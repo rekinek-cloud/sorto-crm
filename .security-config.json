@@ -1,0 +1,253 @@
+{
+  "scanLevel": "comprehensive",
+  "excludePatterns": [
+    "node_modules/**",
+    "dist/**", 
+    "build/**",
+    "coverage/**",
+    ".next/**",
+    "*.log",
+    "*.tmp",
+    ".git/**"
+  ],
+  "securityRules": {
+    "sqlInjection": true,
+    "xssVulnerabilities": true,
+    "csrfProtection": true,
+    "sensitiveDataExposure": true,
+    "authenticationBypass": true,
+    "accessControlFlaws": true,
+    "insecureCryptography": true,
+    "securityMisconfiguration": true,
+    "xmlExternalEntities": true,
+    "brokenAccessControl": true,
+    "securityLoggingFailures": true,
+    "serverSideRequestForgery": true
+  },
+  "complianceChecks": {
+    "gdpr": {
+      "enabled": true,
+      "requirements": [
+        "consent_mechanisms",
+        "data_retention_policies",
+        "right_to_be_forgotten",
+        "data_protection_by_design",
+        "privacy_impact_assessment",
+        "data_breach_notification",
+        "data_controller_identification",
+        "cross_border_transfer_safeguards"
+      ]
+    },
+    "soc2": {
+      "enabled": true,
+      "controls": [
+        "access_control_systems",
+        "logical_physical_access",
+        "system_operations",
+        "change_management",
+        "risk_assessment",
+        "security_monitoring",
+        "incident_response",
+        "vendor_management"
+      ]
+    },
+    "hipaa": {
+      "enabled": false,
+      "safeguards": [
+        "administrative_safeguards",
+        "physical_safeguards",
+        "technical_safeguards"
+      ]
+    },
+    "pci_dss": {
+      "enabled": true,
+      "requirements": [
+        "network_security",
+        "data_protection",
+        "vulnerability_management",
+        "access_control",
+        "monitoring",
+        "security_policies"
+      ]
+    }
+  },
+  "severityThresholds": {
+    "critical": 0,
+    "high": 2,
+    "medium": 5,
+    "low": 10,
+    "informational": 20
+  },
+  "enterpriseFeatures": {
+    "rbac": {
+      "enabled": true,
+      "requirements": [
+        "role_definitions",
+        "permission_granularity",
+        "inheritance_hierarchy",
+        "dynamic_permissions",
+        "audit_trail"
+      ]
+    },
+    "twoFactorAuth": {
+      "enabled": true,
+      "methods": ["totp", "sms", "email", "backup_codes"],
+      "requirements": [
+        "qr_code_generation",
+        "backup_codes",
+        "recovery_mechanisms",
+        "admin_bypass"
+      ]
+    },
+    "singleSignOn": {
+      "enabled": true,
+      "protocols": ["saml", "oauth2", "openid_connect"],
+      "requirements": [
+        "identity_provider_integration",
+        "attribute_mapping",
+        "session_management",
+        "logout_propagation"
+      ]
+    },
+    "auditLogging": {
+      "enabled": true,
+      "requirements": [
+        "comprehensive_coverage",
+        "tamper_proof_storage",
+        "retention_policies",
+        "search_capabilities",
+        "export_functionality",
+        "real_time_monitoring"
+      ]
+    }
+  },
+  "multiTenantSecurity": {
+    "isolation": {
+      "database": {
+        "level": "schema_based",
+        "encryption": "tenant_specific_keys",
+        "backup_isolation": true
+      },
+      "storage": {
+        "level": "bucket_based",
+        "encryption": "tenant_specific_keys",
+        "access_controls": "strict"
+      },
+      "cache": {
+        "level": "namespace_based",
+        "encryption": true,
+        "ttl_policies": "tenant_specific"
+      },
+      "network": {
+        "level": "subdomain_based",
+        "ssl_certificates": "tenant_specific",
+        "rate_limiting": "per_tenant"
+      }
+    },
+    "dataLeakagePrevention": {
+      "cross_tenant_queries": "prohibited",
+      "shared_resources": "monitored",
+      "api_isolation": "enforced",
+      "log_separation": "mandatory"
+    }
+  },
+  "securityMonitoring": {
+    "realTimeAlerts": {
+      "suspicious_activities": true,
+      "failed_authentications": true,
+      "privilege_escalations": true,
+      "data_access_violations": true,
+      "configuration_changes": true
+    },
+    "anomalyDetection": {
+      "user_behavior": true,
+      "api_usage": true,
+      "resource_consumption": true,
+      "geographic_access": true
+    },
+    "threatIntelligence": {
+      "ip_reputation": true,
+      "malware_signatures": true,
+      "attack_patterns": true
+    }
+  },
+  "incidentResponse": {
+    "automaticResponse": {
+      "account_lockout": true,
+      "ip_blocking": true,
+      "session_termination": true,
+      "alert_escalation": true
+    },
+    "forensics": {
+      "evidence_collection": true,
+      "timeline_reconstruction": true,
+      "impact_assessment": true
+    }
+  },
+  "dataProtection": {
+    "encryption": {
+      "at_rest": {
+        "algorithm": "AES-256",
+        "key_management": "dedicated_hsm",
+        "key_rotation": "quarterly"
+      },
+      "in_transit": {
+        "protocol": "TLS_1_3",
+        "certificate_management": "automated",
+        "perfect_forward_secrecy": true
+      },
+      "in_processing": {
+        "memory_encryption": true,
+        "secure_enclaves": false
+      }
+    },
+    "dataClassification": {
+      "categories": ["public", "internal", "confidential", "restricted"],
+      "handling_policies": "category_specific",
+      "retention_policies": "automated"
+    },
+    "dataLossPrevention": {
+      "content_inspection": true,
+      "policy_enforcement": true,
+      "incident_reporting": true
+    }
+  },
+  "vulnerabilityManagement": {
+    "scanning": {
+      "frequency": "daily",
+      "scope": "comprehensive",
+      "integration": "ci_cd_pipeline"
+    },
+    "remediation": {
+      "prioritization": "risk_based",
+      "sla_critical": "24_hours",
+      "sla_high": "7_days",
+      "sla_medium": "30_days"
+    },
+    "reporting": {
+      "executive_dashboard": true,
+      "technical_reports": true,
+      "compliance_reports": true,
+      "trend_analysis": true
+    }
+  },
+  "businessContinuity": {
+    "backup": {
+      "frequency": "hourly_incremental_daily_full",
+      "retention": "3_2_1_strategy",
+      "testing": "monthly",
+      "encryption": true
+    },
+    "disaster_recovery": {
+      "rto_target": "4_hours",
+      "rpo_target": "1_hour",
+      "testing": "quarterly",
+      "documentation": "maintained"
+    },
+    "high_availability": {
+      "redundancy": "multi_region",
+      "failover": "automatic",
+      "load_balancing": "intelligent"
+    }
+  }
+}

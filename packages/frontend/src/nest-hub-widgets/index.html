@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CRM-GTD Smart - Google Nest Hub Dashboard</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body>
+    <div id="nest-hub-container">
+        <!-- Header Bar -->
+        <header id="header-bar">
+            <div class="header-left">
+                <span class="material-icons logo">dashboard</span>
+                <h1>CRM-GTD Smart</h1>
+            </div>
+            <div class="header-center">
+                <div id="current-time"></div>
+                <div id="current-date"></div>
+            </div>
+            <div class="header-right">
+                <div id="connection-status" class="status-indicator">
+                    <span class="material-icons">wifi</span>
+                </div>
+                <div id="refresh-indicator" class="status-indicator">
+                    <span class="material-icons">refresh</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Dashboard Grid -->
+        <main id="dashboard-grid">
+            <!-- Today's Priorities Widget -->
+            <div class="widget priority-widget" id="priorities-widget">
+                <div class="widget-header">
+                    <span class="material-icons">star</span>
+                    <h2>Dzisiejsze Priorytety</h2>
+                    <div class="widget-actions">
+                        <button class="voice-btn" data-voice="priorities">
+                            <span class="material-icons">mic</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="widget-content">
+                    <div id="priority-tasks" class="task-list">
+                        <div class="loading-skeleton">
+                            <div class="skeleton-item"></div>
+                            <div class="skeleton-item"></div>
+                            <div class="skeleton-item"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CRM Metrics Widget -->
+            <div class="widget crm-widget" id="crm-widget">
+                <div class="widget-header">
+                    <span class="material-icons">trending_up</span>
+                    <h2>Metryki CRM</h2>
+                    <div class="widget-actions">
+                        <button class="voice-btn" data-voice="crm">
+                            <span class="material-icons">mic</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="widget-content">
+                    <div id="crm-metrics" class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-icon">
+                                <span class="material-icons">attach_money</span>
+                            </div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="pipeline-value">--</div>
+                                <div class="metric-label">Pipeline Value</div>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-icon">
+                                <span class="material-icons">handshake</span>
+                            </div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="conversion-rate">--</div>
+                                <div class="metric-label">Conversion Rate</div>
+                            </div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="metric-icon">
+                                <span class="material-icons">speed</span>
+                            </div>
+                            <div class="metric-content">
+                                <div class="metric-value" id="velocity">--</div>
+                                <div class="metric-label">Velocity</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div id="pipeline-chart" class="chart-container">
+                        <canvas id="pipelineCanvas"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calendar Overview Widget -->
+            <div class="widget calendar-widget" id="calendar-widget">
+                <div class="widget-header">
+                    <span class="material-icons">event</span>
+                    <h2>Dziś</h2>
+                    <div class="widget-actions">
+                        <button class="voice-btn" data-voice="calendar">
+                            <span class="material-icons">mic</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="widget-content">
+                    <div id="today-meetings" class="meetings-list">
+                        <div class="loading-skeleton">
+                            <div class="skeleton-item"></div>
+                            <div class="skeleton-item"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Goal Progress Widget -->
+            <div class="widget goals-widget" id="goals-widget">
+                <div class="widget-header">
+                    <span class="material-icons">flag</span>
+                    <h2>Postęp Celów</h2>
+                    <div class="widget-actions">
+                        <button class="voice-btn" data-voice="goals">
+                            <span class="material-icons">mic</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="widget-content">
+                    <div id="goal-progress" class="goals-list">
+                        <div class="loading-skeleton">
+                            <div class="skeleton-item"></div>
+                            <div class="skeleton-item"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activities Widget -->
+            <div class="widget activities-widget" id="activities-widget">
+                <div class="widget-header">
+                    <span class="material-icons">history</span>
+                    <h2>Ostatnie Aktywności</h2>
+                    <div class="widget-actions">
+                        <button class="voice-btn" data-voice="activities">
+                            <span class="material-icons">mic</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="widget-content">
+                    <div id="recent-activities" class="activities-list">
+                        <div class="loading-skeleton">
+                            <div class="skeleton-item"></div>
+                            <div class="skeleton-item"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications Panel -->
+            <div class="widget notifications-widget" id="notifications-widget">
+                <div class="widget-header">
+                    <span class="material-icons">notifications</span>
+                    <h2>Powiadomienia</h2>
+                    <div class="notification-badge" id="notification-count">0</div>
+                </div>
+                <div class="widget-content">
+                    <div id="notifications-list" class="notifications-list">
+                        <div class="empty-state">
+                            <span class="material-icons">notifications_off</span>
+                            <p>Brak nowych powiadomień</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Voice Command Modal -->
+        <div id="voice-modal" class="modal">
+            <div class="modal-content">
+                <div class="voice-animation">
+                    <div class="voice-circle"></div>
+                    <div class="voice-circle"></div>
+                    <div class="voice-circle"></div>
+                </div>
+                <h3>Słucham...</h3>
+                <p id="voice-feedback">Powiedz komendę głosową</p>
+                <button id="voice-cancel" class="btn-secondary">Anuluj</button>
+            </div>
+        </div>
+
+        <!-- Offline Banner -->
+        <div id="offline-banner" class="offline-banner">
+            <span class="material-icons">wifi_off</span>
+            <span>Tryb offline - dane z cache</span>
+        </div>
+    </div>
+
+    <script src="api-client.js"></script>
+    <script src="voice-commands.js"></script>
+    <script src="offline-manager.js"></script>
+    <script src="dashboard.js"></script>
+</body>
+</html>

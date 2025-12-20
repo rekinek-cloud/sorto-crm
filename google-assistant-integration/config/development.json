@@ -1,0 +1,150 @@
+{
+  "name": "CRM-GTD Smart Google Assistant - Development",
+  "environment": "development",
+  "server": {
+    "port": 3001,
+    "host": "localhost",
+    "cors": {
+      "enabled": true,
+      "origins": [
+        "http://localhost:3000",
+        "http://localhost:3001",
+        "https://91.99.50.80",
+        "https://console.actions.google.com"
+      ]
+    },
+    "compression": false,
+    "requestTimeout": 30000
+  },
+  "database": {
+    "url": "postgresql://user:password@localhost:5434/crm_gtd_v1",
+    "pool": {
+      "min": 2,
+      "max": 5
+    },
+    "logging": true,
+    "migrations": {
+      "autoRun": true,
+      "directory": "./database/migrations"
+    }
+  },
+  "google": {
+    "projectId": "crm-gtd-smart-dev",
+    "oauth": {
+      "clientId": "dev-client-id.apps.googleusercontent.com",
+      "clientSecret": "dev-client-secret",
+      "redirectUri": "http://localhost:3001/auth/google/callback"
+    },
+    "actions": {
+      "projectId": "crm-gtd-smart-dev",
+      "webhookUrl": "http://localhost:3001/api/webhook/google-assistant"
+    },
+    "appsScript": {
+      "deploymentId": "dev-deployment-id",
+      "webAppUrl": "https://script.google.com/macros/s/dev-script/exec"
+    }
+  },
+  "crmApi": {
+    "baseUrl": "http://localhost:3003/api/v1",
+    "timeout": 10000,
+    "retries": 3,
+    "mock": true
+  },
+  "security": {
+    "jwtSecret": "dev-jwt-secret-key-for-development-only",
+    "webhookSecret": "dev-webhook-secret-for-development",
+    "rateLimit": {
+      "enabled": false,
+      "requests": 1000,
+      "windowMs": 60000
+    }
+  },
+  "logging": {
+    "level": "debug",
+    "format": "simple",
+    "console": true,
+    "file": {
+      "enabled": false,
+      "path": "./logs/development.log"
+    }
+  },
+  "features": {
+    "voiceCommands": true,
+    "nestHubDisplay": true,
+    "weatherWidget": true,
+    "newsWidget": true,
+    "calendarIntegration": true,
+    "mockServices": true
+  },
+  "widgets": {
+    "defaultRefreshInterval": 30,
+    "weather": {
+      "refreshInterval": 300,
+      "apiKey": "dev-weather-api-key",
+      "defaultLocation": {
+        "latitude": 52.2297,
+        "longitude": 21.0122,
+        "city": "Warsaw"
+      }
+    },
+    "news": {
+      "refreshInterval": 120,
+      "apiKey": "dev-news-api-key",
+      "sources": ["polish-tech", "business"]
+    }
+  },
+  "cache": {
+    "enabled": false,
+    "type": "memory",
+    "ttl": {
+      "default": 300,
+      "weather": 600,
+      "news": 300
+    }
+  },
+  "monitoring": {
+    "healthCheck": {
+      "enabled": true,
+      "interval": 30000
+    },
+    "performance": {
+      "enabled": true,
+      "slowQueryThreshold": 1000
+    }
+  },
+  "voiceConfig": {
+    "supportedLanguages": ["pl", "en"],
+    "defaultLanguage": "pl",
+    "responseSettings": {
+      "speed": 1.0,
+      "confirmations": true,
+      "maxResponseLength": 200
+    },
+    "session": {
+      "timeoutMs": 1800000,
+      "maxConcurrent": 10
+    }
+  },
+  "nestHub": {
+    "displayUrl": "http://localhost:3001/nest-display",
+    "defaultTheme": "dark",
+    "autoRefresh": true,
+    "gridConfig": {
+      "columns": 4,
+      "rows": 3,
+      "gap": 16
+    }
+  },
+  "development": {
+    "hotReload": true,
+    "debugWebhooks": true,
+    "mockGoogleServices": true,
+    "verboseLogging": true,
+    "testData": {
+      "generateSampleData": true,
+      "sampleUsers": 3,
+      "sampleTasks": 10,
+      "sampleProjects": 5
+    }
+  }
+}

@@ -1,0 +1,609 @@
+/* Nest Hub Dashboard Styles */
+:root {
+    --primary-color: #4285f4;
+    --secondary-color: #34a853;
+    --accent-color: #fbbc04;
+    --error-color: #ea4335;
+    --background-color: #1a1a1a;
+    --surface-color: #2d2d2d;
+    --text-primary: #ffffff;
+    --text-secondary: #b3b3b3;
+    --border-color: #404040;
+    --shadow: 0 2px 8px rgba(0,0,0,0.3);
+    --border-radius: 12px;
+    --grid-gap: 16px;
+    --widget-padding: 20px;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Google Sans', sans-serif;
+    background: var(--background-color);
+    color: var(--text-primary);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
+
+.dashboard-container {
+    height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    padding: 16px;
+}
+
+/* Header */
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px 16px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.time-display {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.time {
+    font-size: 48px;
+    font-weight: 300;
+    line-height: 1;
+}
+
+.date {
+    font-size: 18px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.status-indicators {
+    display: flex;
+    gap: 16px;
+}
+
+.status-indicator {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    border-radius: 50%;
+    background: var(--surface-color);
+    transition: all 0.3s ease;
+}
+
+.status-indicator.connected {
+    background: var(--secondary-color);
+}
+
+.status-indicator.syncing {
+    background: var(--accent-color);
+    animation: pulse 2s infinite;
+}
+
+.status-indicator.error {
+    background: var(--error-color);
+}
+
+/* Widgets Grid */
+.widgets-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: var(--grid-gap);
+    padding: 16px 0;
+    height: 100%;
+}
+
+/* Widget Base Styles */
+.widget {
+    background: var(--surface-color);
+    border-radius: var(--border-radius);
+    padding: var(--widget-padding);
+    box-shadow: var(--shadow);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.widget:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+
+.widget.dragging {
+    opacity: 0.7;
+    z-index: 1000;
+}
+
+.widget-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.widget-title {
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.widget-actions {
+    display: flex;
+    gap: 8px;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.widget:hover .widget-actions {
+    opacity: 1;
+}
+
+.widget-action {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.widget-action:hover {
+    background: var(--primary-color);
+    color: white;
+}
+
+.widget-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Różne rozmiary widgetów */
+.widget.small {
+    grid-column: span 1;
+    grid-row: span 1;
+}
+
+.widget.medium {
+    grid-column: span 2;
+    grid-row: span 1;
+}
+
+.widget.large {
+    grid-column: span 2;
+    grid-row: span 2;
+}
+
+.widget.full-width {
+    grid-column: span 4;
+    grid-row: span 1;
+}
+
+/* Task Summary Widget */
+.task-summary {
+    text-align: center;
+}
+
+.task-count {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+}
+
+.task-label {
+    font-size: 14px;
+    color: var(--text-secondary);
+}
+
+.task-breakdown {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 16px;
+}
+
+.task-category {
+    text-align: center;
+}
+
+.category-count {
+    font-size: 20px;
+    font-weight: 600;
+    display: block;
+}
+
+.category-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.priority-high { color: var(--error-color); }
+.priority-medium { color: var(--accent-color); }
+.priority-low { color: var(--secondary-color); }
+
+/* Calendar Widget */
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    margin-top: 16px;
+}
+
+.calendar-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    font-size: 12px;
+    background: var(--background-color);
+    transition: all 0.3s ease;
+}
+
+.calendar-day.today {
+    background: var(--primary-color);
+    color: white;
+    font-weight: 600;
+}
+
+.calendar-day.has-events {
+    background: var(--accent-color);
+    color: var(--background-color);
+}
+
+/* Contacts Widget */
+.contacts-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.contact-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    border-radius: 8px;
+    background: var(--background-color);
+}
+
+.contact-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--primary-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.contact-info {
+    flex: 1;
+}
+
+.contact-name {
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.contact-email {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* Projects Widget */
+.projects-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.project-item {
+    padding: 12px;
+    border-radius: 8px;
+    background: var(--background-color);
+    border-left: 4px solid var(--primary-color);
+}
+
+.project-name {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.project-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.progress-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--border-color);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--primary-color);
+    transition: width 0.3s ease;
+}
+
+/* Weather Widget */
+.weather-display {
+    text-align: center;
+}
+
+.weather-temp {
+    font-size: 48px;
+    font-weight: 300;
+    margin-bottom: 8px;
+}
+
+.weather-condition {
+    font-size: 16px;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+}
+
+.weather-details {
+    display: flex;
+    justify-content: space-around;
+    font-size: 12px;
+}
+
+/* News Widget */
+.news-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.news-item {
+    padding: 12px;
+    border-radius: 8px;
+    background: var(--background-color);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.news-item:hover {
+    background: var(--border-color);
+}
+
+.news-title {
+    font-weight: 500;
+    font-size: 14px;
+    margin-bottom: 4px;
+    line-height: 1.3;
+}
+
+.news-source {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* Footer */
+.dashboard-footer {
+    padding: 16px 20px 0;
+    text-align: center;
+    border-top: 1px solid var(--border-color);
+}
+
+.voice-commands {
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    transition: opacity 0.3s ease;
+}
+
+.modal.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.modal-content {
+    background: var(--surface-color);
+    border-radius: var(--border-radius);
+    padding: 24px;
+    max-width: 400px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.modal-header h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.close-modal:hover {
+    background: var(--border-color);
+}
+
+/* Form */
+.form-group {
+    margin-bottom: 16px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--background-color);
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: var(--primary-color);
+}
+
+.form-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    margin-top: 24px;
+}
+
+.form-actions button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.form-actions button[type="submit"] {
+    background: var(--primary-color);
+    color: white;
+}
+
+.form-actions button[type="button"] {
+    background: var(--border-color);
+    color: var(--text-primary);
+}
+
+.form-actions button:hover {
+    transform: translateY(-1px);
+}
+
+/* Drag and Drop */
+.drag-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(66, 133, 244, 0.1);
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.drag-overlay.hidden {
+    display: none;
+}
+
+.drop-zone {
+    border: 2px dashed var(--primary-color);
+    border-radius: var(--border-radius);
+    background: rgba(66, 133, 244, 0.1);
+}
+
+/* Animations */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.widget {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Responsywność dla różnych rozmiarów Nest Hub */
+@media (max-width: 1024px) {
+    .widgets-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+    
+    .widget.full-width {
+        grid-column: span 3;
+    }
+}
+
+@media (max-width: 800px) {
+    .widgets-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .widget.full-width,
+    .widget.large {
+        grid-column: span 2;
+    }
+    
+    .time {
+        font-size: 36px;
+    }
+}
+
+/* Dark mode enhancement */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background-color: #000000;
+        --surface-color: #1a1a1a;
+        --border-color: #333333;
+    }
+}

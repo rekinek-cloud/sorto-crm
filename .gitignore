@@ -1,0 +1,48 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Production
+dist/
+build/
+.next/
+out/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Environment files
+.env
+.env.local
+.env.production
+.env*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Database
+*.sqlite
+*.sqlite3
+postgres_data/
+redis_data/
+clickhouse_data/
+
+# Temp files
+.cache/
+tmp/
+temp/
+
+# Docker volumes
+volumes/
+
+# OS files
+Thumbs.dbbackups/

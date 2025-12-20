@@ -1,0 +1,22 @@
+1. Informacje biznesowe:
+
+Cel aplikacji i grupa docelowa
+Główne problemy, które rozwiązuje
+Kluczowe funkcjonalności (priorytet: must-have vs nice-to-have)
+
+2. Techniczne:
+
+Stack backendu (API endpoints, format danych, autoryzacja)
+Baza danych (struktura, relacje)
+Integracje zewnętrzne (Dropbox, email, itd.)
+Wymagania dot. offline/sync
+
+3. UX/UI:
+
+Flow użytkownika (user journey)
+Główne ekrany i nawigacja
+Wytyczne wizualne (jeśli są)
+
+4. Deployment:
+
+Środowiska (dev, staging, prod)

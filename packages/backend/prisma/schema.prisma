@@ -1,0 +1,4252 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id                      String                    @id @default(uuid())
+  name                    String
+  slug                    String                    @unique
+  domain                  String?                   @unique
+  settings                Json                      @default("{}")
+  limits                  Json                      @default("{}")
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  activities              activities[]
+  agent_actions           agent_actions[]
+  agent_analytics         agent_analytics[]
+  agent_context_cache     agent_context_cache[]
+  agent_conversations     agent_conversations[]
+  agent_learning          agent_learning[]
+  agent_proactive_tasks   agent_proactive_tasks[]
+  agent_suggestions       agent_suggestions[]
+  ai_executions           ai_executions[]
+  ai_knowledge_bases      ai_knowledge_bases[]
+  ai_prompt_templates     ai_prompt_templates[]
+  ai_providers            ai_providers[]
+  ai_rules                ai_rules[]
+  ai_suggestions          ai_suggestions[]
+  ai_usage_stats          ai_usage_stats[]
+  areasOfResponsibility   AreaOfResponsibility[]
+  autoReplies             AutoReply[]
+  break_templates         break_templates[]
+  bug_reports             bug_reports[]
+  communicationChannels   CommunicationChannel[]
+  companies               Company[]
+  complaints              Complaint[]
+  contacts                Contact[]
+  context_priorities      context_priorities[]
+  contexts                Context[]
+  day_templates           day_templates[]
+  deals                   Deal[]
+  delegatedTasks          DelegatedTask[]
+  documents               Document[]
+  email_accounts          email_accounts[]
+  emailAnalysis           EmailAnalysis[]
+  email_logs              email_logs[]
+  email_rules             email_rules[]
+  email_templates         email_templates[]
+  energy_analytics        energy_analytics[]
+  energy_patterns         energy_patterns[]
+  energy_time_blocks      energy_time_blocks[]
+  errorLogs               ErrorLog[]
+  files                   File[]
+  focusModes              FocusMode[]
+  folders                 Folder[]
+  gtdBuckets              GTDBucket[]
+  gtdHorizons             GTDHorizon[]
+  habits                  Habit[]
+  inboxItems              InboxItem[]
+  infos                   Info[]
+  invoices                Invoice[]
+  knowledgeBase           KnowledgeBase[]
+  leads                   Lead[]
+  meetings                Meeting[]
+  messages                Message[]
+  next_actions            next_actions[]
+  offers                  Offer[]
+  orders                  Order[]
+  performance_metrics     performance_metrics[]
+  processingRules         ProcessingRule[]
+  products                Product[]
+  projects                Project[]
+  recommendations         Recommendation[]
+  recurringTasks          RecurringTask[]
+  scheduled_tasks         scheduled_tasks[]
+  searchIndex             SearchIndex[]
+  services                Service[]
+  smart_mailboxes         smart_mailboxes[]
+  smartTemplates          SMARTTemplate[]
+  somedayMaybe            SomedayMaybe[]
+  sprints                 sprints[]
+  stream_access_logs      stream_access_logs[]
+  stream_permissions      stream_permissions[]
+  stream_relations        stream_relations[]
+  streams                 Stream[]
+  subscriptions           Subscription[]
+  tags                    Tag[]
+  tasks                   Task[]
+  template_applications   template_applications[]
+  timeline                Timeline[]
+  unified_rule_executions unified_rule_executions[]
+  unified_rules           unified_rules[]
+  unimportant             Unimportant[]
+  user_access_logs        user_access_logs[]
+  user_ai_patterns        user_ai_patterns[]
+  user_patterns           user_patterns[]
+  user_permissions        user_permissions[]
+  user_profiles           user_profiles[]
+  user_relations          user_relations[]
+  users                   User[]
+  vector_cache            vector_cache[]
+  vector_documents        vector_documents[]
+  vector_search_results   vector_search_results[]
+  waitingFor              WaitingFor[]
+  weeklyReviews           WeeklyReview[]
+  wikiCategories          WikiCategory[]
+  wikiPages               WikiPage[]
+  ai_prompt_overrides     ai_prompt_overrides[]
+
+  // Flow Engine relations
+  flow_learned_patterns     flow_learned_patterns[]
+  flow_automation_rules     flow_automation_rules[]
+  flow_processing_history   flow_processing_history[]
+  flow_conversations        flow_conversations[]
+
+  @@map("organizations")
+}
+
+model User {
+  id                                                       String                  @id @default(uuid())
+  email                                                    String                  @unique
+  passwordHash                                             String
+  firstName                                                String
+  lastName                                                 String
+  avatar                                                   String?
+  role                                                     UserRole                @default(MEMBER)
+  settings                                                 Json                    @default("{}")
+  isActive                                                 Boolean                 @default(true)
+  emailVerified                                            Boolean                 @default(false)
+  lastLoginAt                                              DateTime?
+  createdAt                                                DateTime                @default(now())
+  updatedAt                                                DateTime                @updatedAt
+  organizationId                                           String
+  activities                                               activities[]
+  agent_actions                                            agent_actions[]
+  agent_analytics                                          agent_analytics[]
+  agent_context_cache                                      agent_context_cache[]
+  agent_conversations                                      agent_conversations[]
+  agent_feedback                                           agent_feedback[]
+  agent_learning                                           agent_learning[]
+  agent_proactive_tasks                                    agent_proactive_tasks[]
+  agent_suggestions                                        agent_suggestions[]
+  ai_suggestions                                           ai_suggestions[]
+  areas_of_responsibility                                  AreaOfResponsibility[]
+  break_templates                                          break_templates[]
+  bug_reports                                              bug_reports[]
+  communicationChannels                                    CommunicationChannel[]
+  context_priorities                                       context_priorities[]
+  day_templates                                            day_templates[]
+  ownedDeals                                               Deal[]                  @relation("DealOwner")
+  documentComments                                         DocumentComment[]
+  documentsSharedByMe                                      DocumentShare[]         @relation("DocumentSharedBy")
+  sharedDocuments                                          DocumentShare[]
+  documents                                                Document[]
+  email_accounts                                           email_accounts[]
+  email_logs                                               email_logs[]
+  email_templates                                          email_templates[]
+  energy_analytics                                         energy_analytics[]
+  energy_patterns                                          energy_patterns[]
+  energy_time_blocks                                       energy_time_blocks[]
+  errorLogs                                                ErrorLog[]
+  capturedInboxItems                                       InboxItem[]             @relation("InboxCapturedBy")
+  meetings                                                 Meeting[]
+  next_actions_next_actions_assignedToIdTousers            next_actions[]          @relation("next_actions_assignedToIdTousers")
+  next_actions_next_actions_createdByIdTousers             next_actions[]          @relation("next_actions_createdByIdTousers")
+  createdOffers                                            Offer[]                 @relation("OfferCreator")
+  performance_metrics                                      performance_metrics[]
+  assignedProjects                                         Project[]               @relation("ProjectAssignee")
+  createdProjects                                          Project[]               @relation("ProjectCreator")
+  recurring_tasks                                          RecurringTask[]
+  refreshTokens                                            RefreshToken[]
+  verificationTokens                                       VerificationToken[]
+  scheduled_tasks                                          scheduled_tasks[]
+  smart_mailboxes                                          smart_mailboxes[]
+  createdSomedayMaybe                                      SomedayMaybe[]          @relation("SomedayMaybeCreator")
+  stream_access_logs                                       stream_access_logs[]
+  stream_permissions_stream_permissions_grantedByIdTousers stream_permissions[]    @relation("stream_permissions_grantedByIdTousers")
+  stream_permissions_stream_permissions_userIdTousers      stream_permissions[]    @relation("stream_permissions_userIdTousers")
+  stream_relations                                         stream_relations[]
+  createdStreams                                           Stream[]                @relation("StreamCreator")
+  assignedTasks                                            Task[]                  @relation("TaskAssignee")
+  createdTasks                                             Task[]                  @relation("TaskCreator")
+  template_applications                                    template_applications[]
+  user_access_logs_user_access_logs_targetUserIdTousers    user_access_logs[]      @relation("user_access_logs_targetUserIdTousers")
+  user_access_logs_user_access_logs_userIdTousers          user_access_logs[]      @relation("user_access_logs_userIdTousers")
+  user_ai_patterns                                         user_ai_patterns?
+  user_patterns                                            user_patterns[]
+  user_permissions                                         user_permissions[]
+  user_profiles                                            user_profiles?
+  user_relations_user_relations_createdByIdTousers         user_relations[]        @relation("user_relations_createdByIdTousers")
+  user_relations_user_relations_employeeIdTousers          user_relations[]        @relation("user_relations_employeeIdTousers")
+  user_relations_user_relations_managerIdTousers           user_relations[]        @relation("user_relations_managerIdTousers")
+  user_view_preferences                                    user_view_preferences[]
+  organization                                             Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vector_search_results                                    vector_search_results[]
+  view_analytics                                           view_analytics[]
+  view_configurations                                      view_configurations[]
+  createdWaitingFor                                        WaitingFor[]
+  wikiPages                                                WikiPage[]
+  createdPromptTemplates                                   ai_prompt_templates[]
+  promptVersionChanges                                     ai_prompt_versions[]
+
+  // Flow Engine relations
+  flow_learned_patterns                                    flow_learned_patterns[]
+  flow_automation_rules                                    flow_automation_rules[]
+  flow_processing_history                                  flow_processing_history[]
+  flow_conversations                                       flow_conversations[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model VerificationToken {
+  id        String                 @id @default(uuid())
+  token     String                 @unique
+  type      VerificationTokenType
+  userId    String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime               @default(now())
+  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId, type])
+  @@map("verification_tokens")
+}
+
+enum VerificationTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+  INVITATION
+}
+
+model Subscription {
+  id                   String             @id @default(uuid())
+  organizationId       String
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  stripePriceId        String?
+  plan                 SubscriptionPlan   @default(STARTER)
+  status               SubscriptionStatus @default(TRIAL)
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  organization         Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model Stream {
+  id                                                  String               @id @default(uuid())
+  name                                                String
+  description                                         String?
+  color                                               String               @default("#3B82F6")
+  icon                                                String?
+  settings                                            Json                 @default("{}")
+  status                                              StreamStatus         @default(ACTIVE)
+  templateOrigin                                      String?
+  gtdConfig                                           Json                 @default("{}")
+  streamType                                          StreamType           @default(CUSTOM)
+  organizationId                                      String
+  createdById                                         String
+  createdAt                                           DateTime             @default(now())
+  updatedAt                                           DateTime             @updatedAt
+  horizonLevel                                        Int                  @default(0)
+  pattern                                             String?              @default("custom") @db.VarChar(50)
+  gtdRole                                             String?
+  inboxItems                                          InboxItem[]          @relation("InboxToStream")
+  messages                                            Message[]
+  next_actions                                        next_actions[]
+  precise_goals                                       precise_goals[]
+  processing_rules                                    ProcessingRule[]
+  projects                                            Project[]
+  recurring_tasks                                     RecurringTask[]
+  stream_access_logs                                  stream_access_logs[]
+  streamChannels                                      StreamChannel[]
+  stream_permissions                                  stream_permissions[]
+  stream_relations_stream_relations_childIdTostreams  stream_relations[]   @relation("stream_relations_childIdTostreams")
+  stream_relations_stream_relations_parentIdTostreams stream_relations[]   @relation("stream_relations_parentIdTostreams")
+  createdBy                                           User                 @relation("StreamCreator", fields: [createdById], references: [id])
+  organization                                        Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  tasks                                               Task[]
+  timeline                                            Timeline[]
+
+  // Flow Engine relations
+  flow_learned_patterns                               flow_learned_patterns[]
+  flow_automation_rules                               flow_automation_rules[]
+  flow_conversations_proposed                         flow_conversations[] @relation("ProposedStream")
+  flow_conversations_final                            flow_conversations[] @relation("FinalStream")
+
+  @@index([horizonLevel])
+  @@index([streamType])
+  @@index([templateOrigin])
+  @@map("streams")
+}
+
+model Task {
+  id                                                       String                @id @default(uuid())
+  title                                                    String
+  description                                              String?
+  priority                                                 Priority              @default(MEDIUM)
+  status                                                   TaskStatus            @default(NEW)
+  dueDate                                                  DateTime?
+  completedAt                                              DateTime?
+  estimatedHours                                           Float?
+  actualHours                                              Float?
+  contextId                                                String?
+  energy                                                   EnergyLevel?          @default(MEDIUM)
+  isWaitingFor                                             Boolean               @default(false)
+  waitingForNote                                           String?
+  streamScore                                              Float?
+  smartAnalysis                                            Json?
+  organizationId                                           String
+  createdById                                              String
+  assignedToId                                             String?
+  streamId                                                 String?
+  projectId                                                String?
+  companyId                                                String?
+  createdAt                                                DateTime              @default(now())
+  updatedAt                                                DateTime              @updatedAt
+  sprintId                                                 String?
+  ganttDuration                                            Int?
+  ganttEndDate                                             DateTime?
+  ganttProgress                                            Float                 @default(0)
+  ganttStartDate                                           DateTime?
+  kanbanPosition                                           Int                   @default(0)
+  scrumStoryPoints                                         Int?
+  smartScore                                               Float?
+  activities                                               activities[]
+  completeness                                             Completeness[]
+  delegatedTasks                                           DelegatedTask[]
+  resultingFromInbox                                       InboxItem[]
+  linkedInboxItems                                         InboxItem[]           @relation("InboxLinkedTask")
+  messages                                                 Message[]
+  next_actions                                             next_actions[]
+  scheduled_tasks                                          scheduled_tasks[]
+  smartChecks                                              Smart[]
+  smartAnalysisDetails                                     SMARTAnalysisDetail[]
+  smartImprovements                                        SMARTImprovement[]
+  task_dependencies_task_dependencies_predecessorIdTotasks task_dependencies[]   @relation("task_dependencies_predecessorIdTotasks")
+  task_dependencies_task_dependencies_successorIdTotasks   task_dependencies[]   @relation("task_dependencies_successorIdTotasks")
+  history                                                  TaskHistory[]
+  fromRelationships                                        TaskRelationship[]    @relation("TaskFrom")
+  toRelationships                                          TaskRelationship[]    @relation("TaskTo")
+  assignedTo                                               User?                 @relation("TaskAssignee", fields: [assignedToId], references: [id])
+  companies                                                Company?              @relation(fields: [companyId], references: [id])
+  context                                                  Context?              @relation(fields: [contextId], references: [id])
+  createdBy                                                User                  @relation("TaskCreator", fields: [createdById], references: [id])
+  organization                                             Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project                                                  Project?              @relation(fields: [projectId], references: [id])
+  sprints                                                  sprints?              @relation(fields: [sprintId], references: [id])
+  stream                                                   Stream?               @relation(fields: [streamId], references: [id])
+  waitingFor                                               WaitingFor[]
+
+  @@map("tasks")
+}
+
+model Project {
+  id                      String                @id @default(uuid())
+  name                    String
+  description             String?
+  status                  ProjectStatus         @default(PLANNING)
+  priority                Priority              @default(MEDIUM)
+  startDate               DateTime?
+  endDate                 DateTime?
+  completedAt             DateTime?
+  streamScore             Float?
+  smartAnalysis           Json?
+  organizationId          String
+  createdById             String
+  assignedToId            String?
+  streamId                String?
+  companyId               String?
+  createdAt               DateTime              @default(now())
+  updatedAt               DateTime              @updatedAt
+  areaId                  String?
+  smartScore              Int?                  @default(0)
+  activities              activities[]
+  completeness            Completeness[]
+  criticalPaths           CriticalPath[]
+  inboxItems              InboxItem[]
+  next_actions            next_actions[]
+  targetDependencies      ProjectDependency[]   @relation("DependencyTarget")
+  sourceDependencies      ProjectDependency[]   @relation("DependencySource")
+  areas_of_responsibility AreaOfResponsibility? @relation(fields: [areaId], references: [id])
+  assignedTo              User?                 @relation("ProjectAssignee", fields: [assignedToId], references: [id])
+  companies               Company?              @relation(fields: [companyId], references: [id])
+  createdBy               User                  @relation("ProjectCreator", fields: [createdById], references: [id])
+  organization            Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  stream                  Stream?               @relation(fields: [streamId], references: [id])
+  recurring_tasks         RecurringTask[]
+  smartAnalysisDetails    SMARTAnalysisDetail[]
+  smartImprovements       SMARTImprovement[]
+  tasks                   Task[]
+
+  // Flow Engine relations
+  flow_automation_rules   flow_automation_rules[]
+
+  @@map("projects")
+}
+
+model Contact {
+  id                String          @id @default(uuid())
+  firstName         String
+  lastName          String
+  email             String?
+  phone             String?
+  company           String?
+  position          String?
+  department        String?
+  notes             String?
+  tags              String[]        @default([])
+  status            ContactStatus   @default(ACTIVE)
+  source            String?
+  emailCategory     EmailCategory   @default(UNKNOWN)
+  organizationId    String
+  companyId         String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  lastInteractionAt DateTime?
+  interactionCount  Int             @default(0)
+  activities        activities[]
+  companies         Company[]
+  assignedCompany   Company?        @relation("ContactCompany", fields: [companyId], references: [id])
+  organization      Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  inboxItems        InboxItem[]
+  meetings          Meeting[]
+  messages          Message[]
+  next_actions      next_actions[]
+  offers            Offer[]
+  recurring_tasks   RecurringTask[]
+
+  @@map("contacts")
+}
+
+model Company {
+  id                String          @id @default(uuid())
+  name              String
+  website           String?
+  domain            String?
+  industry          String?
+  size              CompanySize?
+  revenue           String?
+  description       String?
+  address           String?
+  phone             String?
+  email             String?
+  tags              String[]        @default([])
+  status            CompanyStatus   @default(PROSPECT)
+  organizationId    String
+  primaryContactId  String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  lastInteractionAt DateTime?
+  interactionCount  Int             @default(0)
+  activities        activities[]
+  organization      Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  primaryContact    Contact?        @relation(fields: [primaryContactId], references: [id])
+  assignedContacts  Contact[]       @relation("ContactCompany")
+  deals             Deal[]
+  inboxItems        InboxItem[]
+  messages          Message[]
+  next_actions      next_actions[]
+  offers            Offer[]
+  projects          Project[]
+  recurring_tasks   RecurringTask[]
+  tasks             Task[]
+
+  @@map("companies")
+}
+
+model Deal {
+  id                String          @id @default(uuid())
+  title             String
+  description       String?
+  value             Float?
+  currency          String          @default("USD")
+  stage             DealStage       @default(PROSPECT)
+  probability       Float           @default(0)
+  expectedCloseDate DateTime?
+  actualCloseDate   DateTime?
+  source            String?
+  notes             String?
+  organizationId    String
+  companyId         String
+  ownerId           String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  kanbanPosition    Int             @default(0)
+  activities        activities[]
+  company           Company         @relation(fields: [companyId], references: [id])
+  organization      Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  owner             User            @relation("DealOwner", fields: [ownerId], references: [id])
+  messages          Message[]
+  offers            Offer[]
+  recurring_tasks   RecurringTask[]
+
+  @@map("deals")
+}
+
+model Context {
+  id             String       @id @default(uuid())
+  name           String
+  description    String?
+  color          String       @default("#6B7280")
+  icon           String?
+  isActive       Boolean      @default(true)
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  tasks          Task[]
+
+  @@unique([organizationId, name])
+  @@map("contexts")
+}
+
+model Meeting {
+  id             String        @id @default(uuid())
+  title          String
+  description    String?
+  startTime      DateTime
+  endTime        DateTime
+  location       String?
+  meetingUrl     String?
+  agenda         String?
+  notes          String?
+  status         MeetingStatus @default(SCHEDULED)
+  organizationId String
+  organizedById  String
+  contactId      String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  activities     activities[]
+  contact        Contact?      @relation(fields: [contactId], references: [id])
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizedBy    User          @relation(fields: [organizedById], references: [id])
+
+  @@map("meetings")
+}
+
+model WaitingFor {
+  id                   String           @id @default(uuid())
+  description          String
+  waitingForWho        String
+  sinceDate            DateTime         @default(now())
+  expectedResponseDate DateTime?
+  followUpDate         DateTime?
+  status               WaitingForStatus @default(PENDING)
+  notes                String?
+  organizationId       String
+  taskId               String?
+  createdById          String
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  createdBy            User             @relation(fields: [createdById], references: [id])
+  organization         Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  task                 Task?            @relation(fields: [taskId], references: [id])
+
+  @@map("waiting_for")
+}
+
+model SomedayMaybe {
+  id             String               @id @default(uuid())
+  title          String
+  description    String?
+  category       SomedayMaybeCategory @default(IDEAS)
+  priority       Priority             @default(LOW)
+  status         SomedayMaybeStatus   @default(ACTIVE)
+  whenToReview   DateTime?
+  tags           String[]             @default([])
+  activatedAt    DateTime?
+  organizationId String
+  createdById    String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  createdBy      User?                @relation("SomedayMaybeCreator", fields: [createdById], references: [id])
+  organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("someday_maybe")
+}
+
+model Habit {
+  id             String       @id @default(uuid())
+  name           String
+  description    String?
+  frequency      Frequency    @default(DAILY)
+  currentStreak  Int          @default(0)
+  bestStreak     Int          @default(0)
+  startDate      DateTime     @default(now())
+  isActive       Boolean      @default(true)
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  entries        HabitEntry[]
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("habits")
+}
+
+model HabitEntry {
+  id        String   @id @default(uuid())
+  date      DateTime @db.Date
+  completed Boolean  @default(false)
+  notes     String?
+  habitId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+  @@map("habit_entries")
+}
+
+model TaskRelationship {
+  id             String           @id @default(uuid())
+  type           RelationshipType @default(FINISH_TO_START)
+  lag            String?
+  isCriticalPath Boolean          @default(false)
+  notes          String?
+  fromTaskId     String
+  toTaskId       String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  fromTask       Task             @relation("TaskFrom", fields: [fromTaskId], references: [id], onDelete: Cascade)
+  toTask         Task             @relation("TaskTo", fields: [toTaskId], references: [id], onDelete: Cascade)
+
+  @@map("task_relationships")
+}
+
+model TaskHistory {
+  id         String   @id @default(uuid())
+  fieldName  String
+  oldValue   String?
+  newValue   String?
+  changedBy  String
+  changeDate DateTime @default(now())
+  taskId     String
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("task_history")
+}
+
+model RecurringTask {
+  id               String       @id @default(uuid())
+  title            String
+  description      String?
+  frequency        Frequency    @default(WEEKLY)
+  pattern          String?
+  interval         Int          @default(1)
+  daysOfWeek       Int[]        @default([])
+  dayOfMonth       Int?
+  weekOfMonth      Int?
+  months           Int[]        @default([])
+  time             String       @default("09:00")
+  nextOccurrence   DateTime?
+  lastExecuted     DateTime?
+  executionCount   Int          @default(0)
+  context          String?
+  priority         Priority     @default(MEDIUM)
+  estimatedMinutes Int?
+  isActive         Boolean      @default(true)
+  organizationId   String
+  assignedToId     String?
+  companyId        String?
+  contactId        String?
+  projectId        String?
+  streamId         String?
+  dealId           String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  users            User?        @relation(fields: [assignedToId], references: [id])
+  companies        Company?     @relation(fields: [companyId], references: [id])
+  contacts         Contact?     @relation(fields: [contactId], references: [id])
+  deals            Deal?        @relation(fields: [dealId], references: [id])
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  projects         Project?     @relation(fields: [projectId], references: [id])
+  streams          Stream?      @relation(fields: [streamId], references: [id])
+
+  @@map("recurring_tasks")
+}
+
+model WeeklyReview {
+  id                  String       @id @default(uuid())
+  reviewDate          DateTime     @db.Date
+  completedTasksCount Int          @default(0)
+  newTasksCount       Int          @default(0)
+  stalledTasks        Int          @default(0)
+  nextActions         String?
+  notes               String?
+  collectLoosePapers  Boolean      @default(false)
+  processNotes        Boolean      @default(false)
+  emptyInbox          Boolean      @default(false)
+  processVoicemails   Boolean      @default(false)
+  reviewActionLists   Boolean      @default(false)
+  reviewCalendar      Boolean      @default(false)
+  reviewProjects      Boolean      @default(false)
+  reviewWaitingFor    Boolean      @default(false)
+  reviewSomedayMaybe  Boolean      @default(false)
+  organizationId      String
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, reviewDate])
+  @@map("weekly_reviews")
+}
+
+model Tag {
+  id             String       @id @default(uuid())
+  name           String
+  color          String       @default("#6B7280")
+  category       String?
+  usageCount     Int          @default(0)
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
+  @@map("tags")
+}
+
+model FocusMode {
+  id                  String                @id @default(uuid())
+  name                String
+  duration            Int
+  energyLevel         EnergyLevel           @default(HIGH)
+  contextName         String?
+  estimatedTimeMax    Int?
+  category            String?
+  priority            Priority              @default(MEDIUM)
+  tags                String[]              @default([])
+  organizationId      String
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  energy_time_blocks  energy_time_blocks[]
+  organization        Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  performance_metrics performance_metrics[]
+
+  @@map("focus_modes")
+}
+
+model KnowledgeBase {
+  id             String       @id @default(uuid())
+  title          String
+  content        String
+  category       String?
+  tags           String[]     @default([])
+  relatedItems   String[]     @default([])
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("knowledge_base")
+}
+
+model EmailAnalysis {
+  id              String       @id @default(uuid())
+  timestamp       DateTime     @default(now())
+  emailFrom       String
+  emailSubject    String
+  emailReceived   DateTime
+  categories      String[]     @default([])
+  confidenceScore Float        @default(0)
+  summary         String?
+  fullAnalysis    String?
+  rawText         String?
+  processingTime  Int?
+  tokenCount      Int?
+  organizationId  String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("email_analysis")
+}
+
+model DelegatedTask {
+  id             String       @id @default(uuid())
+  description    String
+  delegatedTo    String
+  delegatedOn    DateTime     @default(now())
+  followUpDate   DateTime?
+  status         TaskStatus   @default(NEW)
+  notes          String?
+  organizationId String
+  taskId         String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  task           Task?        @relation(fields: [taskId], references: [id])
+
+  @@map("delegated_tasks")
+}
+
+model Timeline {
+  id             String         @id @default(uuid())
+  eventId        String
+  eventType      String
+  title          String
+  startDate      DateTime
+  endDate        DateTime?
+  status         TimelineStatus @default(SCHEDULED)
+  organizationId String
+  streamId       String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  stream         Stream?        @relation(fields: [streamId], references: [id])
+
+  @@map("timeline")
+}
+
+model AreaOfResponsibility {
+  id              String              @id @default(uuid())
+  name            String
+  description     String?
+  organizationId  String
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  color           String              @default("#3B82F6")
+  createdById     String?
+  currentFocus    String?
+  icon            String?
+  isActive        Boolean             @default(true)
+  outcomes        String[]            @default([])
+  purpose         String?
+  reviewFrequency AreaReviewFrequency @default(MONTHLY)
+  users           User?               @relation(fields: [createdById], references: [id])
+  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  projects        Project[]
+
+  @@map("areas_of_responsibility")
+}
+
+model SMARTAnalysisDetail {
+  id                     String   @id @default(uuid())
+  specificScore          Int      @default(0)
+  specificNotes          String?
+  measurableScore        Int      @default(0)
+  measurableCriteria     String?
+  achievableScore        Int      @default(0)
+  achievableResources    String?
+  relevantScore          Int      @default(0)
+  relevantAlignment      String?
+  timeBoundScore         Int      @default(0)
+  timeEstimationAccuracy String?
+  taskId                 String?
+  projectId              String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  project                Project? @relation(fields: [projectId], references: [id])
+  task                   Task?    @relation(fields: [taskId], references: [id])
+
+  @@map("smart_analysis_details")
+}
+
+model SMARTImprovement {
+  id                   String            @id @default(uuid())
+  smartDimension       String
+  currentState         String
+  suggestedImprovement String
+  status               ImprovementStatus @default(OPEN)
+  taskId               String?
+  projectId            String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  project              Project?          @relation(fields: [projectId], references: [id])
+  task                 Task?             @relation(fields: [taskId], references: [id])
+
+  @@map("smart_improvements")
+}
+
+model SMARTTemplate {
+  id                  String       @id @default(uuid())
+  name                String
+  taskTemplate        String
+  measurableCriteria  String?
+  typicalResources    String?
+  estimatedDuration   Int?
+  typicalDependencies String?
+  organizationId      String
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("smart_templates")
+}
+
+model Lead {
+  id             String       @id @default(uuid())
+  title          String
+  description    String?
+  company        String?
+  contactPerson  String?
+  status         LeadStatus   @default(NEW)
+  priority       Priority     @default(MEDIUM)
+  source         String?
+  value          Float?
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("leads")
+}
+
+model Order {
+  id              String       @id @default(uuid())
+  orderNumber     String       @unique
+  title           String
+  description     String?
+  customer        String
+  status          OrderStatus  @default(PENDING)
+  priority        Priority     @default(MEDIUM)
+  value           Float?
+  currency        String       @default("USD")
+  subtotal        Float?       @default(0)
+  totalDiscount   Float?       @default(0)
+  totalTax        Float?       @default(0)
+  totalAmount     Float?       @default(0)
+  customerEmail   String?
+  customerPhone   String?
+  customerAddress String?
+  deliveryDate    DateTime?
+  deliveryAddress String?
+  deliveryNotes   String?
+  organizationId  String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  items           OrderItem[]
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("orders")
+}
+
+model Invoice {
+  id                String        @id @default(uuid())
+  invoiceNumber     String        @unique
+  title             String
+  description       String?
+  amount            Float
+  currency          String        @default("USD")
+  status            InvoiceStatus @default(PENDING)
+  priority          Priority      @default(MEDIUM)
+  dueDate           DateTime?
+  subtotal          Float?        @default(0)
+  totalDiscount     Float?        @default(0)
+  totalTax          Float?        @default(0)
+  totalAmount       Float?        @default(0)
+  customerEmail     String?
+  customerPhone     String?
+  customerAddress   String?
+  paymentDate       DateTime?
+  paymentMethod     String?
+  paymentNotes      String?
+  fakturowniaId     Int?
+  fakturowniaNumber String?
+  fakturowniaStatus String?
+  lastSyncedAt      DateTime?
+  syncError         String?
+  autoSync          Boolean       @default(true)
+  organizationId    String
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  items             InvoiceItem[]
+  organization      Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("invoices")
+}
+
+model Offer {
+  id              String       @id @default(uuid())
+  offerNumber     String       @unique
+  title           String
+  description     String?
+  status          OfferStatus  @default(DRAFT)
+  priority        Priority     @default(MEDIUM)
+  subtotal        Float?       @default(0)
+  totalDiscount   Float?       @default(0)
+  totalTax        Float?       @default(0)
+  totalAmount     Float?       @default(0)
+  currency        String       @default("USD")
+  validUntil      DateTime?
+  sentDate        DateTime?
+  acceptedDate    DateTime?
+  rejectedDate    DateTime?
+  customerName    String
+  customerEmail   String?
+  customerPhone   String?
+  customerAddress String?
+  companyId       String?
+  contactId       String?
+  dealId          String?
+  paymentTerms    String?
+  deliveryTerms   String?
+  notes           String?
+  organizationId  String
+  createdById     String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  items           OfferItem[]
+  company         Company?     @relation(fields: [companyId], references: [id])
+  contact         Contact?     @relation(fields: [contactId], references: [id])
+  createdBy       User         @relation("OfferCreator", fields: [createdById], references: [id])
+  deal            Deal?        @relation(fields: [dealId], references: [id])
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("offers")
+}
+
+model OfferItem {
+  id                String        @id @default(uuid())
+  itemType          OfferItemType
+  quantity          Int           @default(1)
+  unitPrice         Float
+  discount          Float?        @default(0)
+  tax               Float?        @default(0)
+  totalPrice        Float
+  productId         String?
+  serviceId         String?
+  customName        String?
+  customDescription String?
+  offerId           String
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  offer             Offer         @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  product           Product?      @relation(fields: [productId], references: [id])
+  service           Service?      @relation(fields: [serviceId], references: [id])
+
+  @@map("offer_items")
+}
+
+model Complaint {
+  id             String          @id @default(uuid())
+  title          String
+  description    String?
+  customer       String
+  product        String?
+  status         ComplaintStatus @default(NEW)
+  priority       Priority        @default(HIGH)
+  organizationId String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("complaints")
+}
+
+model Info {
+  id             String       @id @default(uuid())
+  title          String
+  content        String?
+  topic          String?
+  importance     Importance   @default(MEDIUM)
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("info")
+}
+
+model Unimportant {
+  id             String       @id @default(uuid())
+  content        String
+  type           String?
+  source         String?
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("unimportant")
+}
+
+model Completeness {
+  id          String   @id @default(uuid())
+  isComplete  Boolean  @default(false)
+  missingInfo String?
+  clarity     String?
+  taskId      String?
+  projectId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project     Project? @relation(fields: [projectId], references: [id])
+  task        Task?    @relation(fields: [taskId], references: [id])
+
+  @@map("completeness")
+}
+
+model Recommendation {
+  id             String               @id @default(uuid())
+  content        String
+  status         RecommendationStatus @default(OPEN)
+  priority       Priority             @default(MEDIUM)
+  referenceId    String?
+  referenceType  String?
+  organizationId String
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("recommendations")
+}
+
+model Metadata {
+  id            String   @id @default(uuid())
+  confidence    Float    @default(0.0)
+  ambiguity     String?
+  rawText       String?
+  referenceId   String?
+  referenceType String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("metadata")
+}
+
+model GTDBucket {
+  id             String       @id @default(uuid())
+  name           String
+  description    String?
+  viewOrder      Int          @default(1)
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
+  @@map("gtd_buckets")
+}
+
+model GTDHorizon {
+  id              String       @id @default(uuid())
+  level           Int
+  name            String
+  description     String?
+  reviewFrequency Frequency    @default(QUARTERLY)
+  organizationId  String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, level])
+  @@map("gtd_horizons")
+}
+
+model ProjectDependency {
+  id                 String         @id @default(uuid())
+  type               DependencyType @default(FINISH_TO_START)
+  isCriticalPath     Boolean        @default(false)
+  sourceProjectId    String
+  dependentProjectId String
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  dependentProject   Project        @relation("DependencyTarget", fields: [dependentProjectId], references: [id], onDelete: Cascade)
+  sourceProject      Project        @relation("DependencySource", fields: [sourceProjectId], references: [id], onDelete: Cascade)
+
+  @@map("project_dependencies")
+}
+
+model CriticalPath {
+  id                 String    @id @default(uuid())
+  tasks              String[]  @default([])
+  totalDuration      String?
+  earliestCompletion DateTime?
+  slack              String?
+  projectId          String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  project            Project?  @relation(fields: [projectId], references: [id])
+
+  @@map("critical_path")
+}
+
+model File {
+  id             String       @id @default(uuid())
+  fileName       String
+  fileType       String
+  urlPath        String
+  uploadDate     DateTime     @default(now())
+  size           Int?
+  parentId       String?
+  parentType     String?
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("files")
+}
+
+model Smart {
+  id         String   @id @default(uuid())
+  specific   Boolean  @default(false)
+  measurable Boolean  @default(false)
+  achievable Boolean  @default(false)
+  relevant   Boolean  @default(false)
+  timeBound  Boolean  @default(false)
+  taskId     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  task       Task?    @relation(fields: [taskId], references: [id])
+
+  @@map("smart")
+}
+
+model Dependency {
+  id             String         @id @default(uuid())
+  type           DependencyType @default(FINISH_TO_START)
+  isCriticalPath Boolean        @default(false)
+  sourceId       String
+  sourceType     String
+  targetId       String
+  targetType     String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@map("dependencies")
+}
+
+model Document {
+  id                  String            @id @default(uuid())
+  title               String
+  content             String
+  summary             String?
+  type                DocumentType      @default(NOTE)
+  status              DocumentStatus    @default(DRAFT)
+  tags                String[]
+  mimeType            String?
+  fileSize            Int?
+  filePath            String?
+  version             Int               @default(1)
+  isTemplate          Boolean           @default(false)
+  isPublic            Boolean           @default(false)
+  viewCount           Int               @default(0)
+  authorId            String
+  folderId            String?
+  organizationId      String
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  comments            DocumentComment[]
+  linkedDocuments     DocumentLink[]    @relation("SourceDocument")
+  backlinkedDocuments DocumentLink[]    @relation("TargetDocument")
+  shares              DocumentShare[]
+  author              User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  folder              Folder?           @relation(fields: [folderId], references: [id])
+  organization        Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}
+
+model Folder {
+  id             String       @id @default(uuid())
+  name           String
+  description    String?
+  color          String?
+  isSystem       Boolean      @default(false)
+  parentId       String?
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  documents      Document[]
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parent         Folder?      @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children       Folder[]     @relation("FolderHierarchy")
+
+  @@unique([organizationId, parentId, name])
+  @@map("folders")
+}
+
+model DocumentLink {
+  id               String   @id @default(uuid())
+  type             LinkType @default(REFERENCE)
+  strength         Float    @default(1.0)
+  sourceDocumentId String
+  targetDocumentId String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  sourceDocument   Document @relation("SourceDocument", fields: [sourceDocumentId], references: [id], onDelete: Cascade)
+  targetDocument   Document @relation("TargetDocument", fields: [targetDocumentId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceDocumentId, targetDocumentId])
+  @@map("document_links")
+}
+
+model DocumentComment {
+  id         String            @id @default(uuid())
+  content    String
+  isResolved Boolean           @default(false)
+  documentId String
+  authorId   String
+  parentId   String?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  author     User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  document   Document          @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  parent     DocumentComment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    DocumentComment[] @relation("CommentThread")
+
+  @@map("document_comments")
+}
+
+model DocumentShare {
+  id           String          @id @default(uuid())
+  permission   SharePermission @default(READ)
+  expiresAt    DateTime?
+  documentId   String
+  sharedWithId String
+  sharedById   String
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  document     Document        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  sharedBy     User            @relation("DocumentSharedBy", fields: [sharedById], references: [id], onDelete: Cascade)
+  sharedWith   User            @relation(fields: [sharedWithId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, sharedWithId])
+  @@map("document_shares")
+}
+
+model WikiPage {
+  id              String         @id @default(uuid())
+  title           String
+  slug            String
+  content         String
+  summary         String?
+  isPublished     Boolean        @default(false)
+  version         Int            @default(1)
+  template        String?
+  authorId        String
+  categoryId      String?
+  organizationId  String
+  parentPageId    String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  linkedPages     WikiPageLink[] @relation("SourceWikiPage")
+  backlinkedPages WikiPageLink[] @relation("TargetWikiPage")
+  author          User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  category        WikiCategory?  @relation(fields: [categoryId], references: [id])
+  organization    Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parentPage      WikiPage?      @relation("WikiHierarchy", fields: [parentPageId], references: [id])
+  childPages      WikiPage[]     @relation("WikiHierarchy")
+
+  @@unique([organizationId, slug])
+  @@map("wiki_pages")
+}
+
+model WikiCategory {
+  id             String       @id @default(uuid())
+  name           String
+  description    String?
+  color          String?
+  icon           String?
+  sortOrder      Int          @default(0)
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  pages          WikiPage[]
+
+  @@unique([organizationId, name])
+  @@map("wiki_categories")
+}
+
+model WikiPageLink {
+  id           String   @id @default(uuid())
+  linkText     String?
+  sourcePageId String
+  targetPageId String
+  createdAt    DateTime @default(now())
+  sourcePage   WikiPage @relation("SourceWikiPage", fields: [sourcePageId], references: [id], onDelete: Cascade)
+  targetPage   WikiPage @relation("TargetWikiPage", fields: [targetPageId], references: [id], onDelete: Cascade)
+
+  @@unique([sourcePageId, targetPageId])
+  @@map("wiki_page_links")
+}
+
+model SearchIndex {
+  id             String       @id @default(uuid())
+  entityType     String
+  entityId       String
+  title          String
+  content        String
+  searchVector   String?
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([entityType, entityId])
+  @@index([organizationId, entityType])
+  @@map("search_index")
+}
+
+model CommunicationChannel {
+  id              String           @id @default(uuid())
+  name            String
+  type            ChannelType
+  active          Boolean          @default(true)
+  config          Json
+  emailAddress    String?
+  displayName     String?
+  autoProcess     Boolean          @default(true)
+  createTasks     Boolean          @default(false)
+  defaultStream   String?
+  organizationId  String
+  userId          String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  lastSyncAt      DateTime?
+  autoReplies     AutoReply[]
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user            User?            @relation(fields: [userId], references: [id])
+  messages        Message[]
+  processingRules ProcessingRule[]
+  streamChannels  StreamChannel[]
+  unified_rules   unified_rules[]
+
+  @@map("communication_channels")
+}
+
+model StreamChannel {
+  id              String               @id @default(uuid())
+  streamId        String
+  channelId       String
+  autoCreateTasks Boolean              @default(false)
+  defaultContext  String?
+  defaultPriority Priority             @default(MEDIUM)
+  createdAt       DateTime             @default(now())
+  channel         CommunicationChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  stream          Stream               @relation(fields: [streamId], references: [id], onDelete: Cascade)
+
+  @@unique([streamId, channelId])
+  @@map("stream_channels")
+}
+
+model Message {
+  id                String                    @id @default(uuid())
+  channelId         String
+  messageId         String?
+  threadId          String?
+  subject           String?
+  content           String
+  htmlContent       String?
+  fromAddress       String
+  fromName          String?
+  toAddress         String
+  ccAddress         String[]                  @default([])
+  bccAddress        String[]                  @default([])
+  messageType       MessageType               @default(INBOX)
+  priority          MessagePriority           @default(NORMAL)
+  isRead            Boolean                   @default(false)
+  isStarred         Boolean                   @default(false)
+  isArchived        Boolean                   @default(false)
+  sentAt            DateTime?
+  receivedAt        DateTime                  @default(now())
+  autoProcessed     Boolean                   @default(false)
+  actionNeeded      Boolean                   @default(false)
+  needsResponse     Boolean                   @default(false)
+  responseDeadline  DateTime?
+  extractedTasks    String[]                  @default([])
+  extractedContext  String?
+  sentiment         String?
+  urgencyScore      Float?
+  taskId            String?
+  streamId          String?
+  contactId         String?
+  companyId         String?
+  dealId            String?
+  interactionType   String?
+  organizationId    String
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  emailAccountId    String?
+  emailHeaders      Json?
+  imapFolder        String?
+  imapUid           String?
+  rawEmail          String?
+  attachments       MessageAttachment[]
+  processingResults MessageProcessingResult[]
+  channel           CommunicationChannel      @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  company           Company?                  @relation(fields: [companyId], references: [id])
+  contact           Contact?                  @relation(fields: [contactId], references: [id])
+  deal              Deal?                     @relation(fields: [dealId], references: [id])
+  email_accounts    email_accounts?           @relation(fields: [emailAccountId], references: [id])
+  organization      Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  stream            Stream?                   @relation(fields: [streamId], references: [id])
+  task              Task?                     @relation(fields: [taskId], references: [id])
+
+  @@map("messages")
+}
+
+model MessageAttachment {
+  id          String   @id @default(uuid())
+  messageId   String
+  fileName    String
+  fileType    String
+  fileSize    Int?
+  contentType String?
+  storagePath String?
+  isInline    Boolean  @default(false)
+  contentId   String?
+  createdAt   DateTime @default(now())
+  message     Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@map("message_attachments")
+}
+
+model ProcessingRule {
+  id                String                    @id @default(uuid())
+  name              String
+  description       String?
+  active            Boolean                   @default(true)
+  conditions        Json
+  actions           Json
+  priority          Int                       @default(0)
+  channelId         String?
+  organizationId    String
+  executionCount    Int                       @default(0)
+  lastExecuted      DateTime?
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  streamId          String?
+  processingResults MessageProcessingResult[]
+  channel           CommunicationChannel?     @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  organization      Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  streams           Stream?                   @relation(fields: [streamId], references: [id], onDelete: Cascade)
+
+  @@map("processing_rules")
+}
+
+model MessageProcessingResult {
+  id              String          @id @default(uuid())
+  messageId       String
+  ruleId          String?
+  actionTaken     String
+  success         Boolean         @default(true)
+  errorMessage    String?
+  taskCreated     String?
+  contextAssigned String?
+  prioritySet     Priority?
+  processedAt     DateTime        @default(now())
+  message         Message         @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  rule            ProcessingRule? @relation(fields: [ruleId], references: [id])
+
+  @@map("message_processing_results")
+}
+
+model AutoReply {
+  id                String                @id @default(uuid())
+  name              String
+  subject           String
+  content           String
+  htmlContent       String?
+  triggerConditions Json
+  status            AutoReplyStatus       @default(ACTIVE)
+  sendOnce          Boolean               @default(true)
+  delay             Int?
+  activeFrom        DateTime?
+  activeTo          DateTime?
+  channelId         String?
+  organizationId    String
+  sentCount         Int                   @default(0)
+  lastSent          DateTime?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  channel           CommunicationChannel? @relation(fields: [channelId], references: [id])
+  organization      Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("auto_replies")
+}
+
+model ErrorLog {
+  id             String        @id @default(uuid())
+  message        String
+  stack          String?
+  url            String
+  userAgent      String
+  severity       ErrorSeverity
+  context        String?
+  componentStack String?
+  sessionId      String
+  timestamp      DateTime
+  resolved       Boolean       @default(false)
+  userId         String?
+  organizationId String?
+  createdAt      DateTime      @default(now())
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  user           User?         @relation(fields: [userId], references: [id])
+
+  @@map("error_logs")
+}
+
+model Product {
+  id             String        @id @default(uuid())
+  name           String
+  description    String?
+  sku            String?       @unique
+  category       String?
+  subcategory    String?
+  price          Float
+  cost           Float?
+  currency       String        @default("USD")
+  stockQuantity  Int?          @default(0)
+  minStockLevel  Int?          @default(0)
+  trackInventory Boolean       @default(false)
+  unit           String?
+  weight         Float?
+  dimensions     String?
+  status         ProductStatus @default(ACTIVE)
+  isActive       Boolean       @default(true)
+  isFeatured     Boolean       @default(false)
+  tags           String[]      @default([])
+  images         String[]      @default([])
+  organizationId String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  invoiceItems   InvoiceItem[]
+  offerItems     OfferItem[]
+  orderItems     OrderItem[]
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("products")
+}
+
+model Service {
+  id                    String                @id @default(uuid())
+  name                  String
+  description           String?
+  category              String?
+  subcategory           String?
+  price                 Float
+  cost                  Float?
+  currency              String                @default("USD")
+  billingType           ServiceBillingType    @default(ONE_TIME)
+  duration              Int?
+  unit                  String?
+  deliveryMethod        ServiceDeliveryMethod @default(REMOTE)
+  estimatedDeliveryDays Int?
+  status                ServiceStatus         @default(AVAILABLE)
+  isActive              Boolean               @default(true)
+  isFeatured            Boolean               @default(false)
+  requirements          String?
+  resources             String?
+  tags                  String[]              @default([])
+  images                String[]              @default([])
+  organizationId        String
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  invoiceItems          InvoiceItem[]
+  offerItems            OfferItem[]
+  orderItems            OrderItem[]
+  organization          Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("services")
+}
+
+model OrderItem {
+  id                String        @id @default(uuid())
+  itemType          OrderItemType
+  quantity          Int           @default(1)
+  unitPrice         Float
+  discount          Float?        @default(0)
+  tax               Float?        @default(0)
+  totalPrice        Float
+  productId         String?
+  serviceId         String?
+  customName        String?
+  customDescription String?
+  orderId           String
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  order             Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product           Product?      @relation(fields: [productId], references: [id])
+  service           Service?      @relation(fields: [serviceId], references: [id])
+
+  @@map("order_items")
+}
+
+model InvoiceItem {
+  id                String          @id @default(uuid())
+  itemType          InvoiceItemType
+  quantity          Int             @default(1)
+  unitPrice         Float
+  discount          Float?          @default(0)
+  tax               Float?          @default(0)
+  totalPrice        Float
+  productId         String?
+  serviceId         String?
+  customName        String?
+  customDescription String?
+  invoiceId         String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  invoice           Invoice         @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product           Product?        @relation(fields: [productId], references: [id])
+  service           Service?        @relation(fields: [serviceId], references: [id])
+
+  @@map("invoice_items")
+}
+
+model smart_mailboxes {
+  id                  String                @id @default(uuid())
+  name                String
+  icon                String                @default("📧")
+  color               String                @default("blue")
+  description         String?
+  isBuiltIn           Boolean               @default(false)
+  isActive            Boolean               @default(true)
+  displayOrder        Int                   @default(0)
+  userId              String?
+  organizationId      String
+  lastAccessedAt      DateTime?
+  accessCount         Int                   @default(0)
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime              @updatedAt
+  smart_mailbox_rules smart_mailbox_rules[]
+  organization        Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                User?                 @relation(fields: [userId], references: [id])
+
+  @@unique([organizationId, name])
+}
+
+model smart_mailbox_rules {
+  id            String          @id @default(uuid())
+  mailboxId     String
+  field         String
+  operator      String
+  value         String
+  logicOperator String          @default("AND")
+  ruleOrder     Int             @default(0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  mailbox       smart_mailboxes @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+}
+
+model InboxItem {
+  id                 String              @id @default(uuid())
+  content            String
+  note               String?
+  sourceType         InboxSourceType     @default(QUICK_CAPTURE)
+  source             String              @default("manual")
+  sourceUrl          String?
+  urgencyScore       Int?                @default(0)
+  actionable         Boolean             @default(true)
+  estimatedTime      String?
+  context            String?
+  capturedAt         DateTime            @default(now())
+  processed          Boolean             @default(false)
+  processedAt        DateTime?
+  processingDecision ProcessingDecision?
+  resultingTaskId    String?
+  contactId          String?
+  companyId          String?
+  projectId          String?
+  taskId             String?
+  streamId           String?
+  organizationId     String
+  capturedById       String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  dealId             String?
+
+  // Flow Engine - rozszerzone pola
+  elementType           FlowElementType?        // Typ elementu (EMAIL, VOICE, etc.)
+  rawContent            String?                 @db.Text  // Surowa treść (przed przetworzeniem)
+  flowStatus            FlowProcessingStatus    @default(PENDING)  // Status przetwarzania Flow
+  aiAnalysis            Json?                   // Wynik analizy AI
+  suggestedAction       FlowAction?             // Sugerowana akcja AI
+  suggestedStreams      Json?                   // Sugerowane streamy [{streamId, confidence, reason}]
+  userDecision          FlowAction?             // Decyzja użytkownika (jeśli inna niż sugerowana)
+  userDecisionReason    String?                 // Powód innej decyzji
+  splitFromId           String?                 // ID elementu źródłowego (jeśli powstał z podziału)
+  aiConfidence          Float?                  // Pewność AI (0-1)
+  aiReasoning           String?                 @db.Text  // Uzasadnienie AI
+  processingTimeMs      Int?                    // Czas przetwarzania w ms
+
+  capturedBy         User                @relation("InboxCapturedBy", fields: [capturedById], references: [id])
+  company            Company?            @relation(fields: [companyId], references: [id])
+  contact            Contact?            @relation(fields: [contactId], references: [id])
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project            Project?            @relation(fields: [projectId], references: [id])
+  resultingTask      Task?               @relation(fields: [resultingTaskId], references: [id])
+  stream             Stream?             @relation("InboxToStream", fields: [streamId], references: [id])
+  task               Task?               @relation("InboxLinkedTask", fields: [taskId], references: [id])
+  splitFrom          InboxItem?          @relation("InboxSplit", fields: [splitFromId], references: [id])
+  splitItems         InboxItem[]         @relation("InboxSplit")
+  flowConversations  flow_conversations[]
+
+  @@index([capturedAt])
+  @@index([organizationId, processed])
+  @@index([organizationId, flowStatus])
+  @@index([splitFromId])
+  @@map("inbox_items")
+}
+
+model activities {
+  id                     String       @id
+  type                   ActivityType
+  title                  String
+  description            String?
+  metadata               Json         @default("{}")
+  organizationId         String
+  userId                 String?
+  companyId              String?
+  contactId              String?
+  dealId                 String?
+  taskId                 String?
+  projectId              String?
+  meetingId              String?
+  communicationType      String?
+  communicationDirection String?
+  communicationSubject   String?
+  communicationBody      String?
+  communicationDuration  Int?
+  communicationStatus    String?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime
+  companies              Company?     @relation(fields: [companyId], references: [id])
+  contacts               Contact?     @relation(fields: [contactId], references: [id])
+  deals                  Deal?        @relation(fields: [dealId], references: [id])
+  meetings               Meeting?     @relation(fields: [meetingId], references: [id])
+  organizations          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  projects               Project?     @relation(fields: [projectId], references: [id])
+  tasks                  Task?        @relation(fields: [taskId], references: [id])
+  users                  User?        @relation(fields: [userId], references: [id])
+}
+
+model agent_actions {
+  id                  String              @id
+  conversationId      String
+  organizationId      String
+  userId              String
+  actionType          AgentActionType
+  entityType          String?
+  entityId            String?
+  parameters          Json                @default("{}")
+  result              Json?
+  status              ActionStatus        @default(PENDING)
+  error               String?
+  executedAt          DateTime?
+  createdAt           DateTime            @default(now())
+  agent_conversations agent_conversations @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  organizations       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([actionType, status])
+  @@index([organizationId, userId])
+}
+
+model agent_analytics {
+  id             String       @id
+  organizationId String
+  userId         String
+  date           DateTime     @db.Date
+  metrics        Json
+  createdAt      DateTime     @default(now())
+  organizations  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId, date])
+  @@index([date])
+}
+
+model agent_context_cache {
+  id             String       @id
+  organizationId String
+  userId         String
+  cacheKey       String
+  cacheData      Json
+  expiresAt      DateTime
+  createdAt      DateTime     @default(now())
+  organizations  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId, cacheKey])
+  @@index([expiresAt])
+}
+
+model agent_conversations {
+  id             String             @id
+  organizationId String
+  userId         String
+  title          String?
+  status         ConversationStatus @default(ACTIVE)
+  metadata       Json               @default("{}")
+  startedAt      DateTime           @default(now())
+  lastMessageAt  DateTime           @default(now())
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime
+  agent_actions  agent_actions[]
+  organizations  Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  agent_messages agent_messages[]
+
+  @@index([lastMessageAt])
+  @@index([organizationId, userId])
+}
+
+model agent_feedback {
+  id             String         @id
+  messageId      String         @unique
+  userId         String
+  feedbackType   FeedbackType
+  rating         Int?
+  comment        String?
+  metadata       Json           @default("{}")
+  createdAt      DateTime       @default(now())
+  agent_messages agent_messages @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  users          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, feedbackType])
+}
+
+model agent_learning {
+  id             String       @id
+  organizationId String
+  userId         String
+  learningType   LearningType
+  pattern        Json
+  frequency      Int          @default(1)
+  confidence     Float        @default(0.0)
+  lastObservedAt DateTime     @default(now())
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime
+  organizations  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, userId, learningType])
+}
+
+model agent_messages {
+  id                  String              @id
+  conversationId      String
+  role                MessageRole
+  content             String
+  intent              Json?
+  context             Json?
+  sources             Json?
+  confidence          Float               @default(0.0)
+  metadata            Json                @default("{}")
+  createdAt           DateTime            @default(now())
+  agent_feedback      agent_feedback?
+  agent_conversations agent_conversations @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+model agent_proactive_tasks {
+  id               String            @id
+  organizationId   String
+  userId           String
+  taskType         ProactiveTaskType
+  title            String
+  description      String
+  triggerCondition Json
+  scheduledFor     DateTime?
+  executedAt       DateTime?
+  status           AgentTaskStatus   @default(PENDING)
+  result           Json?
+  createdAt        DateTime          @default(now())
+  organizations    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, userId, status])
+  @@index([scheduledFor])
+}
+
+model agent_suggestions {
+  id             String           @id
+  organizationId String
+  userId         String
+  suggestionType SuggestionType
+  title          String
+  description    String
+  actionable     Json?
+  priority       Priority         @default(MEDIUM)
+  status         SuggestionStatus @default(PENDING)
+  dismissedAt    DateTime?
+  acceptedAt     DateTime?
+  createdAt      DateTime         @default(now())
+  organizations  Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, userId, status])
+}
+
+model ai_executions {
+  id                  String               @id
+  ruleId              String?
+  providerId          String?
+  modelId             String?
+  templateId          String?
+  inputData           Json
+  promptSent          String
+  responseReceived    String?
+  parsedOutput        Json?
+  status              AIExecutionStatus
+  executionTime       Int?
+  tokensUsed          Int?
+  cost                Float?
+  errorMessage        String?
+  errorCode           String?
+  retryCount          Int                  @default(0)
+  actionsExecuted     Json?
+  entitiesCreated     Json?
+  organizationId      String
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime
+  ai_models           ai_models?           @relation(fields: [modelId], references: [id])
+  organizations       Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ai_providers        ai_providers?        @relation(fields: [providerId], references: [id])
+  ai_rules            ai_rules?            @relation(fields: [ruleId], references: [id])
+  ai_prompt_templates ai_prompt_templates? @relation(fields: [templateId], references: [id])
+}
+
+model ai_knowledge_bases {
+  id                     String                   @id
+  name                   String
+  description            String?
+  status                 AIKnowledgeStatus        @default(ACTIVE)
+  embeddingModel         String?
+  chunkSize              Int                      @default(1000)
+  chunkOverlap           Int                      @default(200)
+  organizationId         String
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime
+  organizations          Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ai_knowledge_documents ai_knowledge_documents[]
+
+  @@unique([organizationId, name])
+}
+
+model ai_knowledge_documents {
+  id                 String             @id
+  title              String
+  content            String
+  metadata           Json?
+  embedding          String?
+  embeddingModel     String?
+  status             AIDocumentStatus   @default(ACTIVE)
+  knowledgeBaseId    String
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime
+  ai_knowledge_bases ai_knowledge_bases @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+}
+
+model ai_models {
+  id                  String                @id
+  name                String
+  displayName         String
+  type                AIModelType
+  status              AIModelStatus         @default(ACTIVE)
+  maxTokens           Int?
+  inputCost           Float?
+  outputCost          Float?
+  capabilities        String[]              @default([])
+  config              Json                  @default("{}")
+  providerId          String
+  createdAt           DateTime              @default(now())
+  updatedAt           DateTime
+  ai_executions       ai_executions[]
+  ai_providers        ai_providers          @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  ai_prompt_templates ai_prompt_templates[]
+  ai_rules            ai_rules[]
+  unified_rules       unified_rules[]
+
+  @@unique([providerId, name])
+}
+
+model ai_predictions {
+  id              String    @id
+  itemId          String
+  itemType        String
+  predictionType  String
+  predictedValue  Json
+  confidenceScore Float
+  factors         Json      @default("{}")
+  recommendations Json      @default("{}")
+  createdAt       DateTime  @default(now())
+  expiresAt       DateTime?
+}
+
+model ai_prompt_templates {
+  id                   String                  @id
+  code                 String?                 // np. 'SOURCE_ANALYZE'
+  name                 String
+  description          String?
+  category             String?                 // SOURCE, STREAM, TASK, etc.
+  version              Int                     @default(1)
+  status               AITemplateStatus        @default(ACTIVE)
+  isSystem             Boolean                 @default(false) // Systemowe = niemodyfikowalne
+  systemPrompt         String?                 @db.Text
+  userPromptTemplate   String                  @db.Text
+  variables            Json                    @default("{}")
+  modelId              String?
+  defaultModel         String?                 @default("gpt-4o-mini")
+  defaultTemperature   Float                   @default(0.3)
+  maxTokens            Int                     @default(1000)
+  outputSchema         Json?
+  organizationId       String
+  createdById          String?
+  createdAt            DateTime                @default(now())
+  updatedAt            DateTime
+  ai_executions        ai_executions[]
+  ai_models            ai_models?              @relation(fields: [modelId], references: [id])
+  organizations        Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ai_rules             ai_rules[]
+  versions             ai_prompt_versions[]
+  overrides            ai_prompt_overrides[]
+  createdBy            User?                   @relation(fields: [createdById], references: [id])
+
+  @@index([organizationId, code])
+  @@index([category])
+  @@index([status])
+}
+
+model ai_prompt_versions {
+  id             String              @id @default(uuid())
+  promptId       String
+  version        Int
+  systemPrompt   String?             @db.Text
+  userPromptTemplate String          @db.Text
+  variables      Json                @default("{}")
+  changedById    String?
+  changeReason   String?
+  createdAt      DateTime            @default(now())
+  prompt         ai_prompt_templates @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  changedBy      User?               @relation(fields: [changedById], references: [id])
+
+  @@unique([promptId, version])
+  @@index([promptId])
+}
+
+model ai_prompt_overrides {
+  id                  String              @id @default(uuid())
+  promptId            String
+  organizationId      String
+  modelOverride       String?
+  temperatureOverride Float?
+  languageOverride    String?             @default("pl")
+  customInstructions  String?             @db.Text
+  isActive            Boolean             @default(true)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  prompt              ai_prompt_templates @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  organization        Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([promptId, organizationId])
+}
+
+model ai_providers {
+  id             String           @id
+  name           String
+  displayName    String
+  baseUrl        String
+  status         AIProviderStatus @default(ACTIVE)
+  priority       Int              @default(0)
+  config         Json
+  limits         Json             @default("{}")
+  organizationId String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  ai_executions  ai_executions[]
+  ai_models      ai_models[]
+  organizations  Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
+}
+
+model ai_rules {
+  id                   String               @id
+  name                 String
+  description          String?
+  category             String?
+  status               AIRuleStatus         @default(ACTIVE)
+  priority             Int                  @default(0)
+  triggerType          AITriggerType
+  triggerConditions    Json
+  templateId           String?
+  modelId              String?
+  fallbackModelIds     String[]             @default([])
+  actions              Json
+  maxExecutionsPerHour Int?                 @default(100)
+  maxExecutionsPerDay  Int?                 @default(1000)
+  organizationId       String
+  executionCount       Int                  @default(0)
+  successCount         Int                  @default(0)
+  errorCount           Int                  @default(0)
+  avgExecutionTime     Float?
+  lastExecuted         DateTime?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime
+  ai_executions        ai_executions[]
+  ai_models            ai_models?           @relation(fields: [modelId], references: [id])
+  organizations        Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ai_prompt_templates  ai_prompt_templates? @relation(fields: [templateId], references: [id])
+
+  @@unique([organizationId, name])
+}
+
+model ai_suggestions {
+  id                 String       @id
+  user_id            String
+  organization_id    String
+  context            String       @db.VarChar(50)
+  input_data         Json
+  suggestion         Json
+  confidence         Int?
+  reasoning          String?
+  status             String       @default("PENDING") @db.VarChar(20)
+  user_modifications Json?
+  processing_time_ms Int?
+  created_at         DateTime     @default(now())
+  resolved_at        DateTime?
+  organizations      Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  users              User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([context])
+  @@index([created_at])
+  @@index([organization_id])
+  @@index([status])
+  @@index([user_id])
+}
+
+model ai_usage_stats {
+  id                   String       @id
+  date                 DateTime     @db.Date
+  totalExecutions      Int          @default(0)
+  successfulExecutions Int          @default(0)
+  failedExecutions     Int          @default(0)
+  totalTokensUsed      Int          @default(0)
+  totalCost            Float        @default(0)
+  providerStats        Json         @default("{}")
+  modelStats           Json         @default("{}")
+  organizationId       String
+  createdAt            DateTime     @default(now())
+  organizations        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, date])
+}
+
+model break_templates {
+  id             String       @id
+  name           String
+  duration       Int
+  breakType      BreakType
+  description    String?
+  energyBefore   EnergyLevel?
+  energyAfter    EnergyLevel?
+  bestTimeSlots  Json         @default("[]")
+  activities     Json         @default("[]")
+  isDefault      Boolean      @default(false)
+  organizationId String
+  userId         String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime
+  organizations  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users          User?        @relation(fields: [userId], references: [id])
+}
+
+model bug_reports {
+  id               String       @id
+  title            String
+  description      String
+  priority         BugPriority  @default(MEDIUM)
+  status           BugStatus    @default(OPEN)
+  category         BugCategory?
+  userAgent        String?
+  url              String?
+  browserInfo      String?
+  deviceInfo       String?
+  screenshots      String[]     @default([])
+  attachments      String[]     @default([])
+  stepsToReproduce String?
+  expectedBehavior String?
+  actualBehavior   String?
+  reporterId       String
+  organizationId   String
+  adminNotes       String?
+  resolution       String?
+  resolvedAt       DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime
+  organizations    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users            User         @relation(fields: [reporterId], references: [id])
+}
+
+model context_priorities {
+  id               String       @id
+  contextName      String
+  timeSlot         String
+  dayOfWeek        DayOfWeek?
+  priority         Int          @default(1)
+  requiredEnergy   EnergyLevel?
+  maxDuration      Int?
+  alternativeOrder Json         @default("[]")
+  organizationId   String
+  userId           String
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime
+  organizations    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contextName, timeSlot, dayOfWeek])
+}
+
+model day_templates {
+  id                    String                  @id
+  name                  String
+  description           String?
+  templateType          TemplateType            @default(CUSTOM)
+  dayIntensity          TemplateIntensity       @default(MEDIUM)
+  focusStyle            TemplateFocusStyle      @default(MIXED)
+  timeBlocks            Json                    @default("[]")
+  totalWorkTime         Int                     @default(0)
+  totalBreakTime        Int                     @default(0)
+  blocksCount           Int                     @default(0)
+  energyDistribution    Json                    @default("{}")
+  contextBalance        Json                    @default("{}")
+  usageCount            Int                     @default(0)
+  avgRating             Float?
+  lastUsed              DateTime?
+  isDefault             Boolean                 @default(false)
+  isPublic              Boolean                 @default(false)
+  generatedBy           TemplateSource          @default(USER)
+  aiConfidence          Float?
+  basedOnPatterns       Json                    @default("[]")
+  organizationId        String
+  userId                String
+  userProfileId         String?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime
+  weeklyTemplate        Boolean                 @default(false)
+  organizations         Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users                 User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user_profiles         user_profiles?          @relation(fields: [userProfileId], references: [id])
+  template_applications template_applications[]
+}
+
+model email_accounts {
+  id              String             @id
+  name            String
+  email           String
+  provider        EmailProvider      @default(GMAIL)
+  imapHost        String
+  imapPort        Int                @default(993)
+  imapSecure      Boolean            @default(true)
+  imapUsername    String
+  imapPassword    String
+  smtpHost        String
+  smtpPort        Int                @default(587)
+  smtpSecure      Boolean            @default(true)
+  smtpUsername    String
+  smtpPassword    String
+  isActive        Boolean            @default(true)
+  lastSyncAt      DateTime?
+  syncIntervalMin Int                @default(5)
+  maxMessages     Int                @default(1000)
+  syncFolders     String[]           @default(["INBOX", "Sent", "Drafts"])
+  status          EmailAccountStatus @default(PENDING)
+  errorMessage    String?
+  syncCount       Int                @default(0)
+  lastErrorAt     DateTime?
+  organizationId  String
+  userId          String
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime
+  organizations   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users           User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages        Message[]
+
+  @@unique([organizationId, email])
+}
+
+model email_logs {
+  id             String        @id
+  provider       EmailProvider @default(SMTP)
+  messageId      String
+  toAddresses    String[]
+  ccAddresses    String[]      @default([])
+  bccAddresses   String[]      @default([])
+  subject        String
+  success        Boolean
+  error          String?
+  templateId     String?
+  templateData   Json?
+  delivered      Boolean?      @default(false)
+  opened         Boolean?      @default(false)
+  clicked        Boolean?      @default(false)
+  bounced        Boolean?      @default(false)
+  spam           Boolean?      @default(false)
+  sentAt         DateTime      @default(now())
+  deliveredAt    DateTime?
+  openedAt       DateTime?
+  clickedAt      DateTime?
+  bouncedAt      DateTime?
+  organizationId String?
+  sentByUserId   String?
+  organizations  Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users          User?         @relation(fields: [sentByUserId], references: [id])
+}
+
+model email_rules {
+  id              String        @id
+  name            String
+  description     String?
+  senderEmail     String?
+  senderDomain    String?
+  subjectContains String?
+  subjectPattern  String?
+  bodyContains    String?
+  assignCategory  EmailCategory
+  skipAIAnalysis  Boolean       @default(false)
+  autoArchive     Boolean       @default(false)
+  autoDelete      Boolean       @default(false)
+  createTask      Boolean       @default(false)
+  priority        Int           @default(0)
+  isActive        Boolean       @default(true)
+  matchCount      Int           @default(0)
+  lastMatched     DateTime?
+  organizationId  String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime
+  organizations   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model email_templates {
+  id             String       @id
+  name           String
+  description    String?
+  subject        String
+  htmlTemplate   String
+  textTemplate   String?
+  variables      String[]     @default([])
+  category       String?
+  tags           String[]     @default([])
+  isActive       Boolean      @default(true)
+  version        Int          @default(1)
+  usageCount     Int          @default(0)
+  lastUsed       DateTime?
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime
+  createdById    String
+  users          User         @relation(fields: [createdById], references: [id])
+  organizations  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model energy_analytics {
+  id                 String             @id
+  date               DateTime           @default(now())
+  energyTimeBlockId  String
+  plannedEnergy      EnergyLevel
+  actualEnergy       EnergyLevel?
+  energyScore        Int?
+  tasksPlanned       Int                @default(0)
+  tasksCompleted     Int                @default(0)
+  minutesPlanned     Int                @default(0)
+  minutesActual      Int                @default(0)
+  productivityScore  Float?
+  contextsPlanned    Json               @default("[]")
+  contextsActual     Json               @default("[]")
+  contextSwitches    Int                @default(0)
+  satisfactionScore  Int?
+  notes              String?
+  distractions       Json               @default("[]")
+  organizationId     String
+  userId             String
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime
+  energy_time_blocks energy_time_blocks @relation(fields: [energyTimeBlockId], references: [id], onDelete: Cascade)
+  organizations      Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model energy_patterns {
+  id                String       @id
+  timeSlot          String
+  dayOfWeek         DayOfWeek
+  energyLevel       EnergyLevel
+  averageEnergy     Float
+  productivityScore Float
+  tasksCompleted    Int          @default(0)
+  totalMinutes      Int          @default(0)
+  successRate       Float        @default(0.0)
+  preferredContexts Json         @default("[]")
+  avoidedContexts   Json         @default("[]")
+  confidence        Float        @default(0.5)
+  sampleSize        Int          @default(0)
+  lastAnalyzed      DateTime?
+  organizationId    String
+  userId            String
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime
+  organizations     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, timeSlot, dayOfWeek])
+}
+
+model energy_time_blocks {
+  id                  String             @id
+  name                String
+  startTime           String
+  endTime             String
+  energyLevel         EnergyLevel
+  primaryContext      String
+  alternativeContexts Json               @default("[]")
+  isBreak             Boolean            @default(false)
+  breakType           BreakType?
+  dayOfWeek           DayOfWeek?
+  isActive            Boolean            @default(true)
+  order               Int                @default(0)
+  organizationId      String
+  userId              String
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime
+  focusModeId         String?
+  holidays            Boolean            @default(false)
+  specificDays        Json               @default("[]")
+  weekends            Boolean            @default(false)
+  workdays            Boolean            @default(true)
+  energy_analytics    energy_analytics[]
+  focus_modes         FocusMode?         @relation(fields: [focusModeId], references: [id])
+  organizations       Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scheduled_tasks     scheduled_tasks[]
+
+  @@unique([userId, startTime, dayOfWeek])
+}
+
+model kanban_columns {
+  id                  String              @id
+  viewId              String
+  title               String
+  position            Int
+  color               String              @default("#3B82F6")
+  wipLimit            Int?
+  columnType          String?
+  configuration       Json                @default("{}")
+  createdAt           DateTime            @default(now())
+  view_configurations view_configurations @relation(fields: [viewId], references: [id], onDelete: Cascade)
+}
+
+model next_actions {
+  id                                     String       @id
+  title                                  String
+  description                            String?
+  context                                String
+  priority                               Priority     @default(MEDIUM)
+  energy                                 EnergyLevel  @default(MEDIUM)
+  estimatedTime                          String?
+  status                                 TaskStatus   @default(NEW)
+  completedAt                            DateTime?
+  dueDate                                DateTime?
+  contactId                              String?
+  companyId                              String?
+  projectId                              String?
+  taskId                                 String?
+  streamId                               String?
+  organizationId                         String
+  createdById                            String
+  assignedToId                           String?
+  createdAt                              DateTime     @default(now())
+  updatedAt                              DateTime
+  users_next_actions_assignedToIdTousers User?        @relation("next_actions_assignedToIdTousers", fields: [assignedToId], references: [id])
+  companies                              Company?     @relation(fields: [companyId], references: [id])
+  contacts                               Contact?     @relation(fields: [contactId], references: [id])
+  users_next_actions_createdByIdTousers  User         @relation("next_actions_createdByIdTousers", fields: [createdById], references: [id])
+  organizations                          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  projects                               Project?     @relation(fields: [projectId], references: [id])
+  streams                                Stream?      @relation(fields: [streamId], references: [id])
+  tasks                                  Task?        @relation(fields: [taskId], references: [id])
+}
+
+model performance_metrics {
+  id                      String       @id
+  startDate               DateTime
+  endDate                 DateTime
+  periodType              String
+  focusModeId             String?
+  focusModeEfficiency     Float?
+  focusModeProductivity   Float?
+  primaryContext          String
+  alternativeContexts     Json         @default("[]")
+  contextSwitchCount      Int          @default(0)
+  contextEfficiency       Float
+  energyLevel             EnergyLevel
+  energyConsistency       Float
+  energyOptimalTimes      Json         @default("[]")
+  totalTasks              Int          @default(0)
+  completedTasks          Int          @default(0)
+  overdueTasks            Int          @default(0)
+  completionRate          Float
+  avgTaskDuration         Float?
+  timeBlockUtilization    Float
+  breakEffectiveness      Float?
+  aiSuggestionAccuracy    Float?
+  userBehaviorScore       Float?
+  adaptationRate          Float?
+  productiveStreakDays    Int          @default(0)
+  currentStreak           Int          @default(0)
+  longestStreak           Int          @default(0)
+  stressLevel             Int?
+  satisfactionTrend       Float?
+  burnoutRisk             Float?
+  suggestions             Json         @default("[]")
+  implementedSuggestions  Int          @default(0)
+  suggestionEffectiveness Float?
+  organizationId          String
+  userId                  String
+  createdAt               DateTime     @default(now())
+  updatedAt               DateTime
+  focus_modes             FocusMode?   @relation(fields: [focusModeId], references: [id])
+  organizations           Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users                   User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, startDate, endDate, periodType])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model precise_goals {
+  id              String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  result          String
+  measurement     String
+  deadline        DateTime  @db.Timestamp(6)
+  background      String?
+  current_value   Decimal?  @default(0) @db.Decimal(10, 2)
+  target_value    Decimal   @db.Decimal(10, 2)
+  unit            String?   @default("count") @db.VarChar(50)
+  stream_id       String?
+  organization_id String
+  created_by_id   String
+  status          String?   @default("active") @db.VarChar(20)
+  created_at      DateTime? @default(now()) @db.Timestamp(6)
+  updated_at      DateTime? @default(now()) @db.Timestamp(6)
+  achieved_at     DateTime? @db.Timestamp(6)
+  streams         Stream?   @relation(fields: [stream_id], references: [id], onUpdate: NoAction)
+}
+
+model scheduled_tasks {
+  id                 String              @id
+  title              String
+  description        String?
+  estimatedMinutes   Int
+  actualMinutes      Int?
+  taskId             String?
+  energyTimeBlockId  String
+  context            String
+  energyRequired     EnergyLevel
+  priority           Priority            @default(MEDIUM)
+  status             ScheduledTaskStatus @default(PLANNED)
+  scheduledDate      DateTime
+  startedAt          DateTime?
+  completedAt        DateTime?
+  wasRescheduled     Boolean             @default(false)
+  rescheduledFrom    String?
+  rescheduledReason  RescheduleReason?
+  organizationId     String
+  userId             String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime
+  energy_time_blocks energy_time_blocks  @relation(fields: [energyTimeBlockId], references: [id], onDelete: Cascade)
+  organizations      Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  tasks              Task?               @relation(fields: [taskId], references: [id])
+  users              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model sprints {
+  id             String       @id
+  organizationId String
+  name           String
+  goal           String?
+  startDate      DateTime
+  endDate        DateTime
+  velocity       Int          @default(0)
+  status         SprintStatus @default(PLANNED)
+  createdAt      DateTime     @default(now())
+  organizations  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  tasks          Task[]
+}
+
+model stream_access_logs {
+  id                 String              @id
+  streamId           String
+  userId             String
+  action             String
+  accessType         String
+  permissionId       String?
+  relationId         String?
+  success            Boolean
+  accessLevel        AccessLevel?
+  dataScope          DataScope[]
+  errorMessage       String?
+  ipAddress          String?
+  userAgent          String?
+  requestPath        String?
+  accessedAt         DateTime            @default(now())
+  organizationId     String
+  organizations      Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  stream_permissions stream_permissions? @relation(fields: [permissionId], references: [id])
+  stream_relations   stream_relations?   @relation(fields: [relationId], references: [id])
+  streams            Stream              @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  users              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, accessedAt])
+  @@index([streamId, userId])
+  @@index([userId, accessedAt])
+}
+
+model stream_permissions {
+  id                                          String               @id
+  streamId                                    String?
+  relationId                                  String?
+  userId                                      String
+  accessLevel                                 AccessLevel
+  dataScope                                   DataScope[]
+  conditions                                  Json?
+  expiresAt                                   DateTime?
+  isActive                                    Boolean              @default(true)
+  grantedById                                 String
+  grantedAt                                   DateTime             @default(now())
+  updatedAt                                   DateTime
+  organizationId                              String
+  stream_access_logs                          stream_access_logs[]
+  users_stream_permissions_grantedByIdTousers User                 @relation("stream_permissions_grantedByIdTousers", fields: [grantedById], references: [id])
+  organizations                               Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  stream_relations                            stream_relations?    @relation(fields: [relationId], references: [id], onDelete: Cascade)
+  streams                                     Stream?              @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  users_stream_permissions_userIdTousers      User                 @relation("stream_permissions_userIdTousers", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([relationId, userId])
+  @@index([streamId, userId])
+  @@index([userId])
+}
+
+model stream_relations {
+  id                                         String               @id
+  parentId                                   String
+  childId                                    String
+  relationType                               StreamRelationType
+  description                                String?
+  isActive                                   Boolean              @default(true)
+  inheritanceRule                            InheritanceRule      @default(INHERIT_DOWN)
+  createdById                                String
+  createdAt                                  DateTime             @default(now())
+  updatedAt                                  DateTime
+  organizationId                             String
+  stream_access_logs                         stream_access_logs[]
+  stream_permissions                         stream_permissions[]
+  streams_stream_relations_childIdTostreams  Stream               @relation("stream_relations_childIdTostreams", fields: [childId], references: [id], onDelete: Cascade)
+  users                                      User                 @relation(fields: [createdById], references: [id])
+  organizations                              Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  streams_stream_relations_parentIdTostreams Stream               @relation("stream_relations_parentIdTostreams", fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, childId])
+  @@index([childId])
+  @@index([organizationId])
+  @@index([parentId])
+}
+
+model task_dependencies {
+  id                                           String   @id
+  predecessorId                                String
+  successorId                                  String
+  dependencyType                               String   @default("finish_to_start")
+  lagDays                                      Int      @default(0)
+  createdAt                                    DateTime @default(now())
+  tasks_task_dependencies_predecessorIdTotasks Task     @relation("task_dependencies_predecessorIdTotasks", fields: [predecessorId], references: [id], onDelete: Cascade)
+  tasks_task_dependencies_successorIdTotasks   Task     @relation("task_dependencies_successorIdTotasks", fields: [successorId], references: [id], onDelete: Cascade)
+
+  @@unique([predecessorId, successorId])
+}
+
+model template_applications {
+  id                  String        @id
+  appliedDate         DateTime
+  templateSnapshot    Json
+  actualCompletion    Float?
+  userRating          Int?
+  feedback            String?
+  modifications       Json          @default("[]")
+  totalTasksPlanned   Int           @default(0)
+  totalTasksCompleted Int           @default(0)
+  totalTimeSpent      Int?
+  productivityScore   Float?
+  templateId          String
+  organizationId      String
+  userId              String
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime
+  organizations       Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  day_templates       day_templates @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  users               User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model unified_rule_executions {
+  id             String          @id
+  ruleId         String
+  triggeredBy    String?
+  triggerData    Json?
+  executionTime  Float
+  status         ExecutionStatus
+  result         Json?
+  error          String?
+  entityType     String?
+  entityId       String?
+  organizationId String
+  createdAt      DateTime        @default(now())
+  organizations  Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  unified_rules  unified_rules   @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+}
+
+model unified_rules {
+  id                      String                    @id
+  name                    String
+  description             String?
+  ruleType                UnifiedRuleType
+  category                String?
+  status                  UnifiedRuleStatus         @default(ACTIVE)
+  priority                Int                       @default(0)
+  triggerType             UnifiedTriggerType
+  triggerEvents           String[]                  @default([])
+  conditions              Json
+  actions                 Json
+  maxExecutionsPerHour    Int?                      @default(100)
+  maxExecutionsPerDay     Int?                      @default(1000)
+  cooldownPeriod          Int?                      @default(0)
+  activeFrom              DateTime?
+  activeTo                DateTime?
+  timezone                String?                   @default("UTC")
+  channelId               String?
+  aiModelId               String?
+  aiPromptTemplate        String?
+  fallbackModelIds        String[]                  @default([])
+  organizationId          String
+  executionCount          Int                       @default(0)
+  successCount            Int                       @default(0)
+  errorCount              Int                       @default(0)
+  avgExecutionTime        Float?
+  lastExecuted            DateTime?
+  lastError               String?
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime
+  createdBy               String?
+  unified_rule_executions unified_rule_executions[]
+  ai_models               ai_models?                @relation(fields: [aiModelId], references: [id])
+  communication_channels  CommunicationChannel?     @relation(fields: [channelId], references: [id])
+  organizations           Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+}
+
+model user_access_logs {
+  id                                         String          @id
+  userId                                     String
+  targetUserId                               String?
+  relationId                                 String?
+  action                                     String
+  accessType                                 UserAccessType  @default(DIRECT)
+  success                                    Boolean
+  dataScope                                  UserDataScope[]
+  ipAddress                                  String?
+  userAgent                                  String?
+  requestPath                                String?
+  organizationId                             String
+  accessedAt                                 DateTime        @default(now())
+  organizations                              Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user_relations                             user_relations? @relation(fields: [relationId], references: [id])
+  users_user_access_logs_targetUserIdTousers User?           @relation("user_access_logs_targetUserIdTousers", fields: [targetUserId], references: [id])
+  users_user_access_logs_userIdTousers       User            @relation("user_access_logs_userIdTousers", fields: [userId], references: [id])
+
+  @@index([accessedAt])
+  @@index([organizationId])
+  @@index([targetUserId])
+  @@index([userId])
+}
+
+model user_ai_patterns {
+  id                   String       @id
+  user_id              String       @unique
+  organization_id      String
+  preferred_streams    Json         @default("[]")
+  energy_patterns      Json         @default("{}")
+  acceptance_rate      Decimal      @default(0) @db.Decimal(5, 2)
+  common_modifications Json         @default("[]")
+  total_suggestions    Int          @default(0)
+  total_accepted       Int          @default(0)
+  autonomy_level       Int          @default(1)
+  enabled_contexts     Json         @default("[\"SOURCE\", \"DAY_PLAN\", \"REVIEW\"]")
+  updated_at           DateTime     @default(now())
+  organizations        Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  users                User         @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([organization_id])
+}
+
+model user_patterns {
+  id                 String       @id
+  patternType        String
+  patternKey         String
+  confidence         Float
+  strength           Float
+  sampleSize         Int          @default(0)
+  successRate        Float
+  patternData        Json
+  conditions         Json         @default("[]")
+  outcomes           Json         @default("[]")
+  detectedAt         DateTime     @default(now())
+  lastConfirmed      DateTime?
+  validUntil         DateTime?
+  learningSource     String
+  algorithmVersion   String       @default("v1.0")
+  correlations       Json         @default("{}")
+  adaptationCount    Int          @default(0)
+  lastAdaptation     DateTime?
+  adaptationReason   String?
+  userAcceptance     Float?
+  manualOverrides    Int          @default(0)
+  implementationRate Float?
+  organizationId     String
+  userId             String
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime
+  organizations      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, patternType, patternKey])
+}
+
+model user_permissions {
+  id             String         @id
+  relationId     String
+  dataScope      UserDataScope
+  action         UserAction
+  granted        Boolean
+  expiresAt      DateTime?
+  grantedById    String?
+  organizationId String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime
+  users          User?          @relation(fields: [grantedById], references: [id])
+  organizations  Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user_relations user_relations @relation(fields: [relationId], references: [id], onDelete: Cascade)
+
+  @@index([dataScope])
+  @@index([organizationId])
+  @@index([relationId])
+}
+
+model user_profiles {
+  id                 String          @id
+  energyPeaks        Json            @default("[]")
+  energyValleys      Json            @default("[]")
+  energyPattern      Json            @default("{}")
+  preferredContexts  Json            @default("[]")
+  contextTimeSlots   Json            @default("{}")
+  contextAvoidance   Json            @default("{}")
+  focusModePrefs     Json            @default("{}")
+  optimalFocusLength Json            @default("{}")
+  focusEnergyMap     Json            @default("{}")
+  breakFrequency     Int             @default(90)
+  breakDuration      Int             @default(15)
+  breakTypes         Json            @default("[]")
+  lunchTime          String?         @default("12:00")
+  lunchDuration      Int             @default(60)
+  workStartTime      String          @default("08:00")
+  workEndTime        String          @default("17:00")
+  workdays           Json            @default("[\"MONDAY\", \"TUESDAY\", \"WEDNESDAY\", \"THURSDAY\", \"FRIDAY\"]")
+  flexibleBlocks     Boolean         @default(true)
+  learningEnabled    Boolean         @default(true)
+  adaptationRate     Float           @default(0.1)
+  feedbackWeight     Float           @default(0.3)
+  organizationId     String
+  userId             String          @unique
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime
+  day_templates      day_templates[]
+  organizations      Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model user_relations {
+  id                                      String              @id
+  managerId                               String
+  employeeId                              String
+  relationType                            UserRelationType
+  description                             String?
+  isActive                                Boolean             @default(true)
+  inheritanceRule                         UserInheritanceRule @default(INHERIT_DOWN)
+  canDelegate                             Boolean             @default(true)
+  canApprove                              Boolean             @default(false)
+  startsAt                                DateTime?
+  endsAt                                  DateTime?
+  createdById                             String
+  organizationId                          String
+  createdAt                               DateTime            @default(now())
+  updatedAt                               DateTime
+  user_access_logs                        user_access_logs[]
+  user_permissions                        user_permissions[]
+  users_user_relations_createdByIdTousers User                @relation("user_relations_createdByIdTousers", fields: [createdById], references: [id])
+  users_user_relations_employeeIdTousers  User                @relation("user_relations_employeeIdTousers", fields: [employeeId], references: [id], onDelete: Cascade)
+  users_user_relations_managerIdTousers   User                @relation("user_relations_managerIdTousers", fields: [managerId], references: [id], onDelete: Cascade)
+  organizations                           Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([managerId, employeeId, relationType])
+  @@index([employeeId])
+  @@index([isActive])
+  @@index([managerId])
+  @@index([organizationId])
+}
+
+model user_view_preferences {
+  id          String   @id
+  userId      String
+  viewType    ViewType
+  preferences Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime
+  users       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, viewType])
+}
+
+model vector_cache {
+  id             String       @id
+  cacheKey       String       @unique
+  queryText      String
+  results        Json
+  hitCount       Int          @default(0)
+  lastHit        DateTime     @default(now())
+  expiresAt      DateTime
+  filters        Json?
+  limit          Int          @default(10)
+  threshold      Float        @default(0.7)
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime
+  organizations  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@index([organizationId, cacheKey])
+}
+
+model vector_documents {
+  id                    String                  @id
+  title                 String
+  content               String
+  contentHash           String                  @unique
+  embedding             Float[]
+  entityType            String
+  entityId              String
+  source                String
+  language              String                  @default("pl")
+  chunkIndex            Int                     @default(0)
+  totalChunks           Int                     @default(1)
+  chunkSize             Int?
+  processingModel       String?
+  processingDate        DateTime                @default(now())
+  lastUpdated           DateTime
+  organizationId        String
+  organizations         Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vector_search_results vector_search_results[]
+
+  @@index([contentHash])
+  @@index([organizationId, entityId])
+  @@index([organizationId, entityType])
+}
+
+model vector_search_results {
+  id               String           @id
+  queryText        String
+  queryEmbedding   Float[]
+  documentId       String
+  similarity       Float
+  rank             Int
+  userId           String?
+  searchContext    String?
+  executionTime    Int?
+  createdAt        DateTime         @default(now())
+  organizationId   String
+  vector_documents vector_documents @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  organizations    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  users            User?            @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+  @@index([organizationId, userId])
+}
+
+model vectors {
+  id             String    @id @db.VarChar(255)
+  content        String
+  metadata       Json      @default("{}")
+  embedding_data String
+  created_at     DateTime? @default(now()) @db.Timestamp(6)
+  updated_at     DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model view_analytics {
+  id              String   @id
+  userId          String
+  viewType        ViewType
+  action          String
+  metadata        Json     @default("{}")
+  durationSeconds Int?
+  createdAt       DateTime @default(now())
+  users           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model view_configurations {
+  id             String           @id
+  userId         String
+  viewType       ViewType
+  viewName       String
+  configuration  Json
+  isDefault      Boolean          @default(false)
+  isPublic       Boolean          @default(false)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime
+  kanban_columns kanban_columns[]
+  users          User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// ============================================
+// Flow Engine - wzorce uczone z decyzji użytkownika
+// ============================================
+model flow_learned_patterns {
+  id                String        @id @default(uuid())
+  organizationId    String
+  userId            String
+
+  // Wzorzec wejściowy
+  elementType       FlowElementType
+  contentPattern    String?       @db.Text   // Wzorzec treści (regex lub keywords)
+  senderPattern     String?                  // Wzorzec nadawcy
+  subjectPattern    String?                  // Wzorzec tematu
+
+  // Nauczona decyzja
+  learnedAction     FlowAction               // Akcja która została wybrana
+  learnedStreamId   String?                  // Stream do którego trafiło
+
+  // Statystyki
+  occurrences       Int           @default(1)  // Ile razy zastosowane
+  confidence        Float         @default(0.5) // Pewność wzorca (0-1)
+  lastUsedAt        DateTime      @default(now())
+
+  // Metadane
+  isActive          Boolean       @default(true)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  organization      Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  learnedStream     Stream?       @relation(fields: [learnedStreamId], references: [id])
+
+  @@index([organizationId, userId])
+  @@index([elementType, isActive])
+  @@map("flow_learned_patterns")
+}
+
+// ============================================
+// Flow Engine - reguły automatyzacji
+// ============================================
+model flow_automation_rules {
+  id                String        @id @default(uuid())
+  organizationId    String
+  userId            String
+
+  // Definicja reguły
+  name              String
+  description       String?
+  isActive          Boolean       @default(true)
+  priority          Int           @default(0)    // Wyższy = ważniejszy
+
+  // Warunki (JSON array)
+  conditions        Json          // [{field, operator, value}]
+
+  // Akcja do wykonania
+  action            FlowAction
+  targetStreamId    String?                      // Docelowy stream
+  targetProjectId   String?                      // Docelowy projekt
+
+  // Opcje
+  autoExecute       Boolean       @default(false) // Automatyczne wykonanie bez potwierdzenia
+  notifyOnMatch     Boolean       @default(true)  // Powiadom o dopasowaniu
+
+  // Statystyki
+  executionCount    Int           @default(0)
+  lastExecutedAt    DateTime?
+
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  organization      Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetStream      Stream?       @relation(fields: [targetStreamId], references: [id])
+  targetProject     Project?      @relation(fields: [targetProjectId], references: [id])
+
+  @@index([organizationId, isActive])
+  @@index([priority])
+  @@map("flow_automation_rules")
+}
+
+// ============================================
+// Flow Engine - historia przetwarzania
+// ============================================
+model flow_processing_history {
+  id                String        @id @default(uuid())
+  organizationId    String
+  userId            String
+  inboxItemId       String
+
+  // Przebieg przetwarzania
+  startedAt         DateTime      @default(now())
+  completedAt       DateTime?
+  processingTimeMs  Int?
+
+  // Wynik analizy AI
+  aiAnalysis        Json?
+  aiSuggestedAction FlowAction?
+  aiConfidence      Float?
+
+  // Decyzja końcowa
+  finalAction       FlowAction?
+  finalStreamId     String?
+  wasUserOverride   Boolean       @default(false)  // Czy użytkownik zmienił sugestię
+  userFeedback      String?                        // Feedback użytkownika
+
+  // Wzorzec który został użyty (jeśli jakikolwiek)
+  matchedPatternId  String?
+  matchedRuleId     String?
+
+  createdAt         DateTime      @default(now())
+
+  organization      Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, createdAt])
+  @@index([inboxItemId])
+  @@map("flow_processing_history")
+}
+
+// ============================================
+// Flow Engine - konwersacje dialogowe
+// ============================================
+model flow_conversations {
+  id                  String        @id @default(uuid())
+  organizationId      String        @map("organization_id")
+  userId              String        @map("user_id")
+  inboxItemId         String        @map("inbox_item_id")
+
+  // Status konwersacji
+  status              FlowConversationStatus @default(ACTIVE)
+
+  // Propozycje AI (mogą być modyfikowane)
+  proposedAction      FlowAction?   @map("proposed_action")
+  proposedStreamId    String?       @map("proposed_stream_id")
+  proposedTaskTitle   String?       @map("proposed_task_title") @db.Text
+  proposedPriority    String?       @map("proposed_priority")
+  aiConfidence        Float?        @map("ai_confidence")
+
+  // Wynik końcowy
+  finalAction         FlowAction?   @map("final_action")
+  finalStreamId       String?       @map("final_stream_id")
+  finalTaskTitle      String?       @map("final_task_title") @db.Text
+  finalPriority       String?       @map("final_priority")
+
+  // Śledzenie modyfikacji
+  userModifications   Json?         @map("user_modifications")  // [{field, from, to, timestamp}]
+
+  completedAt         DateTime?     @map("completed_at")
+  createdAt           DateTime      @default(now()) @map("created_at")
+  updatedAt           DateTime      @updatedAt @map("updated_at")
+
+  // Relacje
+  organization        Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inboxItem           InboxItem     @relation(fields: [inboxItemId], references: [id], onDelete: Cascade)
+  proposedStream      Stream?       @relation("ProposedStream", fields: [proposedStreamId], references: [id])
+  finalStream         Stream?       @relation("FinalStream", fields: [finalStreamId], references: [id])
+  messages            flow_conversation_messages[]
+
+  @@index([organizationId, status])
+  @@index([inboxItemId])
+  @@map("flow_conversations")
+}
+
+model flow_conversation_messages {
+  id              String      @id @default(uuid())
+  conversationId  String      @map("conversation_id")
+  role            String      // 'user' | 'assistant' | 'system'
+  content         String      @db.Text
+  metadata        Json?       // Dodatkowe dane (np. propozycja, modyfikacja)
+
+  createdAt       DateTime    @default(now()) @map("created_at")
+
+  conversation    flow_conversations @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@map("flow_conversation_messages")
+}
+
+enum FlowConversationStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  MANAGER
+  MEMBER
+  GUEST
+}
+
+enum SubscriptionPlan {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  PAUSED
+}
+
+enum StreamStatus {
+  ACTIVE
+  ARCHIVED
+  TEMPLATE
+  FLOWING
+  FROZEN
+}
+
+enum TaskStatus {
+  NEW
+  IN_PROGRESS
+  WAITING
+  COMPLETED
+  CANCELED
+}
+
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum EnergyLevel {
+  HIGH
+  MEDIUM
+  LOW
+  CREATIVE
+  ADMINISTRATIVE
+}
+
+enum ContactStatus {
+  ACTIVE
+  INACTIVE
+  LEAD
+  CUSTOMER
+  ARCHIVED
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+}
+
+enum CompanySize {
+  STARTUP
+  SMALL
+  MEDIUM
+  LARGE
+  ENTERPRISE
+}
+
+enum CompanyStatus {
+  PROSPECT
+  CUSTOMER
+  PARTNER
+  INACTIVE
+  ARCHIVED
+}
+
+enum DealStage {
+  PROSPECT
+  QUALIFIED
+  PROPOSAL
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+enum WaitingForStatus {
+  PENDING
+  RESPONDED
+  OVERDUE
+  CANCELED
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  BIMONTHLY
+  QUARTERLY
+  YEARLY
+  CUSTOM
+}
+
+enum RelationshipType {
+  FINISH_TO_START
+  START_TO_START
+  FINISH_TO_FINISH
+  START_TO_FINISH
+}
+
+enum Effort {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum Impact {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum Complexity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TimelineStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+}
+
+enum ImprovementStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  SHIPPED
+  DELIVERED
+  CANCELED
+}
+
+enum InvoiceStatus {
+  PENDING
+  SENT
+  PAID
+  OVERDUE
+  CANCELED
+}
+
+enum AutoReplyStatus {
+  ACTIVE
+  INACTIVE
+  SCHEDULED
+}
+
+enum ComplaintStatus {
+  NEW
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  ESCALATED
+}
+
+enum Importance {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RecommendationStatus {
+  OPEN
+  ACCEPTED
+  REJECTED
+  IMPLEMENTED
+}
+
+enum DocumentType {
+  NOTE
+  ARTICLE
+  GUIDE
+  TUTORIAL
+  SPECIFICATION
+  MEETING_NOTES
+  RESEARCH
+  TEMPLATE
+  POLICY
+  PROCEDURE
+  REFERENCE
+  FAQ
+}
+
+enum DocumentStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+  DEPRECATED
+}
+
+enum LinkType {
+  REFERENCE
+  RELATED
+  PREREQUISITE
+  DEPENDENCY
+  INSPIRATION
+  CONTRADICTION
+}
+
+enum SharePermission {
+  READ
+  COMMENT
+  EDIT
+  ADMIN
+}
+
+enum DependencyType {
+  FINISH_TO_START
+  START_TO_START
+  FINISH_TO_FINISH
+  START_TO_FINISH
+}
+
+enum ChannelType {
+  EMAIL
+  SLACK
+  TEAMS
+  WHATSAPP
+  SMS
+  TELEGRAM
+  DISCORD
+  WEBHOOK
+}
+
+enum MessageType {
+  INBOX
+  SENT
+  DRAFT
+  SPAM
+  TRASH
+}
+
+enum MessagePriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum ErrorSeverity {
+  low
+  medium
+  high
+  critical
+}
+
+enum SomedayMaybeCategory {
+  IDEAS
+  PROJECTS
+  GOALS
+  LEARNING
+  TRAVEL
+  PURCHASES
+  EXPERIENCES
+}
+
+enum SomedayMaybeStatus {
+  ACTIVE
+  ACTIVATED
+  ARCHIVED
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  DISCONTINUED
+  OUT_OF_STOCK
+}
+
+enum ServiceStatus {
+  AVAILABLE
+  UNAVAILABLE
+  TEMPORARILY_UNAVAILABLE
+  DISCONTINUED
+}
+
+enum ServiceBillingType {
+  ONE_TIME
+  HOURLY
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+  PROJECT_BASED
+}
+
+enum ServiceDeliveryMethod {
+  REMOTE
+  ON_SITE
+  HYBRID
+  DIGITAL_DELIVERY
+  PHYSICAL_DELIVERY
+}
+
+enum OrderItemType {
+  PRODUCT
+  SERVICE
+  CUSTOM
+}
+
+enum InvoiceItemType {
+  PRODUCT
+  SERVICE
+  CUSTOM
+}
+
+enum OfferStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CANCELED
+}
+
+enum OfferItemType {
+  PRODUCT
+  SERVICE
+  CUSTOM
+}
+
+enum ProcessingDecision {
+  DO
+  DEFER
+  DELEGATE
+  DELETE
+  REFERENCE
+  PROJECT
+  SOMEDAY
+}
+
+enum AIDocumentStatus {
+  ACTIVE
+  INACTIVE
+  PROCESSING
+  ERROR
+}
+
+enum AIExecutionStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  TIMEOUT
+  CANCELLED
+}
+
+enum AIKnowledgeStatus {
+  ACTIVE
+  INACTIVE
+  INDEXING
+  ERROR
+}
+
+enum AIModelStatus {
+  ACTIVE
+  INACTIVE
+  BETA
+  DEPRECATED
+}
+
+enum AIModelType {
+  TEXT_GENERATION
+  TEXT_CLASSIFICATION
+  TEXT_EMBEDDING
+  IMAGE_GENERATION
+  IMAGE_ANALYSIS
+  AUDIO_TRANSCRIPTION
+  AUDIO_GENERATION
+  CODE_GENERATION
+  FUNCTION_CALLING
+  MULTIMODAL
+}
+
+enum AIProviderStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+  DEPRECATED
+}
+
+enum AIRuleStatus {
+  ACTIVE
+  INACTIVE
+  TESTING
+  ARCHIVED
+}
+
+enum AITemplateStatus {
+  ACTIVE
+  INACTIVE
+  DRAFT
+  ARCHIVED
+}
+
+enum AITriggerType {
+  MESSAGE_RECEIVED
+  TASK_CREATED
+  TASK_UPDATED
+  PROJECT_CREATED
+  CONTACT_UPDATED
+  DEAL_STAGE_CHANGED
+  MANUAL_TRIGGER
+  SCHEDULED
+  WEBHOOK
+}
+
+enum AccessLevel {
+  NO_ACCESS
+  READ_ONLY
+  LIMITED
+  CONTRIBUTOR
+  COLLABORATOR
+  MANAGER
+  ADMIN
+  FULL_CONTROL
+}
+
+enum ActionStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ActivityType {
+  DEAL_CREATED
+  DEAL_UPDATED
+  DEAL_STAGE_CHANGED
+  CONTACT_ADDED
+  CONTACT_UPDATED
+  TASK_CREATED
+  TASK_COMPLETED
+  MEETING_SCHEDULED
+  MEETING_COMPLETED
+  EMAIL_SENT
+  EMAIL_RECEIVED
+  PHONE_CALL
+  SMS_SENT
+  CHAT_MESSAGE
+  NOTE_ADDED
+  COMPANY_UPDATED
+  PROJECT_CREATED
+  PROJECT_UPDATED
+}
+
+enum AgentActionType {
+  CREATE_TASK
+  UPDATE_TASK
+  CREATE_PROJECT
+  UPDATE_DEAL
+  SEND_EMAIL
+  SCHEDULE_MEETING
+  CREATE_DOCUMENT
+  ADD_CONTACT
+  SEARCH_DATA
+  GENERATE_REPORT
+  CUSTOM
+}
+
+enum AgentTaskStatus {
+  PENDING
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum AreaReviewFrequency {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+}
+
+enum BreakType {
+  COFFEE
+  MEAL
+  STRETCH
+  WALK
+  MEDITATION
+  SOCIAL
+  FREE
+  TRANSITION
+}
+
+enum BugCategory {
+  UI_UX
+  FUNCTIONALITY
+  PERFORMANCE
+  SECURITY
+  DATA
+  INTEGRATION
+  OTHER
+}
+
+enum BugPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum BugStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  WONT_FIX
+}
+
+enum ColumnType {
+  STAGE
+  PRIORITY
+  CONTEXT
+  SENTIMENT
+  SIZE
+  ASSIGNEE
+}
+
+enum ConversationStatus {
+  ACTIVE
+  PAUSED
+  ARCHIVED
+  COMPLETED
+}
+
+enum DataScope {
+  BASIC_INFO
+  TASKS
+  PROJECTS
+  FINANCIAL
+  METRICS
+  COMMUNICATION
+  PERMISSIONS
+  CONFIGURATION
+  AUDIT_LOGS
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum EmailAccountStatus {
+  PENDING
+  ACTIVE
+  ERROR
+  DISABLED
+  QUOTA_EXCEEDED
+}
+
+enum EmailCategory {
+  VIP
+  SPAM
+  INVOICES
+  ARCHIVE
+  UNKNOWN
+}
+
+enum EmailProvider {
+  SMTP
+  SENDGRID
+  AWS_SES
+  MAILGUN
+  POSTMARK
+  GMAIL
+  OUTLOOK
+  EXCHANGE
+  YAHOO
+  CUSTOM
+}
+
+enum ExecutionStatus {
+  SUCCESS
+  PARTIAL_SUCCESS
+  FAILED
+  TIMEOUT
+  CANCELLED
+  RETRYING
+}
+
+enum FeedbackType {
+  HELPFUL
+  NOT_HELPFUL
+  INCORRECT
+  INCOMPLETE
+  EXCELLENT
+}
+
+enum GTDRole {
+  INBOX
+  NEXT_ACTIONS
+  WAITING_FOR
+  SOMEDAY_MAYBE
+  PROJECTS
+  CONTEXTS
+  AREAS
+  REFERENCE
+  CUSTOM
+}
+
+enum InboxSourceType {
+  QUICK_CAPTURE
+  MEETING_NOTES
+  PHONE_CALL
+  EMAIL
+  IDEA
+  DOCUMENT
+  BILL_INVOICE
+  ARTICLE
+  VOICE_MEMO
+  PHOTO
+  OTHER
+}
+
+// Flow Engine - typy elementów wejściowych
+enum FlowElementType {
+  EMAIL
+  VOICE
+  DOCUMENT_INVOICE
+  DOCUMENT_CONTRACT
+  IMAGE_BUSINESS_CARD
+  IMAGE_RECEIPT
+  IMAGE_WHITEBOARD
+  LINK
+  IDEA
+  EVENT
+  SMS
+  OTHER
+}
+
+// Flow Engine - sugerowane akcje
+enum FlowAction {
+  ZROB_TERAZ        // Natychmiast, < 2 min
+  ZAPLANUJ          // Zaplanuj na konkretny czas
+  PROJEKT           // Dodaj do projektu
+  KIEDYS_MOZE       // Someday/Maybe
+  REFERENCJA        // Materiał referencyjny
+  USUN              // Usuń
+}
+
+// Flow Engine - status przetwarzania
+enum FlowProcessingStatus {
+  PENDING           // Oczekuje na przetworzenie
+  ANALYZING         // Trwa analiza AI
+  AWAITING_DECISION // Oczekuje na decyzję użytkownika
+  PROCESSED         // Przetworzone
+  SPLIT             // Podzielone na elementy
+  ERROR             // Błąd przetwarzania
+  FROZEN            // Zamrożone na później (ZAMROZ)
+  REFERENCE         // Materiał referencyjny (REFERENCJA)
+  DELETED           // Usunięte (USUN)
+}
+
+enum InheritanceRule {
+  NO_INHERITANCE
+  INHERIT_DOWN
+  INHERIT_UP
+  BIDIRECTIONAL
+}
+
+enum LearningType {
+  USER_PREFERENCE
+  WORK_PATTERN
+  COMMUNICATION_STYLE
+  PRIORITY_PATTERN
+  TIME_PATTERN
+  QUERY_PATTERN
+}
+
+enum MessageRole {
+  USER
+  ASSISTANT
+  SYSTEM
+}
+
+enum ProactiveTaskType {
+  MORNING_BRIEFING
+  DEADLINE_CHECK
+  FOLLOW_UP_REMINDER
+  RISK_DETECTION
+  OPPORTUNITY_ALERT
+  WEEKLY_SUMMARY
+  DATA_SYNC
+  CUSTOM
+}
+
+enum RescheduleReason {
+  NO_TASKS_IN_CONTEXT
+  INSUFFICIENT_ENERGY
+  INTERRUPTION
+  PRIORITY_CHANGE
+  TECHNICAL_ISSUES
+  MEETING_CONFLICT
+  USER_PREFERENCE
+}
+
+enum ReviewFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  CUSTOM
+}
+
+enum ScheduledTaskStatus {
+  PLANNED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+  OVERDUE
+}
+
+enum SprintStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum StreamRelationType {
+  OWNS
+  MANAGES
+  BELONGS_TO
+  RELATED_TO
+  DEPENDS_ON
+  SUPPORTS
+}
+
+enum StreamType {
+  WORKSPACE
+  PROJECT
+  AREA
+  CONTEXT
+  CUSTOM
+}
+
+enum SuggestionStatus {
+  PENDING
+  VIEWED
+  ACCEPTED
+  DISMISSED
+  EXPIRED
+}
+
+enum SuggestionType {
+  TASK_OPTIMIZATION
+  DEADLINE_WARNING
+  FOLLOW_UP_REMINDER
+  PROCESS_IMPROVEMENT
+  DATA_INSIGHT
+  RISK_ALERT
+  OPPORTUNITY
+}
+
+enum TemplateFocusStyle {
+  DEEP_WORK
+  MEETINGS
+  CREATIVE
+  ADMIN
+  MIXED
+}
+
+enum TemplateIntensity {
+  LIGHT
+  MEDIUM
+  HEAVY
+}
+
+enum TemplateSource {
+  USER
+  AI
+  HYBRID
+  IMPORTED
+}
+
+enum TemplateType {
+  WORKDAY
+  CREATIVE
+  ADMIN
+  MEETING
+  MIXED
+  CUSTOM
+}
+
+enum UnifiedRuleStatus {
+  ACTIVE
+  INACTIVE
+  DRAFT
+  TESTING
+  ERROR
+  DEPRECATED
+}
+
+enum UnifiedRuleType {
+  PROCESSING
+  EMAIL_FILTER
+  AUTO_REPLY
+  AI_RULE
+  SMART_MAILBOX
+  WORKFLOW
+  NOTIFICATION
+  INTEGRATION
+}
+
+enum UnifiedTriggerType {
+  MANUAL
+  AUTOMATIC
+  EVENT_BASED
+  SCHEDULED
+  WEBHOOK
+  API_CALL
+}
+
+enum UserAccessType {
+  DIRECT
+  RELATION_BASED
+  ROLE_BASED
+  TEMPORARY
+}
+
+enum UserAction {
+  VIEW
+  EDIT
+  CREATE
+  DELETE
+  ASSIGN
+  APPROVE
+  DELEGATE
+  MANAGE
+  AUDIT
+}
+
+enum UserDataScope {
+  PROFILE
+  TASKS
+  PROJECTS
+  SCHEDULE
+  PERFORMANCE
+  DOCUMENTS
+  COMMUNICATION
+  SETTINGS
+  TEAM_DATA
+  REPORTS
+  ALL
+}
+
+enum UserInheritanceRule {
+  NO_INHERITANCE
+  INHERIT_DOWN
+  INHERIT_UP
+  INHERIT_BIDIRECTIONAL
+}
+
+enum UserRelationType {
+  MANAGES
+  LEADS
+  SUPERVISES
+  MENTORS
+  COLLABORATES
+  SUPPORTS
+  REPORTS_TO
+}
+
+enum ViewType {
+  KANBAN
+  GANTT
+  SCRUM
+  CALENDAR
+  LIST
+}

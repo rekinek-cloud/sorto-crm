@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Mikrofonu</title>
+</head>
+<body>
+    <h1>Test dostępu do mikrofonu</h1>
+    <button onclick="testMic()">Testuj mikrofon</button>
+    <div id="result"></div>
+    
+    <script>
+        async function testMic() {
+            const result = document.getElementById('result');
+            
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                result.innerHTML = '<p style="color: green;">✅ Mikrofon działa!</p>';
+                stream.getTracks().forEach(track => track.stop());
+                
+                // Test aplikacji SmartNotes
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+                
+            } catch (error) {
+                result.innerHTML = `<p style="color: red;">❌ Błąd: ${error.message}</p>
+                <p>Rozwiązania:</p>
+                <ul>
+                    <li>Sprawdź uprawnienia mikrofonu w przeglądarce</li>
+                    <li>Użyj HTTPS: <a href="https://localhost:8443">https://localhost:8443</a></li>
+                    <li>Spróbuj Chrome: <a href="http://localhost:9999">http://localhost:9999</a></li>
+                </ul>`;
+            }
+        }
+    </script>
+</body>
+</html>

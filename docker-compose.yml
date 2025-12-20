@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: crm-gtd-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: crm_gtd_dev
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5434:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./packages/backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - crm-gtd-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: crm-gtd-redis
+    restart: unless-stopped
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - crm-gtd-network
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:latest
+    container_name: crm-gtd-clickhouse
+    restart: unless-stopped
+    ports:
+      - "8124:8123"
+      - "9002:9000"
+    environment:
+      CLICKHOUSE_DB: analytics
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ""
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    networks:
+      - crm-gtd-network
+
+volumes:
+  postgres_data:
+  redis_data:
+  clickhouse_data:
+
+networks:
+  crm-gtd-network:
+    driver: bridge

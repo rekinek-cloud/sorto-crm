@@ -1,0 +1,87 @@
+version: '3.8'
+
+services:
+  # CRM-GTD services with unique names and no port conflicts
+  crm-postgres:
+    image: postgres:15-alpine
+    container_name: crm-gtd-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-crm_gtd_prod}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - crm_postgres_data:/var/lib/postgresql/data
+      - ./packages/backend/database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - crm-gtd-network
+
+  crm-redis:
+    image: redis:7-alpine
+    container_name: crm-gtd-redis
+    restart: unless-stopped
+    volumes:
+      - crm_redis_data:/data
+    networks:
+      - crm-gtd-network
+
+  crm-backend:
+    build:
+      context: ./packages/backend
+      dockerfile: Dockerfile
+    container_name: crm-gtd-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 9029
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@crm-postgres:5432/${POSTGRES_DB:-crm_gtd_prod}
+      REDIS_URL: redis://crm-redis:6379
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    depends_on:
+      - crm-postgres
+      - crm-redis
+    networks:
+      - crm-gtd-network
+
+  crm-frontend:
+    build:
+      context: ./packages/frontend
+      dockerfile: Dockerfile
+    container_name: crm-gtd-frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+      NEXT_PUBLIC_BASE_PATH: ${NEXT_PUBLIC_BASE_PATH:-/crm}
+    depends_on:
+      - crm-backend
+    networks:
+      - crm-gtd-network
+
+  crm-nginx:
+    image: nginx:alpine
+    container_name: crm-gtd-nginx
+    restart: unless-stopped
+    ports:
+      - "8081:80"  # Unique port for this app
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+    depends_on:
+      - crm-frontend
+      - crm-backend
+    networks:
+      - crm-gtd-network
+
+volumes:
+  crm_postgres_data:
+  crm_redis_data:
+
+networks:
+  crm-gtd-network:
+    driver: bridge
+    name: crm-gtd-network

@@ -1,0 +1,781 @@
+# Sorto.AI - Views Implementation Guide for Claude Code
+
+## 🎯 Overview
+This document provides comprehensive implementation instructions for creating advanced project management views in Sorto.AI, integrating CRM, GTD methodology, and AI-powered features.
+
+## 📋 Table of Contents
+1. [Kanban Board Views](#1-kanban-board-views)
+2. [Gantt Chart Implementation](#2-gantt-chart-implementation)
+3. [Scrum Board Features](#3-scrum-board-features)
+4. [Calendar Views](#4-calendar-views)
+5. [List Views](#5-list-views)
+6. [Advanced AI-Enhanced Views](#6-advanced-ai-enhanced-views)
+7. [Technical Requirements](#7-technical-requirements)
+8. [Database Schema Requirements](#8-database-schema-requirements)
+
+---
+
+## 1. Kanban Board Views
+
+### 1.1 Classic Sales Pipeline Kanban
+
+**Implementation Requirements:**
+```typescript
+interface KanbanColumn {
+  id: string;
+  title: string;
+  deals: Deal[];
+  totalValue: number;
+  color: string;
+  order: number;
+}
+
+interface Deal {
+  id: string;
+  title: string;
+  company: string;
+  value: number;
+  probability: number;
+  assignee: User;
+  nextAction: GTDAction;
+  dueDate: Date;
+  priority: 'low' | 'medium' | 'high' | 'urgent';
+  aiInsights: AIInsight[];
+}
+```
+
+**Columns Structure:**
+- LEAD (Prospecting)
+- QUALIFIED (Needs confirmed)
+- PROPOSAL (Quote sent)
+- NEGOTIATION (Terms discussion)
+- CLOSED (Won/Lost)
+
+**Features to Implement:**
+- Drag & drop between columns
+- Real-time value calculations per column
+- Color-coded priority indicators
+- GTD context badges (@calls, @email, @meetings)
+- AI confidence scores
+- Quick actions (call, email, schedule)
+
+### 1.2 GTD-Enhanced Pipeline
+
+**Special Features:**
+```typescript
+interface GTDKanbanColumn {
+  id: string;
+  title: string;
+  gtdContext: '@calls' | '@email' | '@meetings' | '@proposals';
+  deals: Deal[];
+  estimatedTime: number; // Total time needed
+  energyLevel: 'high' | 'medium' | 'low' | 'minimal';
+}
+```
+
+**Columns:**
+- 📞 @CALLS (Phone activities)
+- 📧 @EMAILS (Email tasks)
+- 🤝 @MEETINGS (Face-to-face activities)
+- 📄 @PROPOSALS (Document preparation)
+
+### 1.3 Priority-Based Pipeline
+
+**Urgency Matrix:**
+```typescript
+interface PriorityColumn {
+  id: string;
+  urgency: 'urgent' | 'high' | 'medium' | 'low';
+  color: '#FF4444' | '#FFAA00' | '#00AA00' | '#0066AA';
+  deadline: 'today' | 'this_week' | 'this_month' | 'next_month';
+  deals: Deal[];
+}
+```
+
+### 1.4 Deal Size Pipeline
+
+**Value-based Columns:**
+- 💎 ENTERPRISE ($100K+)
+- 💰 LARGE ($50K-100K)
+- 💵 MEDIUM ($20K-50K)
+- 🪙 SMALL (Under $20K)
+
+---
+
+## 2. Gantt Chart Implementation
+
+### 2.1 Project Timeline Structure
+
+**Data Models:**
+```typescript
+interface GanttProject {
+  id: string;
+  name: string;
+  startDate: Date;
+  endDate: Date;
+  tasks: GanttTask[];
+  milestones: Milestone[];
+  dependencies: Dependency[];
+  criticalPath: string[]; // Task IDs
+}
+
+interface GanttTask {
+  id: string;
+  name: string;
+  startDate: Date;
+  endDate: Date;
+  duration: number; // in days
+  progress: number; // 0-100%
+  assignee: User;
+  dependsOn: string[]; // Task IDs
+  priority: Priority;
+  gtdContext: GTDContext;
+}
+
+interface Milestone {
+  id: string;
+  name: string;
+  date: Date;
+  completed: boolean;
+  icon: string; // 📍
+}
+
+interface Dependency {
+  fromTask: string;
+  toTask: string;
+  type: 'finish-to-start' | 'start-to-start' | 'finish-to-finish';
+  lag: number; // days
+}
+```
+
+### 2.2 Sales Pipeline Gantt
+
+**Timeline View for Deals:**
+```typescript
+interface SalesGantt {
+  timeframe: 'month' | 'quarter' | 'year';
+  deals: {
+    id: string;
+    name: string;
+    value: number;
+    phases: SalesPhase[];
+    forecastClose: Date;
+    probability: number;
+  }[];
+}
+
+interface SalesPhase {
+  name: string;
+  startDate: Date;
+  endDate: Date;
+  status: 'not_started' | 'in_progress' | 'completed' | 'delayed';
+  assignee: User;
+}
+```
+
+**Phases:**
+- Research & Contact
+- Demo & Proposal
+- Negotiation & Close
+
+### 2.3 Critical Path Analysis
+
+**Implementation:**
+- Auto-calculate critical path using longest path algorithm
+- Highlight critical tasks in red
+- Show slack time for non-critical tasks
+- Real-time updates when tasks change
+
+---
+
+## 3. Scrum Board Features
+
+### 3.1 Sprint Board Structure
+
+**Data Models:**
+```typescript
+interface SprintBoard {
+  sprintId: string;
+  sprintNumber: number;
+  goal: string;
+  startDate: Date;
+  endDate: Date;
+  columns: ScrumColumn[];
+  velocity: number; // story points
+  burndownData: BurndownPoint[];
+}
+
+interface ScrumColumn {
+  id: string;
+  name: 'product_backlog' | 'sprint_backlog' | 'in_progress' | 'review' | 'done';
+  wipLimit?: number;
+  tasks: ScrumTask[];
+}
+
+interface ScrumTask {
+  id: string;
+  title: string;
+  description: string;
+  storyPoints: number;
+  priority: 'high' | 'medium' | 'low';
+  acceptanceCriteria: string[];
+  assignee: User;
+  estimatedHours: number;
+  actualHours?: number;
+  blockers: string[];
+  labels: string[];
+}
+
+interface BurndownPoint {
+  date: Date;
+  remainingPoints: number;
+  idealRemaining: number;
+}
+```
+
+### 3.2 Sprint Planning View
+
+**Features:**
+- Story point estimation (Fibonacci sequence)
+- Team velocity calculation
+- Capacity planning per team member
+- Acceptance criteria definition
+- Task breakdown structure
+
+### 3.3 Sprint Metrics
+
+**Key Metrics to Track:**
+```typescript
+interface SprintMetrics {
+  velocity: number;
+  burndownRate: number;
+  completionRate: number;
+  scopeChange: number;
+  blockerCount: number;
+  teamSatisfaction: number;
+}
+```
+
+---
+
+## 4. Calendar Views
+
+### 4.1 Weekly Calendar
+
+**Data Structure:**
+```typescript
+interface CalendarWeek {
+  startDate: Date;
+  endDate: Date;
+  days: CalendarDay[];
+  totalEvents: number;
+  totalHours: number;
+}
+
+interface CalendarDay {
+  date: Date;
+  events: CalendarEvent[];
+  tasks: DailyTask[];
+  availability: TimeSlot[];
+}
+
+interface CalendarEvent {
+  id: string;
+  title: string;
+  startTime: Date;
+  endTime: Date;
+  type: 'meeting' | 'call' | 'demo' | 'internal' | 'block';
+  attendees: User[];
+  deal?: Deal;
+  location?: string;
+  priority: Priority;
+  gtdContext: GTDContext;
+}
+
+interface DailyTask {
+  id: string;
+  title: string;
+  estimatedTime: number; // minutes
+  priority: Priority;
+  gtdContext: GTDContext;
+  deadline?: Date;
+}
+```
+
+### 4.2 Monthly Calendar
+
+**Features:**
+- Overview of major milestones
+- Deal close dates
+- Sprint boundaries
+- Critical meetings
+- Color-coded by priority/type
+
+### 4.3 Calendar Integration
+
+**External Calendar Sync:**
+- Google Calendar integration
+- Outlook/Exchange sync
+- Real-time updates
+- Conflict detection
+- Automatic event creation from CRM activities
+
+---
+
+## 5. List Views
+
+### 5.1 Today's Task List
+
+**Smart Prioritization:**
+```typescript
+interface TaskList {
+  date: Date;
+  sections: TaskSection[];
+  totalTasks: number;
+  completedTasks: number;
+  estimatedTime: number;
+}
+
+interface TaskSection {
+  priority: 'urgent' | 'high' | 'normal' | 'low';
+  color: string;
+  tasks: Task[];
+  totalTime: number;
+}
+
+interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  priority: Priority;
+  gtdContext: GTDContext;
+  estimatedTime: number; // minutes
+  assignee: User;
+  dueDate?: Date;
+  deal?: Deal;
+  project?: Project;
+  completed: boolean;
+  completedAt?: Date;
+}
+```
+
+### 5.2 Filtered Views
+
+**Filter Types:**
+- By Person (assignee)
+- By GTD Context (@calls, @email, @meetings, @computer)
+- By Project
+- By Deal
+- By Priority
+- By Due Date
+- By Completion Status
+
+### 5.3 GTD Context Lists
+
+**Context-based Organization:**
+```typescript
+interface GTDContextList {
+  context: GTDContext;
+  icon: string;
+  description: string;
+  tasks: Task[];
+  estimatedTime: number;
+  optimalTiming: string; // e.g., "Morning", "Afternoon", "Anytime"
+}
+
+enum GTDContext {
+  CALLS = '@calls',
+  EMAIL = '@email', 
+  MEETINGS = '@meetings',
+  COMPUTER = '@computer',
+  ERRANDS = '@errands',
+  WAITING = '@waiting',
+  READING = '@reading',
+  PLANNING = '@planning'
+}
+```
+
+---
+
+## 6. Advanced AI-Enhanced Views
+
+### 6.1 Predictive Pipeline
+
+**AI Prediction Model:**
+```typescript
+interface AIPrediction {
+  dealId: string;
+  winProbability: number; // 0-100
+  predictedCloseDate: Date;
+  riskFactors: RiskFactor[];
+  recommendations: Recommendation[];
+  confidence: number; // 0-100
+  lastUpdated: Date;
+}
+
+interface RiskFactor {
+  type: 'competitor' | 'budget' | 'timing' | 'authority' | 'need';
+  severity: 'low' | 'medium' | 'high' | 'critical';
+  description: string;
+  mitigation: string;
+}
+
+interface Recommendation {
+  type: 'action' | 'timing' | 'resource' | 'strategy';
+  priority: Priority;
+  description: string;
+  estimatedImpact: number; // percentage improvement
+}
+```
+
+### 6.2 Sentiment Analysis Pipeline
+
+**Emotion-based Organization:**
+```typescript
+interface SentimentColumn {
+  sentiment: 'positive' | 'neutral' | 'concerned' | 'negative';
+  emoji: '😊' | '😐' | '😟' | '😡';
+  deals: Deal[];
+  averageSentiment: number; // -1 to 1
+  trendDirection: 'improving' | 'stable' | 'declining';
+}
+
+interface SentimentAnalysis {
+  dealId: string;
+  overallSentiment: number; // -1 to 1
+  recentInteractions: InteractionSentiment[];
+  sentimentTrend: 'improving' | 'stable' | 'declining';
+  keyPhrases: string[];
+  concerns: string[];
+  positiveSignals: string[];
+}
+```
+
+### 6.3 Complexity-based Pipeline
+
+**Deal Complexity Assessment:**
+```typescript
+interface ComplexityAssessment {
+  dealId: string;
+  complexity: 'simple' | 'moderate' | 'complex' | 'very_complex';
+  factors: ComplexityFactor[];
+  estimatedSalesEffort: number; // hours
+  requiredSkills: string[];
+  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+}
+
+interface ComplexityFactor {
+  factor: 'stakeholders' | 'technical' | 'legal' | 'integration' | 'timeline';
+  score: number; // 1-10
+  description: string;
+  impact: string;
+}
+```
+
+---
+
+## 7. Technical Requirements
+
+### 7.1 Frontend Components
+
+**React Components Structure:**
+```
+src/
+├── components/
+│   ├── views/
+│   │   ├── KanbanBoard/
+│   │   │   ├── KanbanBoard.tsx
+│   │   │   ├── KanbanColumn.tsx
+│   │   │   ├── KanbanCard.tsx
+│   │   │   └── DragDropProvider.tsx
+│   │   ├── GanttChart/
+│   │   │   ├── GanttChart.tsx
+│   │   │   ├── GanttTimeline.tsx
+│   │   │   ├── GanttTask.tsx
+│   │   │   └── DependencyArrow.tsx
+│   │   ├── ScrumBoard/
+│   │   │   ├── ScrumBoard.tsx
+│   │   │   ├── SprintBacklog.tsx
+│   │   │   ├── TaskCard.tsx
+│   │   │   └── BurndownChart.tsx
+│   │   ├── Calendar/
+│   │   │   ├── CalendarView.tsx
+│   │   │   ├── WeekView.tsx
+│   │   │   ├── MonthView.tsx
+│   │   │   └── EventCard.tsx
+│   │   └── ListView/
+│   │       ├── TaskList.tsx
+│   │       ├── FilterBar.tsx
+│   │       ├── TaskItem.tsx
+│   │       └── GTDContextList.tsx
+│   └── shared/
+│       ├── AIPredictionBadge.tsx
+│       ├── PriorityIndicator.tsx
+│       ├── GTDContextBadge.tsx
+│       └── UserAvatar.tsx
+```
+
+### 7.2 State Management
+
+**Redux/Zustand Store Structure:**
+```typescript
+interface AppState {
+  views: {
+    kanban: KanbanState;
+    gantt: GanttState;
+    scrum: ScrumState;
+    calendar: CalendarState;
+    list: ListState;
+  };
+  deals: DealsState;
+  tasks: TasksState;
+  users: UsersState;
+  ai: AIState;
+  filters: FiltersState;
+}
+```
+
+### 7.3 Drag & Drop Implementation
+
+**Using react-beautiful-dnd:**
+```typescript
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
+
+interface DragEndResult {
+  draggableId: string;
+  source: {
+    droppableId: string;
+    index: number;
+  };
+  destination: {
+    droppableId: string;
+    index: number;
+  } | null;
+}
+```
+
+### 7.4 Real-time Updates
+
+**WebSocket Integration:**
+```typescript
+interface WebSocketMessage {
+  type: 'deal_updated' | 'task_completed' | 'ai_prediction' | 'user_action';
+  payload: any;
+  timestamp: Date;
+  userId: string;
+}
+```
+
+---
+
+## 8. Database Schema Requirements
+
+### 8.1 Core Tables
+
+**Views Configuration:**
+```sql
+CREATE TABLE view_configurations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    view_type VARCHAR(50) NOT NULL, -- 'kanban', 'gantt', 'scrum', 'calendar', 'list'
+    view_name VARCHAR(255) NOT NULL,
+    configuration JSONB NOT NULL, -- Column setup, filters, etc.
+    is_default BOOLEAN DEFAULT false,
+    is_public BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE kanban_columns (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    view_id UUID REFERENCES view_configurations(id),
+    title VARCHAR(255) NOT NULL,
+    position INTEGER NOT NULL,
+    color VARCHAR(7) DEFAULT '#3B82F6',
+    wip_limit INTEGER,
+    column_type VARCHAR(50), -- 'stage', 'priority', 'context', 'sentiment'
+    configuration JSONB DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE user_view_preferences (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    view_type VARCHAR(50) NOT NULL,
+    preferences JSONB NOT NULL, -- Default filters, layouts, etc.
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(user_id, view_type)
+);
+```
+
+**Task and Deal Updates:**
+```sql
+-- Add view-specific fields to existing tables
+ALTER TABLE items ADD COLUMN kanban_position INTEGER DEFAULT 0;
+ALTER TABLE items ADD COLUMN gantt_start_date TIMESTAMP;
+ALTER TABLE items ADD COLUMN gantt_end_date TIMESTAMP;
+ALTER TABLE items ADD COLUMN gantt_duration INTEGER; -- days
+ALTER TABLE items ADD COLUMN gantt_progress DECIMAL(5,2) DEFAULT 0; -- percentage
+ALTER TABLE items ADD COLUMN scrum_story_points INTEGER;
+ALTER TABLE items ADD COLUMN scrum_sprint_id UUID;
+
+-- Dependencies table for Gantt charts
+CREATE TABLE task_dependencies (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    predecessor_id UUID REFERENCES items(id),
+    successor_id UUID REFERENCES items(id),
+    dependency_type VARCHAR(20) DEFAULT 'finish_to_start',
+    lag_days INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT NOW(),
+    UNIQUE(predecessor_id, successor_id)
+);
+
+-- Sprint management
+CREATE TABLE sprints (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID REFERENCES organizations(id),
+    name VARCHAR(255) NOT NULL,
+    goal TEXT,
+    start_date DATE NOT NULL,
+    end_date DATE NOT NULL,
+    velocity INTEGER DEFAULT 0,
+    status VARCHAR(20) DEFAULT 'planned', -- planned, active, completed
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### 8.2 AI Predictions
+
+```sql
+-- AI predictions and insights
+CREATE TABLE ai_predictions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    item_id UUID REFERENCES items(id),
+    prediction_type VARCHAR(50) NOT NULL, -- 'win_probability', 'close_date', 'sentiment'
+    predicted_value JSONB NOT NULL,
+    confidence_score DECIMAL(5,2) NOT NULL,
+    factors JSONB DEFAULT '{}',
+    recommendations JSONB DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT NOW(),
+    expires_at TIMESTAMP -- When prediction becomes stale
+);
+
+-- User interactions with views
+CREATE TABLE view_analytics (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id),
+    view_type VARCHAR(50) NOT NULL,
+    action VARCHAR(100) NOT NULL, -- 'opened', 'filtered', 'drag_drop', 'created_task'
+    metadata JSONB DEFAULT '{}',
+    duration_seconds INTEGER,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+---
+
+## 9. Implementation Priority
+
+### Phase 1: Core Views (Months 1-2)
+1. Basic Kanban Board with drag & drop
+2. Simple List View with filtering
+3. Calendar integration
+4. Basic Gantt chart
+
+### Phase 2: Enhanced Features (Months 3-4)
+1. GTD-enhanced views
+2. Scrum board functionality
+3. Advanced filtering and search
+4. Real-time collaboration
+
+### Phase 3: AI Integration (Months 5-6)
+1. Predictive analytics views
+2. Sentiment analysis pipeline
+3. Smart recommendations
+4. Automated view optimization
+
+### Phase 4: Advanced Views (Months 7-8)
+1. Custom view builder
+2. Complex matrix views
+3. Advanced reporting integration
+4. Mobile-optimized views
+
+---
+
+## 10. API Endpoints
+
+### 10.1 View Management
+```
+GET    /api/v1/views/:type                 # Get all views of type
+POST   /api/v1/views/:type                 # Create new view
+PUT    /api/v1/views/:type/:id             # Update view
+DELETE /api/v1/views/:type/:id             # Delete view
+POST   /api/v1/views/:type/:id/duplicate   # Duplicate view
+```
+
+### 10.2 Data Operations
+```
+GET    /api/v1/kanban/:viewId/data         # Get kanban data
+POST   /api/v1/kanban/:viewId/move         # Move card between columns
+GET    /api/v1/gantt/:projectId/data       # Get gantt data
+PUT    /api/v1/gantt/:projectId/task/:id   # Update task timing
+GET    /api/v1/calendar/:date/events       # Get calendar events
+POST   /api/v1/tasks/bulk-update           # Bulk update tasks
+```
+
+### 10.3 AI Integration
+```
+GET    /api/v1/ai/predictions/:itemId      # Get AI predictions
+POST   /api/v1/ai/analyze/sentiment        # Analyze sentiment
+GET    /api/v1/ai/recommendations          # Get smart recommendations
+POST   /api/v1/ai/optimize-view            # Auto-optimize view layout
+```
+
+---
+
+## 11. Performance Considerations
+
+### 11.1 Optimization Strategies
+- Implement virtual scrolling for large datasets
+- Use React.memo for card components
+- Implement proper pagination
+- Cache view configurations
+- Optimize drag & drop performance
+- Use web workers for complex calculations
+
+### 11.2 Real-time Updates
+- Implement debounced updates
+- Use WebSockets for live collaboration
+- Implement optimistic updates
+- Handle conflict resolution
+- Implement offline mode
+
+---
+
+## 12. Testing Requirements
+
+### 12.1 Unit Tests
+- Component rendering tests
+- Drag & drop functionality
+- Filter and search logic
+- Date calculations
+- AI prediction algorithms
+
+### 12.2 Integration Tests
+- API endpoint tests
+- Database operations
+- Real-time sync
+- Cross-view data consistency
+- Performance benchmarks
+
+### 12.3 User Experience Tests
+- Usability testing for each view type
+- Mobile responsiveness
+- Accessibility compliance
+- Load time optimization
+- User workflow testing
+
+---
+
+This implementation guide provides a comprehensive roadmap for building advanced project management views in Sorto.AI. Each section should be implemented iteratively with user feedback incorporated throughout the development process.

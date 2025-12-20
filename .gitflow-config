@@ -1,0 +1,26 @@
+# CRM-GTD Smart Git Flow Configuration
+# This file documents our branching strategy
+
+## Branch Structure:
+# master          - Main branch (latest stable)
+# production-v1   - Current production version (V1 stable)
+# develop-v1      - V1 development (bug fixes, minor improvements)
+# develop-v2      - V2 development (new features, major changes)
+# feature/*       - Feature branches
+# hotfix/*        - Critical production fixes
+
+## Workflow:
+# 1. V1 Production: production-v1 branch
+# 2. V1 Development: develop-v1 branch 
+# 3. V2 Development: develop-v2 branch
+# 4. Hotfixes: hotfix/* -> production-v1 -> develop-v1
+# 5. V1 Features: feature/v1-* -> develop-v1
+# 6. V2 Features: feature/v2-* -> develop-v2
+
+## Version URLs:
+# V1 Production: http://91.99.50.80/crm/
+# V2 Development: http://91.99.50.80/crm2/
+
+## Environment Variables:
+# V1: .env.v1, docker-compose.v1.yml
+# V2: .env.v2, docker-compose.v2.yml

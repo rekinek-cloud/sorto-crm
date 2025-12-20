@@ -1,0 +1,1580 @@
+# RAG SERVICE - Specyfikacja Implementacji dla Claude Code
+
+## 🎯 OVERVIEW
+
+Budujemy **osobny serwis RAG** który integruje się z istniejącym CRM-GTD-SMART przez API.
+
+---
+
+## 🏗️ ARCHITEKTURA SYSTEMU
+
+### Dwa niezależne serwisy:
+
+```
+┌─────────────────────────────────────────────────┐
+│  CRM-GTD-SMART (istniejący)                     │
+│  Location: /opt/crm-gtd-smart/                  │
+│  Stack: Node.js + Express + Next.js + PostgreSQL│
+│  Port: 9027 (backend), 9025 (frontend)          │
+│                                                 │
+│  NOWE Funkcje w CRM:                            │
+│  ├─ UI: /dashboard/rag-settings (admin panel)   │
+│  ├─ UI: Chat Widget (💬 w każdym widoku)        │
+│  └─ API Client: komunikacja z RAG Service       │
+└─────────────────────────────────────────────────┘
+                    ↕ HTTP API
+┌─────────────────────────────────────────────────┐
+│  RAG SERVICE (nowy, osobny)                     │
+│  Location: /opt/rag-service/                    │
+│  Stack: Python + FastAPI + Qdrant + Celery     │
+│  Port: 8000 (API), internal Docker network      │
+│                                                 │
+│  Komponenty:                                    │
+│  ├─ FastAPI (REST API)                          │
+│  ├─ Celery (background workers)                 │
+│  ├─ Qdrant (vector database)                    │
+│  ├─ PostgreSQL (metadata, config)               │
+│  └─ Redis (task queue, cache)                   │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
+## 📋 WYMAGANIA FUNKCJONALNE
+
+### PHASE 1: MVP (Priorytet 1)
+
+#### 1. Data Sources Management
+
+**Typy źródeł (MVP):**
+- ✅ **Directory** - katalogi na serwerze (filesystem)
+- ✅ **Email Account** - konta mailowe (IMAP: Gmail, Outlook)
+- ✅ **CRM Data** - automatyczny sync z CRM (Streams, Tasks, Companies, etc.)
+- 🔜 Upload Files (Phase 2)
+
+**CRUD Operations:**
+- Create source (via CRM UI → API)
+- Read sources (list + details)
+- Update source config
+- Delete source (+ cleanup vectors)
+- Pause/Resume source
+
+#### 2. Permission Model (Complex!)
+
+**Zasady dostępu:**
+
+```
+OWNER:
+- Widzi WSZYSTKIE źródła w organizacji
+- Może dodawać/edytować/usuwać wszystkie źródła
+- Widzi wszystkie dane w RAG search
+
+ADMIN:
+- Widzi źródła w Streamach do których należy
+- Może dodawać/edytować źródła w swoich Streamach
+- W RAG search widzi tylko dane z dostępnych Streamów
+
+USER (MANAGER, MEMBER):
+- Widzi tylko dane z Streamów do których należy
+- NIE może zarządzać źródłami (read-only)
+- W RAG search widzi tylko swoje Streamy
+
+SUPERADMIN (przyszłość - Phase 2):
+- Cross-organization access
+- System monitoring
+```
+
+**Implementacja:**
+
+```
+Każde źródło ma:
+├─ organizationId (required)
+└─ streamIds[] (optional, empty = all streams)
+
+Przy dodawaniu źródła:
+- OWNER: może zostawić streamIds = [] (dostęp do wszystkiego)
+- ADMIN: musi wybrać Streamy (tylko te gdzie ma dostęp)
+
+Przy RAG search:
+1. Pobierz userId + organizationId
+2. Sprawdź role (OWNER vs ADMIN vs USER)
+3. Jeśli OWNER: search w całej org
+4. Jeśli ADMIN/USER:
+   - Pobierz Streams użytkownika (przez StreamPermission, Task.assignedTo, etc.)
+   - Filter RAG results tylko z tych Streamów
+```
+
+#### 3. Data Ingestion Pipeline
+
+**Flow dla Directory Source:**
+
+```
+1. Admin w CRM definiuje:
+   - Name: "Projekty 2024"
+   - Path: /opt/projekty/2024
+   - File types: PDF, DOCX, XLSX
+   - Schedule: Daily at 02:00
+   - streamIds: ["stream-abc", "stream-xyz"]
+
+2. CRM wysyła do RAG Service:
+   POST /api/v1/sources
+   {
+     "type": "DIRECTORY",
+     "name": "Projekty 2024",
+     "config": {
+       "path": "/opt/projekty/2024",
+       "fileTypes": ["pdf", "docx", "xlsx"],
+       "schedule": "0 2 * * *",
+       "excludePatterns": ["*/temp/*", "~$*"]
+     },
+     "organizationId": "org-123",
+     "streamIds": ["stream-abc", "stream-xyz"],
+     "createdBy": "user-456"
+   }
+
+3. RAG Service:
+   - Zapisuje config w DB (PostgreSQL)
+   - Testuje dostęp do ścieżki
+   - Tworzy Celery task: scan_directory
+   - Zwraca: source_id + job_id
+
+4. Celery Worker rozpoczyna scan:
+   FOR EACH file in directory:
+     a) Read file content
+        - PDF: PyPDF2 / pdfplumber
+        - DOCX: python-docx
+        - XLSX: openpyxl → convert to text
+     
+     b) Extract metadata:
+        - fileName, filePath, fileSize
+        - createdAt, modifiedAt
+        - detectLanguage (langdetect)
+     
+     c) Smart chunking:
+        - Split na 1000 token chunks
+        - Overlap 200 tokens
+        - Preserve context (nie ucina w połowie zdania)
+     
+     d) Create embedding:
+        - PRIMARY: Replicate sentence-transformers/paraphrase-multilingual-mpnet-base-v2
+        - 768 dimensions (smaller, faster)
+        - Batch processing (cost optimization)
+        - FALLBACK: OpenAI text-embedding-3-large (if Replicate fails)
+     
+     e) Store in Qdrant:
+        {
+          "id": "chunk-uuid",
+          "vector": [0.123, -0.456, ...],
+          "payload": {
+            "sourceId": "source-123",
+            "sourceType": "DIRECTORY",
+            "organizationId": "org-123",
+            "streamIds": ["stream-abc", "stream-xyz"],
+            "fileName": "Budget_2024.xlsx",
+            "filePath": "/opt/projekty/2024/Budget_2024.xlsx",
+            "chunkIndex": 0,
+            "totalChunks": 5,
+            "content": "Budget dla projektu Alpha...",
+            "metadata": {
+              "fileSize": 45678,
+              "createdAt": "2024-03-15T10:30:00Z"
+            }
+          }
+        }
+     
+     f) Update progress:
+        - Redis: job:{job_id}:progress = 45%
+        - CRM może polling: GET /api/v1/jobs/{job_id}
+
+5. Po zakończeniu:
+   - Status: COMPLETED
+   - Stats: files=3847, chunks=45231, errors=3
+```
+
+**Flow dla Email Source:**
+
+```
+1. Admin definiuje:
+   - Email: biuro@firma.pl
+   - Provider: Gmail (IMAP)
+   - Folders: INBOX, Sent, "Klienci"
+   - Date range: 2020-01-01 to now
+   - Sync: Every 5 minutes
+   - streamIds: ["stream-abc"]
+
+2. Initial sync (one-time):
+   - Connect IMAP
+   - Fetch all messages in date range
+   - For each message:
+     a) Extract: from, to, subject, body, date
+     b) Parse HTML → plain text
+     c) Extract attachments (PDF, DOCX)
+     d) Create chunks (email body = 1 chunk, każdy attachment = osobno)
+     e) Embedding + store in Qdrant
+
+3. Continuous sync (every 5 min):
+   - IMAP IDLE / periodic check
+   - Fetch tylko NOWE messages (since lastSyncDate)
+   - Process + vectorize
+   - Auto-update Qdrant
+
+4. Payload struktura:
+   {
+     "sourceType": "EMAIL_GMAIL",
+     "organizationId": "org-123",
+     "streamIds": ["stream-abc"],
+     "emailFrom": "ceo@techcorp.com",
+     "emailTo": "biuro@firma.pl",
+     "emailSubject": "Umowa - prośba o zmiany",
+     "emailDate": "2024-10-15T14:30:00Z",
+     "content": "Dzień dobry, w załączniku...",
+     "hasAttachments": true,
+     "attachments": ["umowa_v2.pdf"]
+   }
+```
+
+**Flow dla CRM Data:**
+
+```
+1. Auto-enabled dla każdej organizacji
+
+2. Continuous sync (real-time):
+   - CRM wysyła webhook po każdej zmianie:
+     POST https://rag-service/api/v1/webhooks/crm
+     {
+       "event": "stream.updated",
+       "organizationId": "org-123",
+       "entityType": "STREAM",
+       "entityId": "stream-456",
+       "data": {...}
+     }
+
+3. RAG Service:
+   - Fetch full entity (via CRM API)
+   - Vectorize:
+     Stream: name + description
+     Task: title + description + notes
+     Company: name + description + notes
+     Message: subject + content
+   - Store with streamId z entity
+
+4. Alternatywnie (polling):
+   - Co 5 minut:
+     GET https://crm/api/v1/streams?updatedSince=...
+     GET https://crm/api/v1/tasks?updatedSince=...
+   - Fetch changed entities
+   - Re-vectorize
+```
+
+#### 4. Search Engine (RAG Query)
+
+**Flow użytkownika:**
+
+```
+1. User w CRM Dashboard (dowolny widok):
+   - Widzi Chat Widget (bottom-right)
+   - Klika, rozwija
+   - Pisze: "Gdzie umowa z TechCorp z 2023?"
+
+2. CRM Frontend:
+   POST https://rag-service/api/v1/search
+   {
+     "query": "Gdzie umowa z TechCorp z 2023?",
+     "organizationId": "org-123",
+     "userId": "user-456",
+     "userRole": "ADMIN",
+     "userStreamIds": ["stream-abc", "stream-xyz"], // pre-fetched z CRM
+     "context": {
+       "currentView": "companies",
+       "currentEntityType": "COMPANY",
+       "currentEntityId": "techcorp-id",
+       "filters": {...}
+     },
+     "limit": 10
+   }
+
+3. RAG Service processing:
+
+   STEP 1: Intent Recognition (GPT-4)
+   ────────────────────────────────────
+   Prompt:
+   """
+   User query: "Gdzie umowa z TechCorp z 2023?"
+   
+   Extract:
+   - Intent type (SEARCH_DOCUMENT, STATUS_QUERY, etc.)
+   - Entities (companies, contacts, dates)
+   - Keywords
+   - Filters
+   
+   Return JSON.
+   """
+   
+   Result:
+   {
+     "intent": "SEARCH_DOCUMENT",
+     "entities": {
+       "company": "TechCorp",
+       "documentType": "umowa/contract",
+       "date": "2023"
+     },
+     "keywords": ["umowa", "TechCorp", "2023"],
+     "filters": {
+       "dateRange": {"year": 2023}
+     }
+   }
+
+   STEP 2: Hybrid Search
+   ────────────────────────────────────
+   a) Vector Search (Qdrant):
+      - Create embedding dla query
+      - Search similar vectors
+      - Filter by:
+        ✓ organizationId = "org-123"
+        ✓ streamIds IN ["stream-abc", "stream-xyz"] (RLS!)
+        ✓ Optional: sourceType, date range
+      - Top 20 results (by similarity score > 0.7)
+   
+   b) Keyword Search (optional boost):
+      - Full-text search w Qdrant payload
+      - Match "TechCorp" + "umowa" + "2023"
+      - Boost results that match exactly
+   
+   c) CRM Direct Query (structured data):
+      GET https://crm/api/v1/companies?name=TechCorp
+      GET https://crm/api/v1/deals?companyId=X&year=2023
+      - Uzupełnia kontekst
+
+   STEP 3: Re-ranking
+   ────────────────────────────────────
+   - Combine vector similarity + keyword match + recency
+   - Boost results from:
+     ✓ currentView context (Company = TechCorp)
+     ✓ Recent files (2023 > 2020)
+     ✓ High-importance sources
+   - Top 5-10 final results
+
+   STEP 4: Context Retrieval
+   ────────────────────────────────────
+   - Dla top results, pobierz PEŁNY kontekst:
+     ✓ Sąsiednie chunki (prev/next)
+     ✓ Full document metadata
+     ✓ Related entities z CRM
+
+   STEP 5: Response Generation (GPT-4)
+   ────────────────────────────────────
+   Prompt:
+   """
+   User asked: "Gdzie umowa z TechCorp z 2023?"
+   
+   Context (retrieved chunks):
+   1. [Email 2023-06-15] Subject: Umowa TechCorp - wersja finalna
+      From: legal@techcorp.com
+      Content: "W załączniku umowa po poprawkach..."
+      Attachment: Umowa_TechCorp_Final.pdf
+   
+   2. [File] /opt/umowy/2023/TechCorp_Signed.pdf
+      Created: 2023-06-20
+      Size: 2.3 MB
+   
+   3. [CRM Deal] TechCorp Partnership 2023
+      Value: €45k
+      Stage: CLOSED_WON
+      Closed: 2023-07-01
+   
+   Generate helpful response in Polish.
+   Include citations with source links.
+   Be concise but complete.
+   """
+   
+   Result:
+   "Znalazłem umowę z TechCorp z 2023 w trzech miejscach:
+   
+   📧 **Email (2023-06-15)**
+      Od: legal@techcorp.com
+      Temat: Umowa TechCorp - wersja finalna
+      W załączniku znajduje się podpisana umowa.
+      [Zobacz email]
+   
+   📄 **Plik**
+      /opt/umowy/2023/TechCorp_Signed.pdf
+      Data podpisania: 2023-06-20
+      [Otwórz plik]
+   
+   💼 **Deal w CRM**
+      TechCorp Partnership 2023 (€45k)
+      Status: CLOSED_WON (2023-07-01)
+      [Zobacz deal]"
+
+4. RAG Service zwraca:
+   {
+     "answer": "Znalazłem umowę...",
+     "sources": [
+       {
+         "type": "EMAIL",
+         "id": "email-123",
+         "title": "Umowa TechCorp - wersja finalna",
+         "date": "2023-06-15",
+         "relevanceScore": 0.95,
+         "preview": "W załączniku znajduje się...",
+         "url": "/dashboard/messages/email-123"
+       },
+       {
+         "type": "FILE",
+         "id": "file-456",
+         "path": "/opt/umowy/2023/TechCorp_Signed.pdf",
+         "date": "2023-06-20",
+         "relevanceScore": 0.92,
+         "url": "/api/files/download/file-456"
+       },
+       {
+         "type": "CRM_DEAL",
+         "id": "deal-789",
+         "title": "TechCorp Partnership 2023",
+         "value": 45000,
+         "relevanceScore": 0.88,
+         "url": "/dashboard/deals/deal-789"
+       }
+     ],
+     "confidence": 0.94,
+     "searchTime": 1234 // ms
+   }
+
+5. CRM Frontend wyświetla w chat widget
+```
+
+---
+
+## 🗄️ DATABASE SCHEMA
+
+### PostgreSQL (RAG Service Metadata)
+
+```sql
+-- Sources configuration
+CREATE TABLE sources (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL,
+    stream_ids UUID[] DEFAULT '{}', -- empty = all streams
+    
+    -- Basic info
+    name VARCHAR NOT NULL,
+    type VARCHAR NOT NULL, -- DIRECTORY, EMAIL_GMAIL, EMAIL_OUTLOOK, CRM_DATA, UPLOAD
+    status VARCHAR DEFAULT 'ACTIVE', -- ACTIVE, PAUSED, ERROR, DELETED
+    
+    -- Configuration (JSON, flexible per type)
+    config JSONB NOT NULL,
+    -- Examples:
+    -- Directory: {"path": "/opt/docs", "fileTypes": ["pdf"], "schedule": "0 2 * * *"}
+    -- Email: {"host": "imap.gmail.com", "email": "...", "folders": [...]}
+    
+    -- Stats
+    total_documents INT DEFAULT 0,
+    total_chunks INT DEFAULT 0,
+    last_sync_at TIMESTAMP,
+    last_error TEXT,
+    
+    -- Audit
+    created_by UUID NOT NULL,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_sources_org ON sources(organization_id);
+CREATE INDEX idx_sources_status ON sources(status);
+
+-- Ingestion jobs tracking
+CREATE TABLE ingestion_jobs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    source_id UUID REFERENCES sources(id) ON DELETE CASCADE,
+    
+    -- Job info
+    job_type VARCHAR NOT NULL, -- INITIAL_SCAN, CONTINUOUS_SYNC, RESCAN, REINDEX
+    status VARCHAR DEFAULT 'PENDING', -- PENDING, RUNNING, COMPLETED, FAILED, CANCELLED
+    
+    -- Progress
+    total_items INT DEFAULT 0,
+    processed_items INT DEFAULT 0,
+    failed_items INT DEFAULT 0,
+    chunks_created INT DEFAULT 0,
+    
+    -- Timing
+    started_at TIMESTAMP,
+    completed_at TIMESTAMP,
+    estimated_end TIMESTAMP,
+    
+    -- Errors
+    error_message TEXT,
+    error_log JSONB DEFAULT '[]',
+    
+    -- Metadata
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE INDEX idx_jobs_source ON ingestion_jobs(source_id);
+CREATE INDEX idx_jobs_status ON ingestion_jobs(status);
+
+-- Chat conversations (optional, for history)
+CREATE TABLE chat_conversations (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL,
+    user_id UUID NOT NULL,
+    title VARCHAR,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE chat_messages (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    conversation_id UUID REFERENCES chat_conversations(id) ON DELETE CASCADE,
+    
+    role VARCHAR NOT NULL, -- 'user' or 'assistant'
+    content TEXT NOT NULL,
+    
+    -- Context
+    query_context JSONB, -- {currentView, filters, etc.}
+    sources JSONB, -- [{type, id, score}]
+    
+    -- Metadata
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- Analytics
+CREATE TABLE search_analytics (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    organization_id UUID NOT NULL,
+    user_id UUID NOT NULL,
+    
+    query TEXT NOT NULL,
+    intent VARCHAR,
+    results_count INT,
+    response_time_ms INT,
+    
+    -- Feedback
+    user_rating INT, -- 1-5 or thumbs up/down
+    user_feedback TEXT,
+    
+    created_at TIMESTAMP DEFAULT NOW()
+);
+```
+
+### Qdrant (Vector Database)
+
+```python
+# Collection structure
+collection_name = "crm_rag_vectors"
+
+# Vector config
+{
+    "vectors": {
+        "size": 1536,  # OpenAI text-embedding-3-large
+        "distance": "Cosine"
+    }
+}
+
+# Point structure (each chunk)
+{
+    "id": "chunk-uuid",
+    "vector": [0.123, -0.456, ...],  # 1536 dims
+    "payload": {
+        # Identity
+        "sourceId": "source-uuid",
+        "sourceType": "DIRECTORY | EMAIL_GMAIL | CRM_STREAM | ...",
+        "organizationId": "org-uuid",
+        "streamIds": ["stream-1", "stream-2"],  # RLS filtering!
+        
+        # Content
+        "content": "Full text of this chunk...",
+        "contentHash": "sha256...",
+        "chunkIndex": 0,
+        "totalChunks": 5,
+        
+        # Metadata (flexible, per source type)
+        "fileName": "Budget_2024.xlsx",
+        "filePath": "/opt/projekty/Budget_2024.xlsx",
+        "fileSize": 45678,
+        "fileType": "xlsx",
+        
+        # OR for emails:
+        "emailFrom": "ceo@techcorp.com",
+        "emailSubject": "Umowa - draft v2",
+        "emailDate": "2024-10-15T14:30:00Z",
+        "hasAttachments": true,
+        
+        # OR for CRM:
+        "entityType": "STREAM | TASK | COMPANY | DEAL",
+        "entityId": "entity-uuid",
+        "entityName": "Project Alpha",
+        
+        # Common
+        "language": "pl",
+        "originalDate": "2024-10-15T14:30:00Z",
+        "ingestedAt": "2024-10-17T08:00:00Z",
+        "importance": "HIGH | MEDIUM | LOW"
+    }
+}
+
+# Indexes for fast filtering
+indexes = [
+    "organizationId",
+    "streamIds",
+    "sourceType",
+    "sourceId"
+]
+```
+
+---
+
+## 🔌 API SPECIFICATION
+
+### RAG Service REST API
+
+**Base URL:** `http://rag-service:8000/api/v1`
+
+#### 1. Sources Management
+
+```http
+# Create source
+POST /sources
+Authorization: Bearer {CRM_SERVICE_TOKEN}
+Content-Type: application/json
+
+{
+  "type": "DIRECTORY | EMAIL_GMAIL | EMAIL_OUTLOOK",
+  "name": "Projekty 2024",
+  "organizationId": "org-uuid",
+  "streamIds": ["stream-1", "stream-2"], # empty = all
+  "config": {
+    # For DIRECTORY:
+    "path": "/opt/projekty/2024",
+    "fileTypes": ["pdf", "docx", "xlsx"],
+    "excludePatterns": ["*/temp/*", "~$*"],
+    "schedule": "0 2 * * *", # cron
+    "minSize": 10240, # bytes
+    "maxSize": 52428800 # bytes
+    
+    # For EMAIL_GMAIL:
+    "email": "biuro@firma.pl",
+    "host": "imap.gmail.com",
+    "port": 993,
+    "username": "biuro@firma.pl",
+    "password": "encrypted...",
+    "folders": ["INBOX", "Sent", "Klienci"],
+    "dateFrom": "2020-01-01",
+    "syncInterval": 300, # seconds
+    "includeAttachments": true,
+    "maxAttachmentSize": 10485760
+  },
+  "createdBy": "user-uuid"
+}
+
+Response 201:
+{
+  "sourceId": "source-uuid",
+  "jobId": "job-uuid",
+  "status": "PENDING",
+  "message": "Source created. Scanning will start shortly."
+}
+
+# List sources
+GET /sources?organizationId={org-uuid}&streamId={stream-uuid}
+
+Response 200:
+{
+  "sources": [
+    {
+      "id": "source-uuid",
+      "type": "DIRECTORY",
+      "name": "Projekty 2024",
+      "status": "ACTIVE",
+      "stats": {
+        "totalDocuments": 3847,
+        "totalChunks": 45231,
+        "lastSyncAt": "2024-10-17T06:00:00Z"
+      },
+      "streamIds": ["stream-1"],
+      "createdAt": "2024-10-15T10:00:00Z"
+    }
+  ]
+}
+
+# Get source details
+GET /sources/{sourceId}
+
+# Update source
+PUT /sources/{sourceId}
+{
+  "name": "...",
+  "config": {...},
+  "streamIds": [...]
+}
+
+# Pause source
+POST /sources/{sourceId}/pause
+
+# Resume source
+POST /sources/{sourceId}/resume
+
+# Trigger manual scan
+POST /sources/{sourceId}/scan
+
+# Delete source
+DELETE /sources/{sourceId}
+# This will:
+# - Mark source as DELETED
+# - Stop all jobs
+# - Remove vectors from Qdrant (async)
+```
+
+#### 2. Ingestion Jobs
+
+```http
+# Get job status
+GET /jobs/{jobId}
+
+Response 200:
+{
+  "id": "job-uuid",
+  "sourceId": "source-uuid",
+  "status": "RUNNING",
+  "progress": {
+    "totalItems": 3847,
+    "processedItems": 2385,
+    "failedItems": 3,
+    "chunksCreated": 28734,
+    "percentage": 62
+  },
+  "timing": {
+    "startedAt": "2024-10-17T07:00:00Z",
+    "estimatedEnd": "2024-10-17T08:52:00Z",
+    "elapsedSeconds": 3780
+  },
+  "currentFile": "/opt/projekty/2024/Alpha/Raport_Q3.pdf",
+  "errors": [
+    {
+      "file": "/opt/projekty/2024/scan_old.tiff",
+      "error": "OCR failed: unsupported format"
+    }
+  ]
+}
+
+# Cancel job
+POST /jobs/{jobId}/cancel
+
+# Get job logs
+GET /jobs/{jobId}/logs
+```
+
+#### 3. Search
+
+```http
+# RAG search
+POST /search
+Authorization: Bearer {CRM_USER_TOKEN}
+Content-Type: application/json
+
+{
+  "query": "Gdzie umowa z TechCorp z 2023?",
+  "organizationId": "org-uuid",
+  "userId": "user-uuid",
+  "userRole": "OWNER | ADMIN | MANAGER | MEMBER",
+  "userStreamIds": ["stream-1", "stream-2"], # pre-computed by CRM
+  
+  "filters": {
+    "sourceTypes": ["DIRECTORY", "EMAIL_GMAIL"],
+    "streamIds": ["stream-1"], # optional extra filter
+    "dateFrom": "2023-01-01",
+    "dateTo": "2023-12-31"
+  },
+  
+  "context": {
+    "currentView": "companies",
+    "currentEntityType": "COMPANY",
+    "currentEntityId": "techcorp-id"
+  },
+  
+  "limit": 10,
+  "includeContent": true
+}
+
+Response 200:
+{
+  "answer": "Znalazłem umowę z TechCorp...",
+  "sources": [
+    {
+      "id": "chunk-uuid",
+      "type": "EMAIL",
+      "title": "Umowa TechCorp - wersja finalna",
+      "preview": "W załączniku znajduje się...",
+      "date": "2023-06-15T10:30:00Z",
+      "relevanceScore": 0.95,
+      "metadata": {
+        "emailFrom": "legal@techcorp.com",
+        "hasAttachments": true
+      },
+      "url": "/dashboard/messages/email-123"
+    },
+    {
+      "id": "chunk-uuid-2",
+      "type": "FILE",
+      "title": "TechCorp_Signed.pdf",
+      "preview": null,
+      "date": "2023-06-20",
+      "relevanceScore": 0.92,
+      "metadata": {
+        "filePath": "/opt/umowy/2023/TechCorp_Signed.pdf",
+        "fileSize": 2345678
+      },
+      "url": "/api/files/download/file-456"
+    }
+  ],
+  "confidence": 0.94,
+  "searchTime": 1234,
+  "totalResults": 12
+}
+
+# Simple search (bez LLM, tylko vector results)
+POST /search/simple
+# Same request format, returns raw vector results bez generate answer
+```
+
+#### 4. Webhooks (CRM → RAG)
+
+```http
+# CRM data changed (real-time sync)
+POST /webhooks/crm
+Authorization: Bearer {CRM_SERVICE_TOKEN}
+Content-Type: application/json
+
+{
+  "event": "stream.created | stream.updated | stream.deleted | task.updated | ...",
+  "organizationId": "org-uuid",
+  "entityType": "STREAM | TASK | PROJECT | COMPANY | DEAL | MESSAGE",
+  "entityId": "entity-uuid",
+  "streamId": "stream-uuid", # if applicable
+  "data": {
+    # Full entity data
+    "id": "...",
+    "name": "...",
+    "description": "...",
+    ...
+  }
+}
+
+Response 200:
+{
+  "received": true,
+  "action": "vectorized | scheduled | skipped",
+  "jobId": "job-uuid" # if async
+}
+```
+
+#### 5. Analytics
+
+```http
+# Search feedback
+POST /search/feedback
+{
+  "searchId": "search-uuid",
+  "rating": 5, # 1-5
+  "feedback": "Bardzo pomocne!",
+  "userId": "user-uuid"
+}
+
+# Get analytics
+GET /analytics?organizationId={org}&from={date}&to={date}
+
+Response:
+{
+  "totalSearches": 1234,
+  "avgResponseTime": 1456,
+  "topQueries": ["umowy", "faktury", "projekty"],
+  "sourceBreakdown": {
+    "CRM_DATA": 45,
+    "EMAIL": 32,
+    "DIRECTORY": 23
+  },
+  "userSatisfaction": 4.2
+}
+```
+
+---
+
+## 🎨 CRM UI COMPONENTS
+
+### 1. Admin Panel: /dashboard/rag-settings
+
+**Lokalizacja w CRM:**
+- Route: `packages/frontend/src/app/dashboard/rag-settings/`
+- Layout: Standard dashboard layout z sidebar
+- Permission: OWNER lub ADMIN
+
+**Strony:**
+
+```
+/dashboard/rag-settings/
+├─ page.tsx                    # Overview + sources list
+├─ sources/
+│   ├─ new/
+│   │   └─ page.tsx            # Add source wizard
+│   └─ [id]/
+│       ├─ page.tsx            # Source details
+│       └─ edit/
+│           └─ page.tsx        # Edit source
+└─ jobs/
+    └─ [id]/
+        └─ page.tsx            # Job details + logs
+```
+
+**Komponenty:**
+
+```typescript
+// packages/frontend/src/components/rag/
+
+SourcesList.tsx              # Lista źródeł (cards)
+SourceCard.tsx               # Pojedyncza karta źródła
+AddSourceWizard.tsx          # Wizard dodawania (multi-step)
+SourceConfigForm.tsx         # Formularz konfiguracji
+JobProgress.tsx              # Progress bar + stats
+JobLogs.tsx                  # Log viewer (real-time)
+SourceStatusBadge.tsx        # Status badge (active/error/paused)
+```
+
+### 2. Chat Widget (w każdym widoku)
+
+**Lokalizacja:**
+- Component: `packages/frontend/src/components/chat/ChatWidget.tsx`
+- Global: Mounted w root layout, widoczny wszędzie
+
+**Features:**
+- Fixed position (bottom-right, Å‚atwo dostÄ™pny)
+- Expandable/collapsible (click to open)
+- Context-aware (wie gdzie user jest: Streams, Companies, etc.)
+- History (ostatnie 10 wiadomoÅ›ci)
+- Citations (źródła jako klikalne linki)
+- Feedback (👍👎 po każdej odpowiedzi)
+
+**Stan:**
+
+```typescript
+interface ChatState {
+  isOpen: boolean;
+  messages: ChatMessage[];
+  isLoading: boolean;
+  currentContext: {
+    view: string;           // 'streams', 'companies', 'deals'
+    entityType?: string;    // 'STREAM', 'COMPANY'
+    entityId?: string;
+  };
+}
+
+interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  sources?: Source[];
+  timestamp: Date;
+  feedback?: 'positive' | 'negative';
+}
+
+interface Source {
+  type: 'EMAIL' | 'FILE' | 'CRM_STREAM' | 'CRM_TASK' | ...;
+  id: string;
+  title: string;
+  preview?: string;
+  date?: Date;
+  relevanceScore: number;
+  url: string;
+  metadata?: Record<string, any>;
+}
+```
+
+---
+
+## 🛠️ TECH STACK DETAILS
+
+### RAG Service
+
+```yaml
+Language: Python 3.11+
+Framework: FastAPI 0.104+
+
+Dependencies:
+  # Core
+  - fastapi[all]
+  - uvicorn[standard]
+  - pydantic
+  - pydantic-settings
+  
+  # Database
+  - sqlalchemy
+  - asyncpg  # PostgreSQL async
+  - alembic  # migrations
+  
+  # Vector DB
+  - qdrant-client
+  
+  # Task Queue
+  - celery[redis]
+  - redis
+  
+  # File Processing
+  - PyPDF2
+  - pdfplumber
+  - python-docx
+  - openpyxl
+  - python-magic  # file type detection
+  - langdetect    # language detection
+  
+  # Email
+  - aioimaplib  # async IMAP
+  - email-validator
+  
+  # AI/ML - REPLICATE PRIMARY
+  - replicate  # Primary AI provider (embeddings + LLM)
+  - openai  # Fallback only
+  - tiktoken  # token counting
+  - sentence-transformers  # For local embeddings (optional)
+  
+  # Utils
+  - python-dotenv
+  - httpx  # async HTTP client
+  - tenacity  # retries
+  - loguru  # logging
+
+Structure:
+  /opt/rag-service/
+  ├─ app/
+  │   ├─ main.py                 # FastAPI app
+  │   ├─ config.py               # Settings (from env)
+  │   ├─ models/                 # SQLAlchemy models
+  │   ├─ schemas/                # Pydantic schemas
+  │   ├─ api/
+  │   │   └─ v1/
+  │   │       ├─ sources.py      # Sources endpoints
+  │   │       ├─ search.py       # Search endpoints
+  │   │       ├─ jobs.py         # Jobs endpoints
+  │   │       └─ webhooks.py     # Webhooks
+  │   ├─ services/
+  │   │   ├─ ingestion/
+  │   │   │   ├─ directory.py    # Directory scanner
+  │   │   │   ├─ email.py        # Email sync
+  │   │   │   └─ crm.py          # CRM sync
+  │   │   ├─ processing/
+  │   │   │   ├─ pdf.py          # PDF extractor
+  │   │   │   ├─ docx.py         # Word extractor
+  │   │   │   ├─ xlsx.py         # Excel extractor
+  │   │   │   └─ chunker.py      # Smart chunking
+  │   │   ├─ vectorization/
+  │   │   │   ├─ embeddings.py   # OpenAI embeddings
+  │   │   │   └─ qdrant.py       # Qdrant operations
+  │   │   └─ search/
+  │   │       ├─ retrieval.py    # Vector + hybrid search
+  │   │       ├─ reranking.py    # Result reranking
+  │   │       └─ generation.py   # LLM response generation
+  │   └─ workers/
+  │       └─ celery_app.py       # Celery config + tasks
+  ├─ alembic/                    # DB migrations
+  ├─ tests/
+  ├─ docker-compose.yml
+  ├─ Dockerfile
+  ├─ requirements.txt
+  └─ .env.example
+```
+
+### CRM Extensions
+
+```typescript
+// packages/frontend/src/
+
+app/dashboard/rag-settings/     # New admin pages
+components/rag/                 # RAG-specific components
+components/chat/                # Chat widget
+lib/api/rag.ts                  # RAG Service API client
+types/rag.ts                    # TypeScript types
+hooks/useRAGSearch.ts           # React hook for search
+contexts/ChatContext.tsx        # Chat state management
+```
+
+```typescript
+// packages/backend/src/
+
+routes/rag.ts                   # Proxy routes (CRM → RAG)
+services/ragService.ts          # RAG API client
+middleware/ragAuth.ts           # Service-to-service auth
+webhooks/ragWebhook.ts          # Notify RAG on changes
+```
+
+---
+
+## 🔐 SECURITY & AUTH
+
+### Service-to-Service Auth
+
+```
+CRM ←→ RAG Service:
+- Shared secret (JWT)
+- Each service validates token
+- Token contains: serviceId, organizationId, permissions
+
+CRM Frontend → CRM Backend → RAG Service:
+- User JWT (from CRM auth)
+- CRM validates user
+- CRM extracts: userId, organizationId, role, streamIds
+- CRM forwards to RAG (or exchanges for service token)
+```
+
+### Environment Variables
+
+```bash
+# RAG Service (.env)
+DATABASE_URL=postgresql://user:pass@localhost:5432/rag_db
+REDIS_URL=redis://localhost:6379/0
+QDRANT_URL=http://localhost:6333
+
+# PRIMARY: Replicate (ultra budget - $3/mo)
+REPLICATE_API_TOKEN=r8_...
+REPLICATE_EMBEDDING_MODEL=sentence-transformers/paraphrase-multilingual-mpnet-base-v2
+REPLICATE_LLM_MODEL=meta/meta-llama-3-70b-instruct
+REPLICATE_LLM_FALLBACK=deepseek-ai/deepseek-v3
+
+# FALLBACK: OpenAI (only if Replicate fails)
+OPENAI_API_KEY=sk-...
+OPENAI_EMBEDDING_MODEL=text-embedding-3-large
+OPENAI_CHAT_MODEL=gpt-4-turbo-preview
+
+# Model Selection Strategy
+AI_PROVIDER=replicate  # Options: replicate, openai, hybrid
+ENABLE_SMART_ROUTING=true  # Route complex queries to better models
+ENABLE_FALLBACK=true  # Fall back to OpenAI if Replicate fails
+
+# Cost Tracking
+ENABLE_COST_TRACKING=true
+MONTHLY_BUDGET_USD=10  # Alert if exceeded
+
+CRM_API_URL=http://crm-backend:9027
+CRM_SERVICE_TOKEN=shared-secret-jwt
+
+CELERY_BROKER_URL=redis://localhost:6379/1
+CELERY_RESULT_BACKEND=redis://localhost:6379/2
+
+LOG_LEVEL=INFO
+```
+
+```bash
+# CRM Backend (.env extension)
+RAG_SERVICE_URL=http://rag-service:8000
+RAG_SERVICE_TOKEN=shared-secret-jwt
+```
+
+---
+
+## 📊 MONITORING & OBSERVABILITY
+
+### Metrics to Track
+
+```
+Ingestion:
+- Files processed per hour
+- Average processing time per file
+- Error rate (%)
+- Queue depth (pending jobs)
+
+Search:
+- Queries per minute
+- Average response time
+- Cache hit rate
+- User satisfaction (feedback)
+
+System:
+- Qdrant vector count
+- Database size
+- Redis memory usage
+- Celery worker status
+```
+
+### Health Checks
+
+```http
+GET /health
+
+Response:
+{
+  "status": "healthy",
+  "services": {
+    "database": "up",
+    "redis": "up",
+    "qdrant": "up",
+    "celery": "up"
+  },
+  "stats": {
+    "totalVectors": 123456,
+    "activeJobs": 3,
+    "queueDepth": 42
+  }
+}
+```
+
+---
+
+## 🚀 DEPLOYMENT
+
+### Docker Compose (development)
+
+```yaml
+version: '3.8'
+
+services:
+  rag-api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://rag:password@postgres:5432/rag
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_URL=http://qdrant:6333
+    depends_on:
+      - postgres
+      - redis
+      - qdrant
+    volumes:
+      - /opt:/opt:ro  # Read-only mount for file access
+
+  celery-worker:
+    build: .
+    command: celery -A app.workers.celery_app worker -l info
+    environment:
+      - DATABASE_URL=postgresql://rag:password@postgres:5432/rag
+      - REDIS_URL=redis://redis:6379/0
+      - QDRANT_URL=http://qdrant:6333
+    depends_on:
+      - redis
+      - qdrant
+    volumes:
+      - /opt:/opt:ro
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: rag
+      POSTGRES_USER: rag
+      POSTGRES_PASSWORD: password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    volumes:
+      - redis_data:/data
+
+  qdrant:
+    image: qdrant/qdrant:v1.7.0
+    ports:
+      - "6333:6333"
+    volumes:
+      - qdrant_data:/qdrant/storage
+
+volumes:
+  postgres_data:
+  redis_data:
+  qdrant_data:
+```
+
+### Production Considerations
+
+```
+1. Scaling:
+   - Multiple Celery workers (different queues)
+   - Qdrant cluster (sharding)
+   - Redis Sentinel (HA)
+
+2. Security:
+   - Private network (no public access)
+   - mTLS between services
+   - Encrypted secrets (Vault)
+
+3. Backups:
+   - PostgreSQL: Daily dumps
+   - Qdrant: Snapshot backups
+   - Redis: AOF persistence
+
+4. Monitoring:
+   - Prometheus metrics
+   - Grafana dashboards
+   - Sentry error tracking
+```
+
+---
+
+## ✅ IMPLEMENTATION CHECKLIST
+
+### **Phase 1: Foundation (Week 1-2)** ✅ PRIORITY
+
+- [ ] Setup RAG Service project structure
+- [ ] Docker Compose dla local dev
+- [ ] PostgreSQL schema + migrations (Alembic)
+- [ ] Qdrant collection setup
+- [ ] FastAPI basic routes (health, sources CRUD)
+- [ ] **Replicate integration (embeddings + LLM)**
+  - [ ] Test sentence-transformers embeddings
+  - [ ] Test meta-llama-3-70b-instruct responses
+  - [ ] Compare quality with OpenAI (validation)
+  - [ ] Implement fallback logic
+- [ ] CRM API client (komunikacja z CRM)
+- [ ] Cost tracking system (monitor $3/mo budget)
+
+### **Phase 2: Ingestion - Directory (Week 2-3)**
+
+- [ ] Directory scanner (filesystem walk)
+- [ ] File type detection (magic)
+- [ ] PDF processor (PyPDF2 + pdfplumber)
+- [ ] DOCX processor (python-docx)
+- [ ] XLSX processor (openpyxl)
+- [ ] Smart chunking algorithm
+- [ ] **Replicate embeddings integration** (primary)
+- [ ] **OpenAI embeddings** (fallback only)
+- [ ] Qdrant storage
+- [ ] Celery task: scan_directory
+- [ ] Job progress tracking (Redis)
+- [ ] Error handling + retry logic
+
+### **Phase 3: Ingestion - Email (Week 3-4)**
+
+- [ ] IMAP client (aioimaplib)
+- [ ] Email parser (subject, body, from/to)
+- [ ] HTML → plain text
+- [ ] Attachment extraction
+- [ ] Incremental sync (tylko nowe)
+- [ ] Celery task: sync_email
+- [ ] Schedule: continuous sync (every X min)
+
+### **Phase 4: Search Engine (Week 4-5)**
+
+- [ ] **Intent recognition (Llama-3-70b via Replicate)**
+- [ ] Vector search (Qdrant)
+- [ ] Hybrid search (vector + keywords)
+- [ ] RLS filtering (streamIds)
+- [ ] Re-ranking algorithm
+- [ ] Context retrieval (neighboring chunks)
+- [ ] **Response generation (Llama-3-70b primary, deepseek-v3 fallback)**
+- [ ] Citations formatting
+- [ ] **Smart routing** (simple → llama, complex → deepseek)
+
+### **Phase 5: CRM Integration (Week 5-6)**
+
+- [ ] CRM Admin UI: /dashboard/rag-settings
+  - [ ] Sources list page
+  - [ ] Add source wizard (Directory)
+  - [ ] Add source wizard (Email)
+  - [ ] Source details + edit
+  - [ ] Job progress monitor
+  - [ ] **Cost dashboard** (show $3/mo usage)
+- [ ] Chat Widget component
+  - [ ] Fixed position UI
+  - [ ] Expandable/collapsible
+  - [ ] Message list + input
+  - [ ] Loading states
+  - [ ] Citations display
+  - [ ] Feedback buttons (quality tracking)
+- [ ] API client (CRM → RAG)
+- [ ] Webhooks (CRM → RAG for real-time sync)
+- [ ] Permission checks (streamIds filtering)
+
+### **Phase 6: Testing & Optimization (Week 6-7)**
+
+- [ ] Unit tests (pytest)
+- [ ] Integration tests
+- [ ] Load testing (search performance)
+- [ ] **Quality benchmarking** (Replicate vs OpenAI comparison)
+- [ ] **A/B testing** (10% users on deepseek-v3, 90% on llama)
+- [ ] Cost monitoring alerts
+- [ ] Error scenarios
+- [ ] Documentation
+- [ ] Deployment guide
+
+### **Phase 7: Advanced Features (Week 8+)** - Optional
+
+- [ ] Model Arena (compare models in real-time)
+- [ ] Automatic model selection based on query complexity
+- [ ] User preference (let power users choose model)
+- [ ] Advanced cost optimization (caching, deduplication)
+- [ ] Multi-language support optimization
+- [ ] Performance dashboards (Grafana)
+
+---
+
+## 📝 NOTES FOR CLAUDE CODE
+
+### **Key Points:**
+
+1. **ROW LEVEL SECURITY jest KRYTYCZNY**
+   - ZAWSZE filtruj po organizationId + streamIds
+   - User widzi tylko swoje Streamy
+   - OWNER = all streams, ADMIN/USER = assigned streams
+
+2. **Chunking Strategy**
+   - 1000 tokens per chunk (nie za duże, nie za małe)
+   - 200 tokens overlap (dla kontekstu)
+   - Nie uccinaj w połowie zdania
+   - Preserve markdown/formatting gdzie możliwe
+
+3. **Cost Optimization (CRITICAL with Replicate!)**
+   - **Batch embeddings** aggressively (reduce API calls)
+   - **Cache embeddings** (SHA256 hash content)
+   - **Re-use dla duplicate content** (major savings!)
+   - **Monitor usage daily** - $3/mo budget jest mały
+   - **Smart routing**: 90% queries → llama (cheap), 10% → deepseek (quality)
+   - **Deduplicate chunks** before embedding (save tokens)
+
+4. **Error Handling**
+   - **Primary: Replicate** (90%+ uptime expected)
+   - **Fallback: OpenAI** (if Replicate fails)
+   - Retry logic (exponential backoff)
+   - Log wszystko (debug + errors)
+   - User-friendly messages (nie raw errors)
+   - **Cost alerts** if monthly budget exceeded
+
+5. **Performance**
+   - Async gdzie możliwe (FastAPI, aioimaplib)
+   - Connection pooling (DB, Redis, Qdrant)
+   - Cache search results (Redis, TTL 5min)
+   - Pagination dla dużych result sets
+   - **Replicate can be slower than OpenAI** - manage expectations
+
+6. **Security**
+   - Validate ALL inputs (Pydantic)
+   - Sanitize file paths (prevent traversal)
+   - Rate limiting (per org, per user)
+   - Audit log (kto co kiedy)
+   - **Protect API tokens** (Replicate + OpenAI)
+
+7. **Quality Monitoring**
+   - **Track response quality** (user feedback 👍👎)
+   - **A/B test models** (llama vs deepseek vs openai)
+   - **Measure user satisfaction** (important with budget model!)
+   - **Be ready to upgrade** to better model if quality insufficient
+   - **Log edge cases** where llama fails but GPT-4 would succeed
+
+---
+
+## 🎯 SUCCESS CRITERIA
+
+MVP jest gotowe gdy:
+
+✅ Admin może dodać katalog przez CRM UI
+✅ System automatycznie skanuje pliki
+✅ User może zapytać "Gdzie umowa X?" i dostaje odpowiedź
+✅ Odpowiedź zawiera citations (linki do źródeł)
+✅ RLS działa (User widzi tylko swoje Streamy)
+✅ System działa stabilnie przez 24h bez crashów
+✅ Search response time < 3s (95 percentile)
+✅ **Monthly cost < $5** (Replicate budget maintained)
+✅ **Response quality ≥ 4/5** (user feedback tracking)
+✅ **Fallback to OpenAI works** (when Replicate fails)
+
+---
+
+## 🎯 QUALITY BENCHMARKS
+
+### Acceptance Criteria (Replicate vs OpenAI):
+
+```
+Metric                    | Target  | Measurement
+--------------------------|---------|-------------
+Response Relevance        | ≥ 80%   | User feedback
+Response Completeness     | ≥ 75%   | Contains all sources
+Polish Language Quality   | ≥ 4/5   | Subjective rating
+Citation Accuracy         | ≥ 95%   | Links work
+Speed                     | < 3s    | 95th percentile
+Cost per query            | < $0.01 | API tracking
+Uptime                    | ≥ 99%   | With fallback
+
+If ANY metric fails → escalate to better model (deepseek-v3)
+```
+
+---
+
+## 💰 COST TRACKING DASHBOARD
+
+```
+Daily Budget: $0.12 (~$3.50/mo)
+Current Usage: $0.08 (67%)
+Remaining: $0.04
+
+Breakdown:
+├─ Embeddings: $0.02 (20 new docs)
+├─ LLM (llama): $0.05 (45 queries)
+└─ LLM (deepseek): $0.01 (3 complex queries)
+
+Projected Month: $2.80 ✅ Under budget!
+```
+
+---
+
+## 📚 REFERENCES
+
+- **Replicate Platform**: https://replicate.com/
+- **Replicate Models**:
+  - meta-llama-3-70b-instruct: https://replicate.com/meta/meta-llama-3-70b-instruct
+  - deepseek-v3: https://replicate.com/deepseek-ai/deepseek-v3
+  - sentence-transformers: https://replicate.com/sentence-transformers/
+- **Replicate API Docs**: https://replicate.com/docs
+- **OpenAI Embeddings** (fallback): https://platform.openai.com/docs/guides/embeddings
+- Qdrant Docs: https://qdrant.tech/documentation/
+- FastAPI: https://fastapi.tiangolo.com/
+- Celery: https://docs.celeryq.dev/
+- Prisma (CRM schema reference): /opt/crm-gtd-smart/packages/backend/prisma/schema.prisma
+
+---
+
+## 🔬 MODEL TESTING PROTOCOL
+
+### Week 1: Baseline Testing
+
+```bash
+# Test suite for model validation
+python scripts/test_models.py --mode=comparison
+
+Models to test:
+1. meta-llama-3-70b-instruct (primary)
+2. deepseek-v3 (complex queries)
+3. gpt-4-turbo (baseline for comparison)
+
+Test cases:
+- 10 simple queries (FAQ-style)
+- 10 complex queries (multi-source)
+- 10 Polish-specific queries
+- 5 edge cases (ambiguous, no results)
+
+Metrics:
+- Response quality (1-5 rating)
+- Response time (seconds)
+- Cost per query
+- Citation accuracy
+- Polish language quality
+```
+
+### Decision Matrix:
+
+```
+If llama quality < 3.5/5:
+  → Upgrade to deepseek-v3 as primary
+
+If llama quality 3.5-4.0/5:
+  → Keep llama for 80%, deepseek for 20%
+
+If llama quality > 4.0/5:
+  → Keep llama for 95%, deepseek for 5%
+
+If cost > $5/mo:
+  → Optimize caching/deduplication
+  → Consider cheaper model (llama-3-8b)
+```
+
+---
+
+**END OF SPECIFICATION**
+
+Version: 1.0
+Last Updated: 2024-10-17
+Author: Architecture Discussion with User

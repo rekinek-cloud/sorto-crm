@@ -1,0 +1,789 @@
+{
+  "knowledgeBase": {
+    "fields": [
+      "id          String   @id @default(uuid())",
+      "title       String",
+      "content     String",
+      "category    String?",
+      "tags        String[] @default([])",
+      "relatedItems String[] @default([]) // IDs of related tasks/projects",
+      "organizationId String",
+      "createdAt   DateTime @default(now())",
+      "updatedAt   DateTime @updatedAt"
+    ],
+    "relations": [
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)"
+    ],
+    "required": [
+      "title",
+      "content"
+    ],
+    "optional": [
+      "category",
+      "tags",
+      "relatedItems"
+    ],
+    "complexity": "HIGH"
+  },
+  "emailAnalysis": {
+    "fields": [
+      "id          String   @id @default(uuid())",
+      "timestamp   DateTime @default(now())",
+      "emailFrom   String",
+      "emailSubject String",
+      "emailReceived DateTime",
+      "categories  String[] @default([])",
+      "summary     String?",
+      "fullAnalysis String?",
+      "rawText     String?",
+      "processingTime Int? // seconds",
+      "tokenCount  Int?",
+      "organizationId String",
+      "createdAt   DateTime @default(now())",
+      "updatedAt   DateTime @updatedAt"
+    ],
+    "relations": [
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)"
+    ],
+    "required": [
+      "emailFrom",
+      "emailSubject",
+      "emailReceived"
+    ],
+    "optional": [
+      "timestamp",
+      "categories",
+      "summary",
+      "fullAnalysis",
+      "rawText",
+      "processingTime",
+      "tokenCount"
+    ],
+    "complexity": "HIGH"
+  },
+  "delegatedTask": {
+    "fields": [
+      "id          String   @id @default(uuid())",
+      "description String",
+      "delegatedTo String",
+      "delegatedOn DateTime @default(now())",
+      "followUpDate DateTime?",
+      "notes       String?",
+      "organizationId String",
+      "taskId      String?",
+      "createdAt   DateTime @default(now())",
+      "updatedAt   DateTime @updatedAt"
+    ],
+    "relations": [
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)",
+      "task        Task?   @relation(fields: [taskId], references: [id])"
+    ],
+    "required": [
+      "description",
+      "delegatedTo"
+    ],
+    "optional": [
+      "delegatedOn",
+      "followUpDate",
+      "notes",
+      "taskId"
+    ],
+    "complexity": "HIGH"
+  },
+  "timeline": {
+    "fields": [
+      "id        String   @id @default(uuid())",
+      "eventId   String",
+      "eventType String",
+      "title     String",
+      "startDate DateTime",
+      "endDate   DateTime?",
+      "organizationId String",
+      "streamId  String?",
+      "createdAt DateTime @default(now())",
+      "updatedAt DateTime @updatedAt"
+    ],
+    "relations": [
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)",
+      "stream    Stream? @relation(fields: [streamId], references: [id])"
+    ],
+    "required": [
+      "eventId",
+      "eventType",
+      "title",
+      "startDate"
+    ],
+    "optional": [
+      "endDate",
+      "streamId"
+    ],
+    "complexity": "HIGH"
+  },
+  "areaOfResponsibility": {
+    "fields": [
+      "id          String   @id @default(uuid())",
+      "name        String",
+      "description String?",
+      "owner       String?",
+      "relatedProjects String[] @default([]) // Project IDs",
+      "organizationId String",
+      "createdAt   DateTime @default(now())",
+      "updatedAt   DateTime @updatedAt"
+    ],
+    "relations": [
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)"
+    ],
+    "required": [
+      "name"
+    ],
+    "optional": [
+      "description",
+      "owner",
+      "relatedProjects"
+    ],
+    "complexity": "HIGH"
+  },
+  "lead": {
+    "fields": [
+      "id          String   @id @default(uuid())",
+      "title       String",
+      "description String?",
+      "company     String?",
+      "contactPerson String?",
+      "source      String?",
+      "organizationId String",
+      "createdAt   DateTime @default(now())",
+      "updatedAt   DateTime @updatedAt"
+    ],
+    "relations": [
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)"
+    ],
+    "required": [
+      "title"
+    ],
+    "optional": [
+      "description",
+      "company",
+      "contactPerson",
+      "source"
+    ],
+    "complexity": "HIGH"
+  },
+  "order": {
+    "fields": [
+      "id          String   @id @default(uuid())",
+      "orderNumber String   @unique",
+      "title       String",
+      "description String?",
+      "customer    String",
+      "currency    String @default(\"USD\")",
+      "customerEmail String?",
+      "customerPhone String?",
+      "customerAddress String?",
+      "deliveryDate DateTime?",
+      "deliveryAddress String?",
+      "deliveryNotes String?",
+      "organizationId String",
+      "createdAt   DateTime @default(now())",
+      "updatedAt   DateTime @updatedAt"
+    ],
+    "relations": [
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)"
+    ],
+    "required": [
+      "orderNumber",
+      "title",
+      "customer"
+    ],
+    "optional": [
+      "description",
+      "currency",
+      "customerEmail",
+      "customerPhone",
+      "customerAddress",
+      "deliveryDate",
+      "deliveryAddress",
+      "deliveryNotes"
+    ],
+    "complexity": "HIGH"
+  },
+  "invoice": {
+    "fields": [
+      "id          String   @id @default(uuid())",
+      "invoiceNumber String @unique",
+      "title       String",
+      "description String?",
+      "currency    String @default(\"USD\")",
+      "dueDate     DateTime?",
+      "customerEmail String?",
+      "customerPhone String?",
+      "customerAddress String?",
+      "paymentDate DateTime?",
+      "paymentMethod String?",
+      "paymentNotes String?",
+      "fakturowniaId Int?      // ID in Fakturownia system",
+      "fakturowniaNumber String? // Invoice number from Fakturownia",
+      "fakturowniaStatus String? // Status from Fakturownia",
+      "lastSyncedAt DateTime?  // Last sync timestamp",
+      "syncError   String?     // Last sync error if any",
+      "autoSync    Boolean @default(true) // Whether to auto-sync with Fakturownia",
+      "organizationId String",
+      "createdAt   DateTime @default(now())",
+      "updatedAt   DateTime @updatedAt"
+    ],
+    "relations": [
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)"
+    ],
+    "required": [
+      "invoiceNumber",
+      "title"
+    ],
+    "optional": [
+      "description",
+      "currency",
+      "dueDate",
+      "customerEmail",
+      "customerPhone",
+      "customerAddress",
+      "paymentDate",
+      "paymentMethod",
+      "paymentNotes",
+      "fakturowniaId",
+      "fakturowniaNumber",
+      "fakturowniaStatus",
+      "lastSyncedAt",
+      "syncError",
+      "autoSync"
+    ],
+    "complexity": "HIGH"
+  },
+  "complaint": {
+    "fields": [
+      "id          String   @id @default(uuid())",
+      "title       String",
+      "description String?",
+      "customer    String",
+      "product     String?",
+      "organizationId String",
+      "createdAt   DateTime @default(now())",
+      "updatedAt   DateTime @updatedAt"
+    ],
+    "relations": [
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)"
+    ],
+    "required": [
+      "title",
+      "customer"
+    ],
+    "optional": [
+      "description",
+      "product"
+    ],
+    "complexity": "HIGH"
+  },
+  "info": {
+    "fields": [
+      "id          String   @id @default(uuid())",
+      "title       String",
+      "content     String?",
+      "topic       String?",
+      "organizationId String",
+      "createdAt   DateTime @default(now())",
+      "updatedAt   DateTime @updatedAt"
+    ],
+    "relations": [
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)"
+    ],
+    "required": [
+      "title"
+    ],
+    "optional": [
+      "content",
+      "topic"
+    ],
+    "complexity": "HIGH"
+  },
+  "unimportant": {
+    "fields": [
+      "id          String   @id @default(uuid())",
+      "content     String",
+      "type        String?",
+      "source      String?",
+      "organizationId String",
+      "createdAt   DateTime @default(now())",
+      "updatedAt   DateTime @updatedAt"
+    ],
+    "relations": [
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)"
+    ],
+    "required": [
+      "content"
+    ],
+    "optional": [
+      "type",
+      "source"
+    ],
+    "complexity": "HIGH"
+  },
+  "recommendation": {
+    "fields": [
+      "id          String   @id @default(uuid())",
+      "content     String",
+      "referenceId String?",
+      "referenceType String? // \"task\", \"project\", \"stream\"",
+      "organizationId String",
+      "createdAt   DateTime @default(now())",
+      "updatedAt   DateTime @updatedAt"
+    ],
+    "relations": [
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)"
+    ],
+    "required": [
+      "content"
+    ],
+    "optional": [
+      "referenceId",
+      "referenceType"
+    ],
+    "complexity": "HIGH"
+  },
+  "file": {
+    "fields": [
+      "id          String   @id @default(uuid())",
+      "fileName    String",
+      "fileType    String",
+      "urlPath     String",
+      "uploadDate  DateTime @default(now())",
+      "size        Int?     // bytes",
+      "parentId    String?",
+      "parentType  String? // \"task\", \"project\", \"meeting\"",
+      "organizationId String",
+      "createdAt   DateTime @default(now())",
+      "updatedAt   DateTime @updatedAt"
+    ],
+    "relations": [
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)"
+    ],
+    "required": [
+      "fileName",
+      "fileType",
+      "urlPath"
+    ],
+    "optional": [
+      "uploadDate",
+      "size",
+      "parentId",
+      "parentType"
+    ],
+    "complexity": "HIGH"
+  },
+  "processingRule": {
+    "fields": [
+      "id          String @id @default(uuid())",
+      "name        String",
+      "description String?",
+      "active      Boolean @default(true)"
+    ],
+    "relations": [],
+    "required": [
+      "name"
+    ],
+    "optional": [
+      "description",
+      "active"
+    ],
+    "complexity": "LOW"
+  },
+  "offer": {
+    "fields": [
+      "id          String   @id @default(uuid())",
+      "offerNumber String   @unique",
+      "title       String",
+      "description String?",
+      "currency    String   @default(\"USD\")",
+      "validUntil  DateTime?",
+      "sentDate    DateTime?",
+      "acceptedDate DateTime?",
+      "rejectedDate DateTime?",
+      "customerName String",
+      "customerEmail String?",
+      "customerPhone String?",
+      "customerAddress String?",
+      "companyId   String?",
+      "contactId   String?",
+      "dealId      String?",
+      "paymentTerms String?",
+      "deliveryTerms String?",
+      "notes       String?",
+      "organizationId String",
+      "createdById String",
+      "createdAt   DateTime @default(now())",
+      "updatedAt   DateTime @updatedAt"
+    ],
+    "relations": [
+      "company     Company? @relation(fields: [companyId], references: [id])",
+      "contact     Contact? @relation(fields: [contactId], references: [id])",
+      "deal        Deal? @relation(fields: [dealId], references: [id])",
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)",
+      "createdBy   User   @relation(\"OfferCreator\", fields: [createdById], references: [id])"
+    ],
+    "required": [
+      "offerNumber",
+      "title",
+      "customerName",
+      "createdById"
+    ],
+    "optional": [
+      "description",
+      "currency",
+      "validUntil",
+      "sentDate",
+      "acceptedDate",
+      "rejectedDate",
+      "customerEmail",
+      "customerPhone",
+      "customerAddress",
+      "companyId",
+      "contactId",
+      "dealId",
+      "paymentTerms",
+      "deliveryTerms",
+      "notes"
+    ],
+    "complexity": "HIGH"
+  },
+  "bugReport": {
+    "fields": [
+      "id          String   @id @default(uuid())",
+      "title       String",
+      "description String   @db.Text",
+      "userAgent   String?",
+      "url         String?  // page where bug occurred",
+      "browserInfo String?  // additional browser details",
+      "deviceInfo  String?  // device/OS information",
+      "screenshots String[] @default([]) // Array of image URLs",
+      "attachments String[] @default([]) // Array of file URLs",
+      "stepsToReproduce String?",
+      "expectedBehavior String?",
+      "actualBehavior   String?",
+      "reporterId  String",
+      "organizationId String",
+      "adminNotes  String?",
+      "resolution  String?",
+      "resolvedAt  DateTime?",
+      "createdAt   DateTime @default(now())",
+      "updatedAt   DateTime @updatedAt"
+    ],
+    "relations": [
+      "reporter    User     @relation(fields: [reporterId], references: [id])",
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)"
+    ],
+    "required": [
+      "title",
+      "description",
+      "reporterId"
+    ],
+    "optional": [
+      "userAgent",
+      "url",
+      "browserInfo",
+      "deviceInfo",
+      "screenshots",
+      "attachments",
+      "stepsToReproduce",
+      "expectedBehavior",
+      "actualBehavior",
+      "adminNotes",
+      "resolution",
+      "resolvedAt"
+    ],
+    "complexity": "HIGH"
+  },
+  "wikiPage": {
+    "fields": [
+      "id          String   @id @default(uuid())",
+      "title       String",
+      "slug        String",
+      "content     String   @db.Text",
+      "summary     String?",
+      "isPublished Boolean  @default(false)",
+      "version     Int      @default(1)",
+      "template    String?  // JSON template structure",
+      "authorId    String",
+      "categoryId  String?",
+      "organizationId String",
+      "parentPageId String?",
+      "createdAt   DateTime @default(now())",
+      "updatedAt   DateTime @updatedAt"
+    ],
+    "relations": [
+      "author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)",
+      "category    WikiCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)",
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)",
+      "parentPage   WikiPage? @relation(\"WikiHierarchy\", fields: [parentPageId], references: [id], onDelete: SetNull)",
+      "childPages   WikiPage[] @relation(\"WikiHierarchy\")",
+      "linkedPages    WikiPageLink[] @relation(\"SourceWikiPage\")",
+      "backlinkedPages WikiPageLink[] @relation(\"TargetWikiPage\")"
+    ],
+    "required": [
+      "title",
+      "slug",
+      "content",
+      "authorId"
+    ],
+    "optional": [
+      "summary",
+      "isPublished",
+      "version",
+      "template",
+      "categoryId",
+      "parentPageId"
+    ],
+    "complexity": "HIGH"
+  },
+  "wikiCategory": {
+    "fields": [
+      "id          String   @id @default(uuid())",
+      "name        String",
+      "description String?",
+      "color       String?",
+      "icon        String?",
+      "sortOrder   Int      @default(0)",
+      "organizationId String",
+      "createdAt   DateTime @default(now())",
+      "updatedAt   DateTime @updatedAt"
+    ],
+    "relations": [
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)"
+    ],
+    "required": [
+      "name"
+    ],
+    "optional": [
+      "description",
+      "color",
+      "icon",
+      "sortOrder"
+    ],
+    "complexity": "HIGH"
+  },
+  "searchIndex": {
+    "fields": [
+      "id          String   @id @default(uuid())",
+      "entityType  String   // \"document\", \"wiki_page\", \"task\", etc.",
+      "entityId    String",
+      "title       String",
+      "content     String   @db.Text",
+      "searchVector String?  // For full-text search optimization",
+      "organizationId String",
+      "createdAt   DateTime @default(now())",
+      "updatedAt   DateTime @updatedAt"
+    ],
+    "relations": [
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)"
+    ],
+    "required": [
+      "entityType",
+      "entityId",
+      "title",
+      "content"
+    ],
+    "optional": [
+      "searchVector"
+    ],
+    "complexity": "HIGH"
+  },
+  "emailTemplate": {
+    "fields": [
+      "id           String   @id @default(uuid())",
+      "name         String",
+      "description  String?",
+      "subject      String",
+      "htmlTemplate String   @db.Text",
+      "textTemplate String?  @db.Text",
+      "variables    String[] @default([]) // Array of variable names like [\"firstName\", \"companyName\"]",
+      "category     String?  // \"welcome\", \"notification\", \"marketing\", etc.",
+      "tags         String[] @default([])",
+      "isActive     Boolean  @default(true)",
+      "version      Int      @default(1)",
+      "usageCount   Int      @default(0)",
+      "lastUsed     DateTime?",
+      "organizationId String",
+      "createdAt    DateTime @default(now())",
+      "updatedAt    DateTime @updatedAt",
+      "createdById  String"
+    ],
+    "relations": [
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)",
+      "createdBy    User     @relation(fields: [createdById], references: [id])"
+    ],
+    "required": [
+      "name",
+      "subject",
+      "htmlTemplate",
+      "createdById"
+    ],
+    "optional": [
+      "description",
+      "textTemplate",
+      "variables",
+      "category",
+      "tags",
+      "isActive",
+      "version",
+      "usageCount",
+      "lastUsed"
+    ],
+    "complexity": "HIGH"
+  },
+  "emailLog": {
+    "fields": [
+      "id           String   @id @default(uuid())",
+      "messageId    String   // Provider's message ID",
+      "toAddresses  String[]",
+      "ccAddresses  String[] @default([])",
+      "bccAddresses String[] @default([])",
+      "subject      String",
+      "success      Boolean",
+      "error        String?",
+      "templateId   String?",
+      "delivered    Boolean? @default(false)",
+      "opened       Boolean? @default(false)",
+      "clicked      Boolean? @default(false)",
+      "bounced      Boolean? @default(false)",
+      "spam         Boolean? @default(false)",
+      "sentAt       DateTime @default(now())",
+      "deliveredAt  DateTime?",
+      "openedAt     DateTime?",
+      "clickedAt    DateTime?",
+      "bouncedAt    DateTime?",
+      "organizationId String?",
+      "sentByUserId String?"
+    ],
+    "relations": [
+      "organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)",
+      "sentBy       User?   @relation(fields: [sentByUserId], references: [id])"
+    ],
+    "required": [
+      "messageId",
+      "toAddresses",
+      "subject",
+      "success"
+    ],
+    "optional": [
+      "ccAddresses",
+      "bccAddresses",
+      "error",
+      "templateId",
+      "delivered",
+      "opened",
+      "clicked",
+      "bounced",
+      "spam",
+      "sentAt",
+      "deliveredAt",
+      "openedAt",
+      "clickedAt",
+      "bouncedAt",
+      "sentByUserId"
+    ],
+    "complexity": "HIGH"
+  },
+  "vectorDocument": {
+    "fields": [
+      "id             String   @id @default(uuid())",
+      "title          String",
+      "content        String",
+      "contentHash    String   @unique // MD5 hash to detect duplicates",
+      "entityType     String   // \"task\", \"project\", \"contact\", \"deal\", etc.",
+      "entityId       String   // ID of the original entity",
+      "source         String   // \"manual\", \"sync\", \"import\"",
+      "language       String   @default(\"pl\")",
+      "chunkIndex     Int      @default(0)",
+      "totalChunks    Int      @default(1)",
+      "chunkSize      Int?     // Number of tokens/characters",
+      "processingModel String? // Which model was used for embedding",
+      "processingDate  DateTime @default(now())",
+      "lastUpdated     DateTime @updatedAt",
+      "organizationId String"
+    ],
+    "relations": [
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)"
+    ],
+    "required": [
+      "title",
+      "content",
+      "contentHash",
+      "entityType",
+      "entityId",
+      "source",
+      "lastUpdated"
+    ],
+    "optional": [
+      "language",
+      "chunkIndex",
+      "totalChunks",
+      "chunkSize",
+      "processingModel",
+      "processingDate"
+    ],
+    "complexity": "HIGH"
+  },
+  "vectorSearchResult": {
+    "fields": [
+      "id             String   @id @default(uuid())",
+      "queryText      String",
+      "documentId     String",
+      "rank           Int      // Position in search results",
+      "userId         String?",
+      "searchContext  String?  // \"dashboard\", \"chat\", \"api\"",
+      "executionTime  Int?     // Search time in milliseconds",
+      "createdAt      DateTime @default(now())",
+      "organizationId String"
+    ],
+    "relations": [
+      "document       VectorDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)",
+      "user           User?    @relation(fields: [userId], references: [id])",
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)"
+    ],
+    "required": [
+      "queryText",
+      "documentId",
+      "rank"
+    ],
+    "optional": [
+      "userId",
+      "searchContext",
+      "executionTime"
+    ],
+    "complexity": "HIGH"
+  },
+  "vectorCache": {
+    "fields": [
+      "id             String   @id @default(uuid())",
+      "cacheKey       String   @unique // MD5 of query + filters",
+      "queryText      String",
+      "hitCount       Int      @default(0)",
+      "lastHit        DateTime @default(now())",
+      "expiresAt      DateTime // TTL for cache invalidation",
+      "limit          Int      @default(10)",
+      "organizationId String",
+      "createdAt      DateTime @default(now())",
+      "updatedAt      DateTime @updatedAt"
+    ],
+    "relations": [
+      "organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)"
+    ],
+    "required": [
+      "cacheKey",
+      "queryText",
+      "expiresAt"
+    ],
+    "optional": [
+      "hitCount",
+      "lastHit",
+      "limit"
+    ],
+    "complexity": "HIGH"
+  }
+}

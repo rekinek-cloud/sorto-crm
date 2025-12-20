@@ -1,0 +1,193 @@
+# Lightweight Coqui TTS Service
+FROM python:3.9-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libsndfile1 \
+    espeak-ng \
+    espeak-ng-data \
+    libsndfile1-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies (fix version conflicts)
+RUN pip install --no-cache-dir \
+    TTS \
+    fastapi \
+    uvicorn \
+    python-multipart
+
+# Create app directory
+WORKDIR /app
+
+# Copy TTS server script
+COPY <<EOF /app/tts_server.py
+#!/usr/bin/env python3
+"""
+🎤 Lightweight Coqui TTS Server
+Fast REST API dla text-to-speech synthesis
+"""
+
+import io
+import os
+import asyncio
+from typing import Optional
+from fastapi import FastAPI, HTTPException, Form, UploadFile, File
+from fastapi.responses import Response
+import uvicorn
+from TTS.api import TTS
+import torch
+
+app = FastAPI(title="Coqui TTS Server", version="1.0.0")
+
+# Global TTS model
+tts_model = None
+
+@app.on_event("startup")
+async def startup_event():
+    global tts_model
+    print("🎤 Loading TTS model...")
+    
+    # Use faster model for development
+    model_name = "tts_models/en/ljspeech/tacotron2-DDC"
+    
+    try:
+        tts_model = TTS(model_name=model_name, progress_bar=False, gpu=False)
+        print(f"✅ TTS model loaded: {model_name}")
+    except Exception as e:
+        print(f"❌ Failed to load TTS model: {e}")
+        # Fallback to espeak
+        print("🔄 Using espeak fallback...")
+
+@app.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "model_loaded": tts_model is not None,
+        "timestamp": "2024-01-01T00:00:00Z"
+    }
+
+@app.get("/api/tts/models")
+async def get_models():
+    return {
+        "models": [
+            {
+                "name": "tacotron2-DDC",
+                "language": "en",
+                "description": "Fast English TTS",
+                "isMultilingual": False
+            }
+        ]
+    }
+
+@app.post("/api/tts")
+async def synthesize_text(
+    text: str = Form(...),
+    language: str = Form("en"),
+    emotion: str = Form("neutral"),
+    speed: float = Form(1.0)
+):
+    if not tts_model:
+        raise HTTPException(status_code=503, detail="TTS model not loaded")
+    
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="Text cannot be empty")
+    
+    try:
+        print(f"🎤 Synthesizing: '{text[:50]}...' ({language})")
+        
+        # Generate audio to memory buffer
+        audio_buffer = io.BytesIO()
+        
+        # Use TTS model or fallback to espeak
+        if tts_model:
+            # Generate with Coqui TTS
+            wav = tts_model.tts(text)
+            
+            # Convert to WAV format (simplified)
+            import wave
+            import numpy as np
+            
+            # Create WAV file in memory
+            wav_buffer = io.BytesIO()
+            with wave.open(wav_buffer, 'wb') as wav_file:
+                wav_file.setnchannels(1)  # Mono
+                wav_file.setsampwidth(2)  # 16-bit
+                wav_file.setframerate(22050)  # Sample rate
+                
+                # Convert float audio to int16
+                audio_int16 = (wav * 32767).astype(np.int16)
+                wav_file.writeframes(audio_int16.tobytes())
+            
+            audio_data = wav_buffer.getvalue()
+        else:
+            # Fallback to espeak
+            import subprocess
+            import tempfile
+            
+            with tempfile.NamedTemporaryFile(suffix='.wav', delete=False) as tmp_file:
+                result = subprocess.run([
+                    'espeak-ng', text, '-w', tmp_file.name, '-s', '150'
+                ], capture_output=True)
+                
+                if result.returncode == 0:
+                    with open(tmp_file.name, 'rb') as f:
+                        audio_data = f.read()
+                    os.unlink(tmp_file.name)
+                else:
+                    raise Exception("Espeak synthesis failed")
+
+        print(f"✅ TTS completed: {len(audio_data)} bytes")
+        
+        return Response(
+            content=audio_data,
+            media_type="audio/wav",
+            headers={
+                "X-Audio-Duration": "2.0",  # Placeholder
+                "X-Sample-Rate": "22050",
+                "Content-Disposition": "inline; filename=tts_output.wav"
+            }
+        )
+        
+    except Exception as e:
+        print(f"❌ TTS synthesis failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Synthesis failed: {str(e)}")
+
+@app.post("/api/tts/clone_voice")
+async def clone_voice(
+    text: str = Form(...),
+    language: str = Form("en"),
+    emotion: str = Form("neutral"),
+    speaker_wav: UploadFile = File(...)
+):
+    # Voice cloning not implemented in lite version
+    raise HTTPException(status_code=501, detail="Voice cloning not available in lite version")
+
+@app.post("/api/tts/stream")
+async def stream_synthesis(
+    text: str = Form(...),
+    language: str = Form("en")
+):
+    # Streaming not implemented in lite version
+    raise HTTPException(status_code=501, detail="Streaming not available in lite version")
+
+if __name__ == "__main__":
+    uvicorn.run(
+        app, 
+        host="0.0.0.0", 
+        port=5002,
+        log_level="info"
+    )
+EOF
+
+# Make script executable
+RUN chmod +x /app/tts_server.py
+
+# Expose port
+EXPOSE 5002
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s \
+    CMD curl -f http://localhost:5002/health || exit 1
+
+# Start server
+CMD ["python", "/app/tts_server.py"]

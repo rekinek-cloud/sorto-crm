@@ -1,0 +1,173 @@
+actions:
+  - name: actions.intent.MAIN
+    handler:
+      staticPrompt:
+        candidates:
+          - promptResponse:
+              firstSimple:
+                speech: Witaj w CRM-GTD Smart! Mogę pomóc ci zarządzać zadaniami, projektami i kontaktami. Co chcesz zrobić?
+                text: Witaj w CRM-GTD Smart! Mogę pomóc ci zarządzać zadaniami, projektami i kontaktami.
+              suggestions:
+                - title: Dodaj zadanie
+                - title: Pokaż zadania
+                - title: Utwórz projekt
+                - title: Sprawdź kontakty
+                - title: Dzisiejsze zadania
+                - title: Pomoc
+
+  - name: actions.intent.TEXT
+    handler:
+      staticPrompt:
+        candidates:
+          - promptResponse:
+              firstSimple:
+                speech: Nie rozumiem tego polecenia. Spróbuj powiedzieć "dodaj zadanie", "pokaż zadania" lub "pomoc".
+                text: Nie rozumiem tego polecenia. Spróbuj powiedzieć "dodaj zadanie", "pokaż zadania" lub "pomoc".
+
+  - name: crm_gtd.add_task
+    parameters:
+      - name: task_title
+        type:
+          name: TYPE_STRING
+        required: true
+      - name: task_priority
+        type:
+          name: TYPE_STRING
+        required: false
+      - name: task_context
+        type:
+          name: TYPE_STRING
+        required: false
+    handler:
+      webhook: https://your-domain.com/webhook/add-task
+
+  - name: crm_gtd.show_tasks
+    parameters:
+      - name: task_filter
+        type:
+          name: TYPE_STRING
+        required: false
+      - name: task_date
+        type:
+          name: TYPE_DATE_TIME
+        required: false
+    handler:
+      webhook: https://your-domain.com/webhook/show-tasks
+
+  - name: crm_gtd.create_project
+    parameters:
+      - name: project_name
+        type:
+          name: TYPE_STRING
+        required: true
+      - name: project_description
+        type:
+          name: TYPE_STRING
+        required: false
+    handler:
+      webhook: https://your-domain.com/webhook/create-project
+
+  - name: crm_gtd.show_contacts
+    parameters:
+      - name: contact_filter
+        type:
+          name: TYPE_STRING
+        required: false
+    handler:
+      webhook: https://your-domain.com/webhook/show-contacts
+
+  - name: crm_gtd.process_inbox
+    parameters:
+      - name: action_type
+        type:
+          name: TYPE_STRING
+        required: false
+    handler:
+      webhook: https://your-domain.com/webhook/process-inbox
+
+  - name: crm_gtd.get_help
+    handler:
+      staticPrompt:
+        candidates:
+          - promptResponse:
+              firstSimple:
+                speech: |
+                  Mogę ci pomóc z następującymi poleceniami:
+                  - "Dodaj zadanie [nazwa zadania]" - dodaje nowe zadanie
+                  - "Pokaż zadania" lub "Dzisiejsze zadania" - wyświetla zadania
+                  - "Utwórz projekt [nazwa projektu]" - tworzy nowy projekt
+                  - "Sprawdź kontakty" - wyświetla kontakty
+                  - "Przetwórz skrzynkę" - pomaga w przetwarzaniu GTD Inbox
+                  Co chcesz zrobić?
+                text: |
+                  Dostępne polecenia:
+                  • Dodaj zadanie [nazwa] - dodaje nowe zadanie
+                  • Pokaż zadania - wyświetla zadania
+                  • Utwórz projekt [nazwa] - tworzy nowy projekt
+                  • Sprawdź kontakty - wyświetla kontakty
+                  • Przetwórz skrzynkę - pomaga w GTD Inbox
+              suggestions:
+                - title: Dodaj zadanie
+                - title: Pokaż zadania
+                - title: Utwórz projekt
+                - title: Sprawdź kontakty
+
+intents:
+  - name: crm_gtd.add_task
+    trainingPhrases:
+      - dodaj zadanie $task_title:TYPE_STRING
+      - utwórz zadanie $task_title:TYPE_STRING
+      - nowe zadanie $task_title:TYPE_STRING
+      - zadanie $task_title:TYPE_STRING priorytet $task_priority:TYPE_STRING
+      - dodaj zadanie $task_title:TYPE_STRING w kontekście $task_context:TYPE_STRING
+      - stwórz zadanie $task_title:TYPE_STRING
+      - zapisz zadanie $task_title:TYPE_STRING
+
+  - name: crm_gtd.show_tasks
+    trainingPhrases:
+      - pokaż zadania
+      - wyświetl zadania
+      - moje zadania
+      - dzisiejsze zadania
+      - zadania na dzisiaj
+      - zadania na dziś
+      - lista zadań
+      - co mam do zrobienia
+      - pokaż zadania $task_filter:TYPE_STRING
+      - zadania na $task_date:TYPE_DATE_TIME
+
+  - name: crm_gtd.create_project
+    trainingPhrases:
+      - utwórz projekt $project_name:TYPE_STRING
+      - nowy projekt $project_name:TYPE_STRING
+      - stwórz projekt $project_name:TYPE_STRING
+      - dodaj projekt $project_name:TYPE_STRING
+      - projekt $project_name:TYPE_STRING opis $project_description:TYPE_STRING
+
+  - name: crm_gtd.show_contacts
+    trainingPhrases:
+      - pokaż kontakty
+      - wyświetl kontakty
+      - moje kontakty
+      - lista kontaktów
+      - sprawdź kontakty
+      - pokaż kontakty $contact_filter:TYPE_STRING
+
+  - name: crm_gtd.process_inbox
+    trainingPhrases:
+      - przetwórz skrzynkę
+      - co w skrzynce
+      - sprawdź inbox
+      - przetwórz inbox
+      - co mam do przetworzenia
+      - pokaż skrzynkę
+
+  - name: crm_gtd.get_help
+    trainingPhrases:
+      - pomoc
+      - pomocy
+      - co mogę zrobić
+      - jak mogę ci pomóc
+      - dostępne polecenia
+      - instrukcje
+      - pomóż mi

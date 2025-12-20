@@ -1,0 +1,3840 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id                    String                 @id @default(uuid())
+  name                  String
+  slug                  String                 @unique
+  domain                String?                @unique
+  settings              Json                   @default("{}")
+  limits                Json                   @default("{}")
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  activities            Activity[]
+  aiExecutions          AIExecution[]
+  aiKnowledgeBases      AIKnowledgeBase[]
+  aiPromptTemplates     AIPromptTemplate[]
+  aiProviders           AIProvider[]
+  aiRules               AIRule[]
+  aiUsageStats          AIUsageStats[]
+  areasOfResponsibility AreaOfResponsibility[]
+  autoReplies           AutoReply[]
+  bugReports            BugReport[]
+  communicationChannels CommunicationChannel[]
+  companies             Company[]
+  complaints            Complaint[]
+  contacts              Contact[]
+  contexts              Context[]
+  deals                 Deal[]
+  delegatedTasks        DelegatedTask[]
+  documents             Document[]
+  emailAccounts         EmailAccount[]
+  emailAnalysis         EmailAnalysis[]
+  emailLogs             EmailLog[]
+  emailRules            EmailRule[]
+  emailTemplates        EmailTemplate[]
+  errorLogs             ErrorLog[]
+  files                 File[]
+  focusModes            FocusMode[]
+  folders               Folder[]
+  gtdBuckets            GTDBucket[]
+  gtdHorizons           GTDHorizon[]
+  habits                Habit[]
+  inboxItems            InboxItem[]
+  infos                 Info[]
+  invoices              Invoice[]
+  knowledgeBase         KnowledgeBase[]
+  leads                 Lead[]
+  meetings              Meeting[]
+  messages              Message[]
+  nextActions           NextAction[]
+  offers                Offer[]
+  orders                Order[]
+  processingRules       ProcessingRule[]
+  products              Product[]
+  projects              Project[]
+  recommendations       Recommendation[]
+  recurringTasks        RecurringTask[]
+  searchIndex           SearchIndex[]
+  services              Service[]
+  smartMailboxes        SmartMailbox[]
+  smartTemplates        SMARTTemplate[]
+  somedayMaybe          SomedayMaybe[]
+  sprints               Sprint[]
+  streamAccessLogs      StreamAccessLog[]
+  streamPermissions     StreamPermission[]
+  streamRelations       StreamRelation[]
+  streams               Stream[]
+  subscriptions         Subscription[]
+  tags                  Tag[]
+  tasks                 Task[]
+  timeline              Timeline[]
+  unifiedRuleExecutions UnifiedRuleExecution[]
+  unifiedRules          UnifiedRule[]
+  unimportant           Unimportant[]
+  userAccessLogs        UserAccessLog[]
+  userPermissions       UserPermission[]
+  userRelations         UserRelation[]
+  users                 User[]
+  vectorCache           VectorCache[]
+  vectorDocuments       VectorDocument[]
+  vectorSearchResults   VectorSearchResult[]
+  waitingFor            WaitingFor[]
+  weeklyReviews         WeeklyReview[]
+  wikiCategories        WikiCategory[]
+  wikiPages             WikiPage[]
+  
+  // Smart Day Planner relations
+  energyTimeBlocks      EnergyTimeBlock[]
+  scheduledTasks        ScheduledTask[]
+  energyPatterns        EnergyPattern[]
+  energyAnalytics       EnergyAnalytics[]
+  performanceMetrics    PerformanceMetrics[]
+  userPatterns          UserPattern[]
+  breakTemplates        BreakTemplate[]
+  contextPriorities     ContextPriority[]
+  userProfiles          UserProfile[]
+  dayTemplates          DayTemplate[]
+  templateApplications  TemplateApplication[]
+
+  @@map("organizations")
+}
+
+model User {
+  id                     String                 @id @default(uuid())
+  email                  String                 @unique
+  passwordHash           String
+  firstName              String
+  lastName               String
+  avatar                 String?
+  role                   UserRole               @default(MEMBER)
+  settings               Json                   @default("{}")
+  isActive               Boolean                @default(true)
+  emailVerified          Boolean                @default(false)
+  lastLoginAt            DateTime?
+  createdAt              DateTime               @default(now())
+  updatedAt              DateTime               @updatedAt
+  organizationId         String
+  activities             Activity[]
+  areasOfResponsibility  AreaOfResponsibility[]
+  bugReports             BugReport[]
+  communicationChannels  CommunicationChannel[]
+  ownedDeals             Deal[]                 @relation("DealOwner")
+  documentComments       DocumentComment[]
+  documentsSharedByMe    DocumentShare[]        @relation("DocumentSharedBy")
+  sharedDocuments        DocumentShare[]
+  documents              Document[]
+  emailAccounts          EmailAccount[]
+  sentEmails             EmailLog[]
+  createdEmailTemplates  EmailTemplate[]
+  errorLogs              ErrorLog[]
+  capturedInboxItems     InboxItem[]
+  meetings               Meeting[]
+  assignedNextActions    NextAction[]           @relation("NextActionAssignee")
+  createdNextActions     NextAction[]           @relation("NextActionCreator")
+  createdOffers          Offer[]                @relation("OfferCreator")
+  assignedProjects       Project[]              @relation("ProjectAssignee")
+  createdProjects        Project[]              @relation("ProjectCreator")
+  assignedRecurringTasks RecurringTask[]
+  refreshTokens          RefreshToken[]
+  smartMailboxes         SmartMailbox[]
+  createdSomedayMaybe    SomedayMaybe[]         @relation("SomedayMaybeCreator")
+  streamAccessLogs       StreamAccessLog[]
+  grantedPermissions     StreamPermission[]     @relation("PermissionGranter")
+  streamPermissions      StreamPermission[]
+  createdStreamRelations StreamRelation[]
+  createdStreams         Stream[]               @relation("StreamCreator")
+  assignedTasks          Task[]                 @relation("TaskAssignee")
+  createdTasks           Task[]                 @relation("TaskCreator")
+  userAccessLogsAsTarget UserAccessLog[]        @relation("UserAccessTarget")
+  userAccessLogsAsActor  UserAccessLog[]        @relation("UserAccessActor")
+  grantedUserPermissions UserPermission[]       @relation("UserPermissionGranter")
+  createdUserRelations   UserRelation[]         @relation("UserRelationCreator")
+  employeeRelations      UserRelation[]         @relation("UserEmployee")
+  managerRelations       UserRelation[]         @relation("UserManager")
+  viewPreferences        UserViewPreference[]
+  performanceMetrics     PerformanceMetrics[]
+  userPatterns           UserPattern[]
+  organization           Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  vectorSearchResults    VectorSearchResult[]
+  viewAnalytics          ViewAnalytic[]
+  viewConfigurations     ViewConfiguration[]
+  createdWaitingFor      WaitingFor[]
+  wikiPages              WikiPage[]
+  
+  // Smart Day Planner relations
+  energyTimeBlocks       EnergyTimeBlock[]
+  scheduledTasks         ScheduledTask[]
+  userProfile            UserProfile?
+  dayTemplates           DayTemplate[]
+  templateApplications   TemplateApplication[]
+  energyPatterns         EnergyPattern[]
+  energyAnalytics        EnergyAnalytics[]
+  breakTemplates         BreakTemplate[]
+  contextPriorities      ContextPriority[]
+
+  @@map("users")
+}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model Subscription {
+  id                   String             @id @default(uuid())
+  organizationId       String
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  stripePriceId        String?
+  plan                 SubscriptionPlan   @default(STARTER)
+  status               SubscriptionStatus @default(TRIAL)
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+  organization         Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model Stream {
+  id              String             @id @default(uuid())
+  name            String
+  description     String?
+  color           String             @default("#3B82F6")
+  icon            String?
+  settings        Json               @default("{}")
+  status          StreamStatus       @default(ACTIVE)
+  gtdRole         GTDRole?
+  horizonLevel    Int                @default(0)
+  templateOrigin  String?
+  gtdConfig       Json               @default("{}")
+  streamType      StreamType         @default(CUSTOM)
+  organizationId  String
+  createdById     String
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  inboxItems      InboxItem[]
+  messages        Message[]
+  nextActions     NextAction[]
+  processingRules ProcessingRule[]
+  projects        Project[]
+  recurringTasks  RecurringTask[]
+  accessLogs      StreamAccessLog[]
+  streamChannels  StreamChannel[]
+  permissions     StreamPermission[]
+  childRelations  StreamRelation[]   @relation("ChildStream")
+  parentRelations StreamRelation[]   @relation("ParentStream")
+  createdBy       User               @relation("StreamCreator", fields: [createdById], references: [id])
+  organization    Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  tasks           Task[]
+  timeline        Timeline[]
+
+  @@index([gtdRole])
+  @@index([horizonLevel])
+  @@index([streamType])
+  @@index([templateOrigin])
+  @@map("streams")
+}
+
+model StreamRelation {
+  id              String             @id @default(uuid())
+  parentId        String
+  childId         String
+  relationType    StreamRelationType
+  description     String?
+  isActive        Boolean            @default(true)
+  inheritanceRule InheritanceRule    @default(INHERIT_DOWN)
+  createdById     String
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+  organizationId  String
+  accessLogs      StreamAccessLog[]
+  permissions     StreamPermission[]
+  child           Stream             @relation("ChildStream", fields: [childId], references: [id], onDelete: Cascade)
+  createdBy       User               @relation(fields: [createdById], references: [id])
+  organization    Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parent          Stream             @relation("ParentStream", fields: [parentId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, childId])
+  @@index([parentId])
+  @@index([childId])
+  @@index([organizationId])
+  @@map("stream_relations")
+}
+
+model StreamPermission {
+  id             String            @id @default(uuid())
+  streamId       String?
+  relationId     String?
+  userId         String
+  accessLevel    AccessLevel
+  dataScope      DataScope[]
+  conditions     Json?
+  expiresAt      DateTime?
+  isActive       Boolean           @default(true)
+  grantedById    String
+  grantedAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  organizationId String
+  accessLogs     StreamAccessLog[]
+  grantedBy      User              @relation("PermissionGranter", fields: [grantedById], references: [id])
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  relation       StreamRelation?   @relation(fields: [relationId], references: [id], onDelete: Cascade)
+  stream         Stream?           @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([streamId, userId])
+  @@index([relationId, userId])
+  @@index([userId])
+  @@index([organizationId])
+  @@map("stream_permissions")
+}
+
+model StreamAccessLog {
+  id             String            @id @default(uuid())
+  streamId       String
+  userId         String
+  action         String
+  accessType     String
+  permissionId   String?
+  relationId     String?
+  success        Boolean
+  accessLevel    AccessLevel?
+  dataScope      DataScope[]
+  errorMessage   String?
+  ipAddress      String?
+  userAgent      String?
+  requestPath    String?
+  accessedAt     DateTime          @default(now())
+  organizationId String
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  permission     StreamPermission? @relation(fields: [permissionId], references: [id])
+  relation       StreamRelation?   @relation(fields: [relationId], references: [id])
+  stream         Stream            @relation(fields: [streamId], references: [id], onDelete: Cascade)
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([streamId, userId])
+  @@index([userId, accessedAt])
+  @@index([organizationId, accessedAt])
+  @@map("stream_access_logs")
+}
+
+model Task {
+  id                   String                @id @default(uuid())
+  title                String
+  description          String?
+  priority             Priority              @default(MEDIUM)
+  status               TaskStatus            @default(NEW)
+  dueDate              DateTime?
+  completedAt          DateTime?
+  estimatedHours       Float?
+  actualHours          Float?
+  contextId            String?
+  energy               EnergyLevel?          @default(MEDIUM)
+  isWaitingFor         Boolean               @default(false)
+  waitingForNote       String?
+  smartScore           Float?
+  smartAnalysis        Json?
+  organizationId       String
+  createdById          String
+  assignedToId         String?
+  streamId             String?
+  projectId            String?
+  companyId            String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  sprintId             String?
+  ganttDuration        Int?
+  ganttEndDate         DateTime?
+  ganttProgress        Float                 @default(0)
+  ganttStartDate       DateTime?
+  kanbanPosition       Int                   @default(0)
+  scrumStoryPoints     Int?
+  activities           Activity[]
+  completeness         Completeness[]
+  delegatedTasks       DelegatedTask[]
+  inboxItems           InboxItem[]
+  relatedInboxItems    InboxItem[]           @relation("InboxItemRelatedTask")
+  messages             Message[]
+  nextActions          NextAction[]          @relation("NextActionTask")
+  smartChecks          Smart[]
+  smartAnalysisDetails SMARTAnalysisDetail[]
+  smartImprovements    SMARTImprovement[]
+  predecessors         TaskDependency[]      @relation("TaskPredecessor")
+  successors           TaskDependency[]      @relation("TaskSuccessor")
+  history              TaskHistory[]
+  fromRelationships    TaskRelationship[]    @relation("TaskFrom")
+  toRelationships      TaskRelationship[]    @relation("TaskTo")
+  assignedTo           User?                 @relation("TaskAssignee", fields: [assignedToId], references: [id])
+  company              Company?              @relation("TaskCompany", fields: [companyId], references: [id])
+  context              Context?              @relation(fields: [contextId], references: [id])
+  createdBy            User                  @relation("TaskCreator", fields: [createdById], references: [id])
+  organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project              Project?              @relation(fields: [projectId], references: [id])
+  sprint               Sprint?               @relation("SprintTasks", fields: [sprintId], references: [id])
+  stream               Stream?               @relation(fields: [streamId], references: [id])
+  waitingFor           WaitingFor[]
+  
+  // Smart Day Planner relations
+  scheduledTasks       ScheduledTask[]
+
+  @@map("tasks")
+}
+
+model NextAction {
+  id             String       @id @default(uuid())
+  title          String
+  description    String?
+  context        String
+  priority       Priority     @default(MEDIUM)
+  energy         EnergyLevel  @default(MEDIUM)
+  estimatedTime  String?
+  status         TaskStatus   @default(NEW)
+  completedAt    DateTime?
+  dueDate        DateTime?
+  contactId      String?
+  companyId      String?
+  projectId      String?
+  taskId         String?
+  streamId       String?
+  organizationId String
+  createdById    String
+  assignedToId   String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  assignedTo     User?        @relation("NextActionAssignee", fields: [assignedToId], references: [id])
+  company        Company?     @relation(fields: [companyId], references: [id])
+  contact        Contact?     @relation(fields: [contactId], references: [id])
+  createdBy      User         @relation("NextActionCreator", fields: [createdById], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project        Project?     @relation(fields: [projectId], references: [id])
+  stream         Stream?      @relation(fields: [streamId], references: [id])
+  task           Task?        @relation("NextActionTask", fields: [taskId], references: [id])
+
+  @@map("next_actions")
+}
+
+model Project {
+  id                   String                @id @default(uuid())
+  name                 String
+  description          String?
+  status               ProjectStatus         @default(PLANNING)
+  priority             Priority              @default(MEDIUM)
+  startDate            DateTime?
+  endDate              DateTime?
+  completedAt          DateTime?
+  smartScore           Float?
+  smartAnalysis        Json?
+  organizationId       String
+  createdById          String
+  assignedToId         String?
+  streamId             String?
+  companyId            String?
+  areaId               String?
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+  activities           Activity[]
+  completeness         Completeness[]
+  criticalPaths        CriticalPath[]
+  inboxItems           InboxItem[]
+  nextActions          NextAction[]
+  targetDependencies   ProjectDependency[]   @relation("DependencyTarget")
+  sourceDependencies   ProjectDependency[]   @relation("DependencySource")
+  area                 AreaOfResponsibility? @relation(fields: [areaId], references: [id])
+  assignedTo           User?                 @relation("ProjectAssignee", fields: [assignedToId], references: [id])
+  company              Company?              @relation("ProjectCompany", fields: [companyId], references: [id])
+  createdBy            User                  @relation("ProjectCreator", fields: [createdById], references: [id])
+  organization         Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  stream               Stream?               @relation(fields: [streamId], references: [id])
+  recurringTasks       RecurringTask[]
+  smartAnalysisDetails SMARTAnalysisDetail[]
+  smartImprovements    SMARTImprovement[]
+  tasks                Task[]
+
+  @@map("projects")
+}
+
+model Contact {
+  id                  String          @id @default(uuid())
+  firstName           String
+  lastName            String
+  email               String?
+  phone               String?
+  company             String?
+  position            String?
+  department          String?
+  notes               String?
+  tags                String[]        @default([])
+  status              ContactStatus   @default(ACTIVE)
+  source              String?
+  emailCategory       EmailCategory   @default(UNKNOWN)
+  organizationId      String
+  companyId           String?
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+  lastInteractionAt   DateTime?
+  interactionCount    Int             @default(0)
+  activities          Activity[]
+  primaryForCompanies Company[]       @relation("CompanyPrimaryContact")
+  assignedCompany     Company?        @relation("ContactCompany", fields: [companyId], references: [id])
+  organization        Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  inboxItems          InboxItem[]
+  meetings            Meeting[]
+  messages            Message[]
+  nextActions         NextAction[]
+  offers              Offer[]
+  recurringTasks      RecurringTask[]
+
+  @@map("contacts")
+}
+
+model Company {
+  id                String          @id @default(uuid())
+  name              String
+  website           String?
+  domain            String?
+  industry          String?
+  size              CompanySize?
+  revenue           String?
+  description       String?
+  address           String?
+  phone             String?
+  email             String?
+  tags              String[]        @default([])
+  status            CompanyStatus   @default(PROSPECT)
+  organizationId    String
+  primaryContactId  String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  lastInteractionAt DateTime?
+  interactionCount  Int             @default(0)
+  activities        Activity[]
+  organization      Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  primaryContact    Contact?        @relation("CompanyPrimaryContact", fields: [primaryContactId], references: [id])
+  assignedContacts  Contact[]       @relation("ContactCompany")
+  deals             Deal[]
+  inboxItems        InboxItem[]
+  messages          Message[]
+  nextActions       NextAction[]
+  offers            Offer[]
+  projects          Project[]       @relation("ProjectCompany")
+  recurringTasks    RecurringTask[]
+  tasks             Task[]          @relation("TaskCompany")
+
+  @@map("companies")
+}
+
+model Deal {
+  id                String          @id @default(uuid())
+  title             String
+  description       String?
+  value             Float?
+  currency          String          @default("USD")
+  stage             DealStage       @default(PROSPECT)
+  probability       Float           @default(0)
+  expectedCloseDate DateTime?
+  actualCloseDate   DateTime?
+  source            String?
+  notes             String?
+  organizationId    String
+  companyId         String
+  ownerId           String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  kanbanPosition    Int             @default(0)
+  activities        Activity[]
+  company           Company         @relation(fields: [companyId], references: [id])
+  organization      Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  owner             User            @relation("DealOwner", fields: [ownerId], references: [id])
+  messages          Message[]
+  offers            Offer[]
+  recurringTasks    RecurringTask[]
+
+  @@map("deals")
+}
+
+model Context {
+  id             String       @id @default(uuid())
+  name           String
+  description    String?
+  color          String       @default("#6B7280")
+  icon           String?
+  isActive       Boolean      @default(true)
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  tasks          Task[]
+
+  @@unique([organizationId, name])
+  @@map("contexts")
+}
+
+model Meeting {
+  id             String        @id @default(uuid())
+  title          String
+  description    String?
+  startTime      DateTime
+  endTime        DateTime
+  location       String?
+  meetingUrl     String?
+  agenda         String?
+  notes          String?
+  status         MeetingStatus @default(SCHEDULED)
+  organizationId String
+  organizedById  String
+  contactId      String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  activities     Activity[]
+  contact        Contact?      @relation(fields: [contactId], references: [id])
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizedBy    User          @relation(fields: [organizedById], references: [id])
+
+  @@map("meetings")
+}
+
+model WaitingFor {
+  id                   String           @id @default(uuid())
+  description          String
+  waitingForWho        String
+  sinceDate            DateTime         @default(now())
+  expectedResponseDate DateTime?
+  followUpDate         DateTime?
+  status               WaitingForStatus @default(PENDING)
+  notes                String?
+  organizationId       String
+  taskId               String?
+  createdById          String
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  createdBy            User             @relation(fields: [createdById], references: [id])
+  organization         Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  task                 Task?            @relation(fields: [taskId], references: [id])
+
+  @@map("waiting_for")
+}
+
+model SomedayMaybe {
+  id             String               @id @default(uuid())
+  title          String
+  description    String?
+  category       SomedayMaybeCategory @default(IDEAS)
+  priority       Priority             @default(LOW)
+  status         SomedayMaybeStatus   @default(ACTIVE)
+  whenToReview   DateTime?
+  tags           String[]             @default([])
+  activatedAt    DateTime?
+  organizationId String
+  createdById    String?
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  createdBy      User?                @relation("SomedayMaybeCreator", fields: [createdById], references: [id])
+  organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("someday_maybe")
+}
+
+model Habit {
+  id             String       @id @default(uuid())
+  name           String
+  description    String?
+  frequency      Frequency    @default(DAILY)
+  currentStreak  Int          @default(0)
+  bestStreak     Int          @default(0)
+  startDate      DateTime     @default(now())
+  isActive       Boolean      @default(true)
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  entries        HabitEntry[]
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("habits")
+}
+
+model HabitEntry {
+  id        String   @id @default(uuid())
+  date      DateTime @db.Date
+  completed Boolean  @default(false)
+  notes     String?
+  habitId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+  @@map("habit_entries")
+}
+
+model TaskRelationship {
+  id             String           @id @default(uuid())
+  type           RelationshipType @default(FINISH_TO_START)
+  lag            String?
+  isCriticalPath Boolean          @default(false)
+  notes          String?
+  fromTaskId     String
+  toTaskId       String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  fromTask       Task             @relation("TaskFrom", fields: [fromTaskId], references: [id], onDelete: Cascade)
+  toTask         Task             @relation("TaskTo", fields: [toTaskId], references: [id], onDelete: Cascade)
+
+  @@map("task_relationships")
+}
+
+model TaskHistory {
+  id         String   @id @default(uuid())
+  fieldName  String
+  oldValue   String?
+  newValue   String?
+  changedBy  String
+  changeDate DateTime @default(now())
+  taskId     String
+  task       Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  @@map("task_history")
+}
+
+model RecurringTask {
+  id               String       @id @default(uuid())
+  title            String
+  description      String?
+  frequency        Frequency    @default(WEEKLY)
+  pattern          String?
+  interval         Int          @default(1)
+  daysOfWeek       Int[]        @default([])
+  dayOfMonth       Int?
+  weekOfMonth      Int?
+  months           Int[]        @default([])
+  time             String       @default("09:00")
+  nextOccurrence   DateTime?
+  lastExecuted     DateTime?
+  executionCount   Int          @default(0)
+  context          String?
+  priority         Priority     @default(MEDIUM)
+  estimatedMinutes Int?
+  isActive         Boolean      @default(true)
+  organizationId   String
+  assignedToId     String?
+  companyId        String?
+  contactId        String?
+  projectId        String?
+  streamId         String?
+  dealId           String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  assignedTo       User?        @relation(fields: [assignedToId], references: [id])
+  company          Company?     @relation(fields: [companyId], references: [id])
+  contact          Contact?     @relation(fields: [contactId], references: [id])
+  deal             Deal?        @relation(fields: [dealId], references: [id])
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project          Project?     @relation(fields: [projectId], references: [id])
+  stream           Stream?      @relation(fields: [streamId], references: [id])
+
+  @@map("recurring_tasks")
+}
+
+model WeeklyReview {
+  id                  String       @id @default(uuid())
+  reviewDate          DateTime     @db.Date
+  completedTasksCount Int          @default(0)
+  newTasksCount       Int          @default(0)
+  stalledTasks        Int          @default(0)
+  nextActions         String?
+  notes               String?
+  collectLoosePapers  Boolean      @default(false)
+  processNotes        Boolean      @default(false)
+  emptyInbox          Boolean      @default(false)
+  processVoicemails   Boolean      @default(false)
+  reviewActionLists   Boolean      @default(false)
+  reviewCalendar      Boolean      @default(false)
+  reviewProjects      Boolean      @default(false)
+  reviewWaitingFor    Boolean      @default(false)
+  reviewSomedayMaybe  Boolean      @default(false)
+  organizationId      String
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, reviewDate])
+  @@map("weekly_reviews")
+}
+
+model Tag {
+  id             String       @id @default(uuid())
+  name           String
+  color          String       @default("#6B7280")
+  category       String?
+  usageCount     Int          @default(0)
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
+  @@map("tags")
+}
+
+model FocusMode {
+  id               String       @id @default(uuid())
+  name             String
+  duration         Int
+  energyLevel      EnergyLevel  @default(HIGH)
+  contextName      String?
+  estimatedTimeMax Int?
+  category         String?
+  priority         Priority     @default(MEDIUM)
+  tags             String[]     @default([])
+  organizationId   String
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  timeBlocks       EnergyTimeBlock[]
+  performanceMetrics PerformanceMetrics[]
+
+  @@map("focus_modes")
+}
+
+model KnowledgeBase {
+  id             String       @id @default(uuid())
+  title          String
+  content        String
+  category       String?
+  tags           String[]     @default([])
+  relatedItems   String[]     @default([])
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("knowledge_base")
+}
+
+model EmailAnalysis {
+  id              String       @id @default(uuid())
+  timestamp       DateTime     @default(now())
+  emailFrom       String
+  emailSubject    String
+  emailReceived   DateTime
+  categories      String[]     @default([])
+  confidenceScore Float        @default(0)
+  summary         String?
+  fullAnalysis    String?
+  rawText         String?
+  processingTime  Int?
+  tokenCount      Int?
+  organizationId  String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("email_analysis")
+}
+
+model DelegatedTask {
+  id             String       @id @default(uuid())
+  description    String
+  delegatedTo    String
+  delegatedOn    DateTime     @default(now())
+  followUpDate   DateTime?
+  status         TaskStatus   @default(NEW)
+  notes          String?
+  organizationId String
+  taskId         String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  task           Task?        @relation(fields: [taskId], references: [id])
+
+  @@map("delegated_tasks")
+}
+
+model Timeline {
+  id             String         @id @default(uuid())
+  eventId        String
+  eventType      String
+  title          String
+  startDate      DateTime
+  endDate        DateTime?
+  status         TimelineStatus @default(SCHEDULED)
+  organizationId String
+  streamId       String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  stream         Stream?        @relation(fields: [streamId], references: [id])
+
+  @@map("timeline")
+}
+
+model AreaOfResponsibility {
+  id              String                 @id @default(uuid())
+  name            String
+  description     String?
+  color           String                 @default("#3B82F6")
+  icon            String?
+  purpose         String?
+  outcomes        String[]               @default([])
+  currentFocus    String?
+  reviewFrequency AreaReviewFrequency    @default(MONTHLY)
+  isActive        Boolean                @default(true)
+  organizationId  String
+  createdById     String?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+  organization    Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy       User?                  @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  projects        Project[]
+
+  @@map("areas_of_responsibility")
+}
+
+enum AreaReviewFrequency {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+}
+
+model SMARTAnalysisDetail {
+  id                     String   @id @default(uuid())
+  specificScore          Int      @default(0)
+  specificNotes          String?
+  measurableScore        Int      @default(0)
+  measurableCriteria     String?
+  achievableScore        Int      @default(0)
+  achievableResources    String?
+  relevantScore          Int      @default(0)
+  relevantAlignment      String?
+  timeBoundScore         Int      @default(0)
+  timeEstimationAccuracy String?
+  taskId                 String?
+  projectId              String?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  project                Project? @relation(fields: [projectId], references: [id])
+  task                   Task?    @relation(fields: [taskId], references: [id])
+
+  @@map("smart_analysis_details")
+}
+
+model SMARTImprovement {
+  id                   String            @id @default(uuid())
+  smartDimension       String
+  currentState         String
+  suggestedImprovement String
+  status               ImprovementStatus @default(OPEN)
+  taskId               String?
+  projectId            String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  project              Project?          @relation(fields: [projectId], references: [id])
+  task                 Task?             @relation(fields: [taskId], references: [id])
+
+  @@map("smart_improvements")
+}
+
+model SMARTTemplate {
+  id                  String       @id @default(uuid())
+  name                String
+  taskTemplate        String
+  measurableCriteria  String?
+  typicalResources    String?
+  estimatedDuration   Int?
+  typicalDependencies String?
+  organizationId      String
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("smart_templates")
+}
+
+model Lead {
+  id             String       @id @default(uuid())
+  title          String
+  description    String?
+  company        String?
+  contactPerson  String?
+  status         LeadStatus   @default(NEW)
+  priority       Priority     @default(MEDIUM)
+  source         String?
+  value          Float?
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("leads")
+}
+
+model Order {
+  id              String       @id @default(uuid())
+  orderNumber     String       @unique
+  title           String
+  description     String?
+  customer        String
+  status          OrderStatus  @default(PENDING)
+  priority        Priority     @default(MEDIUM)
+  value           Float?
+  currency        String       @default("USD")
+  subtotal        Float?       @default(0)
+  totalDiscount   Float?       @default(0)
+  totalTax        Float?       @default(0)
+  totalAmount     Float?       @default(0)
+  customerEmail   String?
+  customerPhone   String?
+  customerAddress String?
+  deliveryDate    DateTime?
+  deliveryAddress String?
+  deliveryNotes   String?
+  organizationId  String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  items           OrderItem[]
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("orders")
+}
+
+model Invoice {
+  id                String        @id @default(uuid())
+  invoiceNumber     String        @unique
+  title             String
+  description       String?
+  amount            Float
+  currency          String        @default("USD")
+  status            InvoiceStatus @default(PENDING)
+  priority          Priority      @default(MEDIUM)
+  dueDate           DateTime?
+  subtotal          Float?        @default(0)
+  totalDiscount     Float?        @default(0)
+  totalTax          Float?        @default(0)
+  totalAmount       Float?        @default(0)
+  customerEmail     String?
+  customerPhone     String?
+  customerAddress   String?
+  paymentDate       DateTime?
+  paymentMethod     String?
+  paymentNotes      String?
+  fakturowniaId     Int?
+  fakturowniaNumber String?
+  fakturowniaStatus String?
+  lastSyncedAt      DateTime?
+  syncError         String?
+  autoSync          Boolean       @default(true)
+  organizationId    String
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  items             InvoiceItem[]
+  organization      Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("invoices")
+}
+
+model Offer {
+  id              String       @id @default(uuid())
+  offerNumber     String       @unique
+  title           String
+  description     String?
+  status          OfferStatus  @default(DRAFT)
+  priority        Priority     @default(MEDIUM)
+  subtotal        Float?       @default(0)
+  totalDiscount   Float?       @default(0)
+  totalTax        Float?       @default(0)
+  totalAmount     Float?       @default(0)
+  currency        String       @default("USD")
+  validUntil      DateTime?
+  sentDate        DateTime?
+  acceptedDate    DateTime?
+  rejectedDate    DateTime?
+  customerName    String
+  customerEmail   String?
+  customerPhone   String?
+  customerAddress String?
+  companyId       String?
+  contactId       String?
+  dealId          String?
+  paymentTerms    String?
+  deliveryTerms   String?
+  notes           String?
+  organizationId  String
+  createdById     String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  items           OfferItem[]
+  company         Company?     @relation(fields: [companyId], references: [id])
+  contact         Contact?     @relation(fields: [contactId], references: [id])
+  createdBy       User         @relation("OfferCreator", fields: [createdById], references: [id])
+  deal            Deal?        @relation(fields: [dealId], references: [id])
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("offers")
+}
+
+model OfferItem {
+  id                String        @id @default(uuid())
+  itemType          OfferItemType
+  quantity          Int           @default(1)
+  unitPrice         Float
+  discount          Float?        @default(0)
+  tax               Float?        @default(0)
+  totalPrice        Float
+  productId         String?
+  serviceId         String?
+  customName        String?
+  customDescription String?
+  offerId           String
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  offer             Offer         @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  product           Product?      @relation(fields: [productId], references: [id])
+  service           Service?      @relation(fields: [serviceId], references: [id])
+
+  @@map("offer_items")
+}
+
+model Complaint {
+  id             String          @id @default(uuid())
+  title          String
+  description    String?
+  customer       String
+  product        String?
+  status         ComplaintStatus @default(NEW)
+  priority       Priority        @default(HIGH)
+  organizationId String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("complaints")
+}
+
+model Info {
+  id             String       @id @default(uuid())
+  title          String
+  content        String?
+  topic          String?
+  importance     Importance   @default(MEDIUM)
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("info")
+}
+
+model Unimportant {
+  id             String       @id @default(uuid())
+  content        String
+  type           String?
+  source         String?
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("unimportant")
+}
+
+model Completeness {
+  id          String   @id @default(uuid())
+  isComplete  Boolean  @default(false)
+  missingInfo String?
+  clarity     String?
+  taskId      String?
+  projectId   String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project     Project? @relation(fields: [projectId], references: [id])
+  task        Task?    @relation(fields: [taskId], references: [id])
+
+  @@map("completeness")
+}
+
+model Recommendation {
+  id             String               @id @default(uuid())
+  content        String
+  status         RecommendationStatus @default(OPEN)
+  priority       Priority             @default(MEDIUM)
+  referenceId    String?
+  referenceType  String?
+  organizationId String
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("recommendations")
+}
+
+model Metadata {
+  id            String   @id @default(uuid())
+  confidence    Float    @default(0.0)
+  ambiguity     String?
+  rawText       String?
+  referenceId   String?
+  referenceType String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("metadata")
+}
+
+model GTDBucket {
+  id             String       @id @default(uuid())
+  name           String
+  description    String?
+  viewOrder      Int          @default(1)
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
+  @@map("gtd_buckets")
+}
+
+model GTDHorizon {
+  id              String       @id @default(uuid())
+  level           Int
+  name            String
+  description     String?
+  reviewFrequency Frequency    @default(QUARTERLY)
+  organizationId  String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, level])
+  @@map("gtd_horizons")
+}
+
+model ProjectDependency {
+  id                 String         @id @default(uuid())
+  type               DependencyType @default(FINISH_TO_START)
+  isCriticalPath     Boolean        @default(false)
+  sourceProjectId    String
+  dependentProjectId String
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  dependentProject   Project        @relation("DependencyTarget", fields: [dependentProjectId], references: [id], onDelete: Cascade)
+  sourceProject      Project        @relation("DependencySource", fields: [sourceProjectId], references: [id], onDelete: Cascade)
+
+  @@map("project_dependencies")
+}
+
+model CriticalPath {
+  id                 String    @id @default(uuid())
+  tasks              String[]  @default([])
+  totalDuration      String?
+  earliestCompletion DateTime?
+  slack              String?
+  projectId          String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  project            Project?  @relation(fields: [projectId], references: [id])
+
+  @@map("critical_path")
+}
+
+model File {
+  id             String       @id @default(uuid())
+  fileName       String
+  fileType       String
+  urlPath        String
+  uploadDate     DateTime     @default(now())
+  size           Int?
+  parentId       String?
+  parentType     String?
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("files")
+}
+
+model Smart {
+  id         String   @id @default(uuid())
+  specific   Boolean  @default(false)
+  measurable Boolean  @default(false)
+  achievable Boolean  @default(false)
+  relevant   Boolean  @default(false)
+  timeBound  Boolean  @default(false)
+  taskId     String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  task       Task?    @relation(fields: [taskId], references: [id])
+
+  @@map("smart")
+}
+
+model Dependency {
+  id             String         @id @default(uuid())
+  type           DependencyType @default(FINISH_TO_START)
+  isCriticalPath Boolean        @default(false)
+  sourceId       String
+  sourceType     String
+  targetId       String
+  targetType     String
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@map("dependencies")
+}
+
+model Document {
+  id                  String            @id @default(uuid())
+  title               String
+  content             String
+  summary             String?
+  type                DocumentType      @default(NOTE)
+  status              DocumentStatus    @default(DRAFT)
+  tags                String[]
+  mimeType            String?
+  fileSize            Int?
+  filePath            String?
+  version             Int               @default(1)
+  isTemplate          Boolean           @default(false)
+  isPublic            Boolean           @default(false)
+  viewCount           Int               @default(0)
+  authorId            String
+  folderId            String?
+  organizationId      String
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  comments            DocumentComment[]
+  linkedDocuments     DocumentLink[]    @relation("SourceDocument")
+  backlinkedDocuments DocumentLink[]    @relation("TargetDocument")
+  shares              DocumentShare[]
+  author              User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  folder              Folder?           @relation(fields: [folderId], references: [id])
+  organization        Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("documents")
+}
+
+model Folder {
+  id             String       @id @default(uuid())
+  name           String
+  description    String?
+  color          String?
+  isSystem       Boolean      @default(false)
+  parentId       String?
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  documents      Document[]
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parent         Folder?      @relation("FolderHierarchy", fields: [parentId], references: [id], onDelete: Cascade)
+  children       Folder[]     @relation("FolderHierarchy")
+
+  @@unique([organizationId, parentId, name])
+  @@map("folders")
+}
+
+model DocumentLink {
+  id               String   @id @default(uuid())
+  type             LinkType @default(REFERENCE)
+  strength         Float    @default(1.0)
+  sourceDocumentId String
+  targetDocumentId String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  sourceDocument   Document @relation("SourceDocument", fields: [sourceDocumentId], references: [id], onDelete: Cascade)
+  targetDocument   Document @relation("TargetDocument", fields: [targetDocumentId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceDocumentId, targetDocumentId])
+  @@map("document_links")
+}
+
+model DocumentComment {
+  id         String            @id @default(uuid())
+  content    String
+  isResolved Boolean           @default(false)
+  documentId String
+  authorId   String
+  parentId   String?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+  author     User              @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  document   Document          @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  parent     DocumentComment?  @relation("CommentThread", fields: [parentId], references: [id], onDelete: Cascade)
+  replies    DocumentComment[] @relation("CommentThread")
+
+  @@map("document_comments")
+}
+
+model DocumentShare {
+  id           String          @id @default(uuid())
+  permission   SharePermission @default(READ)
+  expiresAt    DateTime?
+  documentId   String
+  sharedWithId String
+  sharedById   String
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  document     Document        @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  sharedBy     User            @relation("DocumentSharedBy", fields: [sharedById], references: [id], onDelete: Cascade)
+  sharedWith   User            @relation(fields: [sharedWithId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, sharedWithId])
+  @@map("document_shares")
+}
+
+model WikiPage {
+  id              String         @id @default(uuid())
+  title           String
+  slug            String
+  content         String
+  summary         String?
+  isPublished     Boolean        @default(false)
+  version         Int            @default(1)
+  template        String?
+  authorId        String
+  categoryId      String?
+  organizationId  String
+  parentPageId    String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  linkedPages     WikiPageLink[] @relation("SourceWikiPage")
+  backlinkedPages WikiPageLink[] @relation("TargetWikiPage")
+  author          User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  category        WikiCategory?  @relation(fields: [categoryId], references: [id])
+  organization    Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  parentPage      WikiPage?      @relation("WikiHierarchy", fields: [parentPageId], references: [id])
+  childPages      WikiPage[]     @relation("WikiHierarchy")
+
+  @@unique([organizationId, slug])
+  @@map("wiki_pages")
+}
+
+model WikiCategory {
+  id             String       @id @default(uuid())
+  name           String
+  description    String?
+  color          String?
+  icon           String?
+  sortOrder      Int          @default(0)
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  pages          WikiPage[]
+
+  @@unique([organizationId, name])
+  @@map("wiki_categories")
+}
+
+model WikiPageLink {
+  id           String   @id @default(uuid())
+  linkText     String?
+  sourcePageId String
+  targetPageId String
+  createdAt    DateTime @default(now())
+  sourcePage   WikiPage @relation("SourceWikiPage", fields: [sourcePageId], references: [id], onDelete: Cascade)
+  targetPage   WikiPage @relation("TargetWikiPage", fields: [targetPageId], references: [id], onDelete: Cascade)
+
+  @@unique([sourcePageId, targetPageId])
+  @@map("wiki_page_links")
+}
+
+model SearchIndex {
+  id             String       @id @default(uuid())
+  entityType     String
+  entityId       String
+  title          String
+  content        String
+  searchVector   String?
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([entityType, entityId])
+  @@index([organizationId, entityType])
+  @@map("search_index")
+}
+
+model CommunicationChannel {
+  id              String           @id @default(uuid())
+  name            String
+  type            ChannelType
+  active          Boolean          @default(true)
+  config          Json
+  emailAddress    String?
+  displayName     String?
+  autoProcess     Boolean          @default(true)
+  createTasks     Boolean          @default(false)
+  defaultStream   String?
+  organizationId  String
+  userId          String?
+  lastSyncAt      DateTime?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  autoReplies     AutoReply[]
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user            User?            @relation(fields: [userId], references: [id])
+  messages        Message[]
+  processingRules ProcessingRule[]
+  streamChannels  StreamChannel[]
+  unifiedRules    UnifiedRule[]
+
+  @@map("communication_channels")
+}
+
+model StreamChannel {
+  id              String               @id @default(uuid())
+  streamId        String
+  channelId       String
+  autoCreateTasks Boolean              @default(false)
+  defaultContext  String?
+  defaultPriority Priority             @default(MEDIUM)
+  createdAt       DateTime             @default(now())
+  channel         CommunicationChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  stream          Stream               @relation(fields: [streamId], references: [id], onDelete: Cascade)
+
+  @@unique([streamId, channelId])
+  @@map("stream_channels")
+}
+
+model Message {
+  id                String                    @id @default(uuid())
+  channelId         String
+  messageId         String?
+  threadId          String?
+  subject           String?
+  content           String
+  htmlContent       String?
+  fromAddress       String
+  fromName          String?
+  toAddress         String
+  ccAddress         String[]                  @default([])
+  bccAddress        String[]                  @default([])
+  messageType       MessageType               @default(INBOX)
+  priority          MessagePriority           @default(NORMAL)
+  isRead            Boolean                   @default(false)
+  isStarred         Boolean                   @default(false)
+  isArchived        Boolean                   @default(false)
+  sentAt            DateTime?
+  receivedAt        DateTime                  @default(now())
+  autoProcessed     Boolean                   @default(false)
+  actionNeeded      Boolean                   @default(false)
+  needsResponse     Boolean                   @default(false)
+  responseDeadline  DateTime?
+  extractedTasks    String[]                  @default([])
+  extractedContext  String?
+  sentiment         String?
+  urgencyScore      Float?
+  taskId            String?
+  streamId          String?
+  contactId         String?
+  companyId         String?
+  dealId            String?
+  interactionType   String?
+  organizationId    String
+  
+  // IMAP Integration Fields
+  emailAccountId    String?                   // Source email account
+  imapUid           String?                   // IMAP UID for sync
+  imapFolder        String?                   // IMAP folder (INBOX, Sent, etc.)
+  emailHeaders      Json?                     // Raw email headers
+  rawEmail          String?                   // Complete raw email for backup
+  
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  attachments       MessageAttachment[]
+  processingResults MessageProcessingResult[]
+  channel           CommunicationChannel      @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  company           Company?                  @relation(fields: [companyId], references: [id])
+  contact           Contact?                  @relation(fields: [contactId], references: [id])
+  deal              Deal?                     @relation(fields: [dealId], references: [id])
+  emailAccount      EmailAccount?             @relation("EmailAccountMessages", fields: [emailAccountId], references: [id])
+  organization      Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  stream            Stream?                   @relation(fields: [streamId], references: [id])
+  task              Task?                     @relation(fields: [taskId], references: [id])
+
+  @@map("messages")
+}
+
+model MessageAttachment {
+  id          String   @id @default(uuid())
+  messageId   String
+  fileName    String
+  fileType    String
+  fileSize    Int?
+  contentType String?
+  storagePath String?
+  isInline    Boolean  @default(false)
+  contentId   String?
+  createdAt   DateTime @default(now())
+  message     Message  @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@map("message_attachments")
+}
+
+model ProcessingRule {
+  id                String                    @id @default(uuid())
+  name              String
+  description       String?
+  active            Boolean                   @default(true)
+  conditions        Json
+  actions           Json
+  priority          Int                       @default(0)
+  channelId         String?
+  organizationId    String
+  executionCount    Int                       @default(0)
+  lastExecuted      DateTime?
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  streamId          String?
+  processingResults MessageProcessingResult[]
+  channel           CommunicationChannel?     @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  organization      Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  stream            Stream?                   @relation(fields: [streamId], references: [id], onDelete: Cascade)
+
+  @@map("processing_rules")
+}
+
+model MessageProcessingResult {
+  id              String          @id @default(uuid())
+  messageId       String
+  ruleId          String?
+  actionTaken     String
+  success         Boolean         @default(true)
+  errorMessage    String?
+  taskCreated     String?
+  contextAssigned String?
+  prioritySet     Priority?
+  processedAt     DateTime        @default(now())
+  message         Message         @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  rule            ProcessingRule? @relation(fields: [ruleId], references: [id])
+
+  @@map("message_processing_results")
+}
+
+model AutoReply {
+  id                String                @id @default(uuid())
+  name              String
+  subject           String
+  content           String
+  htmlContent       String?
+  triggerConditions Json
+  status            AutoReplyStatus       @default(ACTIVE)
+  sendOnce          Boolean               @default(true)
+  delay             Int?
+  activeFrom        DateTime?
+  activeTo          DateTime?
+  channelId         String?
+  organizationId    String
+  sentCount         Int                   @default(0)
+  lastSent          DateTime?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  channel           CommunicationChannel? @relation(fields: [channelId], references: [id])
+  organization      Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("auto_replies")
+}
+
+model ErrorLog {
+  id             String        @id @default(uuid())
+  message        String
+  stack          String?
+  url            String
+  userAgent      String
+  severity       ErrorSeverity
+  context        String?
+  componentStack String?
+  sessionId      String
+  timestamp      DateTime
+  resolved       Boolean       @default(false)
+  userId         String?
+  organizationId String?
+  createdAt      DateTime      @default(now())
+  organization   Organization? @relation(fields: [organizationId], references: [id])
+  user           User?         @relation(fields: [userId], references: [id])
+
+  @@map("error_logs")
+}
+
+model Product {
+  id             String        @id @default(uuid())
+  name           String
+  description    String?
+  sku            String?       @unique
+  category       String?
+  subcategory    String?
+  price          Float
+  cost           Float?
+  currency       String        @default("USD")
+  stockQuantity  Int?          @default(0)
+  minStockLevel  Int?          @default(0)
+  trackInventory Boolean       @default(false)
+  unit           String?
+  weight         Float?
+  dimensions     String?
+  status         ProductStatus @default(ACTIVE)
+  isActive       Boolean       @default(true)
+  isFeatured     Boolean       @default(false)
+  tags           String[]      @default([])
+  images         String[]      @default([])
+  organizationId String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  invoiceItems   InvoiceItem[]
+  offerItems     OfferItem[]
+  orderItems     OrderItem[]
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("products")
+}
+
+model Service {
+  id                    String                @id @default(uuid())
+  name                  String
+  description           String?
+  category              String?
+  subcategory           String?
+  price                 Float
+  cost                  Float?
+  currency              String                @default("USD")
+  billingType           ServiceBillingType    @default(ONE_TIME)
+  duration              Int?
+  unit                  String?
+  deliveryMethod        ServiceDeliveryMethod @default(REMOTE)
+  estimatedDeliveryDays Int?
+  status                ServiceStatus         @default(AVAILABLE)
+  isActive              Boolean               @default(true)
+  isFeatured            Boolean               @default(false)
+  requirements          String?
+  resources             String?
+  tags                  String[]              @default([])
+  images                String[]              @default([])
+  organizationId        String
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  invoiceItems          InvoiceItem[]
+  offerItems            OfferItem[]
+  orderItems            OrderItem[]
+  organization          Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("services")
+}
+
+model OrderItem {
+  id                String        @id @default(uuid())
+  itemType          OrderItemType
+  quantity          Int           @default(1)
+  unitPrice         Float
+  discount          Float?        @default(0)
+  tax               Float?        @default(0)
+  totalPrice        Float
+  productId         String?
+  serviceId         String?
+  customName        String?
+  customDescription String?
+  orderId           String
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  order             Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product           Product?      @relation(fields: [productId], references: [id])
+  service           Service?      @relation(fields: [serviceId], references: [id])
+
+  @@map("order_items")
+}
+
+model InvoiceItem {
+  id                String          @id @default(uuid())
+  itemType          InvoiceItemType
+  quantity          Int             @default(1)
+  unitPrice         Float
+  discount          Float?          @default(0)
+  tax               Float?          @default(0)
+  totalPrice        Float
+  productId         String?
+  serviceId         String?
+  customName        String?
+  customDescription String?
+  invoiceId         String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  invoice           Invoice         @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  product           Product?        @relation(fields: [productId], references: [id])
+  service           Service?        @relation(fields: [serviceId], references: [id])
+
+  @@map("invoice_items")
+}
+
+model BugReport {
+  id               String       @id @default(uuid())
+  title            String
+  description      String
+  priority         BugPriority  @default(MEDIUM)
+  status           BugStatus    @default(OPEN)
+  category         BugCategory?
+  userAgent        String?
+  url              String?
+  browserInfo      String?
+  deviceInfo       String?
+  screenshots      String[]     @default([])
+  attachments      String[]     @default([])
+  stepsToReproduce String?
+  expectedBehavior String?
+  actualBehavior   String?
+  reporterId       String
+  organizationId   String
+  adminNotes       String?
+  resolution       String?
+  resolvedAt       DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  reporter         User         @relation(fields: [reporterId], references: [id])
+
+  @@map("bug_reports")
+}
+
+model AIProvider {
+  id             String           @id @default(uuid())
+  name           String
+  displayName    String
+  baseUrl        String
+  status         AIProviderStatus @default(ACTIVE)
+  priority       Int              @default(0)
+  config         Json
+  limits         Json             @default("{}")
+  organizationId String
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  executions     AIExecution[]
+  models         AIModel[]
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, name])
+  @@map("ai_providers")
+}
+
+model AIModel {
+  id           String             @id @default(uuid())
+  name         String
+  displayName  String
+  type         AIModelType
+  status       AIModelStatus      @default(ACTIVE)
+  maxTokens    Int?
+  inputCost    Float?
+  outputCost   Float?
+  capabilities String[]           @default([])
+  config       Json               @default("{}")
+  providerId   String
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  executions   AIExecution[]
+  provider     AIProvider         @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  templates    AIPromptTemplate[]
+  rules        AIRule[]
+  unifiedRules UnifiedRule[]
+
+  @@unique([providerId, name])
+  @@map("ai_models")
+}
+
+model AIPromptTemplate {
+  id                 String           @id @default(uuid())
+  name               String
+  description        String?
+  category           String?
+  version            Int              @default(1)
+  status             AITemplateStatus @default(ACTIVE)
+  systemPrompt       String?
+  userPromptTemplate String
+  variables          Json             @default("{}")
+  modelId            String?
+  outputSchema       Json?
+  organizationId     String
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  executions         AIExecution[]
+  model              AIModel?         @relation(fields: [modelId], references: [id])
+  organization       Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  rules              AIRule[]
+
+  @@unique([organizationId, name, version])
+  @@map("ai_prompt_templates")
+}
+
+model AIRule {
+  id                   String            @id @default(uuid())
+  name                 String
+  description          String?
+  category             String?
+  status               AIRuleStatus      @default(ACTIVE)
+  priority             Int               @default(0)
+  triggerType          AITriggerType
+  triggerConditions    Json
+  templateId           String?
+  modelId              String?
+  fallbackModelIds     String[]          @default([])
+  actions              Json
+  maxExecutionsPerHour Int?              @default(100)
+  maxExecutionsPerDay  Int?              @default(1000)
+  organizationId       String
+  executionCount       Int               @default(0)
+  successCount         Int               @default(0)
+  errorCount           Int               @default(0)
+  avgExecutionTime     Float?
+  lastExecuted         DateTime?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  executions           AIExecution[]
+  model                AIModel?          @relation(fields: [modelId], references: [id])
+  organization         Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  template             AIPromptTemplate? @relation(fields: [templateId], references: [id])
+
+  @@unique([organizationId, name])
+  @@map("ai_rules")
+}
+
+model AIExecution {
+  id               String            @id @default(uuid())
+  ruleId           String?
+  providerId       String?
+  modelId          String?
+  templateId       String?
+  inputData        Json
+  promptSent       String
+  responseReceived String?
+  parsedOutput     Json?
+  status           AIExecutionStatus
+  executionTime    Int?
+  tokensUsed       Int?
+  cost             Float?
+  errorMessage     String?
+  errorCode        String?
+  retryCount       Int               @default(0)
+  actionsExecuted  Json?
+  entitiesCreated  Json?
+  organizationId   String
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  model            AIModel?          @relation(fields: [modelId], references: [id])
+  organization     Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  provider         AIProvider?       @relation(fields: [providerId], references: [id])
+  rule             AIRule?           @relation(fields: [ruleId], references: [id])
+  template         AIPromptTemplate? @relation(fields: [templateId], references: [id])
+
+  @@map("ai_executions")
+}
+
+model AIKnowledgeBase {
+  id             String                @id @default(uuid())
+  name           String
+  description    String?
+  status         AIKnowledgeStatus     @default(ACTIVE)
+  embeddingModel String?
+  chunkSize      Int                   @default(1000)
+  chunkOverlap   Int                   @default(200)
+  organizationId String
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  organization   Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  documents      AIKnowledgeDocument[]
+
+  @@unique([organizationId, name])
+  @@map("ai_knowledge_bases")
+}
+
+model AIKnowledgeDocument {
+  id              String           @id @default(uuid())
+  title           String
+  content         String
+  metadata        Json?
+  embedding       String?
+  embeddingModel  String?
+  status          AIDocumentStatus @default(ACTIVE)
+  knowledgeBaseId String
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  knowledgeBase   AIKnowledgeBase  @relation(fields: [knowledgeBaseId], references: [id], onDelete: Cascade)
+
+  @@map("ai_knowledge_documents")
+}
+
+model AIUsageStats {
+  id                   String       @id @default(uuid())
+  date                 DateTime     @db.Date
+  totalExecutions      Int          @default(0)
+  successfulExecutions Int          @default(0)
+  failedExecutions     Int          @default(0)
+  totalTokensUsed      Int          @default(0)
+  totalCost            Float        @default(0)
+  providerStats        Json         @default("{}")
+  modelStats           Json         @default("{}")
+  organizationId       String
+  createdAt            DateTime     @default(now())
+  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, date])
+  @@map("ai_usage_stats")
+}
+
+model Activity {
+  id                     String       @id @default(uuid())
+  type                   ActivityType
+  title                  String
+  description            String?
+  metadata               Json         @default("{}")
+  organizationId         String
+  userId                 String?
+  companyId              String?
+  contactId              String?
+  dealId                 String?
+  taskId                 String?
+  projectId              String?
+  meetingId              String?
+  communicationType      String?
+  communicationDirection String?
+  communicationSubject   String?
+  communicationBody      String?
+  communicationDuration  Int?
+  communicationStatus    String?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+  company                Company?     @relation(fields: [companyId], references: [id])
+  contact                Contact?     @relation(fields: [contactId], references: [id])
+  deal                   Deal?        @relation(fields: [dealId], references: [id])
+  meeting                Meeting?     @relation(fields: [meetingId], references: [id])
+  organization           Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project                Project?     @relation(fields: [projectId], references: [id])
+  task                   Task?        @relation(fields: [taskId], references: [id])
+  user                   User?        @relation(fields: [userId], references: [id])
+
+  @@map("activities")
+}
+
+model InboxItem {
+  id                 String              @id @default(uuid())
+  content            String
+  note               String?
+  sourceType         InboxSourceType     @default(QUICK_CAPTURE)
+  source             String              @default("manual")
+  sourceUrl          String?
+  urgencyScore       Int?                @default(0)
+  actionable         Boolean             @default(true)
+  estimatedTime      String?
+  context            String?
+  capturedAt         DateTime            @default(now())
+  processed          Boolean             @default(false)
+  processedAt        DateTime?
+  processingDecision ProcessingDecision?
+  resultingTaskId    String?
+  contactId          String?
+  companyId          String?
+  projectId          String?
+  taskId             String?
+  streamId           String?
+  organizationId     String
+  capturedById       String
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  capturedBy         User                @relation(fields: [capturedById], references: [id])
+  company            Company?            @relation(fields: [companyId], references: [id])
+  contact            Contact?            @relation(fields: [contactId], references: [id])
+  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project            Project?            @relation(fields: [projectId], references: [id])
+  resultingTask      Task?               @relation(fields: [resultingTaskId], references: [id])
+  stream             Stream?             @relation(fields: [streamId], references: [id])
+  relatedTask        Task?               @relation("InboxItemRelatedTask", fields: [taskId], references: [id])
+
+  @@index([organizationId, processed])
+  @@index([capturedAt])
+  @@map("inbox_items")
+}
+
+model EmailRule {
+  id              String        @id @default(uuid())
+  name            String
+  description     String?
+  senderEmail     String?
+  senderDomain    String?
+  subjectContains String?
+  subjectPattern  String?
+  bodyContains    String?
+  assignCategory  EmailCategory
+  skipAIAnalysis  Boolean       @default(false)
+  autoArchive     Boolean       @default(false)
+  autoDelete      Boolean       @default(false)
+  createTask      Boolean       @default(false)
+  priority        Int           @default(0)
+  isActive        Boolean       @default(true)
+  matchCount      Int           @default(0)
+  lastMatched     DateTime?
+  organizationId  String
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  organization    Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("email_rules")
+}
+
+model SmartMailbox {
+  id             String             @id @default(uuid())
+  name           String
+  icon           String             @default("📧")
+  color          String             @default("blue")
+  description    String?
+  isBuiltIn      Boolean            @default(false)
+  isActive       Boolean            @default(true)
+  displayOrder   Int                @default(0)
+  userId         String?
+  organizationId String
+  lastAccessedAt DateTime?
+  accessCount    Int                @default(0)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+  rules          SmartMailboxRule[]
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User?              @relation(fields: [userId], references: [id])
+
+  @@unique([organizationId, name])
+  @@map("smart_mailboxes")
+}
+
+model SmartMailboxRule {
+  id            String       @id @default(uuid())
+  mailboxId     String
+  field         String
+  operator      String
+  value         String
+  logicOperator String       @default("AND")
+  ruleOrder     Int          @default(0)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  mailbox       SmartMailbox @relation(fields: [mailboxId], references: [id], onDelete: Cascade)
+
+  @@map("smart_mailbox_rules")
+}
+
+model UnifiedRule {
+  id                   String                 @id @default(uuid())
+  name                 String
+  description          String?
+  ruleType             UnifiedRuleType
+  category             String?
+  status               UnifiedRuleStatus      @default(ACTIVE)
+  priority             Int                    @default(0)
+  triggerType          UnifiedTriggerType
+  triggerEvents        String[]               @default([])
+  conditions           Json
+  actions              Json
+  maxExecutionsPerHour Int?                   @default(100)
+  maxExecutionsPerDay  Int?                   @default(1000)
+  cooldownPeriod       Int?                   @default(0)
+  activeFrom           DateTime?
+  activeTo             DateTime?
+  timezone             String?                @default("UTC")
+  channelId            String?
+  aiModelId            String?
+  aiPromptTemplate     String?
+  fallbackModelIds     String[]               @default([])
+  organizationId       String
+  executionCount       Int                    @default(0)
+  successCount         Int                    @default(0)
+  errorCount           Int                    @default(0)
+  avgExecutionTime     Float?
+  lastExecuted         DateTime?
+  lastError            String?
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  createdBy            String?
+  executions           UnifiedRuleExecution[]
+  aiModel              AIModel?               @relation(fields: [aiModelId], references: [id])
+  channel              CommunicationChannel?  @relation(fields: [channelId], references: [id])
+  organization         Organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("unified_rules")
+}
+
+model UnifiedRuleExecution {
+  id             String          @id @default(uuid())
+  ruleId         String
+  triggeredBy    String?
+  triggerData    Json?
+  executionTime  Float
+  status         ExecutionStatus
+  result         Json?
+  error          String?
+  entityType     String?
+  entityId       String?
+  organizationId String
+  createdAt      DateTime        @default(now())
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  rule           UnifiedRule     @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  @@map("unified_rule_executions")
+}
+
+model EmailTemplate {
+  id             String       @id @default(uuid())
+  name           String
+  description    String?
+  subject        String
+  htmlTemplate   String
+  textTemplate   String?
+  variables      String[]     @default([])
+  category       String?
+  tags           String[]     @default([])
+  isActive       Boolean      @default(true)
+  version        Int          @default(1)
+  usageCount     Int          @default(0)
+  lastUsed       DateTime?
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  createdById    String
+  createdBy      User         @relation(fields: [createdById], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("email_templates")
+}
+
+model EmailLog {
+  id             String        @id @default(uuid())
+  provider       EmailProvider @default(SMTP)
+  messageId      String
+  toAddresses    String[]
+  ccAddresses    String[]      @default([])
+  bccAddresses   String[]      @default([])
+  subject        String
+  success        Boolean
+  error          String?
+  templateId     String?
+  templateData   Json?
+  delivered      Boolean?      @default(false)
+  opened         Boolean?      @default(false)
+  clicked        Boolean?      @default(false)
+  bounced        Boolean?      @default(false)
+  spam           Boolean?      @default(false)
+  sentAt         DateTime      @default(now())
+  deliveredAt    DateTime?
+  openedAt       DateTime?
+  clickedAt      DateTime?
+  bouncedAt      DateTime?
+  organizationId String?
+  sentByUserId   String?
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  sentBy         User?         @relation(fields: [sentByUserId], references: [id])
+
+  @@map("email_logs")
+}
+
+model VectorDocument {
+  id              String               @id @default(uuid())
+  title           String
+  content         String
+  contentHash     String               @unique
+  embedding       Float[]
+  entityType      String
+  entityId        String
+  source          String
+  language        String               @default("pl")
+  chunkIndex      Int                  @default(0)
+  totalChunks     Int                  @default(1)
+  chunkSize       Int?
+  processingModel String?
+  processingDate  DateTime             @default(now())
+  lastUpdated     DateTime             @updatedAt
+  organizationId  String
+  organization    Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  searchResults   VectorSearchResult[]
+
+  @@index([organizationId, entityType])
+  @@index([organizationId, entityId])
+  @@index([contentHash])
+  @@map("vector_documents")
+}
+
+model VectorSearchResult {
+  id             String         @id @default(uuid())
+  queryText      String
+  queryEmbedding Float[]
+  documentId     String
+  similarity     Float
+  rank           Int
+  userId         String?
+  searchContext  String?
+  executionTime  Int?
+  createdAt      DateTime       @default(now())
+  organizationId String
+  document       VectorDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User?          @relation(fields: [userId], references: [id])
+
+  @@index([organizationId, userId])
+  @@index([createdAt])
+  @@map("vector_search_results")
+}
+
+model VectorCache {
+  id             String       @id @default(uuid())
+  cacheKey       String       @unique
+  queryText      String
+  results        Json
+  hitCount       Int          @default(0)
+  lastHit        DateTime     @default(now())
+  expiresAt      DateTime
+  filters        Json?
+  limit          Int          @default(10)
+  threshold      Float        @default(0.7)
+  organizationId String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, cacheKey])
+  @@index([expiresAt])
+  @@map("vector_cache")
+}
+
+model UserRelation {
+  id              String              @id @default(uuid())
+  managerId       String
+  employeeId      String
+  relationType    UserRelationType
+  description     String?
+  isActive        Boolean             @default(true)
+  inheritanceRule UserInheritanceRule @default(INHERIT_DOWN)
+  canDelegate     Boolean             @default(true)
+  canApprove      Boolean             @default(false)
+  startsAt        DateTime?
+  endsAt          DateTime?
+  createdById     String
+  organizationId  String
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  accessLogs      UserAccessLog[]
+  permissions     UserPermission[]
+  createdBy       User                @relation("UserRelationCreator", fields: [createdById], references: [id])
+  employee        User                @relation("UserEmployee", fields: [employeeId], references: [id], onDelete: Cascade)
+  manager         User                @relation("UserManager", fields: [managerId], references: [id], onDelete: Cascade)
+  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([managerId, employeeId, relationType])
+  @@index([managerId])
+  @@index([employeeId])
+  @@index([organizationId])
+  @@index([isActive])
+  @@map("user_relations")
+}
+
+model UserPermission {
+  id             String        @id @default(uuid())
+  relationId     String
+  dataScope      UserDataScope
+  action         UserAction
+  granted        Boolean
+  expiresAt      DateTime?
+  grantedById    String?
+  organizationId String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  grantedBy      User?         @relation("UserPermissionGranter", fields: [grantedById], references: [id])
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  relation       UserRelation  @relation(fields: [relationId], references: [id], onDelete: Cascade)
+
+  @@index([relationId])
+  @@index([dataScope])
+  @@index([organizationId])
+  @@map("user_permissions")
+}
+
+model UserAccessLog {
+  id             String          @id @default(uuid())
+  userId         String
+  targetUserId   String?
+  relationId     String?
+  action         String
+  accessType     UserAccessType  @default(DIRECT)
+  success        Boolean
+  dataScope      UserDataScope[]
+  ipAddress      String?
+  userAgent      String?
+  requestPath    String?
+  organizationId String
+  accessedAt     DateTime        @default(now())
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  relation       UserRelation?   @relation(fields: [relationId], references: [id])
+  targetUser     User?           @relation("UserAccessTarget", fields: [targetUserId], references: [id])
+  user           User            @relation("UserAccessActor", fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([targetUserId])
+  @@index([organizationId])
+  @@index([accessedAt])
+  @@map("user_access_logs")
+}
+
+model AIPrediction {
+  id              String    @id @default(uuid())
+  itemId          String
+  itemType        String
+  predictionType  String
+  predictedValue  Json
+  confidenceScore Float
+  factors         Json      @default("{}")
+  recommendations Json      @default("{}")
+  createdAt       DateTime  @default(now())
+  expiresAt       DateTime?
+
+  @@map("ai_predictions")
+}
+
+model ViewAnalytic {
+  id              String   @id @default(uuid())
+  userId          String
+  viewType        ViewType
+  action          String
+  metadata        Json     @default("{}")
+  durationSeconds Int?
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("view_analytics")
+}
+
+model ViewConfiguration {
+  id            String         @id @default(uuid())
+  userId        String
+  viewType      ViewType
+  viewName      String
+  configuration Json
+  isDefault     Boolean        @default(false)
+  isPublic      Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  kanbanColumns KanbanColumn[]
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("view_configurations")
+}
+
+model KanbanColumn {
+  id            String            @id @default(uuid())
+  viewId        String
+  title         String
+  position      Int
+  color         String            @default("#3B82F6")
+  wipLimit      Int?
+  columnType    String?
+  configuration Json              @default("{}")
+  createdAt     DateTime          @default(now())
+  view          ViewConfiguration @relation(fields: [viewId], references: [id], onDelete: Cascade)
+
+  @@map("kanban_columns")
+}
+
+model UserViewPreference {
+  id          String   @id @default(uuid())
+  userId      String
+  viewType    ViewType
+  preferences Json
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, viewType])
+  @@map("user_view_preferences")
+}
+
+model TaskDependency {
+  id             String   @id @default(uuid())
+  predecessorId  String
+  successorId    String
+  dependencyType String   @default("finish_to_start")
+  lagDays        Int      @default(0)
+  createdAt      DateTime @default(now())
+  predecessor    Task     @relation("TaskPredecessor", fields: [predecessorId], references: [id], onDelete: Cascade)
+  successor      Task     @relation("TaskSuccessor", fields: [successorId], references: [id], onDelete: Cascade)
+
+  @@unique([predecessorId, successorId])
+  @@map("task_dependencies")
+}
+
+model Sprint {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  goal           String?
+  startDate      DateTime
+  endDate        DateTime
+  velocity       Int          @default(0)
+  status         SprintStatus @default(PLANNED)
+  createdAt      DateTime     @default(now())
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  tasks          Task[]       @relation("SprintTasks")
+
+  @@map("sprints")
+}
+
+enum StreamRelationType {
+  OWNS
+  MANAGES
+  BELONGS_TO
+  RELATED_TO
+  DEPENDS_ON
+  SUPPORTS
+}
+
+enum AccessLevel {
+  NO_ACCESS
+  READ_ONLY
+  LIMITED
+  CONTRIBUTOR
+  COLLABORATOR
+  MANAGER
+  ADMIN
+  FULL_CONTROL
+}
+
+enum DataScope {
+  BASIC_INFO
+  TASKS
+  PROJECTS
+  FINANCIAL
+  METRICS
+  COMMUNICATION
+  PERMISSIONS
+  CONFIGURATION
+  AUDIT_LOGS
+}
+
+enum InheritanceRule {
+  NO_INHERITANCE
+  INHERIT_DOWN
+  INHERIT_UP
+  BIDIRECTIONAL
+}
+
+enum UserRole {
+  OWNER
+  ADMIN
+  MANAGER
+  MEMBER
+  GUEST
+}
+
+enum SubscriptionPlan {
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  PAUSED
+}
+
+enum StreamStatus {
+  ACTIVE
+  ARCHIVED
+  TEMPLATE
+}
+
+enum GTDRole {
+  INBOX
+  NEXT_ACTIONS
+  WAITING_FOR
+  SOMEDAY_MAYBE
+  PROJECTS
+  CONTEXTS
+  AREAS
+  REFERENCE
+  CUSTOM
+}
+
+enum StreamType {
+  WORKSPACE
+  PROJECT
+  AREA
+  CONTEXT
+  CUSTOM
+}
+
+enum EnergyLevel {
+  HIGH
+  MEDIUM
+  LOW
+  CREATIVE
+  ADMINISTRATIVE
+}
+
+enum ReviewFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  CUSTOM
+}
+
+enum TaskStatus {
+  NEW
+  IN_PROGRESS
+  WAITING
+  COMPLETED
+  CANCELED
+}
+
+enum ProjectStatus {
+  PLANNING
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  CANCELED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ContactStatus {
+  ACTIVE
+  INACTIVE
+  LEAD
+  CUSTOMER
+  ARCHIVED
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+}
+
+enum CompanySize {
+  STARTUP
+  SMALL
+  MEDIUM
+  LARGE
+  ENTERPRISE
+}
+
+enum CompanyStatus {
+  PROSPECT
+  CUSTOMER
+  PARTNER
+  INACTIVE
+  ARCHIVED
+}
+
+enum DealStage {
+  PROSPECT
+  QUALIFIED
+  PROPOSAL
+  NEGOTIATION
+  CLOSED_WON
+  CLOSED_LOST
+}
+
+enum ActivityType {
+  DEAL_CREATED
+  DEAL_UPDATED
+  DEAL_STAGE_CHANGED
+  CONTACT_ADDED
+  CONTACT_UPDATED
+  TASK_CREATED
+  TASK_COMPLETED
+  MEETING_SCHEDULED
+  MEETING_COMPLETED
+  EMAIL_SENT
+  EMAIL_RECEIVED
+  PHONE_CALL
+  SMS_SENT
+  CHAT_MESSAGE
+  NOTE_ADDED
+  COMPANY_UPDATED
+  PROJECT_CREATED
+  PROJECT_UPDATED
+}
+
+enum WaitingForStatus {
+  PENDING
+  RESPONDED
+  OVERDUE
+  CANCELED
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+  BIMONTHLY
+  QUARTERLY
+  YEARLY
+  CUSTOM
+}
+
+enum RelationshipType {
+  FINISH_TO_START
+  START_TO_START
+  FINISH_TO_FINISH
+  START_TO_FINISH
+}
+
+enum Effort {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum Impact {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum Complexity {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum TimelineStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELED
+}
+
+enum ImprovementStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  REJECTED
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  PROPOSAL
+  NEGOTIATION
+  WON
+  LOST
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  IN_PROGRESS
+  SHIPPED
+  DELIVERED
+  CANCELED
+}
+
+enum InvoiceStatus {
+  PENDING
+  SENT
+  PAID
+  OVERDUE
+  CANCELED
+}
+
+enum AutoReplyStatus {
+  ACTIVE
+  INACTIVE
+  SCHEDULED
+}
+
+enum ComplaintStatus {
+  NEW
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  ESCALATED
+}
+
+enum Importance {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum RecommendationStatus {
+  OPEN
+  ACCEPTED
+  REJECTED
+  IMPLEMENTED
+}
+
+enum DocumentType {
+  NOTE
+  ARTICLE
+  GUIDE
+  TUTORIAL
+  SPECIFICATION
+  MEETING_NOTES
+  RESEARCH
+  TEMPLATE
+  POLICY
+  PROCEDURE
+  REFERENCE
+  FAQ
+}
+
+enum DocumentStatus {
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+  DEPRECATED
+}
+
+enum LinkType {
+  REFERENCE
+  RELATED
+  PREREQUISITE
+  DEPENDENCY
+  INSPIRATION
+  CONTRADICTION
+}
+
+enum SharePermission {
+  READ
+  COMMENT
+  EDIT
+  ADMIN
+}
+
+enum ChannelType {
+  EMAIL
+  SLACK
+  TEAMS
+  WHATSAPP
+  SMS
+  TELEGRAM
+  DISCORD
+  WEBHOOK
+}
+
+enum MessageType {
+  INBOX
+  SENT
+  DRAFT
+  SPAM
+  TRASH
+}
+
+enum MessagePriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum ErrorSeverity {
+  low
+  medium
+  high
+  critical
+}
+
+enum SomedayMaybeCategory {
+  IDEAS
+  PROJECTS
+  GOALS
+  LEARNING
+  TRAVEL
+  PURCHASES
+  EXPERIENCES
+}
+
+enum SomedayMaybeStatus {
+  ACTIVE
+  ACTIVATED
+  ARCHIVED
+}
+
+enum ProductStatus {
+  ACTIVE
+  INACTIVE
+  DISCONTINUED
+  OUT_OF_STOCK
+}
+
+enum ServiceStatus {
+  AVAILABLE
+  UNAVAILABLE
+  TEMPORARILY_UNAVAILABLE
+  DISCONTINUED
+}
+
+enum ServiceBillingType {
+  ONE_TIME
+  HOURLY
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+  PROJECT_BASED
+}
+
+enum ServiceDeliveryMethod {
+  REMOTE
+  ON_SITE
+  HYBRID
+  DIGITAL_DELIVERY
+  PHYSICAL_DELIVERY
+}
+
+enum OrderItemType {
+  PRODUCT
+  SERVICE
+  CUSTOM
+}
+
+enum InvoiceItemType {
+  PRODUCT
+  SERVICE
+  CUSTOM
+}
+
+enum OfferStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+  CANCELED
+}
+
+enum OfferItemType {
+  PRODUCT
+  SERVICE
+  CUSTOM
+}
+
+enum BugPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum BugStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+  WONT_FIX
+}
+
+enum BugCategory {
+  UI_UX
+  FUNCTIONALITY
+  PERFORMANCE
+  SECURITY
+  DATA
+  INTEGRATION
+  OTHER
+}
+
+enum AIProviderStatus {
+  ACTIVE
+  INACTIVE
+  MAINTENANCE
+  DEPRECATED
+}
+
+enum AIModelType {
+  TEXT_GENERATION
+  TEXT_CLASSIFICATION
+  TEXT_EMBEDDING
+  IMAGE_GENERATION
+  IMAGE_ANALYSIS
+  AUDIO_TRANSCRIPTION
+  AUDIO_GENERATION
+  CODE_GENERATION
+  FUNCTION_CALLING
+  MULTIMODAL
+}
+
+enum AIModelStatus {
+  ACTIVE
+  INACTIVE
+  BETA
+  DEPRECATED
+}
+
+enum AITemplateStatus {
+  ACTIVE
+  INACTIVE
+  DRAFT
+  ARCHIVED
+}
+
+enum AIRuleStatus {
+  ACTIVE
+  INACTIVE
+  TESTING
+  ARCHIVED
+}
+
+enum AITriggerType {
+  MESSAGE_RECEIVED
+  TASK_CREATED
+  TASK_UPDATED
+  PROJECT_CREATED
+  CONTACT_UPDATED
+  DEAL_STAGE_CHANGED
+  MANUAL_TRIGGER
+  SCHEDULED
+  WEBHOOK
+}
+
+enum AIExecutionStatus {
+  PENDING
+  RUNNING
+  SUCCESS
+  FAILED
+  TIMEOUT
+  CANCELLED
+}
+
+enum AIKnowledgeStatus {
+  ACTIVE
+  INACTIVE
+  INDEXING
+  ERROR
+}
+
+enum AIDocumentStatus {
+  ACTIVE
+  INACTIVE
+  PROCESSING
+  ERROR
+}
+
+enum InboxSourceType {
+  QUICK_CAPTURE
+  MEETING_NOTES
+  PHONE_CALL
+  EMAIL
+  IDEA
+  DOCUMENT
+  BILL_INVOICE
+  ARTICLE
+  VOICE_MEMO
+  PHOTO
+  OTHER
+}
+
+enum ProcessingDecision {
+  DO
+  DEFER
+  DELEGATE
+  DELETE
+  REFERENCE
+  PROJECT
+  SOMEDAY
+}
+
+enum EmailCategory {
+  VIP
+  SPAM
+  INVOICES
+  ARCHIVE
+  UNKNOWN
+}
+
+enum UnifiedRuleType {
+  PROCESSING
+  EMAIL_FILTER
+  AUTO_REPLY
+  AI_RULE
+  SMART_MAILBOX
+  WORKFLOW
+  NOTIFICATION
+  INTEGRATION
+}
+
+enum UnifiedRuleStatus {
+  ACTIVE
+  INACTIVE
+  DRAFT
+  TESTING
+  ERROR
+  DEPRECATED
+}
+
+enum UnifiedTriggerType {
+  MANUAL
+  AUTOMATIC
+  EVENT_BASED
+  SCHEDULED
+  WEBHOOK
+  API_CALL
+}
+
+enum ExecutionStatus {
+  SUCCESS
+  PARTIAL_SUCCESS
+  FAILED
+  TIMEOUT
+  CANCELLED
+  RETRYING
+}
+
+enum EmailProvider {
+  SMTP
+  SENDGRID
+  AWS_SES
+  MAILGUN
+  POSTMARK
+  GMAIL         // Gmail (imap.gmail.com)
+  OUTLOOK       // Outlook/Hotmail (outlook.office365.com)
+  EXCHANGE      // Exchange Server
+  YAHOO         // Yahoo Mail
+  CUSTOM        // Custom IMAP server
+}
+
+enum UserRelationType {
+  MANAGES
+  LEADS
+  SUPERVISES
+  MENTORS
+  COLLABORATES
+  SUPPORTS
+  REPORTS_TO
+}
+
+enum UserInheritanceRule {
+  NO_INHERITANCE
+  INHERIT_DOWN
+  INHERIT_UP
+  INHERIT_BIDIRECTIONAL
+}
+
+enum UserDataScope {
+  PROFILE
+  TASKS
+  PROJECTS
+  SCHEDULE
+  PERFORMANCE
+  DOCUMENTS
+  COMMUNICATION
+  SETTINGS
+  TEAM_DATA
+  REPORTS
+  ALL
+}
+
+enum UserAction {
+  VIEW
+  EDIT
+  CREATE
+  DELETE
+  ASSIGN
+  APPROVE
+  DELEGATE
+  MANAGE
+  AUDIT
+}
+
+enum UserAccessType {
+  DIRECT
+  RELATION_BASED
+  ROLE_BASED
+  TEMPORARY
+}
+
+enum ViewType {
+  KANBAN
+  GANTT
+  SCRUM
+  CALENDAR
+  LIST
+}
+
+enum SprintStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum DependencyType {
+  FINISH_TO_START
+  START_TO_START
+  FINISH_TO_FINISH
+  START_TO_FINISH
+}
+
+enum ColumnType {
+  STAGE
+  PRIORITY
+  CONTEXT
+  SENTIMENT
+  SIZE
+  ASSIGNEE
+}
+
+// IMAP Email Account Configuration
+model EmailAccount {
+  id                String        @id @default(uuid())
+  name              String        // Display name (e.g., "Work Gmail")
+  email             String        // Email address
+  provider          EmailProvider @default(GMAIL)
+  
+  // IMAP Configuration
+  imapHost          String        // IMAP server host
+  imapPort          Int           @default(993)
+  imapSecure        Boolean       @default(true)
+  imapUsername      String        // Usually same as email
+  imapPassword      String        // Encrypted password or app password
+  
+  // SMTP Configuration  
+  smtpHost          String        // SMTP server host
+  smtpPort          Int           @default(587)
+  smtpSecure        Boolean       @default(true)
+  smtpUsername      String        // Usually same as email
+  smtpPassword      String        // Encrypted password or app password
+  
+  // Sync Settings
+  isActive          Boolean       @default(true)
+  lastSyncAt        DateTime?     // Last successful sync
+  syncIntervalMin   Int           @default(5) // Sync interval in minutes
+  maxMessages       Int           @default(1000) // Max messages to sync
+  syncFolders       String[]      @default(["INBOX", "Sent", "Drafts"]) // Folders to sync
+  
+  // Status and Stats
+  status            EmailAccountStatus @default(PENDING)
+  errorMessage      String?       // Last error message
+  syncCount         Int           @default(0) // Total synced messages
+  lastErrorAt       DateTime?     // Last error timestamp
+  
+  // Relationships
+  organizationId    String
+  userId            String        // Account owner
+  organization      Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messages          Message[]     @relation("EmailAccountMessages")
+  
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  
+  @@unique([organizationId, email])
+  @@map("email_accounts")
+}
+
+
+enum EmailAccountStatus {
+  PENDING       // Not yet configured/tested
+  ACTIVE        // Working properly
+  ERROR         // Connection/sync errors
+  DISABLED      // Manually disabled
+  QUOTA_EXCEEDED // Rate limit or quota exceeded
+}
+
+// =============================================================================
+// SMART DAY PLANNER - ENUMS
+// =============================================================================
+
+enum BreakType {
+  COFFEE           // Kawa, herbata
+  MEAL             // Posiłek
+  STRETCH          // Rozciąganie
+  WALK             // Spacer
+  MEDITATION       // Medytacja
+  SOCIAL           // Rozmowa z zespołem
+  FREE             // Wolny czas
+  TRANSITION       // Przejście między zadaniami
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum ScheduledTaskStatus {
+  PLANNED          // Zaplanowane
+  IN_PROGRESS      // W trakcie
+  COMPLETED        // Ukończone
+  CANCELLED        // Anulowane
+  RESCHEDULED      // Przełożone
+  OVERDUE          // Spóźnione
+}
+
+enum RescheduleReason {
+  NO_TASKS_IN_CONTEXT    // Brak zadań w głównym kontekście
+  INSUFFICIENT_ENERGY    // Za mała energia
+  INTERRUPTION          // Przerwanie zewnętrzne
+  PRIORITY_CHANGE       // Zmiana priorytetów
+  TECHNICAL_ISSUES      // Problemy techniczne
+  MEETING_CONFLICT      // Konflikt ze spotkaniem
+  USER_PREFERENCE       // Preferencja użytkownika
+}
+
+// =============================================================================
+// SMART DAY PLANNER - MODELS
+// =============================================================================
+
+// Energy Time Blocks - Bloki czasowe z energią
+model EnergyTimeBlock {
+  id               String                    @id @default(uuid())
+  name             String                    // "Poranny Deep Work", "Popołudniowe Email"
+  startTime        String                    // "07:00"
+  endTime          String                    // "07:45"
+  energyLevel      EnergyLevel               // HIGH, MEDIUM, LOW, CREATIVE, ADMINISTRATIVE
+  primaryContext   String                    // "@computer"
+  alternativeContexts Json                   @default("[]") // ["@reading", "@planning"]
+  isBreak          Boolean                   @default(false)
+  breakType        BreakType?                // COFFEE, MEAL, STRETCH, WALK, FREE
+  dayOfWeek        DayOfWeek?                // Opcjonalnie specyficzny dzień
+  
+  // Extended Day Selection
+  workdays         Boolean                   @default(true)  // Dni robocze (Mon-Fri)
+  weekends         Boolean                   @default(false) // Weekendy (Sat-Sun)
+  holidays         Boolean                   @default(false) // Święta państwowe
+  specificDays     Json                      @default("[]")  // Konkretne dni tygodnia: ["MONDAY", "WEDNESDAY"]
+  
+  isActive         Boolean                   @default(true)
+  order            Int                       @default(0)    // Kolejność w dniu
+  
+  // Focus Mode Integration
+  focusModeId      String?
+  
+  // Metadane
+  organizationId   String
+  userId           String
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  
+  // Relacje
+  organization     Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user             User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  focusMode        FocusMode?                @relation(fields: [focusModeId], references: [id], onDelete: SetNull)
+  scheduledTasks   ScheduledTask[]
+  energyAnalytics  EnergyAnalytics[]
+  
+  @@unique([userId, startTime, dayOfWeek])
+  @@map("energy_time_blocks")
+}
+
+// Scheduled Tasks - Zaplanowane zadania w blokach
+model ScheduledTask {
+  id                String                   @id @default(uuid())
+  
+  // Podstawowe info
+  title             String
+  description       String?
+  estimatedMinutes  Int                      // Czas w minutach
+  actualMinutes     Int?                     // Rzeczywisty czas wykonania
+  
+  // Powiązania z systemem
+  taskId            String?                  // Opcjonalne powiązanie z Task
+  energyTimeBlockId String
+  context           String                   // "@computer", "@calls", etc.
+  energyRequired    EnergyLevel
+  priority          Priority                 @default(MEDIUM)
+  
+  // Status i wykonanie
+  status            ScheduledTaskStatus      @default(PLANNED)
+  scheduledDate     DateTime                 // Data zaplanowania
+  startedAt         DateTime?
+  completedAt       DateTime?
+  
+  // Fallback context system
+  wasRescheduled    Boolean                  @default(false)
+  rescheduledFrom   String?                  // Oryginalny context
+  rescheduledReason RescheduleReason?        // Powód przełożenia
+  
+  // Metadane
+  organizationId    String
+  userId            String
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  
+  // Relacje
+  organization      Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user              User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  energyTimeBlock   EnergyTimeBlock          @relation(fields: [energyTimeBlockId], references: [id], onDelete: Cascade)
+  task              Task?                    @relation(fields: [taskId], references: [id])
+  
+  @@map("scheduled_tasks")
+}
+
+// Daily Energy Patterns - Wzorce energii użytkownika
+model EnergyPattern {
+  id               String                    @id @default(uuid())
+  
+  // Podstawowe info
+  timeSlot         String                    // "07:00-08:00"
+  dayOfWeek        DayOfWeek
+  energyLevel      EnergyLevel
+  
+  // Statystyki i learning
+  averageEnergy    Float                     // Średnia energia (1-10)
+  productivityScore Float                    // Wskaźnik produktywności
+  tasksCompleted   Int                       @default(0)
+  totalMinutes     Int                       @default(0)
+  successRate      Float                     @default(0.0)  // Wskaźnik sukcesu (0-1)
+  
+  // Preferencje kontekstów w tym czasie
+  preferredContexts Json                     @default("[]") // ["@computer", "@calls"]
+  avoidedContexts   Json                     @default("[]") // ["@admin"]
+  
+  // Machine Learning fields
+  confidence       Float                     @default(0.5)  // Pewność predykcji
+  sampleSize       Int                       @default(0)    // Liczba próbek
+  lastAnalyzed     DateTime?                 // Ostatnia analiza
+  
+  // Metadane
+  organizationId   String
+  userId           String
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  
+  // Relacje
+  organization     Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user             User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, timeSlot, dayOfWeek])
+  @@map("energy_patterns")
+}
+
+// Energy Analytics - Analityka energii i produktywności
+model EnergyAnalytics {
+  id                 String                  @id @default(uuid())
+  
+  // Dane sesji
+  date               DateTime                @default(now())
+  energyTimeBlockId  String
+  
+  // Metryki energii
+  plannedEnergy      EnergyLevel
+  actualEnergy       EnergyLevel?            // Rzeczywista energia (user input)
+  energyScore        Int?                    // Skala 1-10
+  
+  // Metryki produktywności
+  tasksPlanned       Int                     @default(0)
+  tasksCompleted     Int                     @default(0)
+  minutesPlanned     Int                     @default(0)
+  minutesActual      Int                     @default(0)
+  productivityScore  Float?                  // Wskaźnik produktywności
+  
+  // Konteksty użyte
+  contextsPlanned    Json                    @default("[]")
+  contextsActual     Json                    @default("[]")
+  contextSwitches    Int                     @default(0)
+  
+  // Feedback użytkownika
+  satisfactionScore  Int?                    // 1-5 stars
+  notes              String?
+  distractions       Json                    @default("[]") // ["phone", "email", "meeting"]
+  
+  // Metadane
+  organizationId     String
+  userId             String
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  
+  // Relacje
+  organization       Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user               User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  energyTimeBlock    EnergyTimeBlock         @relation(fields: [energyTimeBlockId], references: [id], onDelete: Cascade)
+  
+  @@map("energy_analytics")
+}
+
+// Performance Metrics - Zaawansowana analityka wydajności
+model PerformanceMetrics {
+  id                    String       @id @default(uuid())
+  
+  // Okres analizy
+  startDate             DateTime
+  endDate               DateTime
+  periodType            String       // "daily", "weekly", "monthly"
+  
+  // Focus Mode Analytics
+  focusModeId           String?
+  focusModeEfficiency   Float?       // % zadań ukończonych w trybie koncentracji
+  focusModeProductivity Float?       // Średnia produktywność w trybie
+  
+  // Context Combination Analytics
+  primaryContext        String
+  alternativeContexts   Json         @default("[]")
+  contextSwitchCount    Int          @default(0)
+  contextEfficiency     Float        // Efektywność kombinacji kontekstów
+  
+  // Energy Pattern Analytics
+  energyLevel           EnergyLevel
+  energyConsistency     Float        // Jak konsekwentnie utrzymywany poziom energii
+  energyOptimalTimes    Json         @default("[]") // Optymalne godziny dla danego poziomu
+  
+  // Task Completion Analytics
+  totalTasks            Int          @default(0)
+  completedTasks        Int          @default(0)
+  overdueTasks          Int          @default(0)
+  completionRate        Float        // % ukończonych zadań
+  avgTaskDuration       Float?       // Średni czas wykonania zadania w minutach
+  
+  // Time Block Performance
+  timeBlockUtilization  Float        // % wykorzystania czasu w blokach
+  breakEffectiveness    Float?       // Wpływ przerw na produktywność następnych bloków
+  
+  // AI Learning Metrics
+  aiSuggestionAccuracy  Float?       // Dokładność sugestii AI (% zaakceptowanych)
+  userBehaviorScore     Float?       // Wynik uczenia się wzorców użytkownika
+  adaptationRate        Float?       // Szybkość adaptacji AI do preferencji
+  
+  // Streak Analytics
+  productiveStreakDays  Int          @default(0)
+  currentStreak         Int          @default(0)
+  longestStreak         Int          @default(0)
+  
+  // Wellbeing Metrics
+  stressLevel           Int?         // 1-10 scale
+  satisfactionTrend     Float?       // Trend zadowolenia (±)
+  burnoutRisk           Float?       // Ryzyko wypalenia (0-1)
+  
+  // Improvement Suggestions
+  suggestions           Json         @default("[]") // AI suggestions for improvement
+  implementedSuggestions Int         @default(0)
+  suggestionEffectiveness Float?      // Skuteczność wdrożonych sugestii
+  
+  // Metadata
+  organizationId        String
+  userId                String
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  
+  // Relations
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  focusMode             FocusMode?   @relation(fields: [focusModeId], references: [id], onDelete: SetNull)
+  
+  @@unique([userId, startDate, endDate, periodType])
+  @@map("performance_metrics")
+}
+
+// User Patterns - ML model uczenia się indywidualnych wzorców
+model UserPattern {
+  id                    String       @id @default(uuid())
+  
+  // Identyfikacja wzorca
+  patternType           String       // "time_preference", "context_efficiency", "energy_cycle", "task_sizing", "break_timing"
+  patternKey            String       // Unikalny klucz wzorca dla danego użytkownika
+  
+  // ML Metrics
+  confidence            Float        // 0-1, pewność wzorca
+  strength              Float        // 0-1, siła wzorca
+  sampleSize            Int          @default(0)
+  successRate           Float        // Wskaźnik sukcesu wzorca
+  
+  // Pattern Data
+  patternData           Json         // Szczegółowe dane wzorca (flexible JSON)
+  conditions            Json         @default("[]") // Warunki kiedy wzorzec występuje
+  outcomes              Json         @default("[]") // Rezultaty wzorca
+  
+  // Time-based Learning
+  detectedAt            DateTime     @default(now())
+  lastConfirmed         DateTime?    // Ostatnie potwierdzenie wzorca
+  validUntil            DateTime?    // Data ważności wzorca
+  
+  // AI Learning Metadata
+  learningSource        String       // "time_blocks", "task_completion", "energy_feedback", "context_switching"
+  algorithmVersion      String       @default("v1.0")
+  correlations          Json         @default("{}") // Korelacje z innymi wzorcami
+  
+  // Adaptation Tracking
+  adaptationCount       Int          @default(0)
+  lastAdaptation        DateTime?
+  adaptationReason      String?      // Powód ostatniej adaptacji
+  
+  // User Preferences Integration
+  userAcceptance        Float?       // 0-1, jak użytkownik reaguje na wzorzec
+  manualOverrides       Int          @default(0) // Ile razy użytkownik odrzucił sugestię
+  implementationRate    Float?       // Jak często wzorzec jest implementowany
+  
+  // Metadata
+  organizationId        String
+  userId                String
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+  
+  // Relations
+  organization          Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                  User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, patternType, patternKey])
+  @@map("user_patterns")
+}
+
+// Break Templates - Szablony przerw
+model BreakTemplate {
+  id               String                    @id @default(uuid())
+  
+  // Podstawowe info
+  name             String                    // "Kawa + stretch", "Szybki lunch"
+  duration         Int                       // Czas w minutach
+  breakType        BreakType
+  description      String?
+  
+  // Rekomendacje
+  energyBefore     EnergyLevel?              // Energia przed przerwą
+  energyAfter      EnergyLevel?              // Oczekiwana energia po
+  bestTimeSlots    Json                      @default("[]") // ["09:00", "15:00"]
+  
+  // Aktywności
+  activities       Json                      @default("[]") // ["coffee", "walk", "meditation"]
+  isDefault        Boolean                   @default(false)
+  
+  // Metadane
+  organizationId   String
+  userId           String?                   // Null = szablon organizacyjny
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  
+  // Relacje
+  organization     Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user             User?                     @relation(fields: [userId], references: [id])
+  
+  @@map("break_templates")
+}
+
+// Context Priorities - Priorytety kontekstów w różnych czasach
+model ContextPriority {
+  id               String                    @id @default(uuid())
+  
+  // Konfiguracja
+  contextName      String                    // "@computer"
+  timeSlot         String                    // "07:00-08:00"
+  dayOfWeek        DayOfWeek?                // Opcjonalnie specyficzny dzień
+  
+  // Priorytet i warunki
+  priority         Int                       @default(1)    // 1 = najwyższy, 5 = najniższy
+  requiredEnergy   EnergyLevel?              // Minimalna energia do tego kontekstu
+  maxDuration      Int?                      // Max czas w minutach
+  
+  // Alternatywne konteksty (fallback)
+  alternativeOrder Json                      @default("[]") // ["@reading", "@admin"]
+  
+  // Metadane
+  organizationId   String
+  userId           String
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  
+  // Relacje
+  organization     Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user             User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, contextName, timeSlot, dayOfWeek])
+  @@map("context_priorities")
+}
+
+// =============================================================================
+// DAY TEMPLATE GENERATOR - USER PROFILE & TEMPLATES
+// =============================================================================
+
+// User Profile - Profil użytkownika dla generowania szablonów dnia
+model UserProfile {
+  id                  String                    @id @default(uuid())
+  
+  // Energy Profile - Profil energii użytkownika
+  energyPeaks         Json                      @default("[]") // [{"time": "09:00", "level": "HIGH"}, ...]
+  energyValleys       Json                      @default("[]") // [{"time": "14:00", "level": "LOW"}, ...]
+  energyPattern       Json                      @default("{}") // Wzorce energii w różne dni
+  
+  // Context Preferences - Preferencje kontekstów
+  preferredContexts   Json                      @default("[]") // ["@computer", "@creative", "@calls"]
+  contextTimeSlots    Json                      @default("{}") // {"@computer": ["09:00-17:00"], ...}
+  contextAvoidance    Json                      @default("{}") // Konteksty do unikania w określonych godzinach
+  
+  // Focus Mode Preferences - Preferencje trybów koncentracji
+  focusModePrefs      Json                      @default("{}") // Preferencje dla różnych focus modes
+  optimalFocusLength  Json                      @default("{}") // Optymalne długości dla każdego trybu
+  focusEnergyMap      Json                      @default("{}") // Mapowanie focus modes na energie
+  
+  // Break Patterns - Wzorce przerw
+  breakFrequency      Int                       @default(90)   // Co ile minut przerwa (domyślnie 90min)
+  breakDuration       Int                       @default(15)   // Długość przerwy (domyślnie 15min)
+  breakTypes          Json                      @default("[]") // Preferowane typy przerw
+  lunchTime           String?                   @default("12:00") // Preferowana pora obiadu
+  lunchDuration       Int                       @default(60)   // Długość obiadu
+  
+  // Workday Configuration - Konfiguracja dnia roboczego
+  workStartTime       String                    @default("08:00") // Początek dnia roboczego
+  workEndTime         String                    @default("17:00") // Koniec dnia roboczego
+  workdays            Json                      @default("[\"MONDAY\",\"TUESDAY\",\"WEDNESDAY\",\"THURSDAY\",\"FRIDAY\"]")
+  flexibleBlocks      Boolean                   @default(true)  // Czy pozwalać na flexible bloki
+  
+  // AI Learning Configuration
+  learningEnabled     Boolean                   @default(true)  // Czy AI ma się uczyć wzorców
+  adaptationRate      Float                     @default(0.1)   // Szybkość adaptacji AI (0.0-1.0)
+  feedbackWeight      Float                     @default(0.3)   // Waga user feedback (0.0-1.0)
+  
+  // Metadane
+  organizationId      String
+  userId              String                    @unique
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  
+  // Relacje
+  organization        Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  dayTemplates        DayTemplate[]
+  
+  @@map("user_profiles")
+}
+
+// Day Template - Szablon dnia
+model DayTemplate {
+  id                  String                    @id @default(uuid())
+  
+  // Template Info
+  name                String                    // "Workday Template", "Creative Day", "Admin Day"
+  description         String?                   // Opis szablonu
+  templateType        TemplateType              @default(CUSTOM) // WORKDAY, CREATIVE, ADMIN, MEETING, CUSTOM
+  
+  // Template Configuration
+  dayIntensity        TemplateIntensity         @default(MEDIUM) // LIGHT, MEDIUM, HEAVY
+  focusStyle          TemplateFocusStyle        @default(MIXED)  // DEEP_WORK, MEETINGS, MIXED, CREATIVE
+  
+  // Time Blocks - Bloki czasowe szablonu
+  timeBlocks          Json                      @default("[]") // Array bloków czasowych
+  
+  // Template Statistics
+  totalWorkTime       Int                       @default(0)    // Łączny czas pracy w minutach
+  totalBreakTime      Int                       @default(0)    // Łączny czas przerw w minutach
+  blocksCount         Int                       @default(0)    // Liczba bloków
+  energyDistribution  Json                      @default("{}") // Rozkład energii {"HIGH": 120, "MEDIUM": 180}
+  contextBalance      Json                      @default("{}") // Balans kontekstów {"@computer": 240, "@calls": 60}
+  
+  // Usage & Performance
+  usageCount          Int                       @default(0)    // Ile razy użyto
+  avgRating           Float?                    // Średnia ocena użytkowników
+  lastUsed            DateTime?                 // Ostatnie użycie
+  isDefault           Boolean                   @default(false) // Czy to domyślny szablon
+  isPublic            Boolean                   @default(false) // Czy dostępny dla innych
+  weeklyTemplate      Boolean                   @default(false) // Czy to szablon tygodniowy
+  
+  // AI Generated
+  generatedBy         TemplateSource            @default(USER)  // USER, AI, HYBRID
+  aiConfidence        Float?                    // Pewność AI przy generowaniu (0.0-1.0)
+  basedOnPatterns     Json                      @default("[]")  // Wzorce na których bazuje
+  
+  // Metadane
+  organizationId      String
+  userId              String
+  userProfileId       String?
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  
+  // Relacje
+  organization        Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userProfile         UserProfile?              @relation(fields: [userProfileId], references: [id], onDelete: SetNull)
+  templateApplications TemplateApplication[]
+  
+  @@map("day_templates")
+}
+
+// Template Application - Zastosowanie szablonu
+model TemplateApplication {
+  id                  String                    @id @default(uuid())
+  
+  // Application Info
+  appliedDate         DateTime                  // Data zastosowania
+  templateSnapshot    Json                      // Snapshot szablonu w momencie zastosowania
+  
+  // Performance Tracking
+  actualCompletion    Float?                    // Faktyczny % ukończenia (0.0-1.0)
+  userRating          Int?                      // Ocena użytkownika (1-5)
+  feedback            String?                   // Feedback tekstowy
+  modifications       Json                      @default("[]") // Modyfikacje wprowadzone przez użytkownika
+  
+  // Results
+  totalTasksPlanned   Int                       @default(0)
+  totalTasksCompleted Int                       @default(0)
+  totalTimeSpent      Int?                      // Faktyczny czas spędzony
+  productivityScore   Float?                    // Wynik produktywności
+  
+  // Metadane
+  templateId          String
+  organizationId      String
+  userId              String
+  createdAt           DateTime                  @default(now())
+  updatedAt           DateTime                  @updatedAt
+  
+  // Relacje
+  template            DayTemplate               @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  organization        Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user                User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("template_applications")
+}
+
+// =============================================================================
+// ENUMS FOR TEMPLATE SYSTEM
+// =============================================================================
+
+enum TemplateType {
+  WORKDAY      // Standardowy dzień roboczy
+  CREATIVE     // Dzień kreatywny
+  ADMIN        // Dzień administracyjny
+  MEETING      // Dzień spotkań
+  MIXED        // Mieszany typ
+  CUSTOM       // Własny szablon
+}
+
+enum TemplateIntensity {
+  LIGHT        // Lekki dzień (mało zadań, więcej przerw)
+  MEDIUM       // Standardowa intensywność
+  HEAVY        // Intensywny dzień (dużo zadań, mniej przerw)
+}
+
+enum TemplateFocusStyle {
+  DEEP_WORK    // Skupienie na głębokiej pracy
+  MEETINGS     // Dzień spotkań i komunikacji
+  CREATIVE     // Kreatywność i innowacje
+  ADMIN        // Zadania administracyjne
+  MIXED        // Mieszany styl
+}
+
+enum TemplateSource {
+  USER         // Utworzony przez użytkownika
+  AI           // Wygenerowany przez AI
+  HYBRID       // Kombinacja user + AI
+  IMPORTED     // Importowany z zewnątrz
+}

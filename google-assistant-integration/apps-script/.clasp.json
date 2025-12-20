@@ -1,0 +1,10 @@
+{
+  "scriptId": "YOUR_SCRIPT_ID",
+  "rootDir": "./",
+  "projectId": "crm-gtd-smart-assistant",
+  "fileExtension": "gs",
+  "filePushOrder": [
+    "appsscript.json",
+    "Code.gs"
+  ]
+}

@@ -1,0 +1,310 @@
+// =============================================================================
+// SMART DAY PLANNER - ROZSZERZENIE SCHEMA PRISMA
+// =============================================================================
+// System inteligentnego planowania dnia z energią, przerwami i kontekstami
+// Autor: Claude Code 2025-07-07
+
+// -----------------------------------------------------------------------------
+// 1. ENERGY TIME BLOCKS - Bloki czasowe z energią
+// -----------------------------------------------------------------------------
+
+model EnergyTimeBlock {
+  id               String                    @id @default(uuid())
+  name             String                    // "Poranny Deep Work", "Popołudniowe Email"
+  startTime        String                    // "07:00"
+  endTime          String                    // "07:45"
+  energyLevel      EnergyLevel               // HIGH, MEDIUM, LOW, CREATIVE, ADMINISTRATIVE
+  primaryContext   String                    // "@computer"
+  alternativeContexts Json                   @default("[]") // ["@reading", "@planning"]
+  isBreak          Boolean                   @default(false)
+  breakType        BreakType?                // COFFEE, MEAL, STRETCH, WALK, FREE
+  dayOfWeek        DayOfWeek?                // Opcjonalnie specyficzny dzień
+  isActive         Boolean                   @default(true)
+  order            Int                       @default(0)    // Kolejność w dniu
+  
+  // Metadane
+  organizationId   String
+  userId           String
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  
+  // Relacje
+  organization     Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user             User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scheduledTasks   ScheduledTask[]
+  energyAnalytics  EnergyAnalytics[]
+  
+  @@unique([userId, startTime, dayOfWeek])
+  @@map("energy_time_blocks")
+}
+
+// -----------------------------------------------------------------------------
+// 2. SCHEDULED TASKS - Zaplanowane zadania w blokach
+// -----------------------------------------------------------------------------
+
+model ScheduledTask {
+  id                String                   @id @default(uuid())
+  
+  // Podstawowe info
+  title             String
+  description       String?
+  estimatedMinutes  Int                      // Czas w minutach
+  actualMinutes     Int?                     // Rzeczywisty czas wykonania
+  
+  // Powiązania z systemem
+  taskId            String?                  // Opcjonalne powiązanie z Task
+  energyTimeBlockId String
+  context           String                   // "@computer", "@calls", etc.
+  energyRequired    EnergyLevel
+  priority          Priority                 @default(MEDIUM)
+  
+  // Status i wykonanie
+  status            ScheduledTaskStatus      @default(PLANNED)
+  scheduledDate     DateTime                 // Data zaplanowania
+  startedAt         DateTime?
+  completedAt       DateTime?
+  
+  // Fallback context system
+  wasRescheduled    Boolean                  @default(false)
+  rescheduledFrom   String?                  // Oryginalny context
+  rescheduledReason RescheduleReason?        // Powód przełożenia
+  
+  // Metadane
+  organizationId    String
+  userId            String
+  createdAt         DateTime                 @default(now())
+  updatedAt         DateTime                 @updatedAt
+  
+  // Relacje
+  organization      Organization             @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user              User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  energyTimeBlock   EnergyTimeBlock          @relation(fields: [energyTimeBlockId], references: [id], onDelete: Cascade)
+  task              Task?                    @relation(fields: [taskId], references: [id])
+  
+  @@map("scheduled_tasks")
+}
+
+// -----------------------------------------------------------------------------
+// 3. DAILY ENERGY PATTERNS - Wzorce energii użytkownika
+// -----------------------------------------------------------------------------
+
+model EnergyPattern {
+  id               String                    @id @default(uuid())
+  
+  // Podstawowe info
+  timeSlot         String                    // "07:00-08:00"
+  dayOfWeek        DayOfWeek
+  energyLevel      EnergyLevel
+  
+  // Statystyki i learning
+  averageEnergy    Float                     // Średnia energia (1-10)
+  productivityScore Float                    // Wskaźnik produktywności
+  tasksCompleted   Int                       @default(0)
+  totalMinutes     Int                       @default(0)
+  successRate      Float                     @default(0.0)  // Wskaźnik sukcesu (0-1)
+  
+  // Preferencje kontekstów w tym czasie
+  preferredContexts Json                     @default("[]") // ["@computer", "@calls"]
+  avoidedContexts   Json                     @default("[]") // ["@admin"]
+  
+  // Machine Learning fields
+  confidence       Float                     @default(0.5)  // Pewność predykcji
+  sampleSize       Int                       @default(0)    // Liczba próbek
+  lastAnalyzed     DateTime?                 // Ostatnia analiza
+  
+  // Metadane
+  organizationId   String
+  userId           String
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  
+  // Relacje
+  organization     Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user             User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, timeSlot, dayOfWeek])
+  @@map("energy_patterns")
+}
+
+// -----------------------------------------------------------------------------
+// 4. ENERGY ANALYTICS - Analityka energii i produktywności
+// -----------------------------------------------------------------------------
+
+model EnergyAnalytics {
+  id                 String                  @id @default(uuid())
+  
+  // Dane sesji
+  date               DateTime                @default(now())
+  energyTimeBlockId  String
+  
+  // Metryki energii
+  plannedEnergy      EnergyLevel
+  actualEnergy       EnergyLevel?            // Rzeczywista energia (user input)
+  energyScore        Int?                    // Skala 1-10
+  
+  // Metryki produktywności
+  tasksPlanned       Int                     @default(0)
+  tasksCompleted     Int                     @default(0)
+  minutesPlanned     Int                     @default(0)
+  minutesActual      Int                     @default(0)
+  productivityScore  Float?                  // Wskaźnik produktywności
+  
+  // Konteksty użyte
+  contextsPlanned    Json                    @default("[]")
+  contextsActual     Json                    @default("[]")
+  contextSwitches    Int                     @default(0)
+  
+  // Feedback użytkownika
+  satisfactionScore  Int?                    // 1-5 stars
+  notes              String?
+  distractions       Json                    @default("[]") // ["phone", "email", "meeting"]
+  
+  // Metadane
+  organizationId     String
+  userId             String
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  
+  // Relacje
+  organization       Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user               User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  energyTimeBlock    EnergyTimeBlock         @relation(fields: [energyTimeBlockId], references: [id], onDelete: Cascade)
+  
+  @@map("energy_analytics")
+}
+
+// -----------------------------------------------------------------------------
+// 5. BREAK TEMPLATES - Szablony przerw
+// -----------------------------------------------------------------------------
+
+model BreakTemplate {
+  id               String                    @id @default(uuid())
+  
+  // Podstawowe info
+  name             String                    // "Kawa + stretch", "Szybki lunch"
+  duration         Int                       // Czas w minutach
+  breakType        BreakType
+  description      String?
+  
+  // Rekomendacje
+  energyBefore     EnergyLevel?              // Energia przed przerwą
+  energyAfter      EnergyLevel?              // Oczekiwana energia po
+  bestTimeSlots    Json                      @default("[]") // ["09:00", "15:00"]
+  
+  // Aktywności
+  activities       Json                      @default("[]") // ["coffee", "walk", "meditation"]
+  isDefault        Boolean                   @default(false)
+  
+  // Metadane
+  organizationId   String
+  userId           String?                   // Null = szablon organizacyjny
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  
+  // Relacje
+  organization     Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user             User?                     @relation(fields: [userId], references: [id])
+  
+  @@map("break_templates")
+}
+
+// -----------------------------------------------------------------------------
+// 6. CONTEXT PRIORITIES - Priorytety kontekstów w różnych czasach
+// -----------------------------------------------------------------------------
+
+model ContextPriority {
+  id               String                    @id @default(uuid())
+  
+  // Konfiguracja
+  contextName      String                    // "@computer"
+  timeSlot         String                    // "07:00-08:00"
+  dayOfWeek        DayOfWeek?                // Opcjonalnie specyficzny dzień
+  
+  // Priorytet i warunki
+  priority         Int                       @default(1)    // 1 = najwyższy, 5 = najniższy
+  requiredEnergy   EnergyLevel?              // Minimalna energia do tego kontekstu
+  maxDuration      Int?                      // Max czas w minutach
+  
+  // Alternatywne konteksty (fallback)
+  alternativeOrder Json                      @default("[]") // ["@reading", "@admin"]
+  
+  // Metadane
+  organizationId   String
+  userId           String
+  createdAt        DateTime                  @default(now())
+  updatedAt        DateTime                  @updatedAt
+  
+  // Relacje
+  organization     Organization              @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user             User                      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, contextName, timeSlot, dayOfWeek])
+  @@map("context_priorities")
+}
+
+// -----------------------------------------------------------------------------
+// 7. ENUMS - Definicje typów
+// -----------------------------------------------------------------------------
+
+enum BreakType {
+  COFFEE           // Kawa, herbata
+  MEAL             // Posiłek
+  STRETCH          // Rozciąganie
+  WALK             // Spacer
+  MEDITATION       // Medytacja
+  SOCIAL           // Rozmowa z zespołem
+  FREE             // Wolny czas
+  TRANSITION       // Przejście między zadaniami
+}
+
+enum DayOfWeek {
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+  SUNDAY
+}
+
+enum ScheduledTaskStatus {
+  PLANNED          // Zaplanowane
+  IN_PROGRESS      // W trakcie
+  COMPLETED        // Ukończone
+  CANCELLED        // Anulowane
+  RESCHEDULED      // Przełożone
+  OVERDUE          // Spóźnione
+}
+
+enum RescheduleReason {
+  NO_TASKS_IN_CONTEXT    // Brak zadań w głównym kontekście
+  INSUFFICIENT_ENERGY    // Za mała energia
+  INTERRUPTION          // Przerwanie zewnętrzne
+  PRIORITY_CHANGE       // Zmiana priorytetów
+  TECHNICAL_ISSUES      // Problemy techniczne
+  MEETING_CONFLICT      // Konflikt ze spotkaniem
+  USER_PREFERENCE       // Preferencja użytkownika
+}
+
+// -----------------------------------------------------------------------------
+// 8. ROZSZERZENIA ISTNIEJĄCYCH MODELI
+// -----------------------------------------------------------------------------
+
+// Dodaj do modelu User:
+// energyTimeBlocks     EnergyTimeBlock[]
+// scheduledTasks       ScheduledTask[]
+// energyPatterns       EnergyPattern[]
+// energyAnalytics      EnergyAnalytics[]
+// breakTemplates       BreakTemplate[]
+// contextPriorities    ContextPriority[]
+
+// Dodaj do modelu Organization:
+// energyTimeBlocks     EnergyTimeBlock[]
+// scheduledTasks       ScheduledTask[]
+// energyPatterns       EnergyPattern[]
+// energyAnalytics      EnergyAnalytics[]
+// breakTemplates       BreakTemplate[]
+// contextPriorities    ContextPriority[]
+
+// Dodaj do modelu Task:
+// scheduledTasks       ScheduledTask[]

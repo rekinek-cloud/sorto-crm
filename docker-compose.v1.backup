@@ -1,0 +1,104 @@
+version: '3.8'
+
+services:
+  # V1 Frontend - Production/Testing
+  frontend-v1:
+    build:
+      context: ./packages/frontend
+      dockerfile: Dockerfile.dev
+    container_name: crm-frontend-v1
+    ports:
+      - "9025:9025"
+    environment:
+      - NODE_ENV=development
+      - NEXT_PUBLIC_API_URL=http://91.99.50.80/crm/api
+      - NEXT_PUBLIC_APP_VERSION=1.0.0
+      - NEXT_PUBLIC_ENVIRONMENT=production
+      - WATCHPACK_POLLING=true
+    volumes:
+      - ./packages/frontend:/app
+      - /app/node_modules
+    restart: unless-stopped
+    networks:
+      - crm-v1-network
+    command: npm run dev
+
+  # V1 Backend - Production/Testing  
+  backend-v1:
+    build:
+      context: ./packages/backend
+      dockerfile: Dockerfile
+    container_name: crm-backend-v1
+    ports:
+      - "3003:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - DATABASE_URL=postgresql://user:password@postgres-v1:5432/crm_gtd_v1
+      - REDIS_URL=redis://crm-redis-v1:6379
+      - JWT_SECRET=super-bezpieczny-klucz-jwt-v1-min-32-znakow
+      - JWT_REFRESH_SECRET=super-bezpieczny-refresh-klucz-v1-min-32-znakow
+      - BCRYPT_ROUNDS=12
+      - NEXT_PUBLIC_APP_URL=http://91.99.50.80:9025
+    volumes:
+      - ./packages/backend:/app
+      - /app/node_modules
+    depends_on:
+      - postgres-v1
+      - crm-redis-v1
+    restart: unless-stopped
+    networks:
+      - crm-v1-network
+    command: sh -c "npx prisma generate && npx ts-node --transpile-only src/app.ts"
+
+  # V1 PostgreSQL Database
+  postgres-v1:
+    image: postgres:14
+    container_name: crm-postgres-v1
+    ports:
+      - "5434:5432"
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=crm_gtd_v1
+    volumes:
+      - postgres_v1_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - crm-v1-network
+
+  # V1 Redis Cache
+  crm-redis-v1:
+    image: redis:7-alpine
+    container_name: crm-redis-v1
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis_v1_data:/data
+    restart: unless-stopped
+    networks:
+      - crm-v1-network
+
+  # Mock TTS Service (Development)
+  voice-tts-v1:
+    build:
+      context: .
+      dockerfile: Dockerfile.mock-tts
+    container_name: crm-voice-tts-v1
+    ports:
+      - "5002:5002"
+    environment:
+      - PYTHONUNBUFFERED=1
+    restart: unless-stopped
+    networks:
+      - crm-v1-network
+
+volumes:
+  postgres_v1_data:
+    driver: local
+  redis_v1_data:
+    driver: local
+
+networks:
+  crm-v1-network:
+    driver: bridge

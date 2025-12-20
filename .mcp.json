@@ -1,0 +1,50 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y", 
+        "@modelcontextprotocol/server-filesystem",
+        "/opt/crm-gtd-smart/packages/backend/src",
+        "/opt/crm-gtd-smart/packages/backend/prisma", 
+        "/opt/crm-gtd-smart/packages/frontend/src",
+        "/opt/crm-gtd-smart/docs",
+        "/opt/crm-gtd-smart/scripts"
+      ]
+    },
+    "postgres": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-postgres"],
+      "env": {
+        "DATABASE_URL": "postgresql://postgres:password@localhost:5432/crm_gtd"
+      }
+    },
+    "github": {
+      "command": "npx", 
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "env": {
+        "GITHUB_TOKEN": "your_github_token_here"
+      }
+    },
+    "puppeteer": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-puppeteer"]
+    },
+    "sequential-thinking": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"]
+    },
+    "fetch": {
+      "command": "npx", 
+      "args": ["-y", "@kazuph/mcp-fetch"]
+    },
+    "security-audit": {
+      "command": "node",
+      "args": ["/opt/crm-gtd-smart/scripts/security_audit_mcp.js"]
+    },
+    "tenant-manager": {
+      "command": "node", 
+      "args": ["/opt/crm-gtd-smart/scripts/tenant_manager_mcp.js"]
+    }
+  }
+}

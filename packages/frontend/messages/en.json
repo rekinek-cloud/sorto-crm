@@ -1,0 +1,158 @@
+{
+  "navigation": {
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "tasks": "Tasks",
+    "contacts": "Contacts",
+    "companies": "Companies",
+    "deals": "Deals",
+    "communication": "Communication",
+    "gtd": "GTD",
+    "reports": "Reports",
+    "settings": "Settings",
+    "streams": "Streams",
+    "crm": "CRM",
+    "reviews": "Reviews",
+    "habits": "Habits",
+    "delegated": "Delegated",
+    "organization": "Organization",
+    "tools": "Tools",
+    "advanced": "Advanced"
+  },
+  "gtd": {
+    "inbox": "Inbox",
+    "contexts": "Contexts",
+    "nextActions": "Next Actions",
+    "waitingFor": "Waiting For",
+    "somedayMaybe": "Someday/Maybe",
+    "energyLevels": "Energy Levels",
+    "focusModes": "Focus Modes",
+    "processing": "Processing",
+    "quickCapture": "Quick Capture"
+  },
+  "tasks": {
+    "title": "Tasks",
+    "createNew": "New Task",
+    "edit": "Edit Task",
+    "delete": "Delete Task",
+    "completed": "Completed",
+    "pending": "Pending",
+    "priority": {
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "status": {
+      "pending": "Pending",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "on_hold": "On Hold"
+    }
+  },
+  "projects": {
+    "title": "Projects",
+    "createNew": "New Project",
+    "edit": "Edit Project",
+    "delete": "Delete Project",
+    "status": {
+      "planning": "Planning",
+      "active": "Active",
+      "on_hold": "On Hold",
+      "completed": "Completed"
+    }
+  },
+  "communication": {
+    "title": "Communication",
+    "messages": "Messages",
+    "rules": "Rules",
+    "filters": "Filters",
+    "autoReply": "Auto Reply",
+    "unifiedInbox": "Unified Inbox",
+    "rulesManager": "Rules Manager",
+    "channels": "Channels",
+    "processingRules": "Processing Rules",
+    "emailFilters": "Email Filters",
+    "smartMailboxes": "Smart Mailboxes"
+  },
+  "crm": {
+    "companies": "Companies",
+    "contacts": "Contacts",
+    "deals": "Deals",
+    "offers": "Offers",
+    "leads": "Leads",
+    "orders": "Orders",
+    "invoices": "Invoices",
+    "products": "Products",
+    "services": "Services",
+    "meetings": "Meetings"
+  },
+  "reviews": {
+    "weekly": "Weekly Review",
+    "monthly": "Monthly Review",
+    "quarterly": "Quarterly Review"
+  },
+  "organization": {
+    "tags": "Tags",
+    "areas": "Areas",
+    "recurringTasks": "Recurring Tasks"
+  },
+  "tools": {
+    "aiAssistant": "AI Assistant",
+    "aiManagement": "AI Management",
+    "phase2Demo": "Phase 2 Demo",
+    "smartAnalysis": "SMART Analysis",
+    "smartDetails": "SMART Details",
+    "smartImprovements": "SMART Improvements",
+    "smartTemplates": "SMART Templates",
+    "emailAnalysis": "Email Analysis",
+    "autoReplies": "Auto Replies",
+    "knowledgeBase": "Knowledge Base",
+    "relationMap": "Relation Map",
+    "timeline": "Timeline",
+    "analytics": "Analytics",
+    "metadata": "Metadata"
+  },
+  "advanced": {
+    "taskHistory": "Task History",
+    "taskRelationships": "Task Relationships",
+    "projectDependencies": "Project Dependencies",
+    "gtdBuckets": "GTD Buckets",
+    "gtdHorizons": "GTD Horizons",
+    "files": "Files",
+    "recommendations": "Recommendations",
+    "info": "Info",
+    "complaints": "Complaints",
+    "unimportant": "Unimportant"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "search": "Search",
+    "filter": "Filter",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "confirm": "Confirm",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "forms": {
+    "validation": {
+      "required": "This field is required",
+      "email": "Please enter a valid email address",
+      "minLength": "Minimum {count} characters",
+      "maxLength": "Maximum {count} characters"
+    }
+  },
+  "dates": {
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "tomorrow": "Tomorrow",
+    "thisWeek": "This Week",
+    "lastWeek": "Last Week",
+    "nextWeek": "Next Week"
+  }
+}

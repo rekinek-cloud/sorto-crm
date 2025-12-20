@@ -1,0 +1,57 @@
+# Manual deployment steps for VPS 91.99.50.80
+
+## KROK 1: Utwórz archiwum lokalnie
+tar -czf /tmp/crm-gtd-deploy.tar.gz \
+    --exclude=node_modules \
+    --exclude=.git \
+    --exclude=dist \
+    --exclude=.next \
+    --exclude=*.log \
+    --exclude=postgres_data \
+    --exclude=redis_data \
+    .
+
+## KROK 2: Wyślij plik na VPS (podaj hasło gdy zapyta)
+scp /tmp/crm-gtd-deploy.tar.gz root@91.99.50.80:/tmp/
+
+## KROK 3: Zaloguj się na VPS
+ssh root@91.99.50.80
+
+## KROK 4: Na VPS wykonaj po kolei:
+mkdir -p /opt/crm-gtd-smart
+cd /opt/crm-gtd-smart
+tar -xzf /tmp/crm-gtd-deploy.tar.gz
+rm /tmp/crm-gtd-deploy.tar.gz
+chmod +x *.sh
+ls -la
+
+## KROK 5: Uruchom quick setup (instaluje Docker)
+./quick-start.sh
+
+## KROK 6: Konfiguracja
+cp .env.production.example .env.production
+nano .env.production
+
+### W .env.production ustaw:
+POSTGRES_PASSWORD=jakies_silne_haslo
+JWT_SECRET=wygeneruj_32_znaki_haslo
+JWT_REFRESH_SECRET=inne_32_znaki_haslo
+NEXT_PUBLIC_API_URL=http://91.99.50.80/crm
+NEXT_PUBLIC_APP_URL=http://91.99.50.80/crm
+NEXT_PUBLIC_BASE_PATH=/crm
+
+## KROK 7: Główny nginx na VPS
+apt install -y nginx
+cp nginx-main-vps.conf /etc/nginx/sites-available/default
+nginx -t
+systemctl restart nginx
+
+## KROK 8: Deploy aplikacji
+docker-compose -f docker-compose.multi-app.yml up -d
+
+## KROK 9: Sprawdź status
+docker ps
+curl http://localhost:8081/health
+
+## KROK 10: Dostęp z przeglądarki
+http://91.99.50.80/crm

@@ -1,0 +1,1401 @@
+import { apiClient } from './client';
+
+// Types
+export interface TimeBlock {
+  id: string;
+  name: string;
+  startTime: string;
+  endTime: string;
+  energyLevel: 'HIGH' | 'MEDIUM' | 'LOW' | 'CREATIVE' | 'ADMINISTRATIVE';
+  primaryContext: string;
+  alternativeContexts: string[];
+  isBreak: boolean;
+  breakType?: 'COFFEE' | 'MEAL' | 'STRETCH' | 'WALK' | 'MEDITATION' | 'SOCIAL' | 'FREE' | 'TRANSITION';
+  dayOfWeek?: 'MONDAY' | 'TUESDAY' | 'WEDNESDAY' | 'THURSDAY' | 'FRIDAY' | 'SATURDAY' | 'SUNDAY';
+  
+  // Extended Day Selection
+  workdays: boolean;      // Dni robocze (Mon-Fri)
+  weekends: boolean;      // Weekendy (Sat-Sun)
+  holidays: boolean;      // Święta państwowe
+  specificDays: string[]; // Konkretne dni tygodnia: ["MONDAY", "WEDNESDAY"]
+  
+  focusModeId?: string;
+  isActive: boolean;
+  order: number;
+  organizationId: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  focusMode?: FocusMode;
+  scheduledTasks?: ScheduledTask[];
+  energyAnalytics?: EnergyAnalytics[];
+}
+
+export interface FocusMode {
+  id: string;
+  name: string;
+  duration: number;
+  energyLevel: 'HIGH' | 'MEDIUM' | 'LOW' | 'CREATIVE' | 'ADMINISTRATIVE';
+  contextName?: string;
+  estimatedTimeMax?: number;
+  category?: string;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  tags: string[];
+  organizationId: string;
+  createdAt: string;
+  updatedAt: string;
+  timeBlocks?: Array<{
+    id: string;
+    name: string;
+    startTime: string;
+    endTime: string;
+    dayOfWeek?: string;
+  }>;
+}
+
+export interface ScheduledTask {
+  id: string;
+  title: string;
+  description?: string;
+  estimatedMinutes: number;
+  actualMinutes?: number;
+  taskId?: string;
+  energyTimeBlockId: string;
+  context: string;
+  energyRequired: 'HIGH' | 'MEDIUM' | 'LOW' | 'CREATIVE' | 'ADMINISTRATIVE';
+  priority: 'LOW' | 'MEDIUM' | 'HIGH';
+  status: 'PLANNED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'RESCHEDULED' | 'OVERDUE';
+  scheduledDate: string;
+  startedAt?: string;
+  completedAt?: string;
+  wasRescheduled: boolean;
+  rescheduledFrom?: string;
+  rescheduledReason?: string;
+}
+
+export interface EnergyPattern {
+  id: string;
+  timeSlot: string;
+  dayOfWeek: string;
+  energyLevel: 'HIGH' | 'MEDIUM' | 'LOW' | 'CREATIVE' | 'ADMINISTRATIVE';
+  averageEnergy: number;
+  productivityScore: number;
+  tasksCompleted: number;
+  totalMinutes: number;
+  successRate: number;
+  preferredContexts: string[];
+  avoidedContexts: string[];
+  confidence: number;
+  sampleSize: number;
+  lastAnalyzed?: string;
+}
+
+export interface EnergyAnalytics {
+  id: string;
+  date: string;
+  energyTimeBlockId: string;
+  plannedEnergy: 'HIGH' | 'MEDIUM' | 'LOW' | 'CREATIVE' | 'ADMINISTRATIVE';
+  actualEnergy?: 'HIGH' | 'MEDIUM' | 'LOW' | 'CREATIVE' | 'ADMINISTRATIVE';
+  energyScore?: number;
+  tasksPlanned: number;
+  tasksCompleted: number;
+  minutesPlanned: number;
+  minutesActual: number;
+  productivityScore?: number;
+  contextsPlanned: string[];
+  contextsActual: string[];
+  contextSwitches: number;
+  satisfactionScore?: number;
+  notes?: string;
+  distractions: string[];
+}
+
+export interface BreakTemplate {
+  id: string;
+  name: string;
+  duration: number;
+  breakType: 'COFFEE' | 'MEAL' | 'STRETCH' | 'WALK' | 'MEDITATION' | 'SOCIAL' | 'FREE' | 'TRANSITION';
+  description?: string;
+  energyBefore?: 'HIGH' | 'MEDIUM' | 'LOW' | 'CREATIVE' | 'ADMINISTRATIVE';
+  energyAfter?: 'HIGH' | 'MEDIUM' | 'LOW' | 'CREATIVE' | 'ADMINISTRATIVE';
+  bestTimeSlots: string[];
+  activities: string[];
+  isDefault: boolean;
+}
+
+export interface DailySchedule {
+  date: string;
+  dayOfWeek: string;
+  timeBlocks: TimeBlock[];
+  statistics: {
+    totalBlocks: number;
+    workBlocks: number;
+    breakBlocks: number;
+    totalTasks: number;
+    totalPlannedMinutes: number;
+    totalWorkMinutes: number;
+    utilizationRate: number;
+    blocksWithTasks: number;
+  };
+}
+
+export interface ScheduleTasksRequest {
+  date: string;
+  tasks: Array<{
+    id?: string;
+    title: string;
+    description?: string;
+    estimatedMinutes: number;
+    priority: 'LOW' | 'MEDIUM' | 'HIGH';
+    context: string;
+    energyRequired: 'HIGH' | 'MEDIUM' | 'LOW' | 'CREATIVE' | 'ADMINISTRATIVE';
+  }>;
+  strategy?: 'ENERGY_MATCH' | 'PRIORITY_FIRST' | 'CONTEXT_BATCH' | 'BALANCED';
+}
+
+export interface ScheduleTasksResponse {
+  scheduledTasks: ScheduledTask[];
+  unscheduledTasks: any[];
+  statistics: {
+    totalTasks: number;
+    scheduledCount: number;
+    unscheduledCount: number;
+    schedulingRate: number;
+    blocksUsed: number;
+    totalBlocks: number;
+  };
+}
+
+export interface PerformanceMetrics {
+  id: string;
+  startDate: string;
+  endDate: string;
+  periodType: 'daily' | 'weekly' | 'monthly';
+  focusModeId?: string;
+  focusModeEfficiency?: number;
+  focusModeProductivity?: number;
+  primaryContext: string;
+  alternativeContexts: string[];
+  contextSwitchCount: number;
+  contextEfficiency: number;
+  energyLevel: 'HIGH' | 'MEDIUM' | 'LOW' | 'CREATIVE' | 'ADMINISTRATIVE';
+  energyConsistency: number;
+  energyOptimalTimes: string[];
+  totalTasks: number;
+  completedTasks: number;
+  overdueTasks: number;
+  completionRate: number;
+  avgTaskDuration?: number;
+  timeBlockUtilization: number;
+  breakEffectiveness?: number;
+  aiSuggestionAccuracy?: number;
+  userBehaviorScore?: number;
+  adaptationRate?: number;
+  productiveStreakDays: number;
+  currentStreak: number;
+  longestStreak: number;
+  stressLevel?: number;
+  satisfactionTrend?: number;
+  burnoutRisk?: number;
+  suggestions: string[];
+  implementedSuggestions: number;
+  suggestionEffectiveness?: number;
+  organizationId: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  focusMode?: FocusMode;
+}
+
+export interface PerformanceAnalyticsResponse {
+  metrics: PerformanceMetrics[];
+  summary?: {
+    avgCompletionRate: number;
+    avgProductivityScore: number;
+    totalTasksCompleted: number;
+    avgContextEfficiency: number;
+    currentStreak: number;
+    longestStreak: number;
+    avgStressLevel?: number;
+    burnoutRiskTrend: number[];
+  };
+  meta: {
+    total: number;
+    period: {
+      startDate?: string;
+      endDate?: string;
+      periodType?: string;
+    };
+    dataAvailable: boolean;
+  };
+}
+
+export interface PerformanceInsights {
+  insights: string[];
+  recommendations: string[];
+  trends: {
+    productivity: { direction: 'up' | 'down' | 'stable'; percentage: number };
+    completionRate: { direction: 'up' | 'down' | 'stable'; percentage: number };
+    stressLevel: { direction: 'up' | 'down' | 'stable'; percentage: number };
+    burnoutRisk: { direction: 'up' | 'down' | 'stable'; percentage: number };
+    energyConsistency: { direction: 'up' | 'down' | 'stable'; percentage: number };
+  };
+  bestPerformingFocusMode?: FocusMode & { avgEfficiency: number };
+  optimalWorkPatterns: {
+    bestEnergyTime?: string;
+    optimalTaskCount: number;
+    bestContextCombination: string[];
+    idealSessionLength: number;
+  };
+  performanceScore: number;
+  message?: string;
+}
+
+// Enhanced AI Types
+export interface PatternDetectionResult {
+  type: string;
+  key: string;
+  confidence: number;
+  strength: number;
+  data: any;
+  source: string;
+}
+
+export interface AIRecommendation {
+  type: 'time_block' | 'focus_mode' | 'context' | 'break' | 'task_sizing';
+  priority: 'high' | 'medium' | 'low';
+  title: string;
+  description: string;
+  confidence: number;
+  expectedImpact: number;
+  implementation: any;
+  patternBased: boolean;
+}
+
+export interface UserPattern {
+  id: string;
+  patternType: string;
+  patternKey: string;
+  confidence: number;
+  strength: number;
+  sampleSize: number;
+  successRate: number;
+  patternData: any;
+  conditions: any[];
+  outcomes: any[];
+  learningSource: string;
+  userAcceptance?: number;
+  implementationRate?: number;
+  manualOverrides: number;
+  adaptationCount: number;
+  lastConfirmed?: string;
+  lastAdaptation?: string;
+  adaptationReason?: string;
+  validUntil?: string;
+  organizationId: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PatternLearningInsights {
+  totalPatterns: number;
+  highConfidencePatterns: number;
+  acceptedPatterns: number;
+  adaptationCount: number;
+  learningEffectiveness: number;
+  patternsByType: { [key: string]: number };
+  recommendations: {
+    needMoreData: number;
+    readyForUse: number;
+    conflicting: number;
+  };
+}
+
+// Template Generator Types
+export interface UserProfile {
+  id: string;
+  energyPeaks: Array<{ time: string; level: string }>;
+  energyValleys: Array<{ time: string; level: string }>;
+  energyPattern: Record<string, any>;
+  preferredContexts: string[];
+  contextTimeSlots: Record<string, string[]>;
+  contextAvoidance: Record<string, any>;
+  focusModePrefs: Record<string, any>;
+  optimalFocusLength: Record<string, number>;
+  focusEnergyMap: Record<string, string>;
+  breakFrequency: number;
+  breakDuration: number;
+  breakTypes: string[];
+  lunchTime: string;
+  lunchDuration: number;
+  workStartTime: string;
+  workEndTime: string;
+  workdays: string[];
+  flexibleBlocks: boolean;
+  learningEnabled: boolean;
+  adaptationRate: number;
+  feedbackWeight: number;
+  organizationId: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  dayTemplates?: DayTemplate[];
+}
+
+export interface DayTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  templateType: 'WORKDAY' | 'CREATIVE' | 'ADMIN' | 'MEETING' | 'MIXED' | 'CUSTOM';
+  dayIntensity: 'LIGHT' | 'MEDIUM' | 'HEAVY';
+  focusStyle: 'DEEP_WORK' | 'MEETINGS' | 'CREATIVE' | 'ADMIN' | 'MIXED';
+  timeBlocks: string; // JSON string
+  totalWorkTime: number;
+  totalBreakTime: number;
+  blocksCount: number;
+  energyDistribution: string; // JSON string
+  contextBalance: string; // JSON string
+  usageCount: number;
+  avgRating?: number;
+  lastUsed?: string;
+  isDefault: boolean;
+  isPublic: boolean;
+  generatedBy: 'USER' | 'AI' | 'HYBRID' | 'IMPORTED';
+  aiConfidence?: number;
+  basedOnPatterns: string; // JSON string
+  organizationId: string;
+  userId: string;
+  userProfileId?: string;
+  createdAt: string;
+  updatedAt: string;
+  templateApplications?: TemplateApplication[];
+}
+
+export interface TemplateApplication {
+  id: string;
+  appliedDate: string;
+  templateSnapshot: string; // JSON string
+  actualCompletion?: number;
+  userRating?: number;
+  feedback?: string;
+  modifications: string; // JSON string
+  totalTasksPlanned: number;
+  totalTasksCompleted: number;
+  totalTimeSpent?: number;
+  productivityScore?: number;
+  templateId: string;
+  organizationId: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GenerateTemplateRequest {
+  templateType?: 'WORKDAY' | 'CREATIVE' | 'ADMIN' | 'MEETING' | 'MIXED' | 'CUSTOM';
+  dayIntensity?: 'LIGHT' | 'MEDIUM' | 'HEAVY';
+  focusStyle?: 'DEEP_WORK' | 'MEETINGS' | 'CREATIVE' | 'ADMIN' | 'MIXED';
+  name?: string;
+  description?: string;
+}
+
+export interface ApplyTemplateRequest {
+  date: string;
+  modifications?: Array<{
+    blockIndex: number;
+    changes: Partial<TimeBlock>;
+  }>;
+}
+
+// API Functions
+export const smartDayPlannerApi = {
+  // Time Blocks
+  async getTimeBlocks(dayOfWeek?: string) {
+    const params = dayOfWeek ? `?dayOfWeek=${dayOfWeek}` : '';
+    const response = await apiClient.get(`/smart-day-planner/time-blocks${params}`);
+    return response.data;
+  },
+
+  async createTimeBlock(data: Partial<TimeBlock>) {
+    const response = await apiClient.post('/smart-day-planner/time-blocks', data);
+    return response.data;
+  },
+
+  async updateTimeBlock(id: string, data: Partial<TimeBlock>) {
+    const response = await apiClient.put(`/smart-day-planner/time-blocks/${id}`, data);
+    return response.data;
+  },
+
+  async deleteTimeBlock(id: string) {
+    const response = await apiClient.delete(`/smart-day-planner/time-blocks/${id}`);
+    return response.data;
+  },
+
+  async updateBlockOrder(blocks: Array<{ id: string; order: number }>) {
+    const response = await apiClient.put('/smart-day-planner/time-blocks/order', { blocks });
+    return response.data;
+  },
+
+  // Daily Schedule
+  async getDailySchedule(date: string): Promise<{ success: boolean; data: DailySchedule }> {
+    const response = await apiClient.get(`/smart-day-planner/daily-schedule/${date}`);
+    return response.data;
+  },
+
+  // Task Scheduling
+  async scheduleTasks(data: ScheduleTasksRequest): Promise<{ success: boolean; data: ScheduleTasksResponse }> {
+    const response = await apiClient.post('/smart-day-planner/schedule-tasks', data);
+    return response.data;
+  },
+
+  async createScheduledTask(data: Partial<ScheduledTask>): Promise<{ success: boolean; data: ScheduledTask }> {
+    const response = await apiClient.post('/smart-day-planner/scheduled-tasks', data);
+    return response.data;
+  },
+
+  async updateScheduledTask(id: string, data: Partial<ScheduledTask>) {
+    const response = await apiClient.put(`/smart-day-planner/scheduled-tasks/${id}`, data);
+    return response.data;
+  },
+
+  async completeTask(id: string) {
+    const response = await apiClient.post(`/smart-day-planner/scheduled-tasks/${id}/complete`);
+    return response.data;
+  },
+
+  async rescheduleTask(id: string, data: { 
+    newBlockId?: string; 
+    reason?: string;
+    newDate?: string;
+  }) {
+    const response = await apiClient.post(`/smart-day-planner/scheduled-tasks/${id}/reschedule`, data);
+    return response.data;
+  },
+
+  // Energy Patterns
+  async getEnergyPatterns() {
+    const response = await apiClient.get('/smart-day-planner/energy-patterns');
+    return response.data;
+  },
+
+  async analyzeEnergyPatterns(dateRange?: { from: string; to: string }) {
+    const response = await apiClient.post('/smart-day-planner/energy-patterns/analyze', dateRange);
+    return response.data;
+  },
+
+  // Energy Analytics
+  async getEnergyAnalytics(dateRange?: { from: string; to: string }) {
+    const params = dateRange 
+      ? `?from=${dateRange.from}&to=${dateRange.to}` 
+      : '';
+    const response = await apiClient.get(`/smart-day-planner/energy-analytics${params}`);
+    return response.data;
+  },
+
+  async submitEnergyFeedback(blockId: string, data: {
+    actualEnergy: 'HIGH' | 'MEDIUM' | 'LOW' | 'CREATIVE' | 'ADMINISTRATIVE';
+    energyScore: number;
+    satisfactionScore: number;
+    notes?: string;
+    distractions?: string[];
+  }) {
+    const response = await apiClient.post(`/smart-day-planner/time-blocks/${blockId}/feedback`, data);
+    return response.data;
+  },
+
+  // Break Templates
+  async getBreakTemplates() {
+    const response = await apiClient.get('/smart-day-planner/break-templates');
+    return response.data;
+  },
+
+  async createBreakTemplate(data: Partial<BreakTemplate>) {
+    const response = await apiClient.post('/smart-day-planner/break-templates', data);
+    return response.data;
+  },
+
+  async updateBreakTemplate(id: string, data: Partial<BreakTemplate>) {
+    const response = await apiClient.put(`/smart-day-planner/break-templates/${id}`, data);
+    return response.data;
+  },
+
+  async deleteBreakTemplate(id: string) {
+    const response = await apiClient.delete(`/smart-day-planner/break-templates/${id}`);
+    return response.data;
+  },
+
+  async applyBreakTemplate(templateId: string, timeBlockId: string) {
+    const response = await apiClient.post(`/smart-day-planner/break-templates/${templateId}/apply`, {
+      timeBlockId
+    });
+    return response.data;
+  },
+
+  // Context Priorities
+  async getContextPriorities() {
+    const response = await apiClient.get('/smart-day-planner/context-priorities');
+    return response.data;
+  },
+
+  async updateContextPriority(data: {
+    contextName: string;
+    timeSlot: string;
+    dayOfWeek?: string;
+    priority: number;
+    requiredEnergy?: 'HIGH' | 'MEDIUM' | 'LOW' | 'CREATIVE' | 'ADMINISTRATIVE';
+    maxDuration?: number;
+    alternativeOrder?: string[];
+  }) {
+    const response = await apiClient.post('/smart-day-planner/context-priorities', data);
+    return response.data;
+  },
+
+  // AI Suggestions
+  async getAISuggestions(data: {
+    date: string;
+    tasks?: Array<{ title: string; estimatedMinutes: number; context: string }>;
+    optimizeFor?: 'PRODUCTIVITY' | 'ENERGY' | 'BALANCE';
+  }) {
+    const response = await apiClient.post('/smart-day-planner/ai-suggestions', data);
+    return response.data;
+  },
+
+  // Statistics
+  async getProductivityStats(dateRange?: { from: string; to: string }) {
+    const params = dateRange 
+      ? `?from=${dateRange.from}&to=${dateRange.to}` 
+      : '';
+    const response = await apiClient.get(`/smart-day-planner/statistics/productivity${params}`);
+    return response.data;
+  },
+
+  async getEnergyStats(dateRange?: { from: string; to: string }) {
+    const params = dateRange 
+      ? `?from=${dateRange.from}&to=${dateRange.to}` 
+      : '';
+    const response = await apiClient.get(`/smart-day-planner/statistics/energy${params}`);
+    return response.data;
+  },
+
+  // Focus Modes
+  async getFocusModes(): Promise<{ success: boolean; data: FocusMode[] }> {
+    const response = await apiClient.get('/smart-day-planner/focus-modes');
+    return response.data;
+  },
+
+  async createFocusMode(data: Partial<FocusMode>): Promise<{ success: boolean; data: FocusMode }> {
+    const response = await apiClient.post('/smart-day-planner/focus-modes', data);
+    return response.data;
+  },
+
+  async updateFocusMode(id: string, data: Partial<FocusMode>): Promise<{ success: boolean; data: FocusMode }> {
+    const response = await apiClient.put(`/smart-day-planner/focus-modes/${id}`, data);
+    return response.data;
+  },
+
+  async deleteFocusMode(id: string): Promise<{ success: boolean }> {
+    const response = await apiClient.delete(`/smart-day-planner/focus-modes/${id}`);
+    return response.data;
+  },
+
+  async assignFocusModeToBlock(blockId: string, focusModeId: string | null): Promise<{ success: boolean; data: TimeBlock }> {
+    const response = await apiClient.post(`/smart-day-planner/time-blocks/${blockId}/focus-mode`, {
+      focusModeId
+    });
+    return response.data;
+  },
+
+  // Performance Analytics
+  async getPerformanceAnalytics(params?: {
+    startDate?: string;
+    endDate?: string;
+    periodType?: 'daily' | 'weekly' | 'monthly';
+  }): Promise<{ success: boolean; data: PerformanceAnalyticsResponse }> {
+    const queryParams = new URLSearchParams();
+    if (params?.startDate) queryParams.append('startDate', params.startDate);
+    if (params?.endDate) queryParams.append('endDate', params.endDate);
+    if (params?.periodType) queryParams.append('periodType', params.periodType);
+
+    const response = await apiClient.get(`/smart-day-planner/performance-analytics?${queryParams}`);
+    return response.data;
+  },
+
+  async generatePerformanceAnalytics(data: {
+    startDate: string;
+    endDate: string;
+    periodType?: 'daily' | 'weekly' | 'monthly';
+  }): Promise<{ success: boolean; data: PerformanceMetrics }> {
+    const response = await apiClient.post('/smart-day-planner/performance-analytics/generate', data);
+    return response.data;
+  },
+
+  async getPerformanceInsights(period?: '7d' | '30d' | '90d'): Promise<{ success: boolean; data: PerformanceInsights }> {
+    const params = period ? `?period=${period}` : '';
+    const response = await apiClient.get(`/smart-day-planner/performance-insights${params}`);
+    return response.data;
+  },
+
+  // Enhanced AI - Pattern Learning
+  async getUserPatterns(patternType?: string): Promise<{ success: boolean; data: UserPattern[] }> {
+    const params = patternType ? `?patternType=${patternType}` : '';
+    const response = await apiClient.get(`/smart-day-planner/user-patterns${params}`);
+    return response.data;
+  },
+
+  async detectUserPatterns(days: number = 30): Promise<{ success: boolean; data: { patterns: PatternDetectionResult[]; stored: number; insights: number } }> {
+    const response = await apiClient.post('/smart-day-planner/detect-patterns', { days });
+    return response.data;
+  },
+
+  async getAIRecommendations(): Promise<{ success: boolean; data: AIRecommendation[] }> {
+    const response = await apiClient.get('/smart-day-planner/ai-recommendations');
+    return response.data;
+  },
+
+  async submitPatternFeedback(patternId: string, accepted: boolean, implemented?: boolean): Promise<{ success: boolean }> {
+    const response = await apiClient.post('/smart-day-planner/pattern-feedback', {
+      patternId,
+      accepted,
+      implemented
+    });
+    return response.data;
+  },
+
+  async getLearningInsights(): Promise<{ success: boolean; data: PatternLearningInsights }> {
+    const response = await apiClient.get('/smart-day-planner/learning-insights');
+    return response.data;
+  },
+
+  async adaptPatterns(): Promise<{ success: boolean }> {
+    const response = await apiClient.post('/smart-day-planner/adapt-patterns');
+    return response.data;
+  },
+
+  // Template Generator - User Profile Management
+  async getUserProfile(): Promise<{ success: boolean; data: UserProfile }> {
+    const response = await apiClient.get('/smart-day-planner/user-profile');
+    return response.data;
+  },
+
+  async updateUserProfile(data: Partial<UserProfile>): Promise<{ success: boolean; data: UserProfile }> {
+    const response = await apiClient.put('/smart-day-planner/user-profile', data);
+    return response.data;
+  },
+
+  // Template Generator - Template Management
+  async generateTemplate(data: GenerateTemplateRequest): Promise<{ success: boolean; data: DayTemplate }> {
+    const response = await apiClient.post('/smart-day-planner/generate-template', data);
+    return response.data;
+  },
+
+  async getTemplates(params?: {
+    templateType?: string;
+    isPublic?: boolean;
+  }): Promise<{ success: boolean; data: DayTemplate[]; meta: any }> {
+    const queryParams = new URLSearchParams();
+    if (params?.templateType) queryParams.append('templateType', params.templateType);
+    if (params?.isPublic !== undefined) queryParams.append('isPublic', String(params.isPublic));
+
+    const response = await apiClient.get(`/smart-day-planner/templates?${queryParams}`);
+    return response.data;
+  },
+
+  async applyTemplate(templateId: string, data: ApplyTemplateRequest): Promise<{ 
+    success: boolean; 
+    data: { 
+      templateApplication: TemplateApplication;
+      appliedBlocks: TimeBlock[];
+      appliedDate: string;
+    }
+  }> {
+    const response = await apiClient.post(`/smart-day-planner/templates/${templateId}/apply`, data);
+    return response.data;
+  },
+
+  async updateTemplate(templateId: string, data: Partial<DayTemplate>): Promise<{ success: boolean; data: DayTemplate }> {
+    const response = await apiClient.put(`/smart-day-planner/templates/${templateId}`, data);
+    return response.data;
+  },
+
+  async deleteTemplate(templateId: string): Promise<{ success: boolean }> {
+    const response = await apiClient.delete(`/smart-day-planner/templates/${templateId}`);
+    return response.data;
+  },
+
+  // Weekly Templates - FAZA 1
+  async createWeeklyTemplate(data: {
+    baseDayTemplateId: string;
+    weekName?: string;
+    weekDescription?: string;
+    workdays?: string[];
+    holidays?: string[];
+    customizations?: any;
+  }): Promise<{ success: boolean; data: DayTemplate }> {
+    const response = await apiClient.post('/smart-day-planner/weekly-templates/create', data);
+    return response.data;
+  },
+
+  async applyWeeklyTemplate(templateId: string, data: {
+    weekStartDate: string; // "2025-07-07" (Monday)
+    workdays?: string[];
+    holidays?: string[];
+    modifications?: any; // { "TUESDAY": [{ blockIndex: 0, changes: {...} }] }
+  }): Promise<{ 
+    success: boolean; 
+    data: {
+      appliedDays: string[];
+      skippedDays: string[];
+      totalBlocks: number;
+      templateApplications: TemplateApplication[];
+      weekStartDate: string;
+      weekEndDate: string;
+    };
+    message: string;
+  }> {
+    const response = await apiClient.post(`/smart-day-planner/weekly-templates/${templateId}/apply`, data);
+    return response.data;
+  },
+
+  async getCurrentWeeklyTemplate(weekStartDate?: string): Promise<{
+    success: boolean;
+    data: {
+      template: DayTemplate;
+      templateApplications: TemplateApplication[];
+      weekStart: string;
+      weekEnd: string;
+      blocksByDay: { [date: string]: TimeBlock[] };
+      statistics: {
+        totalApplications: number;
+        totalBlocks: number;
+        averageBlocksPerDay: number;
+      };
+    } | null;
+    message?: string;
+  }> {
+    const params = weekStartDate ? `?weekStartDate=${weekStartDate}` : '';
+    const response = await apiClient.get(`/smart-day-planner/weekly-templates/current${params}`);
+    return response.data;
+  },
+
+  async quickWeeklySetup(data: {
+    templateName?: string;
+    weekStartDate: string;
+    templateType?: 'WORKDAY' | 'CREATIVE' | 'ADMIN' | 'MEETING' | 'MIXED' | 'CUSTOM';
+    dayIntensity?: 'LIGHT' | 'MEDIUM' | 'HEAVY';
+    focusStyle?: 'DEEP_WORK' | 'MEETINGS' | 'CREATIVE' | 'ADMIN' | 'MIXED';
+    workHours?: { start: string; end: string };
+    lunchBreak?: { start: string; duration: number };
+    shortBreaks?: { frequency: number; duration: number };
+  }): Promise<{
+    success: boolean;
+    data: {
+      template: DayTemplate;
+      appliedBlocks: number;
+      appliedDays: string[];
+      weekStart: string;
+      weekEnd: string;
+    };
+    message: string;
+  }> {
+    const response = await apiClient.post('/smart-day-planner/weekly-templates/quick-setup', data);
+    return response.data;
+  },
+
+  // FAZA 2: Task Queue Management - Intelligent Task Distribution
+  async getTaskQueue(params?: {
+    date?: string;
+    includeRecurring?: boolean;
+    includeProjects?: boolean;
+    includeInbox?: boolean;
+  }): Promise<{
+    success: boolean;
+    data: {
+      tasks: TaskQueueItem[];
+      statistics: TaskQueueStatistics;
+      sources: {
+        gtdInbox: boolean;
+        projects: boolean;
+        recurring: boolean;
+      };
+      generatedAt: string;
+    };
+  }> {
+    const queryParams = new URLSearchParams();
+    if (params?.date) queryParams.append('date', params.date);
+    if (params?.includeRecurring !== undefined) queryParams.append('includeRecurring', String(params.includeRecurring));
+    if (params?.includeProjects !== undefined) queryParams.append('includeProjects', String(params.includeProjects));
+    if (params?.includeInbox !== undefined) queryParams.append('includeInbox', String(params.includeInbox));
+
+    const response = await apiClient.get(`/smart-day-planner/task-queue?${queryParams}`);
+    return response.data;
+  },
+
+  async analyzeTaskQueue(data: {
+    date: string;
+    tasks: TaskQueueItem[];
+  }): Promise<{
+    success: boolean;
+    data: {
+      analysis: TaskQueueAnalysis;
+      capacity: TaskCapacity;
+      workload: TaskWorkload;
+      compatibility: TaskCompatibility;
+      date: string;
+      dayOfWeek: string;
+      analyzedAt: string;
+    };
+  }> {
+    const response = await apiClient.post('/smart-day-planner/task-queue/analyze', data);
+    return response.data;
+  },
+
+  async prioritizeTasks(data: {
+    tasks: TaskQueueItem[];
+    strategy?: 'DEADLINE_FIRST' | 'ENERGY_OPTIMAL' | 'QUICK_WINS' | 'BALANCED';
+    userPreferences?: any;
+  }): Promise<{
+    success: boolean;
+    data: {
+      tasks: TaskQueueItem[];
+      strategy: string;
+      statistics: TaskPrioritizationStats;
+      recommendations: string[];
+      appliedAt: string;
+    };
+  }> {
+    const response = await apiClient.post('/smart-day-planner/task-queue/prioritize', data);
+    return response.data;
+  },
+
+  // FAZA 2: Smart Assignment Algorithm
+  async smartAssignment(data: {
+    date: string;
+    tasks: TaskQueueItem[];
+    strategy?: 'ENERGY_MATCH' | 'CONTEXT_BATCH' | 'PRIORITY_FIRST' | 'TIME_OPTIMAL' | 'BALANCED';
+    preferences?: any;
+    forceAssignment?: boolean;
+    saveAssignments?: boolean;
+  }): Promise<{
+    success: boolean;
+    data: SmartAssignmentResult;
+  }> {
+    const response = await apiClient.post('/smart-day-planner/smart-assignment', data);
+    return response.data;
+  },
+
+  async optimizeAssignments(data: {
+    date: string;
+    optimizationGoal?: 'ENERGY_BALANCE' | 'CONTEXT_GROUPING' | 'TIME_EFFICIENCY' | 'PRIORITY_ALIGNMENT' | 'BALANCED';
+  }): Promise<{
+    success: boolean;
+    data: AssignmentOptimization;
+  }> {
+    const response = await apiClient.post('/smart-day-planner/optimize-assignments', data);
+    return response.data;
+  },
+
+  async emergencyReschedule(data: {
+    canceledDate: string;
+    reason?: string;
+    redistributionDays?: number;
+    priorityThreshold?: 'LOW' | 'MEDIUM' | 'HIGH';
+    executeReschedule?: boolean;
+  }): Promise<{
+    success: boolean;
+    data: EmergencyRescheduleResult;
+  }> {
+    const response = await apiClient.post('/smart-day-planner/emergency-reschedule', data);
+    return response.data;
+  },
+
+  // NOWE: Sugestie następnych zadań przy wcześniejszym ukończeniu
+  async getNextTaskSuggestions(data: {
+    completedTaskId: string;
+    availableMinutes?: number;
+    energyLevel?: 'HIGH' | 'MEDIUM' | 'LOW' | 'CREATIVE' | 'ADMINISTRATIVE';
+    currentContext?: string;
+  }): Promise<{
+    success: boolean;
+    data: TaskSuggestion[];
+  }> {
+    const response = await apiClient.post('/smart-day-planner/next-suggestions', data);
+    return response.data;
+  },
+
+  // NOWE: Obsługa skróconego dnia pracy  
+  async handlePartialDay(data: {
+    endTime: string; // np. "14:00"
+    strategy: 'COMPRESS_BLOCKS' | 'RESCHEDULE_REMAINING';
+    date?: string;
+  }): Promise<{
+    success: boolean;
+    data: PartialDayResult;
+  }> {
+    const response = await apiClient.post('/smart-day-planner/partial-day', data);
+    return response.data;
+  },
+
+  // Weekly Schedule
+  async getWeeklySchedule(date: string): Promise<{ success: boolean; data: any }> {
+    try {
+      console.log('📅 Calling weekly schedule API for date:', date);
+      console.log('📡 API URL:', `/smart-day-planner/weekly-schedule/${date}`);
+      const response = await apiClient.get(`/smart-day-planner/weekly-schedule/${date}`);
+      console.log('✅ Weekly schedule response:', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ Error fetching weekly schedule:', error);
+      console.error('Error details:', error.response?.data);
+      return { success: false, data: null };
+    }
+  },
+
+  // Monthly Schedule
+  async getMonthlySchedule(year: number, month: number): Promise<{ success: boolean; data: any }> {
+    try {
+      const response = await apiClient.get(`/smart-day-planner/monthly-schedule/${year}/${month}`);
+      return response.data;
+    } catch (error: any) {
+      console.error('Error fetching monthly schedule:', error);
+      return { success: false, data: null };
+    }
+  }
+};
+
+// FAZA 2: Task Queue Types
+export interface TaskQueueItem {
+  id: string;
+  source: 'GTD_INBOX' | 'PROJECTS' | 'RECURRING';
+  type: 'INBOX_ITEM' | 'PROJECT_TASK' | 'RECURRING_TASK';
+  title: string;
+  description?: string;
+  estimatedMinutes: number;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  context: string;
+  energyRequired: 'HIGH' | 'MEDIUM' | 'LOW' | 'CREATIVE' | 'ADMINISTRATIVE';
+  deadline?: string;
+  tags: string[];
+  metadata: {
+    [key: string]: any;
+    urgencyScore: number;
+  };
+  priorityRank?: number;
+  priorityScore?: number;
+  quickWinScore?: 'HIGH' | 'MEDIUM' | 'LOW';
+}
+
+export interface TaskQueueStatistics {
+  total: number;
+  bySource: {
+    gtdInbox: number;
+    projects: number;
+    recurring: number;
+  };
+  byPriority: {
+    high: number;
+    medium: number;
+    low: number;
+  };
+  byEnergyLevel: {
+    high: number;
+    medium: number;
+    low: number;
+    creative: number;
+    administrative: number;
+  };
+  totalEstimatedTime: number;
+}
+
+export interface TaskQueueAnalysis {
+  availableBlocks: TimeBlock[];
+  workCapacity: number;
+  energyDistribution: { [energy: string]: number };
+  contextCapacity: { [context: string]: number };
+  recommendations: string[];
+}
+
+export interface TaskCapacity {
+  totalMinutes: number;
+  availableBlocks: number;
+  breakBlocks: number;
+}
+
+export interface TaskWorkload {
+  totalTasks: number;
+  totalMinutes: number;
+  utilizationRate: number;
+  averageTaskDuration: number;
+}
+
+export interface TaskCompatibility {
+  energyMatch: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR' | 'NO_DATA';
+  contextMatch: 'EXCELLENT' | 'GOOD' | 'FAIR' | 'POOR' | 'NO_DATA';
+  timeMatch: 'GOOD' | 'TIGHT' | 'OVERLOAD';
+}
+
+export interface TaskPrioritizationStats {
+  totalTasks: number;
+  avgPriorityScore: number;
+  quickWins: number;
+  highPriorityTasks: number;
+  tasksWithDeadlines: number;
+}
+
+// FAZA 2: Smart Assignment Algorithm Types
+export interface TaskAssignment {
+  task: TaskQueueItem;
+  block: TimeBlock & {
+    totalTime: number;
+    usedTime: number;
+    availableTime: number;
+    utilizationRate: number;
+  };
+  score: number;
+  matchType: 'ENERGY_MATCH' | 'CONTEXT_BATCH' | 'PRIORITY_FIRST' | 'TIME_OPTIMAL' | 'BALANCED';
+  confidence: 'HIGH' | 'MEDIUM' | 'LOW';
+  timeWaste?: number;
+}
+
+export interface SmartAssignmentResult {
+  assignments: TaskAssignment[];
+  unassigned: Array<{
+    task: TaskQueueItem;
+    reason: string;
+    bestScore?: number;
+    requiredTime?: number;
+    suggestedContext?: string;
+  }>;
+  strategy: string;
+  statistics: {
+    totalTasks: number;
+    assignedTasks: number;
+    unassignedTasks: number;
+    assignmentRate: number;
+    blocksUsed: number;
+    totalBlocks: number;
+    blockUtilization: number;
+  };
+  insights: string[];
+  scheduledTasks?: ScheduledTask[];
+  date: string;
+  processedAt: string;
+}
+
+export interface AssignmentOptimization {
+  currentScore: number;
+  optimizedScore: number;
+  improvement: number;
+  recommendations: string[];
+  suggestedMoves: Array<{
+    taskId: string;
+    fromBlockId: string;
+    toBlockId: string;
+    reason: string;
+  }>;
+  analysis: {
+    energyDistribution: any;
+    contextClustering: any;
+    priorityAlignment: any;
+    timeEfficiency: any;
+  };
+  optimizationGoal: string;
+  date: string;
+  analyzedAt: string;
+}
+
+export interface EmergencyRescheduleResult {
+  canceledDate: string;
+  tasksAffected: number;
+  redistributionPlan: {
+    moves: Array<{
+      taskId: string;
+      newDate: string;
+      newBlockId: string;
+      reason: string;
+    }>;
+    failed: Array<{
+      taskId: string;
+      reason: string;
+    }>;
+  };
+  categories: {
+    urgent: ScheduledTask[];
+    important: ScheduledTask[];
+    routine: ScheduledTask[];
+  };
+  availableSlots: number;
+  statistics: {
+    highPriorityTasks: number;
+    mediumPriorityTasks: number;
+    lowPriorityTasks: number;
+    successfullyRescheduled: number;
+    failedToReschedule: number;
+    redistributionRate: number;
+  };
+  recommendations: string[];
+  rescheduledTasks: ScheduledTask[];
+  reason: string;
+}
+
+// =============================================================================
+// FAZA 3: DASHBOARD INTEGRATION TYPES
+// =============================================================================
+
+export interface DailyWidgetData {
+  date: string;
+  summary: {
+    totalBlocks: number;
+    completedTasks: number;
+    inProgressTasks: number;
+    totalTasks: number;
+    completionRate: number;
+  };
+  currentActivity: {
+    currentBlock: {
+      id: string;
+      name: string;
+      startTime: string;
+      endTime: string;
+      energyLevel: 'HIGH' | 'MEDIUM' | 'LOW' | 'CREATIVE' | 'ADMINISTRATIVE';
+      isBreak: boolean;
+      activeTasks: ScheduledTask[];
+    } | null;
+    nextBlock: {
+      id: string;
+      name: string;
+      startTime: string;
+      energyLevel: 'HIGH' | 'MEDIUM' | 'LOW' | 'CREATIVE' | 'ADMINISTRATIVE';
+      upcomingTasks: ScheduledTask[];
+    } | null;
+  };
+  insights: {
+    todayForecast: 'HIGH' | 'MEDIUM' | 'LOW';
+    recommendations: string[];
+  };
+  timeline: Array<{
+    id: string;
+    name: string;
+    startTime: string;
+    endTime: string;
+    energyLevel: 'HIGH' | 'MEDIUM' | 'LOW' | 'CREATIVE' | 'ADMINISTRATIVE';
+    isBreak: boolean;
+    breakType?: string;
+    isActive: boolean;
+    isNext: boolean;
+    tasksCount: number;
+    completedTasksCount: number;
+    focusMode: {
+      name: string;
+      category?: string;
+    } | null;
+  }>;
+  quickActions: Array<{
+    id: string;
+    label: string;
+    type: string;
+    target: string | null;
+  }>;
+}
+
+export interface WeekOverviewData {
+  weekPeriod: {
+    start: string;
+    end: string;
+  };
+  productivity: {
+    thisWeek: number;
+    tasksCompleted: number;
+    totalTasks: number;
+    overdueTasks: number;
+  };
+  dailyStats: Array<{
+    day: string;
+    totalTasks: number;
+    completedTasks: number;
+    completionRate: number;
+    avgEnergy: number;
+  }>;
+  bestTimeSlots: Array<{
+    time: string;
+    day: string;
+    productivity: number;
+    energyLevel: string;
+  }>;
+  recommendations: string[];
+}
+
+export interface QuickActionRequest {
+  actionType: 'START_TASK' | 'COMPLETE_TASK' | 'ADD_URGENT' | 'RESCHEDULE_TODAY';
+  targetId?: string | null;
+  data?: {
+    title?: string;
+    estimatedMinutes?: number;
+    context?: string;
+    actualMinutes?: number;
+  };
+}
+
+export interface QuickActionResult {
+  success: boolean;
+  data: any;
+  message: string;
+}
+
+
+// NOWE: Typy dla sugestii następnych zadań
+export interface TaskSuggestion {
+  id: string;
+  taskId?: string;
+  title: string;
+  description?: string;
+  estimatedMinutes: number;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  context: string;
+  energyRequired: 'HIGH' | 'MEDIUM' | 'LOW' | 'CREATIVE' | 'ADMINISTRATIVE';
+  source: 'SCHEDULED_LATER' | 'GTD_INBOX' | 'PROJECT_BACKLOG' | 'QUICK_WIN';
+  score: number; // 0-100, im wyżej tym lepsze dopasowanie
+  reason: string; // Dlaczego ta sugestia
+  originalScheduledTime?: string;
+  canFitInTime: boolean;
+}
+
+// NOWE: Typ dla rezultatu skróconego dnia
+export interface PartialDayResult {
+  strategy: 'COMPRESS_BLOCKS' | 'RESCHEDULE_REMAINING';
+  summary: {
+    endTime: string;
+    affectedBlocks: number;
+    compressedBlocks: number;
+    rescheduledTasks: number;
+    savedTime: number; // minuty
+  };
+  changes: Array<{
+    blockId: string;
+    blockName: string;
+    originalTime: string;
+    newTime?: string;
+    action: 'COMPRESSED' | 'RESCHEDULED' | 'REMOVED';
+    tasksMoved?: Array<{
+      taskId: string;
+      taskTitle: string;
+      newDate: string;
+    }>;
+  }>;
+  warnings: string[];
+}
+
+// =============================================================================
+// DASHBOARD API - Dashboard Integration
+// =============================================================================
+export const dashboardApi = {
+  async getDailyWidget(date?: string): Promise<{ success: boolean; data: DailyWidgetData }> {
+    try {
+      // Określ dzień tygodnia
+      const targetDate = date ? new Date(date) : new Date();
+      const dayOfWeek = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'][targetDate.getDay()];
+      
+      // Pobierz bloki czasowe tylko dla konkretnego dnia
+      const response = await smartDayPlannerApi.getTimeBlocks(dayOfWeek);
+      
+      if (response.success && response.data) {
+        const blocks = response.data;
+        const now = new Date();
+        const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+        
+        // Znajdź aktualny blok
+        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+        const currentBlock = blocks.find((block: any) => {
+          const [startH, startM] = block.startTime.split(':').map(Number);
+          const [endH, endM] = block.endTime.split(':').map(Number);
+          const startMinutes = startH * 60 + startM;
+          const endMinutes = endH * 60 + endM;
+          return currentMinutes >= startMinutes && currentMinutes < endMinutes;
+        });
+
+        // Znajdź następny blok
+        const nextBlock = blocks.find((block: any) => {
+          const [startH, startM] = block.startTime.split(':').map(Number);
+          const startMinutes = startH * 60 + startM;
+          return startMinutes > currentMinutes;
+        });
+
+        // Transformuj do formatu DailyWidgetData
+        const totalTasks = blocks.reduce((sum: number, block: any) => sum + (block.scheduledTasks?.length || 0), 0);
+        const completedTasks = blocks.reduce((sum: number, block: any) =>
+          sum + (block.scheduledTasks?.filter((t: any) => t.status === 'COMPLETED').length || 0), 0);
+
+        const dailyData: DailyWidgetData = {
+          date: date || new Date().toISOString().split('T')[0],
+          summary: {
+            totalBlocks: blocks.length,
+            completedTasks,
+            inProgressTasks: blocks.reduce((sum: number, block: any) =>
+              sum + (block.scheduledTasks?.filter((t: any) => t.status === 'IN_PROGRESS').length || 0), 0),
+            totalTasks,
+            completionRate: totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0
+          },
+          currentActivity: {
+            currentBlock: currentBlock ? {
+              id: currentBlock.id,
+              name: currentBlock.name,
+              startTime: currentBlock.startTime,
+              endTime: currentBlock.endTime,
+              energyLevel: currentBlock.energyLevel,
+              isBreak: currentBlock.isBreak,
+              activeTasks: currentBlock.scheduledTasks || []
+            } : null,
+            nextBlock: nextBlock ? {
+              id: nextBlock.id,
+              name: nextBlock.name,
+              startTime: nextBlock.startTime,
+              energyLevel: nextBlock.energyLevel,
+              upcomingTasks: nextBlock.scheduledTasks || []
+            } : null
+          },
+          insights: {
+            todayForecast: 'MEDIUM' as const,
+            recommendations: ['Rozpocznij od zadań o wysokiej energii']
+          },
+          timeline: blocks.map((block: any) => ({
+            id: block.id,
+            name: block.name,
+            startTime: block.startTime,
+            endTime: block.endTime,
+            energyLevel: block.energyLevel,
+            isBreak: block.isBreak,
+            isActive: block.id === currentBlock?.id,
+            isNext: block.id === nextBlock?.id,
+            tasksCount: block.scheduledTasks?.length || 0,
+            completedTasksCount: block.scheduledTasks?.filter((t: any) => t.status === 'COMPLETED').length || 0,
+            focusMode: block.focusMode || null,
+            breakType: block.breakType,
+            scheduledTasks: block.scheduledTasks || []
+          })),
+          quickActions: []
+        };
+
+        return { success: true, data: dailyData };
+      }
+      
+      return { success: false, data: null as any };
+    } catch (error: any) {
+      console.error('Error fetching daily widget:', error);
+      return { success: false, data: null as any };
+    }
+  },
+
+  async executeQuickAction(action: QuickActionRequest): Promise<{
+    success: boolean;
+    data: QuickActionResult;
+  }> {
+    // Mock implementation for now
+    return {
+      success: true,
+      data: {
+        success: true,
+        message: 'Action executed',
+        actionId: (action as any).id || 'action-1'
+      } as unknown as QuickActionResult
+    };
+  }
+};

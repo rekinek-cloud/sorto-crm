@@ -1,0 +1,411 @@
+// ================================================================
+// VOICE INTEGRATION PRISMA MODELS
+// Version: 1.0.0
+// Date: 2025-07-04
+// Description: Prisma models for voice interactions and Google Nest integration
+// ================================================================
+
+// ================================================================
+// NEW VOICE TABLES
+// ================================================================
+
+model VoiceInteraction {
+  id          String   @id @default(uuid())
+  
+  // Interaction context
+  sessionId   String?  @map("session_id")
+  userId      String   @map("user_id")
+  organizationId String @map("organization_id")
+  
+  // Voice command details
+  intent      String   // e.g., "crm_gtd.add_task", "crm_gtd.show_tasks"
+  originalPhrase String @map("original_phrase") // What user actually said
+  processedPhrase String? @map("processed_phrase") // Cleaned/normalized phrase
+  confidenceScore Decimal? @map("confidence_score") @db.Decimal(3,2) // 0.00-1.00
+  language    String   @default("pl-PL")
+  
+  // Parameters and entities
+  parameters  Json     @default("{}")  // Extracted parameters from voice
+  entities    Json     @default("{}")  // Named entities (person, place, date, etc.)
+  contextData Json     @default("{}") @map("context_data") // Additional context
+  
+  // Response details
+  responseType String  @map("response_type") // "SUCCESS", "ERROR", "CLARIFICATION_NEEDED"
+  responseText String? @map("response_text") // What assistant said back
+  responseData Json    @default("{}") @map("response_data") // Structured response data
+  displayData Json     @default("{}") @map("display_data") // Data for visual display
+  
+  // Processing metadata
+  processingTimeMs Int? @map("processing_time_ms") // Time to process request
+  apiCallsMade Json    @default("[]") @map("api_calls_made") // Which APIs were called
+  errors      Json     @default("[]") // Any errors during processing
+  
+  // Source and device info
+  sourceDevice String? @map("source_device") // "google_home", "nest_hub", "phone"
+  deviceId    String?  @map("device_id")
+  location    String?  // Physical location of device
+  ipAddress   String?  @map("ip_address")
+  userAgent   String?  @map("user_agent")
+  
+  // Results and actions
+  actionsPerformed Json @default("[]") @map("actions_performed") // Actions taken
+  createdEntities Json  @default("{}") @map("created_entities") // IDs of created items
+  modifiedEntities Json @default("{}") @map("modified_entities") // IDs of modified items
+  
+  // Timestamps
+  interactionAt DateTime @default(now()) @map("interaction_at")
+  processedAt   DateTime? @map("processed_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, organizationId])
+  @@index([sessionId])
+  @@index([intent])
+  @@index([interactionAt(sort: Desc)])
+  @@index([responseType])
+  @@index([sourceDevice, deviceId])
+  @@index([language])
+  @@index([interactionAt]) // Partial index for recent interactions (last 30 days)
+  @@map("voice_interactions")
+}
+
+model AssistantPreferences {
+  id          String   @id @default(uuid())
+  userId      String   @unique @map("user_id")
+  organizationId String @map("organization_id")
+  
+  // Voice settings
+  preferredLanguage String  @default("pl-PL") @map("preferred_language")
+  voiceSpeed       Decimal @default(1.0) @map("voice_speed") @db.Decimal(3,2) // 0.5-2.0
+  voicePitch       Decimal @default(1.0) @map("voice_pitch") @db.Decimal(3,2) // 0.5-2.0
+  voiceVolume      Decimal @default(0.8) @map("voice_volume") @db.Decimal(3,2) // 0.0-1.0
+  voicePersonality String  @default("professional") @map("voice_personality")
+  
+  // Response preferences
+  responseLength  String  @default("medium") @map("response_length") // "brief", "medium", "detailed"
+  includeSuggestions Boolean @default(true) @map("include_suggestions")
+  includeContext  Boolean @default(true) @map("include_context")
+  pronunciationCorrections Json @default("{}") @map("pronunciation_corrections")
+  
+  // Interaction preferences
+  autoConfirmActions Boolean @default(false) @map("auto_confirm_actions")
+  requestConfirmationFor Json @default("[\"delete\", \"important_changes\"]") @map("request_confirmation_for")
+  defaultTaskPriority String @default("MEDIUM") @map("default_task_priority")
+  defaultTaskContext String @default("@computer") @map("default_task_context")
+  preferredDateFormat String @default("DD.MM.YYYY") @map("preferred_date_format")
+  preferredTimeFormat String @default("24h") @map("preferred_time_format")
+  
+  // Privacy settings
+  storeVoiceHistory Boolean @default(true) @map("store_voice_history")
+  shareUsageAnalytics Boolean @default(true) @map("share_usage_analytics")
+  enablePersonalization Boolean @default(true) @map("enable_personalization")
+  
+  // Notification preferences
+  voiceNotificationsEnabled Boolean @default(true) @map("voice_notifications_enabled")
+  notificationTimes Json @default("{\"morning\": \"09:00\", \"evening\": \"18:00\"}") @map("notification_times")
+  notificationTypes Json @default("[\"reminders\", \"deadlines\", \"suggestions\"]") @map("notification_types")
+  
+  // Quick shortcuts
+  favoriteCommands Json @default("[]") @map("favorite_commands")
+  customPhrases Json @default("{}") @map("custom_phrases")
+  
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([preferredLanguage])
+  @@map("assistant_preferences")
+}
+
+model DisplayWidget {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  organizationId String  @map("organization_id")
+  
+  // Widget identification
+  widgetType   String   @map("widget_type") // "task_summary", "calendar_today", "deals_pipeline"
+  widgetName   String   @map("widget_name")
+  description  String?
+  
+  // Display configuration
+  position        Int     @default(0) // Order on screen
+  size            String  @default("medium") // "small", "medium", "large", "full_width"
+  displayDuration Int     @default(30) @map("display_duration") // Seconds to show
+  refreshInterval Int     @default(300) @map("refresh_interval") // Seconds between refreshes
+  
+  // Widget settings
+  settings       Json    @default("{}")
+  dataFilters    Json    @default("{}") @map("data_filters")
+  visualOptions  Json    @default("{}") @map("visual_options")
+  
+  // Visibility and conditions
+  isEnabled         Boolean @default(true) @map("is_enabled")
+  visibilityConditions Json @default("{}") @map("visibility_conditions")
+  deviceTypes       Json    @default("[\"nest_hub\", \"nest_mini\"]") @map("device_types")
+  
+  // Data source
+  dataSourceType   String @map("data_source_type") // "tasks", "calendar", "contacts", "deals"
+  dataSourceConfig Json   @default("{}") @map("data_source_config")
+  cacheDuration    Int    @default(60) @map("cache_duration") // Cache data for N seconds
+  
+  // Interaction
+  isInteractive  Boolean @default(false) @map("is_interactive")
+  voiceCommands  Json    @default("[]") @map("voice_commands")
+  touchActions   Json    @default("[]") @map("touch_actions")
+  
+  // Timestamps
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+  lastDisplayedAt DateTime? @map("last_displayed_at")
+  lastRefreshedAt DateTime? @map("last_refreshed_at")
+  
+  // Relations
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, organizationId])
+  @@index([widgetType])
+  @@index([isEnabled])
+  @@index([userId, position])
+  @@map("display_widgets")
+}
+
+model VoiceShortcut {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  organizationId String  @map("organization_id")
+  
+  // Shortcut identification
+  name           String
+  description    String?
+  triggerPhrases Json    @map("trigger_phrases") // Array of phrases that trigger this
+  
+  // Action configuration
+  actionType     String  @map("action_type") // "create_task", "show_calendar", "call_api"
+  actionConfig   Json    @map("action_config")
+  parametersTemplate Json @default("{}") @map("parameters_template")
+  
+  // Execution options
+  requiresConfirmation Boolean @default(false) @map("requires_confirmation")
+  confirmationMessage  String? @map("confirmation_message")
+  successMessage       String? @map("success_message")
+  errorMessage         String? @map("error_message")
+  
+  // Conditions and constraints
+  executionConditions Json    @default("{}") @map("execution_conditions")
+  usageLimit         Int?     @map("usage_limit") // Max uses per day
+  usageCountToday    Int      @default(0) @map("usage_count_today")
+  usageResetAt       DateTime @default(dbgenerated("(DATE_TRUNC('day', NOW()) + INTERVAL '1 day')")) @map("usage_reset_at")
+  
+  // Analytics
+  totalUsageCount     Int      @default(0) @map("total_usage_count")
+  lastUsedAt         DateTime? @map("last_used_at")
+  averageExecutionTime Decimal? @map("average_execution_time") @db.Decimal(10,2)
+  
+  // Status
+  isActive  Boolean @default(true) @map("is_active")
+  isPublic  Boolean @default(false) @map("is_public") // Can other users see/use this
+  
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  @@index([userId, organizationId])
+  @@index([isActive])
+  @@index([isPublic, organizationId])
+  @@index([actionType])
+  @@map("voice_shortcuts")
+}
+
+model NotificationSettings {
+  id            String   @id @default(uuid())
+  userId        String   @unique @map("user_id")
+  organizationId String  @map("organization_id")
+  
+  // Voice notification settings
+  voiceNotificationsEnabled Boolean @default(true) @map("voice_notifications_enabled")
+  voiceNotificationVolume   Decimal @default(0.7) @map("voice_notification_volume") @db.Decimal(3,2)
+  voiceNotificationSpeed    Decimal @default(1.0) @map("voice_notification_speed") @db.Decimal(3,2)
+  voiceNotificationLanguage String  @default("pl-PL") @map("voice_notification_language")
+  
+  // Display notification settings
+  displayNotificationsEnabled Boolean @default(true) @map("display_notifications_enabled")
+  displayNotificationDuration Int     @default(15) @map("display_notification_duration")
+  displayNotificationPosition String  @default("center") @map("display_notification_position")
+  displayTheme                String  @default("auto") @map("display_theme")
+  
+  // Notification types and timing
+  notificationTypes Json @default("{\"task_reminders\": true, \"deadline_alerts\": true, \"meeting_reminders\": true, \"daily_summary\": true, \"weekly_review\": true, \"deal_updates\": true, \"priority_changes\": true, \"system_alerts\": true}") @map("notification_types")
+  
+  quietHours           Json @default("{\"enabled\": true, \"start\": \"22:00\", \"end\": \"08:00\", \"timezone\": \"Europe/Warsaw\"}") @map("quiet_hours")
+  notificationSchedule Json @default("{\"daily_summary\": \"09:00\", \"weekly_review\": \"MON-09:00\", \"deadline_reminder\": \"1h_before\", \"meeting_reminder\": \"15m_before\"}") @map("notification_schedule")
+  
+  // Smart notification settings
+  smartDelivery   Boolean @default(true) @map("smart_delivery")
+  priorityBypass  Boolean @default(true) @map("priority_bypass")
+  locationBased   Boolean @default(false) @map("location_based")
+  
+  // Device-specific settings
+  devicePreferences Json @default("{\"google_home\": {\"enabled\": true, \"volume\": 0.7}, \"nest_hub\": {\"enabled\": true, \"brightness\": 0.8}, \"mobile\": {\"enabled\": true, \"vibrate\": true}, \"desktop\": {\"enabled\": true, \"sound\": true}}") @map("device_preferences")
+  
+  // Emergency settings
+  emergencyContactEnabled Boolean @default(false) @map("emergency_contact_enabled")
+  emergencyPhrases       Json    @default("[\"emergency\", \"urgent help\", \"call help\", \"pomoc\", \"awaria\"]") @map("emergency_phrases")
+  emergencyActions       Json    @default("{\"call_admin\": true, \"log_incident\": true}") @map("emergency_actions")
+  
+  // Timestamps
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // Relations
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@map("notification_settings")
+}
+
+// ================================================================
+// EXTENSIONS TO EXISTING MODELS
+// ================================================================
+
+// These fields should be added to existing models:
+
+// Task model extensions:
+// voiceAccessible      Boolean   @default(true) @map("voice_accessible")
+// assistantPriority    Int       @default(5) @map("assistant_priority") // 1-10 scale
+// voiceNotes          Json      @default("{}") @map("voice_notes")
+// voiceInstructions   String?   @map("voice_instructions")
+// lastVoiceUpdate     DateTime? @map("last_voice_update")
+// voiceMetadata       Json      @default("{}") @map("voice_metadata")
+
+// Contact model extensions:
+// voiceNotes              Json      @default("{}") @map("voice_notes")
+// preferredVoiceLanguage  String    @default("pl-PL") @map("preferred_voice_language")
+// voicePronunciation      String?   @map("voice_pronunciation")
+// voiceAccessible         Boolean   @default(true) @map("voice_accessible")
+// voiceSummary           String?   @map("voice_summary")
+
+// Meeting model extensions:
+// voiceReminders      Json      @default("{}") @map("voice_reminders")
+// voiceRecordingUrl   String?   @map("voice_recording_url")
+// voiceTranscription  String?   @map("voice_transcription")
+// voiceNotes         Json      @default("{}") @map("voice_notes")
+// voiceAccessible    Boolean   @default(true) @map("voice_accessible")
+// reminderSettings   Json      @default("{\"voice_reminder\": true, \"display_reminder\": true, \"reminder_times\": [\"15m\", \"5m\"]}") @map("reminder_settings")
+
+// User model extensions:
+// voiceSettings        Json      @default("{\"enabled\": true, \"language\": \"pl-PL\", \"personality\": \"professional\", \"response_style\": \"concise\"}") @map("voice_settings")
+// voiceTrainingData    Json      @default("{}") @map("voice_training_data")
+// lastVoiceInteraction DateTime? @map("last_voice_interaction")
+
+// ================================================================
+// ORGANIZATION MODEL EXTENSIONS
+// ================================================================
+
+// Add these relations to Organization model:
+// voiceInteractions      VoiceInteraction[]
+// assistantPreferences   AssistantPreferences[]
+// displayWidgets         DisplayWidget[]
+// voiceShortcuts         VoiceShortcut[]
+// notificationSettings   NotificationSettings[]
+
+// ================================================================
+// USER MODEL EXTENSIONS
+// ================================================================
+
+// Add these relations to User model:
+// voiceInteractions      VoiceInteraction[]
+// assistantPreferences   AssistantPreferences?
+// displayWidgets         DisplayWidget[]
+// voiceShortcuts         VoiceShortcut[]
+// notificationSettings   NotificationSettings?
+
+// ================================================================
+// ENUMS FOR VOICE FUNCTIONALITY
+// ================================================================
+
+enum VoiceResponseType {
+  SUCCESS
+  ERROR
+  CLARIFICATION_NEEDED
+  TIMEOUT
+  CANCELLED
+  
+  @@map("voice_response_type")
+}
+
+enum VoicePersonality {
+  PROFESSIONAL
+  CASUAL
+  ENTHUSIASTIC
+  FORMAL
+  FRIENDLY
+  
+  @@map("voice_personality")
+}
+
+enum ResponseLength {
+  BRIEF
+  MEDIUM
+  DETAILED
+  CUSTOM
+  
+  @@map("response_length")
+}
+
+enum WidgetSize {
+  SMALL
+  MEDIUM
+  LARGE
+  FULL_WIDTH
+  
+  @@map("widget_size")
+}
+
+enum ActionType {
+  CREATE_TASK
+  SHOW_CALENDAR
+  CALL_API
+  RUN_WORKFLOW
+  SEND_NOTIFICATION
+  CREATE_NOTE
+  SCHEDULE_MEETING
+  UPDATE_STATUS
+  
+  @@map("action_type")
+}
+
+enum DisplayTheme {
+  LIGHT
+  DARK
+  AUTO
+  HIGH_CONTRAST
+  
+  @@map("display_theme")
+}
+
+enum NotificationPosition {
+  TOP
+  CENTER
+  BOTTOM
+  TOP_LEFT
+  TOP_RIGHT
+  BOTTOM_LEFT
+  BOTTOM_RIGHT
+  
+  @@map("notification_position")
+}

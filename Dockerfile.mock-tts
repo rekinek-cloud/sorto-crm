@@ -1,0 +1,193 @@
+# Mock TTS Service dla development
+FROM python:3.9-slim
+
+# Install basic dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Python dependencies
+RUN pip install --no-cache-dir \
+    fastapi==0.104.1 \
+    uvicorn==0.24.0 \
+    python-multipart==0.0.6
+
+# Create app directory
+WORKDIR /app
+
+# Copy mock TTS server script
+COPY <<EOF /app/mock_tts_server.py
+#!/usr/bin/env python3
+"""
+🎭 Mock TTS Server dla Development
+Symuluje Coqui TTS API dla szybkiego testowania
+"""
+
+import io
+import os
+import wave
+import struct
+import math
+from typing import Optional
+from fastapi import FastAPI, HTTPException, Form, UploadFile, File
+from fastapi.responses import Response
+import uvicorn
+
+app = FastAPI(title="Mock TTS Server", version="1.0.0")
+
+def generate_beep_audio(duration: float = 2.0, frequency: int = 440) -> bytes:
+    """
+    Generuje prosty sygnał audio (beep) jako mock TTS
+    """
+    sample_rate = 22050
+    samples = int(sample_rate * duration)
+    
+    # Generate sine wave
+    audio_data = []
+    for i in range(samples):
+        sample = int(32767 * math.sin(2 * math.pi * frequency * i / sample_rate))
+        audio_data.append(sample)
+    
+    # Create WAV file in memory
+    wav_buffer = io.BytesIO()
+    with wave.open(wav_buffer, 'wb') as wav_file:
+        wav_file.setnchannels(1)  # Mono
+        wav_file.setsampwidth(2)  # 16-bit
+        wav_file.setframerate(sample_rate)
+        
+        # Pack audio data
+        packed_audio = struct.pack('<' + 'h' * len(audio_data), *audio_data)
+        wav_file.writeframes(packed_audio)
+    
+    return wav_buffer.getvalue()
+
+@app.get("/health")
+async def health_check():
+    return {
+        "status": "healthy",
+        "model_loaded": True,
+        "service": "mock-tts",
+        "timestamp": "2024-01-01T00:00:00Z"
+    }
+
+@app.get("/api/tts/models")
+async def get_models():
+    return {
+        "models": [
+            {
+                "name": "mock-tts-pl",
+                "language": "pl",
+                "description": "Mock Polish TTS (Development)",
+                "isMultilingual": False
+            },
+            {
+                "name": "mock-tts-en",
+                "language": "en", 
+                "description": "Mock English TTS (Development)",
+                "isMultilingual": False
+            }
+        ]
+    }
+
+@app.post("/api/tts")
+async def synthesize_text(
+    text: str = Form(...),
+    language: str = Form("pl"),
+    emotion: str = Form("neutral"),
+    speed: float = Form(1.0)
+):
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="Text cannot be empty")
+    
+    print(f"🎭 Mock TTS: '{text[:50]}...' ({language})")
+    
+    # Różne częstotliwości dla różnych emocji
+    frequency_map = {
+        "neutral": 440,    # A4
+        "happy": 523,      # C5
+        "sad": 349,        # F4
+        "angry": 277,      # C#4
+        "surprised": 659   # E5
+    }
+    
+    frequency = frequency_map.get(emotion, 440)
+    
+    # Adjust duration based on text length and speed
+    base_duration = len(text) * 0.1  # 0.1s per character
+    duration = max(1.0, min(5.0, base_duration / speed))  # 1-5 seconds
+    
+    # Generate mock audio
+    audio_data = generate_beep_audio(duration, frequency)
+    
+    print(f"✅ Mock TTS completed: {len(audio_data)} bytes, {duration:.1f}s")
+    
+    return Response(
+        content=audio_data,
+        media_type="audio/wav",
+        headers={
+            "X-Audio-Duration": str(duration),
+            "X-Sample-Rate": "22050",
+            "Content-Disposition": "inline; filename=mock_tts_output.wav"
+        }
+    )
+
+@app.post("/api/tts/clone_voice")
+async def clone_voice(
+    text: str = Form(...),
+    language: str = Form("pl"),
+    emotion: str = Form("neutral"),
+    speaker_wav: UploadFile = File(...)
+):
+    print(f"🎭 Mock Voice Cloning: '{text[:50]}...'")
+    
+    # Simulate voice cloning with different frequency
+    audio_data = generate_beep_audio(2.0, 330)  # Lower frequency for "cloned" voice
+    
+    return Response(
+        content=audio_data,
+        media_type="audio/wav",
+        headers={
+            "X-Audio-Duration": "2.0",
+            "X-Sample-Rate": "22050",
+            "Content-Disposition": "inline; filename=mock_cloned_voice.wav"
+        }
+    )
+
+@app.post("/api/tts/stream")
+async def stream_synthesis(
+    text: str = Form(...),
+    language: str = Form("pl")
+):
+    print(f"🌊 Mock Streaming TTS: '{text[:50]}...'")
+    
+    # For mock, just return regular audio (no streaming)
+    audio_data = generate_beep_audio(1.5, 494)  # B4
+    
+    return Response(
+        content=audio_data,
+        media_type="audio/wav"
+    )
+
+if __name__ == "__main__":
+    print("🎭 Starting Mock TTS Server...")
+    print("📝 This is a development mock - generates beeps instead of speech")
+    uvicorn.run(
+        app, 
+        host="0.0.0.0", 
+        port=5002,
+        log_level="info"
+    )
+EOF
+
+# Make script executable
+RUN chmod +x /app/mock_tts_server.py
+
+# Expose port
+EXPOSE 5002
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s \
+    CMD curl -f http://localhost:5002/health || exit 1
+
+# Start server
+CMD ["python", "/app/mock_tts_server.py"]

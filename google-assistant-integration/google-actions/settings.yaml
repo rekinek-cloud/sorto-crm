@@ -1,0 +1,48 @@
+projectId: crm-gtd-smart-assistant
+defaultLocale: pl
+category: BUSINESS_AND_FINANCE
+displayName: CRM-GTD Smart Assistant
+pronunciation: CRM GDT Smart Assistant
+shortDescription: Asystent głosowy dla systemu CRM-GTD Smart
+fullDescription: >
+  Zaawansowany asystent głosowy umożliwiający zarządzanie zadaniami,
+  projektami i kontaktami w systemie CRM-GTD Smart. Obsługuje polecenia
+  głosowe dla metodologii Getting Things Done oraz zarządzanie CRM.
+sampleInvocations:
+  - Hey Google, porozmawiaj z CRM-GTD Smart
+  - Hey Google, ask CRM-GTD Smart to add task
+  - Hey Google, tell CRM-GTD Smart to show my today's tasks
+smallLogoUrl: https://your-domain.com/images/logo-small.png
+largeLogoUrl: https://your-domain.com/images/logo-large.png
+privacyPolicyUrl: https://your-domain.com/privacy-policy
+termsOfUseUrl: https://your-domain.com/terms-of-use
+testingInstructions: >
+  Aby przetestować asystenta:
+  1. Powiedz "Hey Google, talk to CRM-GTD Smart"
+  2. Spróbuj poleceń: "add task", "show tasks", "create project"
+  3. Sprawdź wyświetlanie na Nest Hub
+localizedSettings:
+  pl:
+    displayName: CRM-GTD Smart Assistant
+    pronunciation: CRM GDT Smart Asystent
+    shortDescription: Asystent głosowy dla systemu CRM-GTD Smart
+    fullDescription: >
+      Zaawansowany asystent głosowy umożliwiający zarządzanie zadaniami,
+      projektami i kontaktami w systemie CRM-GTD Smart. Obsługuje polecenia
+      głosowe dla metodologii Getting Things Done oraz zarządzanie CRM.
+    sampleInvocations:
+      - Hey Google, porozmawiaj z CRM-GTD Smart
+      - Hey Google, poproś CRM-GTD Smart o dodanie zadania
+      - Hey Google, powiedz CRM-GTD Smart żeby pokazał dzisiejsze zadania
+  en:
+    displayName: CRM-GTD Smart Assistant
+    pronunciation: CRM GDT Smart Assistant
+    shortDescription: Voice assistant for CRM-GTD Smart system
+    fullDescription: >
+      Advanced voice assistant for managing tasks, projects and contacts
+      in CRM-GTD Smart system. Supports voice commands for Getting Things
+      Done methodology and CRM management.
+    sampleInvocations:
+      - Hey Google, talk to CRM-GTD Smart
+      - Hey Google, ask CRM-GTD Smart to add task
+      - Hey Google, tell CRM-GTD Smart to show my today's tasks

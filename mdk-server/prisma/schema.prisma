@@ -1,0 +1,471 @@
+// Full PostgreSQL schema for production
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  subdomain String   @unique
+  plan      Plan     @default(BASIC)
+  status    Status   @default(ACTIVE)
+  settings  Json?    // Flexible configuration storage
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  users        User[]
+  customers    Customer[]
+  reservations Reservation[]
+  menuItems    MenuItem[]
+  tables       Table[]
+  orders       Order[]
+  subscription Subscription?
+  payments     Payment[]
+  notifications Notification[]
+  deliveries   Delivery[]
+  reviews      Review[]
+
+  @@map("organizations")
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  password     String
+  firstName    String
+  lastName     String
+  phone        String?
+  role         Role      @default(STAFF)
+  isActive     Boolean   @default(true)
+  lastLoginAt  DateTime?
+  emailVerified Boolean  @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  @@map("users")
+}
+
+model Customer {
+  id          String    @id @default(cuid())
+  firstName   String
+  lastName    String
+  email       String
+  phone       String?
+  dateOfBirth DateTime?
+  address     String?
+  notes       String?
+  loyaltyLevel LoyaltyLevel @default(NEW)
+  totalSpent  Decimal   @default(0) @db.Decimal(10, 2)
+  totalVisits Int       @default(0)
+  lastVisit   DateTime?
+  isActive    Boolean   @default(true)
+  marketingConsent Boolean @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  reservations Reservation[]
+  orders       Order[]
+
+  @@unique([organizationId, email])
+  @@map("customers")
+}
+
+model Table {
+  id          String   @id @default(cuid())
+  number      String
+  capacity    Int
+  isActive    Boolean  @default(true)
+  notes       String?
+  createdAt   DateTime @default(now())
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  reservations Reservation[]
+
+  @@unique([organizationId, number])
+  @@map("tables")
+}
+
+model Reservation {
+  id         String    @id @default(cuid())
+  date       DateTime
+  time       String
+  guests     Int
+  status     ReservationStatus @default(PENDING)
+  notes      String?
+  reminderSent Boolean @default(false)
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  customer   Customer @relation(fields: [customerId], references: [id])
+  customerId String
+
+  table   Table?  @relation(fields: [tableId], references: [id])
+  tableId String?
+
+  orders Order[]
+
+  @@map("reservations")
+}
+
+model MenuCategory {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  menuItems MenuItem[]
+
+  @@map("menu_categories")
+}
+
+model MenuItem {
+  id          String  @id @default(cuid())
+  name        String
+  description String?
+  price       Decimal   @db.Decimal(8, 2)
+  isAvailable Boolean @default(true)
+  isVegetarian Boolean @default(false)
+  isVegan     Boolean @default(false)
+  isGlutenFree Boolean @default(false)
+  allergens   String? // Comma-separated list
+  preparationTime Int?
+  calories    Int?
+  imageUrl    String?
+  sortOrder   Int     @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  category   MenuCategory @relation(fields: [categoryId], references: [id])
+  categoryId String
+
+  orderItems OrderItem[]
+
+  @@map("menu_items")
+}
+
+model Order {
+  id            String    @id @default(cuid())
+  orderNumber   String    @unique
+  type          OrderType
+  status        OrderStatus @default(PENDING)
+  total         Decimal   @db.Decimal(10, 2)
+  subtotal      Decimal   @db.Decimal(10, 2)
+  tax           Decimal   @default(0) @db.Decimal(10, 2)
+  tip           Decimal   @default(0) @db.Decimal(10, 2)
+  notes         String?
+  estimatedTime Int?
+  actualTime    Int?
+  completedAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  customer   Customer @relation(fields: [customerId], references: [id])
+  customerId String
+
+  reservation   Reservation? @relation(fields: [reservationId], references: [id])
+  reservationId String?
+
+  orderItems OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id       String  @id @default(cuid())
+  quantity Int
+  price    Decimal   @db.Decimal(8, 2)
+  notes    String?
+
+  // Relations
+  order   Order  @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  orderId String
+
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id])
+  menuItemId String
+
+  @@map("order_items")
+}
+
+// Enums
+enum Plan {
+  BASIC
+  PREMIUM
+  ENTERPRISE
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MANAGER
+  STAFF
+}
+
+enum LoyaltyLevel {
+  NEW
+  REGULAR
+  VIP
+}
+
+enum ReservationStatus {
+  PENDING
+  CONFIRMED
+  SEATED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum OrderType {
+  DINE_IN
+  TAKEOUT
+  DELIVERY
+}
+
+enum OrderStatus {
+  PENDING
+  CONFIRMED
+  PREPARING
+  READY
+  SERVED
+  COMPLETED
+  CANCELLED
+}
+
+// SaaS Subscription Models
+model Subscription {
+  id                    String             @id @default(cuid())
+  organizationId        String             @unique
+  stripeSubscriptionId  String?            @unique
+  stripeCustomerId      String?            @unique
+  status                SubscriptionStatus @default(TRIALING)
+  plan                  Plan               @default(BASIC)
+  billingCycle          BillingCycle       @default(MONTHLY)
+  currentPeriodStart    DateTime
+  currentPeriodEnd      DateTime
+  trialStart            DateTime?
+  trialEnd              DateTime?
+  cancelAtPeriodEnd     Boolean            @default(false)
+  canceledAt            DateTime?
+  endedAt               DateTime?
+  metadata              Json?
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invoices     Invoice[]
+  usageMetrics UsageMetric[]
+
+  @@map("subscriptions")
+}
+
+model Invoice {
+  id                   String        @id @default(cuid())
+  subscriptionId       String
+  stripeInvoiceId      String?       @unique
+  number               String        @unique
+  status               InvoiceStatus @default(DRAFT)
+  currency             String        @default("USD")
+  amountPaid           Int           @default(0) // in cents
+  amountDue            Int           @default(0) // in cents
+  amountRemaining      Int           @default(0) // in cents
+  description          String?
+  hostedInvoiceUrl     String?
+  invoicePdf           String?
+  billingReason        String?
+  dueDate              DateTime?
+  paidAt               DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+
+  // Relations
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@map("invoices")
+}
+
+model UsageMetric {
+  id             String   @id @default(cuid())
+  subscriptionId String
+  metricName     String   // e.g., 'reservations', 'customers', 'orders'
+  value          Int
+  period         DateTime // Month/day the usage is for
+  createdAt      DateTime @default(now())
+
+  // Relations
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@unique([subscriptionId, metricName, period])
+  @@map("usage_metrics")
+}
+
+model Payment {
+  id                 String        @id @default(cuid())
+  organizationId     String
+  stripePaymentId    String?       @unique
+  amount             Int           // in cents
+  currency           String        @default("USD")
+  status             PaymentStatus @default(PENDING)
+  method             String?       // card, bank_transfer, etc.
+  description        String?
+  metadata           Json?
+  processedAt        DateTime?
+  failureReason      String?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model Notification {
+  id             String           @id @default(cuid())
+  organizationId String
+  type           NotificationType
+  title          String
+  message        String
+  isRead         Boolean          @default(false)
+  data           Json?            // Additional data for the notification
+  createdAt      DateTime         @default(now())
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Delivery {
+  id             String         @id @default(cuid())
+  organizationId String
+  orderId        String?
+  customerId     String
+  address        String
+  city           String
+  postalCode     String
+  country        String         @default("Poland")
+  phone          String
+  status         DeliveryStatus @default(PENDING)
+  estimatedTime  Int?           // in minutes
+  actualTime     Int?           // in minutes
+  driverName     String?
+  driverPhone    String?
+  notes          String?
+  deliveredAt    DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("deliveries")
+}
+
+model Review {
+  id             String   @id @default(cuid())
+  organizationId String
+  customerId     String?
+  orderId        String?
+  rating         Int      // 1-5 stars
+  comment        String?
+  isPublic       Boolean  @default(true)
+  isVerified     Boolean  @default(false)
+  source         String?  // google, facebook, internal, etc.
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
+}
+
+// Additional Enums for SaaS
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+}
+
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum InvoiceStatus {
+  DRAFT
+  OPEN
+  PAID
+  VOID
+  UNCOLLECTABLE
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  CANCELED
+  REFUNDED
+}
+
+enum NotificationType {
+  SYSTEM
+  BILLING
+  FEATURE
+  MAINTENANCE
+  SECURITY
+}
+
+enum DeliveryStatus {
+  PENDING
+  ASSIGNED
+  PICKED_UP
+  IN_TRANSIT
+  DELIVERED
+  FAILED
+  CANCELLED
+}

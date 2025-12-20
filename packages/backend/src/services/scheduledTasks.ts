@@ -1,0 +1,286 @@
+import { PrismaClient } from '@prisma/client';
+import logger from '../config/logger';
+import { invoiceService } from './invoiceService';
+
+const prisma = new PrismaClient();
+
+export class ScheduledTasksService {
+  private intervals: Map<string, NodeJS.Timeout> = new Map();
+
+  /**
+   * Start all scheduled tasks
+   */
+  public startAll(): void {
+    this.startInvoiceSyncTask();
+    logger.info('All scheduled tasks started');
+  }
+
+  /**
+   * Stop all scheduled tasks
+   */
+  public stopAll(): void {
+    this.intervals.forEach((interval, taskName) => {
+      clearInterval(interval);
+      logger.info(`Stopped scheduled task: ${taskName}`);
+    });
+    this.intervals.clear();
+    logger.info('All scheduled tasks stopped');
+  }
+
+  /**
+   * Start automatic invoice sync task
+   * Runs every 30 minutes
+   */
+  private startInvoiceSyncTask(): void {
+    const taskName = 'invoice-sync';
+    const intervalMs = 30 * 60 * 1000; // 30 minutes
+
+    const task = async () => {
+      try {
+        logger.info('Starting automatic invoice sync task');
+
+        if (!invoiceService.isFakturowniaAvailable()) {
+          logger.debug('Fakturownia not available, skipping invoice sync');
+          return;
+        }
+
+        // Get all organizations that have invoices with auto-sync enabled
+        const organizations = await prisma.organization.findMany({
+          where: {
+            invoices: {
+              some: {
+                autoSync: true
+              }
+            }
+          },
+          select: {
+            id: true,
+            name: true
+          }
+        });
+
+        logger.info(`Found ${organizations.length} organizations with auto-sync invoices`);
+
+        for (const org of organizations) {
+          try {
+            logger.info(`Syncing invoices for organization: ${org.name} (${org.id})`);
+            
+            const result = await invoiceService.bulkSyncInvoices(org.id, {
+              batchSize: 3, // Smaller batches for scheduled tasks
+              delayBetweenBatches: 2000, // 2 second delay
+              syncOnlyAutoSync: true
+            });
+
+            logger.info(`Invoice sync completed for ${org.name}`, {
+              organizationId: org.id,
+              totalProcessed: result.totalProcessed,
+              successful: result.successful,
+              failed: result.failed
+            });
+
+            // Add delay between organizations
+            if (organizations.indexOf(org) < organizations.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second delay
+            }
+
+          } catch (error: any) {
+            logger.error(`Failed to sync invoices for organization ${org.name}`, {
+              organizationId: org.id,
+              error: error.message
+            });
+          }
+        }
+
+        logger.info('Automatic invoice sync task completed');
+      } catch (error: any) {
+        logger.error('Error in automatic invoice sync task', { error: error.message });
+      }
+    };
+
+    // Run immediately and then on schedule
+    task().catch(error => {
+      logger.error('Error in initial invoice sync task run', { error: error.message });
+    });
+
+    const interval = setInterval(task, intervalMs);
+    this.intervals.set(taskName, interval);
+
+    logger.info(`Started ${taskName} task with ${intervalMs / 1000 / 60} minute interval`);
+  }
+
+  /**
+   * Start Fakturownia import task
+   * Runs daily at 2 AM
+   */
+  public startFakturowniaImportTask(): void {
+    const taskName = 'fakturownia-import';
+
+    const scheduleNext = () => {
+      const now = new Date();
+      const next = new Date();
+      next.setHours(2, 0, 0, 0); // 2 AM
+
+      // If it's already past 2 AM today, schedule for tomorrow
+      if (now >= next) {
+        next.setDate(next.getDate() + 1);
+      }
+
+      const msUntilNext = next.getTime() - now.getTime();
+
+      const timeout = setTimeout(async () => {
+        try {
+          logger.info('Starting daily Fakturownia import task');
+
+          if (!invoiceService.isFakturowniaAvailable()) {
+            logger.debug('Fakturownia not available, skipping import');
+            scheduleNext(); // Reschedule for next day
+            return;
+          }
+
+          // Get all organizations
+          const organizations = await prisma.organization.findMany({
+            select: {
+              id: true,
+              name: true
+            }
+          });
+
+          for (const org of organizations) {
+            try {
+              logger.info(`Importing invoices from Fakturownia for ${org.name}`);
+              
+              const result = await invoiceService.importInvoicesFromFakturownia(org.id, {
+                period: 'last_30_days', // Import last 30 days
+                perPage: 50
+              });
+
+              logger.info(`Fakturownia import completed for ${org.name}`, {
+                organizationId: org.id,
+                totalProcessed: result.totalProcessed,
+                created: result.created,
+                updated: result.updated
+              });
+
+              // Delay between organizations
+              if (organizations.indexOf(org) < organizations.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 10000)); // 10 second delay
+              }
+
+            } catch (error: any) {
+              logger.error(`Failed to import from Fakturownia for ${org.name}`, {
+                organizationId: org.id,
+                error: error.message
+              });
+            }
+          }
+
+          logger.info('Daily Fakturownia import task completed');
+        } catch (error: any) {
+          logger.error('Error in daily Fakturownia import task', { error: error.message });
+        } finally {
+          scheduleNext(); // Schedule next run
+        }
+      }, msUntilNext);
+
+      this.intervals.set(taskName, timeout);
+      logger.info(`Scheduled ${taskName} for ${next.toISOString()}`);
+    };
+
+    scheduleNext();
+  }
+
+  /**
+   * Manual trigger for invoice sync
+   */
+  public async triggerInvoiceSync(organizationId?: string): Promise<void> {
+    logger.info('Manually triggering invoice sync', { organizationId });
+
+    if (!invoiceService.isFakturowniaAvailable()) {
+      throw new Error('Fakturownia not available');
+    }
+
+    if (organizationId) {
+      // Sync specific organization
+      const result = await invoiceService.bulkSyncInvoices(organizationId);
+      logger.info('Manual invoice sync completed', {
+        organizationId,
+        ...result
+      });
+    } else {
+      // Sync all organizations
+      const organizations = await prisma.organization.findMany({
+        where: {
+          invoices: {
+            some: {
+              autoSync: true
+            }
+          }
+        },
+        select: {
+          id: true,
+          name: true
+        }
+      });
+
+      for (const org of organizations) {
+        try {
+          const result = await invoiceService.bulkSyncInvoices(org.id);
+          logger.info(`Manual sync completed for ${org.name}`, {
+            organizationId: org.id,
+            ...result
+          });
+        } catch (error: any) {
+          logger.error(`Failed manual sync for ${org.name}`, {
+            organizationId: org.id,
+            error: error.message
+          });
+        }
+      }
+    }
+  }
+
+  /**
+   * Get status of all scheduled tasks
+   */
+  public getTaskStatus(): { [taskName: string]: { active: boolean; nextRun?: string } } {
+    const status: { [taskName: string]: { active: boolean; nextRun?: string } } = {};
+
+    this.intervals.forEach((interval, taskName) => {
+      status[taskName] = {
+        active: true
+      };
+    });
+
+    return status;
+  }
+
+  /**
+   * Clean up old sync errors
+   * Removes sync errors older than 7 days
+   */
+  public async cleanupOldSyncErrors(): Promise<void> {
+    try {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+      const result = await prisma.invoice.updateMany({
+        where: {
+          syncError: { not: null },
+          lastSyncedAt: {
+            lt: sevenDaysAgo
+          }
+        },
+        data: {
+          syncError: null
+        }
+      });
+
+      logger.info(`Cleaned up ${result.count} old sync errors`);
+    } catch (error: any) {
+      logger.error('Failed to clean up old sync errors', { error: error.message });
+    }
+  }
+}
+
+// Export singleton instance
+export const scheduledTasksService = new ScheduledTasksService();

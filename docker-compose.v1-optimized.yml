@@ -1,0 +1,153 @@
+version: '3.8'
+
+services:
+  # V1 Frontend - Optimized
+  frontend-v1:
+    build:
+      context: ./packages/frontend
+      dockerfile: Dockerfile.dev
+    container_name: crm-frontend-v1
+    ports:
+      - "9025:9025"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://91.99.50.80/crm/api
+      - NEXT_PUBLIC_APP_VERSION=1.0.0
+      - NEXT_PUBLIC_ENVIRONMENT=production
+      - WATCHPACK_POLLING=false
+      - NODE_OPTIONS=--max-old-space-size=512
+    volumes:
+      - ./packages/frontend:/app
+      - /app/node_modules
+    restart: unless-stopped
+    networks:
+      - crm-v1-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+    command: npm run build && npm run start
+
+  # V1 Backend - Optimized
+  backend-v1:
+    build:
+      context: ./packages/backend
+      dockerfile: Dockerfile
+    container_name: crm-backend-v1
+    ports:
+      - "3003:3001"
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      - DATABASE_URL=postgresql://user:password@postgres-v1:5432/crm_gtd_v1?connection_limit=20&pool_timeout=20
+      - REDIS_URL=redis://crm-redis-v1:6379
+      - JWT_SECRET=super-bezpieczny-klucz-jwt-v1-min-32-znakow
+      - JWT_REFRESH_SECRET=super-bezpieczny-refresh-klucz-v1-min-32-znakow
+      - BCRYPT_ROUNDS=10
+      - NEXT_PUBLIC_APP_URL=http://91.99.50.80:9025
+      - NODE_OPTIONS=--max-old-space-size=512
+    volumes:
+      - ./packages/backend:/app
+      - /app/node_modules
+    depends_on:
+      - postgres-v1
+      - crm-redis-v1
+    restart: unless-stopped
+    networks:
+      - crm-v1-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.5'
+        reservations:
+          memory: 256M
+          cpus: '0.5'
+    command: sh -c "npx prisma generate && npx ts-node --transpile-only src/app.ts"
+
+  # V1 PostgreSQL Database - Optimized
+  postgres-v1:
+    image: postgres:14
+    container_name: crm-postgres-v1
+    ports:
+      - "5434:5432"
+    environment:
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_DB=crm_gtd_v1
+      # PostgreSQL Performance Tuning
+      - POSTGRES_INITDB_ARGS=--auth-host=scram-sha-256
+    volumes:
+      - postgres_v1_data:/var/lib/postgresql/data
+      - ./postgres-config:/etc/postgresql/postgresql.conf.d/
+    restart: unless-stopped
+    networks:
+      - crm-v1-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '1.0'
+        reservations:
+          memory: 512M
+          cpus: '0.5'
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf.d/custom.conf
+
+  # V1 Redis Cache - Optimized
+  crm-redis-v1:
+    image: redis:7-alpine
+    container_name: crm-redis-v1
+    ports:
+      - "6381:6379"
+    volumes:
+      - redis_v1_data:/data
+    restart: unless-stopped
+    networks:
+      - crm-v1-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+    command: redis-server --maxmemory 200mb --maxmemory-policy allkeys-lru --save 60 1000
+
+  # Mock TTS Service - Optimized
+  voice-tts-v1:
+    build:
+      context: .
+      dockerfile: Dockerfile.mock-tts
+    container_name: crm-voice-tts-v1
+    ports:
+      - "5002:5002"
+    environment:
+      - PYTHONUNBUFFERED=1
+      - GUNICORN_WORKERS=2
+      - GUNICORN_THREADS=2
+    restart: unless-stopped
+    networks:
+      - crm-v1-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+volumes:
+  postgres_v1_data:
+    driver: local
+  redis_v1_data:
+    driver: local
+
+networks:
+  crm-v1-network:
+    driver: bridge

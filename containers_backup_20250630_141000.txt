@@ -1,0 +1,6 @@
+NAME                IMAGE                        COMMAND                  SERVICE             CREATED             STATUS                      PORTS
+crm-backend-v1      crm-gtd-smart-backend-v1     "docker-entrypoint.s…"   backend-v1          12 minutes ago      Up 12 minutes (unhealthy)   0.0.0.0:3003->3001/tcp
+crm-frontend-v1     crm-gtd-smart-frontend-v1    "docker-entrypoint.s…"   frontend-v1         12 minutes ago      Up 8 minutes                3000/tcp, 0.0.0.0:9025->9025/tcp
+crm-postgres-v1     postgres:14                  "docker-entrypoint.s…"   postgres-v1         12 minutes ago      Up 12 minutes               0.0.0.0:5434->5432/tcp
+crm-redis-v1        redis:7-alpine               "docker-entrypoint.s…"   crm-redis-v1        12 minutes ago      Up 12 minutes               0.0.0.0:6381->6379/tcp
+crm-voice-tts-v1    crm-gtd-smart-voice-tts-v1   "python /app/mock_tt…"   voice-tts-v1        12 minutes ago      Up 12 minutes (healthy)     0.0.0.0:5002->5002/tcp

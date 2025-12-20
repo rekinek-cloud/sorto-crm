@@ -1,0 +1,670 @@
+actions:
+  # Main Entry Point
+  - name: actions.intent.MAIN
+    handler:
+      staticPrompt:
+        candidates:
+          - promptResponse:
+              firstSimple:
+                speech: Witaj w CRM-GTD Smart! Mogę pomóc ci z zadaniami, klientami, projektami i celami. Powiedz "pomoc" aby zobaczyć wszystkie opcje.
+                text: Witaj w CRM-GTD Smart! Dostępne kategorie:\n• Zadania (dodaj, pokaż, oznacz jako ukończone)\n• CRM (klienci, leady, notatki)\n• GTD (inbox, listy, przegląd)\n• Cele (progress, aktualizacje)
+              suggestions:
+                - title: Pokaż zadania
+                - title: Dodaj zadanie
+                - title: CRM operacje
+                - title: Przetwórz inbox
+                - title: Moje cele
+                - title: Pomoc
+
+  # ================================
+  # TASK MANAGEMENT ACTIONS
+  # ================================
+
+  - name: crm_gtd.add_task
+    parameters:
+      - name: task_description
+        type:
+          name: TYPE_FREEFORM_TEXT
+        required: true
+      - name: task_priority
+        type:
+          name: TYPE_PRIORITY
+        required: false
+      - name: task_context
+        type:
+          name: TYPE_CONTEXT
+        required: false
+      - name: task_date
+        type:
+          name: TYPE_DATE_TIME
+        required: false
+    handler:
+      webhook: https://your-domain.com/webhook/tasks/add
+
+  - name: crm_gtd.show_tasks_today
+    parameters:
+      - name: task_filter
+        type:
+          name: TYPE_STRING
+        required: false
+    handler:
+      webhook: https://your-domain.com/webhook/tasks/show-today
+
+  - name: crm_gtd.complete_task
+    parameters:
+      - name: task_name
+        type:
+          name: TYPE_FREEFORM_TEXT
+        required: true
+    handler:
+      webhook: https://your-domain.com/webhook/tasks/complete
+
+  - name: crm_gtd.move_task
+    parameters:
+      - name: task_name
+        type:
+          name: TYPE_FREEFORM_TEXT
+        required: true
+      - name: target_date
+        type:
+          name: TYPE_DATE_TIME
+        required: true
+    handler:
+      webhook: https://your-domain.com/webhook/tasks/move
+
+  - name: crm_gtd.next_priority_task
+    handler:
+      webhook: https://your-domain.com/webhook/tasks/next-priority
+
+  # ================================
+  # CRM OPERATIONS ACTIONS
+  # ================================
+
+  - name: crm_gtd.add_client_note
+    parameters:
+      - name: client_name
+        type:
+          name: TYPE_PERSON_NAME
+        required: true
+      - name: note_content
+        type:
+          name: TYPE_FREEFORM_TEXT
+        required: true
+      - name: note_type
+        type:
+          name: TYPE_NOTE_TYPE
+        required: false
+    handler:
+      webhook: https://your-domain.com/webhook/crm/add-note
+
+  - name: crm_gtd.show_lead_status
+    parameters:
+      - name: lead_name
+        type:
+          name: TYPE_PERSON_NAME
+        required: true
+    handler:
+      webhook: https://your-domain.com/webhook/crm/lead-status
+
+  - name: crm_gtd.schedule_followup
+    parameters:
+      - name: client_name
+        type:
+          name: TYPE_PERSON_NAME
+        required: true
+      - name: followup_date
+        type:
+          name: TYPE_DATE_TIME
+        required: true
+      - name: followup_type
+        type:
+          name: TYPE_FOLLOWUP_TYPE
+        required: false
+    handler:
+      webhook: https://your-domain.com/webhook/crm/schedule-followup
+
+  - name: crm_gtd.deals_closing_week
+    handler:
+      webhook: https://your-domain.com/webhook/crm/deals-closing
+
+  - name: crm_gtd.create_new_lead
+    parameters:
+      - name: company_name
+        type:
+          name: TYPE_ORGANIZATION
+        required: true
+      - name: contact_person
+        type:
+          name: TYPE_PERSON_NAME
+        required: false
+      - name: lead_source
+        type:
+          name: TYPE_LEAD_SOURCE
+        required: false
+      - name: lead_value
+        type:
+          name: TYPE_NUMBER
+        required: false
+    handler:
+      webhook: https://your-domain.com/webhook/crm/create-lead
+
+  # ================================
+  # GTD WORKFLOWS ACTIONS
+  # ================================
+
+  - name: crm_gtd.process_inbox
+    parameters:
+      - name: action_type
+        type:
+          name: TYPE_GTD_ACTION
+        required: false
+    handler:
+      webhook: https://your-domain.com/webhook/gtd/process-inbox
+
+  - name: crm_gtd.show_someday_maybe
+    parameters:
+      - name: category_filter
+        type:
+          name: TYPE_STRING
+        required: false
+    handler:
+      webhook: https://your-domain.com/webhook/gtd/someday-maybe
+
+  - name: crm_gtd.move_to_waiting
+    parameters:
+      - name: task_name
+        type:
+          name: TYPE_FREEFORM_TEXT
+        required: true
+      - name: waiting_for_person
+        type:
+          name: TYPE_PERSON_NAME
+        required: false
+      - name: expected_date
+        type:
+          name: TYPE_DATE_TIME
+        required: false
+    handler:
+      webhook: https://your-domain.com/webhook/gtd/move-waiting
+
+  - name: crm_gtd.weekly_review
+    parameters:
+      - name: review_section
+        type:
+          name: TYPE_REVIEW_SECTION
+        required: false
+    handler:
+      webhook: https://your-domain.com/webhook/gtd/weekly-review
+
+  # ================================
+  # SMART GOALS ACTIONS
+  # ================================
+
+  - name: crm_gtd.goal_progress
+    parameters:
+      - name: goal_name
+        type:
+          name: TYPE_FREEFORM_TEXT
+        required: true
+    handler:
+      webhook: https://your-domain.com/webhook/goals/progress
+
+  - name: crm_gtd.update_goal_progress
+    parameters:
+      - name: goal_name
+        type:
+          name: TYPE_FREEFORM_TEXT
+        required: true
+      - name: progress_percentage
+        type:
+          name: TYPE_NUMBER
+        required: true
+    handler:
+      webhook: https://your-domain.com/webhook/goals/update-progress
+
+  - name: crm_gtd.show_quarterly_goals
+    parameters:
+      - name: quarter_filter
+        type:
+          name: TYPE_STRING
+        required: false
+    handler:
+      webhook: https://your-domain.com/webhook/goals/quarterly
+
+  # ================================
+  # HELP AND FALLBACK ACTIONS
+  # ================================
+
+  - name: crm_gtd.get_help
+    parameters:
+      - name: help_category
+        type:
+          name: TYPE_HELP_CATEGORY
+        required: false
+    handler:
+      staticPrompt:
+        candidates:
+          - promptResponse:
+              firstSimple:
+                speech: |
+                  Oto wszystkie dostępne polecenia w CRM-GTD Smart:
+                  
+                  ZADANIA:
+                  "Dodaj zadanie [opis]" - tworzy nowe zadanie
+                  "Pokaż zadania na dziś" - wyświetla dzisiejsze zadania
+                  "Oznacz zadanie [nazwa] jako ukończone"
+                  "Przenieś zadanie [nazwa] na jutro"
+                  "Jakie mam następne priorytetowe zadanie?"
+                  
+                  CRM:
+                  "Dodaj notatkę do klienta [nazwa]: [treść]"
+                  "Pokaż status leada [nazwa]"
+                  "Zaplanuj follow-up z [klient] na [data]"
+                  "Które deale zamykamy w tym tygodniu?"
+                  "Utwórz nowego leada: [nazwa firmy]"
+                  
+                  GTD:
+                  "Przetwórz mój inbox"
+                  "Co jest na mojej liście może kiedyś?"
+                  "Przenieś [zadanie] do oczekiwania"
+                  "Pokaż mój przegląd tygodniowy"
+                  
+                  CELE:
+                  "Jaki jest progress celu [nazwa]?"
+                  "Aktualizuj cel [nazwa] na [procent] procent"
+                  "Pokaż moje cele kwartalne"
+                  
+                  Co chcesz zrobić?
+                text: |
+                  📋 **ZADANIA**
+                  • Dodaj zadanie [opis]
+                  • Pokaż zadania na dziś
+                  • Oznacz zadanie [nazwa] jako ukończone
+                  • Przenieś zadanie [nazwa] na jutro
+                  • Następne priorytetowe zadanie
+                  
+                  👥 **CRM**
+                  • Dodaj notatkę do klienta [nazwa]: [treść]
+                  • Pokaż status leada [nazwa]
+                  • Zaplanuj follow-up z [klient] na [data]
+                  • Deale zamykane w tym tygodniu
+                  • Utwórz nowego leada: [firma]
+                  
+                  🎯 **GTD**
+                  • Przetwórz inbox
+                  • Lista "może kiedyś"
+                  • Przenieś do oczekiwania
+                  • Przegląd tygodniowy
+                  
+                  🏆 **CELE**
+                  • Progress celu [nazwa]
+                  • Aktualizuj cel [nazwa] na [%]
+                  • Cele kwartalne
+              suggestions:
+                - title: Zadania
+                - title: CRM
+                - title: GTD
+                - title: Cele
+
+  - name: actions.intent.NO_MATCH_1
+    handler:
+      staticPrompt:
+        candidates:
+          - promptResponse:
+              firstSimple:
+                speech: Nie rozumiem tego polecenia. Spróbuj powiedzieć na przykład "dodaj zadanie", "pokaż klientów" lub "pomoc" aby zobaczyć wszystkie opcje.
+                text: Nie rozumiem tego polecenia. Przykłady:\n• "Dodaj zadanie przygotuj prezentację"\n• "Pokaż zadania na dziś"\n• "Dodaj notatkę do klienta Kowalski"\n• "Pomocy" - pełna lista
+              suggestions:
+                - title: Pomocy
+                - title: Dodaj zadanie
+                - title: Pokaż zadania
+
+  - name: actions.intent.NO_MATCH_2
+    handler:
+      staticPrompt:
+        candidates:
+          - promptResponse:
+              firstSimple:
+                speech: Nadal nie rozumiem. Powiedz "pomoc" aby zobaczyć pełną listę dostępnych poleceń, lub spróbuj prostszego polecenia jak "pokaż zadania".
+                text: Spróbuj prostszego polecenia:\n• "Pomoc" - pełna lista\n• "Pokaż zadania"\n• "Dodaj zadanie"\n• "Moje cele"
+              suggestions:
+                - title: Pomoc
+                - title: Przykłady
+
+intents:
+  # ================================
+  # TASK MANAGEMENT INTENTS
+  # ================================
+
+  - name: crm_gtd.add_task
+    trainingPhrases:
+      # Podstawowe polecenia
+      - dodaj zadanie $task_description:TYPE_FREEFORM_TEXT
+      - utwórz zadanie $task_description:TYPE_FREEFORM_TEXT
+      - nowe zadanie $task_description:TYPE_FREEFORM_TEXT
+      - stwórz zadanie $task_description:TYPE_FREEFORM_TEXT
+      - zapisz zadanie $task_description:TYPE_FREEFORM_TEXT
+      
+      # Z priorytetem
+      - dodaj pilne zadanie $task_description:TYPE_FREEFORM_TEXT
+      - utwórz zadanie o $task_priority:TYPE_PRIORITY priorytecie $task_description:TYPE_FREEFORM_TEXT
+      - nowe $task_priority:TYPE_PRIORITY zadanie $task_description:TYPE_FREEFORM_TEXT
+      
+      # Z kontekstem
+      - dodaj zadanie $task_description:TYPE_FREEFORM_TEXT w kontekście $task_context:TYPE_CONTEXT
+      - utwórz zadanie $task_description:TYPE_FREEFORM_TEXT dla $task_context:TYPE_CONTEXT
+      
+      # Z datą
+      - dodaj zadanie $task_description:TYPE_FREEFORM_TEXT na $task_date:TYPE_DATE_TIME
+      - zaplanuj zadanie $task_description:TYPE_FREEFORM_TEXT na $task_date:TYPE_DATE_TIME
+      
+      # Naturalne warianty
+      - muszę zrobić $task_description:TYPE_FREEFORM_TEXT
+      - przypomnij mi żeby $task_description:TYPE_FREEFORM_TEXT
+      - dodaj do listy $task_description:TYPE_FREEFORM_TEXT
+
+  - name: crm_gtd.show_tasks_today
+    trainingPhrases:
+      - pokaż moje zadania na dziś
+      - jakie mam zadania dzisiaj
+      - co mam do zrobienia dziś
+      - dzisiejsze zadania
+      - moje zadania na dzisiaj
+      - lista zadań na dziś
+      - zadania na dziś
+      - co dziś robię
+      - pokaż dzisiejszą listę zadań
+      - jakie zadania mam zaplanowane na dziś
+
+  - name: crm_gtd.complete_task
+    trainingPhrases:
+      - oznacz zadanie $task_name:TYPE_FREEFORM_TEXT jako ukończone
+      - ukończ zadanie $task_name:TYPE_FREEFORM_TEXT
+      - zakończ zadanie $task_name:TYPE_FREEFORM_TEXT
+      - zadanie $task_name:TYPE_FREEFORM_TEXT zrobione
+      - skończ zadanie $task_name:TYPE_FREEFORM_TEXT
+      - mark task $task_name:TYPE_FREEFORM_TEXT as complete
+      - mark task $task_name:TYPE_FREEFORM_TEXT as done
+      - complete task $task_name:TYPE_FREEFORM_TEXT
+      - finish task $task_name:TYPE_FREEFORM_TEXT
+      - zrobiłem $task_name:TYPE_FREEFORM_TEXT
+
+  - name: crm_gtd.move_task
+    trainingPhrases:
+      - przenieś zadanie $task_name:TYPE_FREEFORM_TEXT na $target_date:TYPE_DATE_TIME
+      - move task $task_name:TYPE_FREEFORM_TEXT to $target_date:TYPE_DATE_TIME
+      - zaplanuj zadanie $task_name:TYPE_FREEFORM_TEXT na $target_date:TYPE_DATE_TIME
+      - przełóż zadanie $task_name:TYPE_FREEFORM_TEXT na $target_date:TYPE_DATE_TIME
+      - schedule task $task_name:TYPE_FREEFORM_TEXT for $target_date:TYPE_DATE_TIME
+      - przenieś $task_name:TYPE_FREEFORM_TEXT na jutro
+      - move $task_name:TYPE_FREEFORM_TEXT to tomorrow
+
+  - name: crm_gtd.next_priority_task
+    trainingPhrases:
+      - jakie mam następne priorytetowe zadanie
+      - co powinienem zrobić teraz
+      - następne zadanie
+      - what's my next priority task
+      - what should I do next
+      - następny priorytet
+      - co dalej
+      - jakie zadanie jest najważniejsze
+      - co robić teraz
+      - następna rzecz do zrobienia
+
+  # ================================
+  # CRM OPERATIONS INTENTS
+  # ================================
+
+  - name: crm_gtd.add_client_note
+    trainingPhrases:
+      - dodaj notatkę do klienta $client_name:TYPE_PERSON_NAME $note_content:TYPE_FREEFORM_TEXT
+      - add note to client $client_name:TYPE_PERSON_NAME $note_content:TYPE_FREEFORM_TEXT
+      - zapisz notatkę dla $client_name:TYPE_PERSON_NAME $note_content:TYPE_FREEFORM_TEXT
+      - notatka dla klienta $client_name:TYPE_PERSON_NAME $note_content:TYPE_FREEFORM_TEXT
+      - dodaj komentarz do $client_name:TYPE_PERSON_NAME $note_content:TYPE_FREEFORM_TEXT
+      - note for $client_name:TYPE_PERSON_NAME $note_content:TYPE_FREEFORM_TEXT
+
+  - name: crm_gtd.show_lead_status
+    trainingPhrases:
+      - pokaż status leada $lead_name:TYPE_PERSON_NAME
+      - show status of lead $lead_name:TYPE_PERSON_NAME
+      - jaki jest status $lead_name:TYPE_PERSON_NAME
+      - sprawdź leada $lead_name:TYPE_PERSON_NAME
+      - status potencjalnego klienta $lead_name:TYPE_PERSON_NAME
+      - gdzie jest lead $lead_name:TYPE_PERSON_NAME
+      - check lead $lead_name:TYPE_PERSON_NAME
+
+  - name: crm_gtd.schedule_followup
+    trainingPhrases:
+      - zaplanuj follow-up z $client_name:TYPE_PERSON_NAME na $followup_date:TYPE_DATE_TIME
+      - schedule follow-up with $client_name:TYPE_PERSON_NAME for $followup_date:TYPE_DATE_TIME
+      - umów spotkanie z $client_name:TYPE_PERSON_NAME na $followup_date:TYPE_DATE_TIME
+      - follow-up z $client_name:TYPE_PERSON_NAME $followup_date:TYPE_DATE_TIME
+      - zaplanuj rozmowę z $client_name:TYPE_PERSON_NAME na $followup_date:TYPE_DATE_TIME
+      - schedule meeting with $client_name:TYPE_PERSON_NAME for $followup_date:TYPE_DATE_TIME
+
+  - name: crm_gtd.deals_closing_week
+    trainingPhrases:
+      - które deale zamykamy w tym tygodniu
+      - what deals are closing this week
+      - jakie umowy kończymy w tym tygodniu
+      - deals tego tygodnia
+      - closing deals this week
+      - transakcje na ten tydzień
+      - co zamykamy w tym tygodniu
+      - weekly closing deals
+
+  - name: crm_gtd.create_new_lead
+    trainingPhrases:
+      - utwórz nowego leada $company_name:TYPE_ORGANIZATION
+      - create new lead $company_name:TYPE_ORGANIZATION
+      - dodaj leada $company_name:TYPE_ORGANIZATION
+      - nowy lead $company_name:TYPE_ORGANIZATION
+      - add lead $company_name:TYPE_ORGANIZATION
+      - zapisz leada $company_name:TYPE_ORGANIZATION
+      - new lead for $company_name:TYPE_ORGANIZATION
+
+  # ================================
+  # GTD WORKFLOWS INTENTS
+  # ================================
+
+  - name: crm_gtd.process_inbox
+    trainingPhrases:
+      - przetwórz mój inbox
+      - process my inbox
+      - co w skrzynce
+      - sprawdź inbox
+      - przetwórz skrzynkę
+      - what's in my inbox
+      - GTD inbox
+      - process inbox
+
+  - name: crm_gtd.show_someday_maybe
+    trainingPhrases:
+      - co jest na mojej liście może kiedyś
+      - what's in my someday maybe list
+      - pokaż może kiedyś
+      - lista może kiedyś
+      - someday maybe list
+      - show someday maybe
+      - co na liście aspiracji
+
+  - name: crm_gtd.move_to_waiting
+    trainingPhrases:
+      - przenieś $task_name:TYPE_FREEFORM_TEXT do oczekiwania
+      - move $task_name:TYPE_FREEFORM_TEXT to waiting for
+      - czekam na $task_name:TYPE_FREEFORM_TEXT
+      - waiting for $task_name:TYPE_FREEFORM_TEXT
+      - $task_name:TYPE_FREEFORM_TEXT oczekuje na kogoś
+      - put $task_name:TYPE_FREEFORM_TEXT in waiting
+
+  - name: crm_gtd.weekly_review
+    trainingPhrases:
+      - pokaż mój przegląd tygodniowy
+      - show my weekly review
+      - przegląd tygodnia
+      - weekly review
+      - co w tym tygodniu
+      - podsumowanie tygodnia
+      - weekly summary
+
+  # ================================
+  # SMART GOALS INTENTS
+  # ================================
+
+  - name: crm_gtd.goal_progress
+    trainingPhrases:
+      - jaki jest progress celu $goal_name:TYPE_FREEFORM_TEXT
+      - what's my progress on goal $goal_name:TYPE_FREEFORM_TEXT
+      - pokaż postęp celu $goal_name:TYPE_FREEFORM_TEXT
+      - jak idzie cel $goal_name:TYPE_FREEFORM_TEXT
+      - progress of goal $goal_name:TYPE_FREEFORM_TEXT
+      - stan celu $goal_name:TYPE_FREEFORM_TEXT
+
+  - name: crm_gtd.update_goal_progress
+    trainingPhrases:
+      - aktualizuj cel $goal_name:TYPE_FREEFORM_TEXT na $progress_percentage:TYPE_NUMBER procent
+      - update goal $goal_name:TYPE_FREEFORM_TEXT progress to $progress_percentage:TYPE_NUMBER percent
+      - cel $goal_name:TYPE_FREEFORM_TEXT jest w $progress_percentage:TYPE_NUMBER procentach
+      - ustaw progress celu $goal_name:TYPE_FREEFORM_TEXT na $progress_percentage:TYPE_NUMBER
+      - goal $goal_name:TYPE_FREEFORM_TEXT is $progress_percentage:TYPE_NUMBER percent complete
+
+  - name: crm_gtd.show_quarterly_goals
+    trainingPhrases:
+      - pokaż moje cele kwartalne
+      - show my quarterly goals
+      - cele na kwartał
+      - quarterly goals
+      - jakie mam cele kwartalne
+      - what are my quarterly goals
+      - quarterly objectives
+
+  # ================================
+  # HELP INTENTS
+  # ================================
+
+  - name: crm_gtd.get_help
+    trainingPhrases:
+      - pomoc
+      - pomocy
+      - help
+      - co mogę zrobić
+      - what can I do
+      - jakie polecenia
+      - what commands
+      - dostępne opcje
+      - available options
+      - instrukcje
+      - instructions
+      - jak używać
+      - how to use
+
+# ================================
+# CUSTOM TYPES DEFINITIONS
+# ================================
+
+types:
+  - name: TYPE_PRIORITY
+    entities:
+      - value: HIGH
+        synonyms: [wysoki, pilne, ważne, high, urgent, important, krytyczne]
+      - value: MEDIUM
+        synonyms: [średni, normalny, medium, normal, standardowy]
+      - value: LOW
+        synonyms: [niski, mało ważne, low, later, może]
+
+  - name: TYPE_CONTEXT
+    entities:
+      - value: '@computer'
+        synonyms: [komputer, komputerze, biurko, laptop, PC]
+      - value: '@calls'
+        synonyms: [telefon, rozmowy, dzwonienie, calls]
+      - value: '@office'
+        synonyms: [biuro, biurze, praca, office]
+      - value: '@home'
+        synonyms: [dom, domu, mieszkanie, home]
+      - value: '@errands'
+        synonyms: [sprawy, zakupy, miasto, errands]
+      - value: '@online'
+        synonyms: [internet, online, sieć, www]
+      - value: '@waiting'
+        synonyms: [oczekiwanie, czekanie, waiting]
+      - value: '@reading'
+        synonyms: [czytanie, lektura, reading, książki]
+
+  - name: TYPE_NOTE_TYPE
+    entities:
+      - value: MEETING
+        synonyms: [spotkanie, meeting, rozmowa]
+      - value: CALL
+        synonyms: [telefon, call, rozmowa telefoniczna]
+      - value: EMAIL
+        synonyms: [email, mail, wiadomość]
+      - value: FOLLOW_UP
+        synonyms: [follow-up, następny krok, dalsze działania]
+      - value: GENERAL
+        synonyms: [ogólne, general, notatka]
+
+  - name: TYPE_FOLLOWUP_TYPE
+    entities:
+      - value: CALL
+        synonyms: [telefon, call, rozmowa]
+      - value: MEETING
+        synonyms: [spotkanie, meeting]
+      - value: EMAIL
+        synonyms: [email, mail]
+      - value: DEMO
+        synonyms: [demo, prezentacja, demonstration]
+      - value: PROPOSAL
+        synonyms: [propozycja, oferta, proposal]
+
+  - name: TYPE_LEAD_SOURCE
+    entities:
+      - value: WEBSITE
+        synonyms: [strona, website, www]
+      - value: REFERRAL
+        synonyms: [polecenie, referral, rekomendacja]
+      - value: COLD_CALL
+        synonyms: [cold call, zimny telefon]
+      - value: SOCIAL_MEDIA
+        synonyms: [social media, media społecznościowe, facebook, linkedin]
+      - value: TRADE_SHOW
+        synonyms: [targi, trade show, konferencja]
+      - value: ADVERTISING
+        synonyms: [reklama, advertising, ad]
+
+  - name: TYPE_GTD_ACTION
+    entities:
+      - value: DO
+        synonyms: [zrób, do, wykonaj]
+      - value: DEFER
+        synonyms: [odłóż, defer, później]
+      - value: DELEGATE
+        synonyms: [deleguj, delegate, przekaż]
+      - value: DELETE
+        synonyms: [usuń, delete, wyrzuć]
+
+  - name: TYPE_REVIEW_SECTION
+    entities:
+      - value: GOALS
+        synonyms: [cele, goals, objectives]
+      - value: PROJECTS
+        synonyms: [projekty, projects]
+      - value: NEXT_ACTIONS
+        synonyms: [następne działania, next actions]
+      - value: WAITING_FOR
+        synonyms: [oczekiwanie, waiting for]
+      - value: SOMEDAY_MAYBE
+        synonyms: [może kiedyś, someday maybe]
+
+  - name: TYPE_HELP_CATEGORY
+    entities:
+      - value: TASKS
+        synonyms: [zadania, tasks, todo]
+      - value: CRM
+        synonyms: [crm, klienci, clients]
+      - value: GTD
+        synonyms: [gtd, getting things done]
+      - value: GOALS
+        synonyms: [cele, goals, objectives]

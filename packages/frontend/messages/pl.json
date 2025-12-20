@@ -1,0 +1,158 @@
+{
+  "navigation": {
+    "dashboard": "Pulpit",
+    "projects": "Projekty",
+    "tasks": "Zadania",
+    "contacts": "Kontakty",
+    "companies": "Firmy",
+    "deals": "Transakcje",
+    "communication": "Komunikacja",
+    "gtd": "GTD",
+    "reports": "Raporty",
+    "settings": "Ustawienia",
+    "streams": "Strumienie",
+    "crm": "CRM",
+    "reviews": "Przeglądy",
+    "habits": "Nawyki",
+    "delegated": "Delegowane",
+    "organization": "Organizacja",
+    "tools": "Narzędzia",
+    "advanced": "Zaawansowane"
+  },
+  "gtd": {
+    "inbox": "Skrzynka",
+    "contexts": "Konteksty",
+    "nextActions": "Kolejne działania",
+    "waitingFor": "Oczekuje na",
+    "somedayMaybe": "Kiedyś/Może",
+    "energyLevels": "Poziomy energii",
+    "focusModes": "Tryby skupienia",
+    "processing": "Przetwarzanie",
+    "quickCapture": "Szybkie przechwytywanie"
+  },
+  "tasks": {
+    "title": "Zadania",
+    "createNew": "Nowe zadanie",
+    "edit": "Edytuj zadanie",
+    "delete": "Usuń zadanie",
+    "completed": "Zakończone",
+    "pending": "Oczekujące",
+    "priority": {
+      "high": "Wysoki",
+      "medium": "Średni",
+      "low": "Niski"
+    },
+    "status": {
+      "pending": "Oczekujące",
+      "in_progress": "W trakcie",
+      "completed": "Zakończone",
+      "on_hold": "Wstrzymane"
+    }
+  },
+  "projects": {
+    "title": "Projekty",
+    "createNew": "Nowy projekt",
+    "edit": "Edytuj projekt",
+    "delete": "Usuń projekt",
+    "status": {
+      "planning": "Planowanie",
+      "active": "Aktywny",
+      "on_hold": "Wstrzymany",
+      "completed": "Zakończony"
+    }
+  },
+  "communication": {
+    "title": "Komunikacja",
+    "messages": "Wiadomości",
+    "rules": "Reguły",
+    "filters": "Filtry",
+    "autoReply": "Automatyczne odpowiedzi",
+    "unifiedInbox": "Zunifikowana skrzynka",
+    "rulesManager": "Rules Manager",
+    "channels": "Kanały",
+    "processingRules": "Reguły przetwarzania",
+    "emailFilters": "Filtry Email",
+    "smartMailboxes": "Smart Mailboxes"
+  },
+  "crm": {
+    "companies": "Firmy",
+    "contacts": "Kontakty",
+    "deals": "Transakcje",
+    "offers": "Oferty",
+    "leads": "Potencjalni klienci",
+    "orders": "Zamówienia",
+    "invoices": "Faktury",
+    "products": "Produkty",
+    "services": "Usługi",
+    "meetings": "Spotkania"
+  },
+  "reviews": {
+    "weekly": "Przegląd tygodniowy",
+    "monthly": "Przegląd miesięczny",
+    "quarterly": "Przegląd kwartalny"
+  },
+  "organization": {
+    "tags": "Tagi",
+    "areas": "Obszary",
+    "recurringTasks": "Zadania cykliczne"
+  },
+  "tools": {
+    "aiAssistant": "AI Assistant",
+    "aiManagement": "Zarządzanie AI",
+    "phase2Demo": "Phase 2 Demo",
+    "smartAnalysis": "Analiza SMART",
+    "smartDetails": "Szczegóły SMART",
+    "smartImprovements": "Ulepszenia SMART",
+    "smartTemplates": "Szablony SMART",
+    "emailAnalysis": "Analiza email",
+    "autoReplies": "Automatyczne odpowiedzi",
+    "knowledgeBase": "Baza wiedzy",
+    "relationMap": "Mapa Powiązań",
+    "timeline": "Oś czasu",
+    "analytics": "Analityka",
+    "metadata": "Metadane"
+  },
+  "advanced": {
+    "taskHistory": "Historia zadań",
+    "taskRelationships": "Relacje zadań",
+    "projectDependencies": "Zależności projektów",
+    "gtdBuckets": "Kubełki GTD",
+    "gtdHorizons": "Horyzonty GTD",
+    "files": "Pliki",
+    "recommendations": "Rekomendacje",
+    "info": "Informacje",
+    "complaints": "Skargi",
+    "unimportant": "Nieważne"
+  },
+  "common": {
+    "save": "Zapisz",
+    "cancel": "Anuluj",
+    "delete": "Usuń",
+    "edit": "Edytuj",
+    "create": "Utwórz",
+    "search": "Szukaj",
+    "filter": "Filtruj",
+    "loading": "Ładowanie...",
+    "error": "Błąd",
+    "success": "Sukces",
+    "confirm": "Potwierdź",
+    "yes": "Tak",
+    "no": "Nie"
+  },
+  "forms": {
+    "validation": {
+      "required": "To pole jest wymagane",
+      "email": "Wprowadź poprawny adres email",
+      "minLength": "Minimum {count} znaków",
+      "maxLength": "Maksimum {count} znaków"
+    }
+  },
+  "dates": {
+    "today": "Dzisiaj",
+    "yesterday": "Wczoraj",
+    "tomorrow": "Jutro",
+    "thisWeek": "Ten tydzień",
+    "lastWeek": "Ostatni tydzień",
+    "nextWeek": "Następny tydzień"
+  }
+}

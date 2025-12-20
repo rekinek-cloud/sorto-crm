@@ -1,0 +1,60 @@
+webhooks:
+  ActionsOnGoogleFulfillment:
+    handlers:
+      - name: add_task
+        httpExecution:
+          url: https://your-domain.com/webhook/add-task
+          httpMethod: POST
+          headers:
+            - key: Content-Type
+              value: application/json
+            - key: Authorization
+              value: Bearer ${WEBHOOK_SECRET}
+          timeout: 30s
+          
+      - name: show_tasks  
+        httpExecution:
+          url: https://your-domain.com/webhook/show-tasks
+          httpMethod: POST
+          headers:
+            - key: Content-Type
+              value: application/json
+            - key: Authorization
+              value: Bearer ${WEBHOOK_SECRET}
+          timeout: 30s
+          
+      - name: create_project
+        httpExecution:
+          url: https://your-domain.com/webhook/create-project
+          httpMethod: POST
+          headers:
+            - key: Content-Type
+              value: application/json
+            - key: Authorization
+              value: Bearer ${WEBHOOK_SECRET}
+          timeout: 30s
+          
+      - name: show_contacts
+        httpExecution:
+          url: https://your-domain.com/webhook/show-contacts
+          httpMethod: POST
+          headers:
+            - key: Content-Type
+              value: application/json
+            - key: Authorization
+              value: Bearer ${WEBHOOK_SECRET}
+          timeout: 30s
+          
+      - name: process_inbox
+        httpExecution:
+          url: https://your-domain.com/webhook/process-inbox
+          httpMethod: POST
+          headers:
+            - key: Content-Type
+              value: application/json
+            - key: Authorization
+              value: Bearer ${WEBHOOK_SECRET}
+          timeout: 30s
+
+    inlineCloudFunction:
+      executeFunction: processCrmGtdRequest
