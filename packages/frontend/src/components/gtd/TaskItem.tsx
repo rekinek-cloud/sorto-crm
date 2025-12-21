@@ -25,10 +25,21 @@ export default function TaskItem({ task, onEdit, onDelete, onStatusChange, onTas
     onStatusChange(task.id, newStatus);
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Nie propaguj jeśli kliknięto na przycisk lub checkbox
+    if ((e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    onEdit(task);
+  };
+
   return (
-    <div className={`bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow p-4 ${
-      isOverdue ? 'border-red-500 bg-red-50' : 'border-gray-200'
-    }`}>
+    <div
+      className={`bg-white rounded-lg border-l-4 shadow-sm hover:shadow-md transition-shadow p-4 cursor-pointer ${
+        isOverdue ? 'border-red-500 bg-red-50' : 'border-gray-200'
+      }`}
+      onClick={handleCardClick}
+    >
       <div className="flex items-start justify-between">
         {/* Left side - Task content */}
         <div className="flex-1 min-w-0">

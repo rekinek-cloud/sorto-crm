@@ -38,7 +38,7 @@ const mockTemplates: Template[] = [
   },
   {
     id: '3',
-    name: 'Przegląd tygodniowy GTD',
+    name: 'Przegląd tygodniowy',
     category: 'Produktywność',
     description: 'Lista kontrolna do cotygodniowego przeglądu systemu',
     tasksCount: 15,

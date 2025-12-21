@@ -165,7 +165,7 @@ export const ListView: React.FC<ListViewProps> = ({
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
           {viewType === 'today' && 'Lista Zadań na Dziś'}
-          {viewType === 'gtd_context' && 'Zadania według Kontekstu GTD'}
+          {viewType === 'gtd_context' && 'Zadania według Kontekstu'}
           {viewType === 'filtered' && 'Przefiltrowane Zadania'}
         </h2>
         <div className="flex items-center space-x-4 text-sm text-gray-600">

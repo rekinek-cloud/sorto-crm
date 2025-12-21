@@ -19,10 +19,18 @@ interface HabitCardProps {
   onEdit: (habit: Habit) => void;
   onDelete: (id: string) => void;
   onEntryUpdate: () => void;
+  onClick?: (habit: Habit) => void;
 }
 
-export default function HabitCard({ habit, onEdit, onDelete, onEntryUpdate }: HabitCardProps) {
+export default function HabitCard({ habit, onEdit, onDelete, onEntryUpdate, onClick }: HabitCardProps) {
   const [isToggling, setIsToggling] = useState(false);
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('button')) {
+      return;
+    }
+    onClick?.(habit);
+  };
   
   // Get today's completion status
   const today = new Date();
@@ -59,9 +67,10 @@ export default function HabitCard({ habit, onEdit, onDelete, onEntryUpdate }: Ha
 
   return (
     <motion.div
-      className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200"
+      className={`bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 ${onClick ? 'cursor-pointer' : ''}`}
       whileHover={{ y: -2 }}
       transition={{ duration: 0.2 }}
+      onClick={handleCardClick}
     >
       <div className="p-6">
         {/* Header */}

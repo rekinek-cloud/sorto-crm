@@ -7,9 +7,10 @@ interface CompanyItemProps {
   company: Company;
   onEdit: (company: Company) => void;
   onDelete: (id: string) => void;
+  onOpen?: (id: string) => void;
 }
 
-export default function CompanyItem({ company, onEdit, onDelete }: CompanyItemProps) {
+export default function CompanyItem({ company, onEdit, onDelete, onOpen }: CompanyItemProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'CUSTOMER': return 'bg-green-100 text-green-800';
@@ -43,7 +44,10 @@ export default function CompanyItem({ company, onEdit, onDelete }: CompanyItemPr
   };
 
   return (
-    <div className="p-6 hover:bg-gray-50 transition-colors">
+    <div
+      className="p-6 hover:bg-gray-50 transition-colors cursor-pointer"
+      onClick={() => onOpen?.(company.id)}
+    >
       <div className="flex items-center justify-between">
         {/* Company Info */}
         <div className="flex-1 min-w-0">
@@ -84,11 +88,12 @@ export default function CompanyItem({ company, onEdit, onDelete }: CompanyItemPr
                   <span>{company.phone}</span>
                 )}
                 {company.website && (
-                  <a 
-                    href={company.website} 
-                    target="_blank" 
+                  <a
+                    href={company.website}
+                    target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary-600 hover:text-primary-700"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     Website
                   </a>
@@ -137,7 +142,7 @@ export default function CompanyItem({ company, onEdit, onDelete }: CompanyItemPr
         {/* Actions */}
         <div className="flex items-center space-x-2 ml-6">
           <button
-            onClick={() => onEdit(company)}
+            onClick={(e) => { e.stopPropagation(); onEdit(company); }}
             className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
             title="Edit company"
           >
@@ -146,7 +151,7 @@ export default function CompanyItem({ company, onEdit, onDelete }: CompanyItemPr
             </svg>
           </button>
           <button
-            onClick={() => onDelete(company.id)}
+            onClick={(e) => { e.stopPropagation(); onDelete(company.id); }}
             className="p-2 text-gray-400 hover:text-red-600 transition-colors"
             title="Delete company"
           >

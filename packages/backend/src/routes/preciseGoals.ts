@@ -58,11 +58,12 @@ router.get('/', authenticateToken, async (req, res) => {
     // Format response
     const formattedGoals = goals.map(goal => ({
       id: goal.id,
-      // RZUT fields
-      result: goal.result,
-      measurement: goal.measurement,
+      // RZUT fields (Rezultat, Zmierzalność, Ujście, Tło)
+      result: goal.result,           // R - Rezultat
+      measurement: goal.measurement, // Z - Zmierzalność
+      outlet: goal.outlet,           // U - Ujście
       deadline: goal.deadline,
-      background: goal.background,
+      background: goal.background,   // T - Tło
       // Metrics
       currentValue: Number(goal.current_value) || 0,
       targetValue: Number(goal.target_value),
@@ -233,10 +234,12 @@ router.get('/:id', authenticateToken, async (req, res) => {
       success: true,
       data: {
         id: goal.id,
-        result: goal.result,
-        measurement: goal.measurement,
+        // RZUT fields
+        result: goal.result,           // R - Rezultat
+        measurement: goal.measurement, // Z - Zmierzalność
+        outlet: goal.outlet,           // U - Ujście
         deadline: goal.deadline,
-        background: goal.background,
+        background: goal.background,   // T - Tło
         currentValue: Number(goal.current_value) || 0,
         targetValue: Number(goal.target_value),
         unit: goal.unit || 'count',
@@ -269,6 +272,7 @@ router.post('/', authenticateToken, async (req, res) => {
     const {
       result,
       measurement,
+      outlet,
       deadline,
       background,
       targetValue,
@@ -276,20 +280,21 @@ router.post('/', authenticateToken, async (req, res) => {
       streamId
     } = req.body;
 
-    // Validation
+    // Validation - RZUT: Rezultat, Zmierzalność, Ujście, Tło
     if (!result || !measurement || !deadline || !targetValue) {
       return res.status(400).json({
         success: false,
-        error: 'Missing required RZUT fields: result, measurement, deadline, targetValue'
+        error: 'Missing required RZUT fields: result (R), measurement (Z), deadline, targetValue'
       });
     }
 
     const goal = await prisma.precise_goals.create({
       data: {
-        result,
-        measurement,
+        result,           // R - Rezultat
+        measurement,      // Z - Zmierzalność
+        outlet: outlet || null,  // U - Ujście
         deadline: new Date(deadline),
-        background: background || null,
+        background: background || null,  // T - Tło
         target_value: targetValue,
         current_value: 0,
         unit: unit || 'count',
@@ -313,10 +318,12 @@ router.post('/', authenticateToken, async (req, res) => {
       success: true,
       data: {
         id: goal.id,
-        result: goal.result,
-        measurement: goal.measurement,
+        // RZUT fields
+        result: goal.result,           // R - Rezultat
+        measurement: goal.measurement, // Z - Zmierzalność
+        outlet: goal.outlet,           // U - Ujście
         deadline: goal.deadline,
-        background: goal.background,
+        background: goal.background,   // T - Tło
         currentValue: 0,
         targetValue: Number(goal.target_value),
         unit: goal.unit,
@@ -364,6 +371,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     const {
       result,
       measurement,
+      outlet,
       deadline,
       background,
       currentValue,
@@ -377,10 +385,12 @@ router.put('/:id', authenticateToken, async (req, res) => {
       updated_at: new Date()
     };
 
-    if (result !== undefined) updateData.result = result;
-    if (measurement !== undefined) updateData.measurement = measurement;
+    // RZUT fields
+    if (result !== undefined) updateData.result = result;           // R - Rezultat
+    if (measurement !== undefined) updateData.measurement = measurement; // Z - Zmierzalność
+    if (outlet !== undefined) updateData.outlet = outlet;           // U - Ujście
     if (deadline !== undefined) updateData.deadline = new Date(deadline);
-    if (background !== undefined) updateData.background = background;
+    if (background !== undefined) updateData.background = background; // T - Tło
     if (currentValue !== undefined) updateData.current_value = currentValue;
     if (targetValue !== undefined) updateData.target_value = targetValue;
     if (unit !== undefined) updateData.unit = unit;
@@ -410,10 +420,12 @@ router.put('/:id', authenticateToken, async (req, res) => {
       success: true,
       data: {
         id: goal.id,
-        result: goal.result,
-        measurement: goal.measurement,
+        // RZUT fields
+        result: goal.result,           // R - Rezultat
+        measurement: goal.measurement, // Z - Zmierzalność
+        outlet: goal.outlet,           // U - Ujście
         deadline: goal.deadline,
-        background: goal.background,
+        background: goal.background,   // T - Tło
         currentValue: Number(goal.current_value) || 0,
         targetValue: Number(goal.target_value),
         unit: goal.unit,

@@ -194,11 +194,12 @@ export default function GoalsPage() {
             return (
               <div
                 key={goal.id}
-                className={`bg-white rounded-xl border p-6 hover:shadow-md transition-shadow ${
+                className={`bg-white rounded-xl border p-6 hover:shadow-md transition-shadow cursor-pointer ${
                   goal.status === 'achieved' ? 'border-green-300 bg-green-50' :
                   isOverdue ? 'border-red-300' :
                   isUrgent ? 'border-amber-300' : 'border-gray-200'
                 }`}
+                onClick={() => openEditModal(goal)}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
@@ -214,7 +215,7 @@ export default function GoalsPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <button
-                      onClick={() => openEditModal(goal)}
+                      onClick={(e) => { e.stopPropagation(); openEditModal(goal); }}
                       className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -222,7 +223,7 @@ export default function GoalsPage() {
                       </svg>
                     </button>
                     <button
-                      onClick={() => handleDelete(goal.id)}
+                      onClick={(e) => { e.stopPropagation(); handleDelete(goal.id); }}
                       className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
                     >
                       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -255,15 +256,15 @@ export default function GoalsPage() {
 
                 {/* Quick Update */}
                 {goal.status === 'active' && (
-                  <div className="flex items-center gap-2 mb-4">
+                  <div className="flex items-center gap-2 mb-4" onClick={(e) => e.stopPropagation()}>
                     <button
-                      onClick={() => handleUpdateProgress(goal.id, goal.currentValue + 1)}
+                      onClick={(e) => { e.stopPropagation(); handleUpdateProgress(goal.id, goal.currentValue + 1); }}
                       className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg text-sm font-medium hover:bg-purple-200"
                     >
                       +1
                     </button>
                     <button
-                      onClick={() => handleUpdateProgress(goal.id, goal.currentValue + 5)}
+                      onClick={(e) => { e.stopPropagation(); handleUpdateProgress(goal.id, goal.currentValue + 5); }}
                       className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg text-sm font-medium hover:bg-purple-200"
                     >
                       +5
@@ -272,6 +273,7 @@ export default function GoalsPage() {
                       type="number"
                       value={goal.currentValue}
                       onChange={(e) => handleUpdateProgress(goal.id, Number(e.target.value))}
+                      onClick={(e) => e.stopPropagation()}
                       className="w-24 px-3 py-1 border border-gray-200 rounded-lg text-sm"
                       min="0"
                     />

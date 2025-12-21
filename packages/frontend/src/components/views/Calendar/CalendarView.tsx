@@ -84,7 +84,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           location: 'Online - Teams',
           priority: 'high',
           gtdContext: '@meetings',
-          description: 'Prezentacja funkcjonalności CRM-GTD Smart'
+          description: 'Prezentacja funkcjonalności CRM Smart'
         },
         {
           id: '2',
@@ -95,7 +95,7 @@ export const CalendarView: React.FC<CalendarViewProps> = ({
           attendees: [
             { id: '2', name: 'Anna Nowak', avatar: '' }
           ],
-          deal: { id: '2', title: 'GTD System Training', company: 'RetailChain Poland' },
+          deal: { id: '2', title: 'System Training', company: 'RetailChain Poland' },
           priority: 'medium',
           gtdContext: '@calls',
           description: 'Omówienie feedback po prezentacji'

@@ -114,9 +114,10 @@ export class AIKnowledgeEngine {
         executionTime
       };
       
-    } catch (error) {
-      console.error('Knowledge query error:', error);
-      
+    } catch (error: any) {
+      console.error('Knowledge query error:', error?.message || error);
+      console.error('Full error:', JSON.stringify(error, null, 2));
+
       return {
         answer: 'Przepraszam, wystąpił błąd podczas analizy danych. Spróbuj ponownie lub sformułuj pytanie inaczej.',
         confidence: 0,
@@ -133,6 +134,7 @@ export class AIKnowledgeEngine {
     
     // Keywords mapping for intent classification
     const intentPatterns = {
+      streams: ['strumień', 'strumieni', 'stream', 'streams', 'gtd', 'flow', 'najważniejsz'],
       projects: ['projekt', 'projekty', 'zagrożon', 'opóźnien', 'deadline', 'termin'],
       deals: ['deal', 'transakcj', 'sprzedaż', 'zamknięci', 'prawdopodobieństwo', 'pipeline'],
       tasks: ['zadani', 'todo', 'priorytet', 'jutro', 'dziś', 'overdue', 'zrobić'],
@@ -165,26 +167,136 @@ export class AIKnowledgeEngine {
    */
   private async gatherData(intent: any, query: KnowledgeQuery): Promise<any> {
     const { organizationId } = query;
-    
+
     switch (intent.type) {
+      case 'streams':
+        return await this.gatherStreamsData(organizationId);
+
       case 'projects':
         return await this.gatherProjectsData(organizationId);
-      
+
       case 'deals':
         return await this.gatherDealsData(organizationId);
-      
+
       case 'tasks':
         return await this.gatherTasksData(organizationId, query.userId);
-      
+
       case 'productivity':
         return await this.gatherProductivityData(organizationId, query.userId);
-      
+
       case 'communication':
         return await this.gatherCommunicationData(organizationId);
-      
+
       default:
         return await this.gatherGeneralData(organizationId);
     }
+  }
+
+  /**
+   * Gather GTD streams data with analysis
+   */
+  private async gatherStreamsData(organizationId: string): Promise<any> {
+    const [streams, tasks, projects] = await Promise.all([
+      // Get all streams
+      prisma.stream.findMany({
+        where: { organizationId },
+        include: {
+          tasks: {
+            where: { status: { not: 'COMPLETED' } },
+            select: {
+              id: true,
+              title: true,
+              priority: true,
+              dueDate: true,
+              status: true
+            }
+          },
+          projects: {
+            where: { status: { in: ['IN_PROGRESS', 'PLANNING'] } },
+            select: { id: true, name: true, status: true }
+          }
+        },
+        orderBy: { createdAt: 'asc' }
+      }),
+
+      // Get overdue tasks by stream
+      prisma.task.findMany({
+        where: {
+          organizationId,
+          dueDate: { lt: new Date() },
+          status: { not: 'COMPLETED' }
+        },
+        select: {
+          id: true,
+          title: true,
+          priority: true,
+          streamId: true
+        }
+      }),
+
+      // Get all projects for reference
+      prisma.project.findMany({
+        where: { organizationId },
+        select: { id: true, name: true, status: true, streamId: true }
+      })
+    ]);
+
+    // Analyze each stream
+    const streamAnalysis = streams.map(stream => {
+      const streamOverdueTasks = tasks.filter(t => t.streamId === stream.id);
+      const highPriorityTasks = stream.tasks.filter((t: any) => t.priority === 'HIGH');
+      const activeProjects = stream.projects.length;
+      const totalTasks = stream.tasks.length;
+
+      // Calculate importance score
+      let importanceScore = 0;
+      importanceScore += streamOverdueTasks.length * 10; // Overdue tasks are very important
+      importanceScore += highPriorityTasks.length * 5;   // High priority matters
+      importanceScore += totalTasks * 1;                  // More tasks = needs attention
+      importanceScore += activeProjects * 3;              // Active projects add importance
+
+      // Determine urgency level
+      let urgencyLevel: 'critical' | 'high' | 'medium' | 'low' = 'low';
+      if (streamOverdueTasks.length > 2 || highPriorityTasks.length > 3) {
+        urgencyLevel = 'critical';
+      } else if (streamOverdueTasks.length > 0 || highPriorityTasks.length > 1) {
+        urgencyLevel = 'high';
+      } else if (totalTasks > 5 || activeProjects > 1) {
+        urgencyLevel = 'medium';
+      }
+
+      return {
+        id: stream.id,
+        name: stream.name,
+        color: stream.color,
+        gtdRole: stream.gtdRole,
+        description: stream.description,
+        totalTasks,
+        overdueTasks: streamOverdueTasks.length,
+        highPriorityTasks: highPriorityTasks.length,
+        activeProjects,
+        importanceScore,
+        urgencyLevel,
+        overdue: streamOverdueTasks,
+        highPriority: highPriorityTasks.slice(0, 3)
+      };
+    });
+
+    // Sort by importance
+    const sortedStreams = [...streamAnalysis].sort((a, b) => b.importanceScore - a.importanceScore);
+    const mostImportant = sortedStreams[0];
+
+    return {
+      streams: streamAnalysis,
+      sortedByImportance: sortedStreams,
+      mostImportant,
+      summary: {
+        totalStreams: streams.length,
+        totalOverdue: tasks.length,
+        criticalStreams: streamAnalysis.filter(s => s.urgencyLevel === 'critical').length,
+        highUrgencyStreams: streamAnalysis.filter(s => s.urgencyLevel === 'high').length
+      }
+    };
   }
 
   /**
@@ -499,21 +611,65 @@ export class AIKnowledgeEngine {
     const insights: Insight[] = [];
 
     switch (intent.type) {
+      case 'streams':
+        insights.push(...this.generateStreamInsights(data));
+        break;
+
       case 'projects':
         insights.push(...this.generateProjectInsights(data));
         break;
-        
+
       case 'deals':
         insights.push(...this.generateDealInsights(data));
         break;
-        
+
       case 'tasks':
         insights.push(...this.generateTaskInsights(data));
         break;
-        
+
       case 'productivity':
         insights.push(...this.generateProductivityInsights(data));
         break;
+    }
+
+    return insights;
+  }
+
+  /**
+   * Generate stream-specific insights
+   */
+  private generateStreamInsights(data: any): Insight[] {
+    const insights: Insight[] = [];
+    const { mostImportant, summary, sortedByImportance } = data;
+
+    if (mostImportant) {
+      insights.push({
+        type: 'recommendation',
+        title: `Najważniejszy strumień: ${mostImportant.name}`,
+        description: `${mostImportant.overdueTasks} zaległych zadań, ${mostImportant.highPriorityTasks} pilnych, ${mostImportant.activeProjects} aktywnych projektów`,
+        priority: mostImportant.urgencyLevel === 'critical' ? 'critical' : mostImportant.urgencyLevel === 'high' ? 'high' : 'medium',
+        data: mostImportant
+      });
+    }
+
+    if (summary.criticalStreams > 0) {
+      insights.push({
+        type: 'warning',
+        title: `${summary.criticalStreams} strumieni wymaga pilnej uwagi`,
+        description: 'Strumienie z wieloma zaległymi lub pilnymi zadaniami',
+        priority: 'critical',
+        data: sortedByImportance.filter((s: any) => s.urgencyLevel === 'critical')
+      });
+    }
+
+    if (summary.totalOverdue > 0) {
+      insights.push({
+        type: 'warning',
+        title: `${summary.totalOverdue} zaległych zadań łącznie`,
+        description: 'Zadania po terminie wymagające natychmiastowej uwagi',
+        priority: 'high',
+        data: { count: summary.totalOverdue }
+      });
     }
 
     return insights;
@@ -724,7 +880,7 @@ export class AIKnowledgeEngine {
       } else {
         // Fallback to hardcoded prompt
         console.log('PROMPT NOT FOUND - USING HARDCODED FALLBACK');
-        systemPrompt = `Jesteś inteligentnym asystentem analizującym dane CRM-GTD.
+        systemPrompt = `Jesteś inteligentnym asystentem analizującym dane systemu STREAMS.
         Odpowiadaj po polsku, konkretnie i pomocnie.
         Bazuj TYLKO na dostarczonych danych, nie wymyślaj informacji.
         Formatuj odpowiedź z użyciem emoji i list gdzie to stosowne.`;
@@ -795,6 +951,25 @@ Przeanalizuj te dane i odpowiedz na pytanie użytkownika. Podaj konkretne zalece
    */
   private prepareDataSummary(data: any, intent: any): string {
     switch (intent.type) {
+      case 'streams':
+        const { mostImportant, summary, sortedByImportance } = data;
+        let streamSummary = `Analiza strumieni: ${summary?.totalStreams || 0} strumieni\n`;
+        streamSummary += `- Strumienie krytyczne: ${summary?.criticalStreams || 0}\n`;
+        streamSummary += `- Strumienie pilne: ${summary?.highUrgencyStreams || 0}\n`;
+        streamSummary += `- Łącznie zaległych zadań: ${summary?.totalOverdue || 0}\n\n`;
+
+        if (sortedByImportance && sortedByImportance.length > 0) {
+          streamSummary += `Ranking strumieni wg ważności:\n`;
+          sortedByImportance.slice(0, 5).forEach((stream: any, index: number) => {
+            streamSummary += `${index + 1}. ${stream.name} (score: ${stream.importanceScore}, zadań: ${stream.totalTasks}, zaległych: ${stream.overdueTasks})\n`;
+          });
+        }
+
+        if (mostImportant) {
+          streamSummary += `\nNajważniejszy: ${mostImportant.name} - ${mostImportant.urgencyLevel} urgency`;
+        }
+        return streamSummary;
+
       case 'projects':
         const { projects, riskAnalysis } = data;
         return `Analizowane projekty: ${projects?.length || 0}
@@ -821,41 +996,44 @@ Przeanalizuj te dane i odpowiedz na pytanie użytkownika. Podaj konkretne zalece
         const total = weeklyStats?.reduce((sum: any, stat: any) => sum + stat._count.id, 0) || 0;
         return `Produktywność (ten tydzień): ${completed}/${total} zadań ukończonych`;
         
-      default:
-        const { summary } = data;
+      default: {
+        const generalSummary = data.summary;
         return `Stan organizacji:
-        - Aktywne projekty: ${summary?.activeProjects || 0}
-        - Aktywne zadania: ${summary?.activeTasks || 0}
-        - Aktywne deals: ${summary?.activeDeals || 0}`;
+        - Aktywne projekty: ${generalSummary?.activeProjects || 0}
+        - Aktywne zadania: ${generalSummary?.activeTasks || 0}
+        - Aktywne deals: ${generalSummary?.activeDeals || 0}`;
+      }
     }
   }
 
   /**
    * Get available AI providers for organization
    */
-  public async getAvailableAIProviders(organizationId: string): Promise<Array<{id: string, name: string, provider: string}>> {
+  public async getAvailableAIProviders(organizationId: string): Promise<Array<{id: string, name: string, provider: string, providerId: string, providerName: string}>> {
     try {
-      const providers = await prisma.aIProvider.findMany({
+      const providers = await prisma.ai_providers.findMany({
         where: {
           organizationId,
           status: 'ACTIVE'
         },
         include: {
-          models: {
+          ai_models: {
             where: { status: 'ACTIVE' }
           }
         },
         orderBy: { priority: 'asc' } // Use provider with lowest priority number first
       });
 
-      const availableModels: Array<{id: string, name: string, provider: string}> = [];
-      
+      const availableModels: Array<{id: string, name: string, provider: string, providerId: string, providerName: string}> = [];
+
       for (const provider of providers) {
-        for (const model of provider.models) {
+        for (const model of provider.ai_models) {
           availableModels.push({
             id: model.id,
             name: model.name,
-            provider: provider.name
+            provider: provider.name,
+            providerId: provider.id,
+            providerName: provider.displayName
           });
         }
       }
@@ -873,6 +1051,8 @@ Przeanalizuj te dane i odpowiedz na pytanie użytkownika. Podaj konkretne zalece
   private generateStaticResponse(data: any, insights: Insight[], intent: any): string {
     // Keep existing static response methods as fallback
     switch (intent.type) {
+      case 'streams':
+        return this.generateStreamResponse(data, insights);
       case 'projects':
         return this.generateProjectResponse(data, insights);
       case 'deals':
@@ -889,6 +1069,65 @@ Przeanalizuj te dane i odpowiedz na pytanie użytkownika. Podaj konkretne zalece
   /**
    * Helper methods for specific response generation
    */
+  private generateStreamResponse(data: any, insights: Insight[]): string {
+    const { mostImportant, sortedByImportance, summary } = data;
+
+    if (!mostImportant || sortedByImportance.length === 0) {
+      return 'Nie znaleziono żadnych strumieni w Twojej organizacji. Utwórz strumienie, aby móc zarządzać przepływem pracy.';
+    }
+
+    let response = `Na podstawie analizy ${summary.totalStreams} strumieni:\n\n`;
+
+    // Most important stream
+    response += `🎯 NAJWAŻNIEJSZY STRUMIEŃ:\n`;
+    const urgencyEmoji = mostImportant.urgencyLevel === 'critical' ? '🔴' :
+                         mostImportant.urgencyLevel === 'high' ? '🟠' :
+                         mostImportant.urgencyLevel === 'medium' ? '🟡' : '🟢';
+    response += `${urgencyEmoji} **${mostImportant.name}**\n`;
+    response += `   • Zadania aktywne: ${mostImportant.totalTasks}\n`;
+    response += `   • Zaległe: ${mostImportant.overdueTasks}\n`;
+    response += `   • Pilne (HIGH): ${mostImportant.highPriorityTasks}\n`;
+    response += `   • Aktywne projekty: ${mostImportant.activeProjects}\n`;
+    response += `   • Wynik ważności: ${mostImportant.importanceScore}\n\n`;
+
+    // Show top 3 high priority tasks if available
+    if (mostImportant.highPriority && mostImportant.highPriority.length > 0) {
+      response += `⚡ Pilne zadania w tym strumieniu:\n`;
+      mostImportant.highPriority.forEach((task: any, i: number) => {
+        response += `   ${i + 1}. ${task.title}\n`;
+      });
+      response += '\n';
+    }
+
+    // Show other streams ranking
+    if (sortedByImportance.length > 1) {
+      response += `📊 RANKING POZOSTAŁYCH STRUMIENI:\n`;
+      sortedByImportance.slice(1, 4).forEach((stream: any, index: number) => {
+        const emoji = stream.urgencyLevel === 'critical' ? '🔴' :
+                      stream.urgencyLevel === 'high' ? '🟠' :
+                      stream.urgencyLevel === 'medium' ? '🟡' : '🟢';
+        response += `${index + 2}. ${emoji} ${stream.name} - ${stream.totalTasks} zadań`;
+        if (stream.overdueTasks > 0) {
+          response += ` (${stream.overdueTasks} zaległych)`;
+        }
+        response += '\n';
+      });
+      response += '\n';
+    }
+
+    // Recommendations
+    response += `💡 REKOMENDACJA:\n`;
+    if (mostImportant.overdueTasks > 0) {
+      response += `Skup się na strumienie "${mostImportant.name}" - masz ${mostImportant.overdueTasks} zaległych zadań!\n`;
+    } else if (mostImportant.highPriorityTasks > 0) {
+      response += `Zacznij od pilnych zadań w strumienie "${mostImportant.name}"\n`;
+    } else {
+      response += `Strumień "${mostImportant.name}" ma najwięcej aktywności - warto go przejrzeć.\n`;
+    }
+
+    return response;
+  }
+
   private generateProjectResponse(data: any, insights: Insight[]): string {
     const { projects, riskAnalysis } = data;
     

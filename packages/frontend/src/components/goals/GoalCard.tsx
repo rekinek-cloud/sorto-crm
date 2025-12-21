@@ -19,6 +19,7 @@ interface GoalCardProps {
   onDelete: (id: string) => void;
   onUpdateProgress: (id: string, currentValue: number) => void;
   onAchieve: (id: string) => void;
+  onClick?: (goal: PreciseGoal) => void;
 }
 
 export default function GoalCard({
@@ -27,6 +28,7 @@ export default function GoalCard({
   onDelete,
   onUpdateProgress,
   onAchieve,
+  onClick,
 }: GoalCardProps) {
   const [isUpdatingProgress, setIsUpdatingProgress] = useState(false);
   const [progressValue, setProgressValue] = useState(goal.currentValue);
@@ -89,10 +91,21 @@ export default function GoalCard({
     return 'bg-red-500';
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    // Nie propaguj kliknięcia jeśli kliknięto na przycisk
+    if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('input')) {
+      return;
+    }
+    onClick?.(goal);
+  };
+
   return (
-    <div className={`bg-white rounded-lg border shadow-sm hover:shadow-md transition-shadow ${
-      isOverdue ? 'border-red-300' : 'border-gray-200'
-    }`}>
+    <div
+      className={`bg-white rounded-lg border shadow-sm hover:shadow-md transition-shadow ${
+        isOverdue ? 'border-red-300' : 'border-gray-200'
+      } ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={handleCardClick}
+    >
       {/* Header */}
       <div className="p-4 border-b border-gray-100">
         <div className="flex items-start justify-between">

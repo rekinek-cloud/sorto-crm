@@ -320,8 +320,8 @@ export default function GTDHorizonsRoadmapPage() {
         // NOW - Immediate Actions (0-3 months)
         {
           id: '1',
-          title: 'Wdrożenie GTD Inbox',
-          description: 'Implementacja systemu zbierania wszystkich zadań w jednym miejscu zgodnie z metodologią David Allen',
+          title: 'Wdrożenie Źródła',
+          description: 'Implementacja systemu zbierania wszystkich zadań w jednym miejscu',
           horizonLevel: 0,
           horizonName: 'Działania (Runway)',
           horizonIcon: '🏃‍♂️',
@@ -342,7 +342,7 @@ export default function GTDHorizonsRoadmapPage() {
             { id: 'm4', title: 'Pełne wdrożenie', targetDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), completed: false }
           ],
           alignment: 'PERFECT',
-          tags: ['GTD', 'Produktywność', 'Workflow'],
+          tags: ['STREAMS', 'Produktywność', 'Workflow'],
           createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
         },
         {
@@ -635,7 +635,7 @@ export default function GTDHorizonsRoadmapPage() {
               <MapIcon className="w-6 h-6 mr-2 text-blue-600" />
               Roadmap GTD Horizons
             </h1>
-            <p className="text-gray-600">Strategiczne planowanie według 6 poziomów perspektywy GTD</p>
+            <p className="text-gray-600">Strategiczne planowanie według 6 poziomów perspektywy</p>
           </div>
         </div>
 

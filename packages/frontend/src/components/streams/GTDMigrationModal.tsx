@@ -127,7 +127,7 @@ const STREAM_TYPES = [
   { 
     value: 'CONTEXT', 
     label: 'Context', 
-    description: 'Kontekst wykonywania zadań GTD',
+    description: 'Kontekst wykonywania zadań',
     example: '@computer, @phone, @office'
   },
   { 
@@ -216,7 +216,7 @@ const GTDMigrationModal: React.FC<GTDMigrationModalProps> = ({
         role: 'CONTEXTS',
         type: 'CONTEXT',
         confidence: 80,
-        reason: 'Nazwa sugeruje kontekst GTD'
+        reason: 'Nazwa sugeruje kontekst'
       });
     }
 

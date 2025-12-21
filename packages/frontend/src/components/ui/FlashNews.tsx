@@ -16,7 +16,7 @@ export default function FlashNews() {
   const mockNews: FlashNewsItem[] = [
     {
       id: '1',
-      content: '🚀 Nowa wersja GTD Streams dostępna! Sprawdź zaktualizowane funkcje.',
+      content: '🚀 Nowa wersja STREAMS dostępna! Sprawdź zaktualizowane funkcje.',
       type: 'info',
       priority: 'medium',
       source: 'ai_rule',

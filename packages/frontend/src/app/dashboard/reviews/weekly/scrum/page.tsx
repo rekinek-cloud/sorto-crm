@@ -860,7 +860,7 @@ export default function WeeklyReviewScrumPage() {
             </button>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Weekly Review Sprint</h1>
-              <p className="text-gray-600">GTD weekly review as agile sprint (Week {weekNumber})</p>
+              <p className="text-gray-600">Przegląd tygodniowy jako sprint (Tydzień {weekNumber})</p>
             </div>
           </div>
         </div>
@@ -983,7 +983,7 @@ export default function WeeklyReviewScrumPage() {
 
       {/* GTD Phases Overview */}
       <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">GTD Workflow Phases</h3>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Fazy Workflow</h3>
         <div className="grid grid-cols-5 gap-4">
           {GTD_CATEGORIES.map((category) => {
             const itemsInPhase = reviewItems.filter(item => item.gtdCategory === category.id).length;

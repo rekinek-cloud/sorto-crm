@@ -119,7 +119,7 @@ const GTDStreamCard: React.FC<GTDStreamCardProps> = ({
 
   // Formatowanie roli GTD
   const formatGTDRole = (role?: GTDRole) => {
-    if (!role) return 'Brak roli GTD';
+    if (!role) return 'Brak roli';
     return role.replace(/_/g, ' ').toLowerCase()
       .split(' ')
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))

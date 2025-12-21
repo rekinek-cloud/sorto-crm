@@ -150,7 +150,7 @@ export default function ProjectsPage() {
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Projects</h1>
-          <p className="text-gray-600">Organize your work into meaningful projects with GTD methodology</p>
+          <p className="text-gray-600">Organizuj pracę w znaczące projekty</p>
         </div>
         
         <div className="flex items-center gap-3">
@@ -357,6 +357,7 @@ export default function ProjectsPage() {
                       setIsProjectFormOpen(true);
                     }}
                     onDelete={handleDelete}
+                    onOpen={(id) => window.location.href = `/crm/dashboard/projects/${id}`}
                   />
                 </motion.div>
               ))}
@@ -368,7 +369,11 @@ export default function ProjectsPage() {
               </div>
               <div className="divide-y divide-gray-200">
                 {filteredProjects.map((project) => (
-                  <div key={project.id} className="p-6 hover:bg-gray-50">
+                  <div
+                    key={project.id}
+                    className="p-6 hover:bg-gray-50 cursor-pointer"
+                    onClick={() => window.location.href = `/crm/dashboard/projects/${project.id}`}
+                  >
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3">
@@ -409,7 +414,8 @@ export default function ProjectsPage() {
                       </div>
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => {
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setEditingProject(project);
                             setIsProjectFormOpen(true);
                           }}
@@ -420,7 +426,7 @@ export default function ProjectsPage() {
                           </svg>
                         </button>
                         <button
-                          onClick={() => handleDelete(project.id)}
+                          onClick={(e) => { e.stopPropagation(); handleDelete(project.id); }}
                           className="text-gray-400 hover:text-red-600"
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

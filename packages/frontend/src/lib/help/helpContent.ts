@@ -6,7 +6,7 @@ const helpContents: Record<string, string> = {
 # Dashboard - Strona główna
 
 ## Przegląd
-Dashboard to centralne miejsce, z którego możesz szybko przejść do wszystkich funkcji systemu CRM-GTD Smart.
+Dashboard to centralne miejsce, z którego możesz szybko przejść do wszystkich funkcji systemu STREAMS.
 
 ## Główne sekcje:
 - **Statystyki** - Szybki przegląd najważniejszych wskaźników
@@ -29,16 +29,16 @@ Smart Mailboxes to centralne miejsce zarządzania całą komunikacją - emailami
 ## Główne funkcje:
 - **📧 Skrzynki** - Organizacja wiadomości w zakładkach (Today, Last 7 days, Important, etc.)
 - **🔍 Filtry** - 9 typów filtrów do szybkiego wyszukiwania
-- **🎯 GTD** - Przekształcanie wiadomości w zadania według metodologii Getting Things Done
+- **🎯 Przetwarzanie** - Przekształcanie wiadomości w zadania
 
 ## Jak używać:
 1. **Wybierz zakładkę** - Kliknij na odpowiednią skrzynkę (np. "Today" dla dzisiejszych wiadomości)
 2. **Kliknij wiadomość** - Rozwiń podgląd klikając na dowolną wiadomość
 3. **Quick Actions** - Użyj przycisków szybkich akcji:
-   - **📥 Inbox** - Dodaj do GTD Inbox do późniejszego przetworzenia
+   - **📥 Źródło** - Dodaj do Źródła do późniejszego przetworzenia
    - **✅ DO** - Utwórz natychmiastowe zadanie (< 2 min)
    - **⏳ DEFER** - Zaplanuj na jutro
-   - **🎯 GTD+** - Otwórz pełny modal przetwarzania GTD
+   - **🎯 Przetwórz** - Otwórz pełny modal przetwarzania
 
 ## Filtry zaawansowane:
 - **Search** - Wyszukiwanie w temacie i treści
@@ -66,13 +66,13 @@ Smart Mailboxes to centralne miejsce zarządzania całą komunikacją - emailami
 `,
 
   'gtd-inbox': `
-# GTD Inbox - Skrzynka odbiorczka
+# Źródło - Skrzynka odbiorcza
 
-## Zasady GTD Inbox według David Allena:
+## Zasady Źródła:
 1. **Jeden główny punkt zbierania** - wszystko trafia tutaj
-2. **Nie analizujesz - tylko zbierasz** - inbox to kosz na wszystko
+2. **Nie analizujesz - tylko zbierasz** - Źródło to miejsce na wszystko
 3. **Nic nie zostaje na stałe** - wszystko musi być regularnie przetwarzane
-4. **Opróżniasz systematycznie** - processing jest kluczowy
+4. **Opróżniasz systematycznie** - przetwarzanie jest kluczowe
 
 ## 11 Typów źródeł:
 - 📝 **Quick Capture** - Szybkie notatki i myśli
@@ -92,9 +92,9 @@ Smart Mailboxes to centralne miejsce zarządzania całą komunikacją - emailami
 - **DEFER** - Zaplanuj na później z datą
 - **DELETE** - Usuń bez śladu
 
-## Workflow GTD:
+## Workflow STREAMS:
 \`\`\`
-Capture → Inbox → Process (DO/DEFER/DELETE) → Organize → Done
+Capture → Źródło → Process (DO/DEFER/DELETE) → Organize → Done
 \`\`\`
 
 ## 💡 Najlepsze praktyki:
@@ -127,10 +127,10 @@ Sekcja Projekty pozwala na zarządzanie złożonymi przedsięwzięciami składaj
 3. Dodaj kamienie milowe
 4. Utwórz zadania w projekcie
 
-## Metodyka GTD w projektach:
-- Projekty to "wielokrokowe rezultaty" według David Allena
+## Metodyka w projektach:
+- Projekty to wielokrokowe rezultaty
 - Każdy projekt powinien mieć jasno zdefiniowany rezultat
-- Regularnie przeglądaj postępy podczas Weekly Review
+- Regularnie przeglądaj postępy podczas przeglądu tygodniowego
 
 ## 💡 Wskazówki:
 - Użyj szablonów projektów dla powtarzalnych procesów
@@ -150,7 +150,7 @@ Centralne miejsce do zarządzania wszystkimi zadaniami w systemie.
 - **Someday/Maybe** - Zadania do rozważenia w przyszłości
 - **Delegated** - Zadania przekazane innym
 
-## Konteksty GTD:
+## Konteksty:
 - **@computer** - Przy komputerze
 - **@calls** - Telefony do wykonania
 - **@office** - W biurze
@@ -180,7 +180,7 @@ Centralne miejsce do zarządzania wszystkimi zadaniami w systemie.
 # Rules Manager - Zarządzanie regułami
 
 ## Przegląd
-Rules Manager to centrum automatyzacji procesów w systemie CRM-GTD Smart.
+Rules Manager to centrum automatyzacji procesów w systemie STREAMS.
 
 ## 9 Typów reguł:
 1. **PROCESSING** - Przetwarzanie wiadomości na zadania

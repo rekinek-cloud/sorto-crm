@@ -205,6 +205,7 @@ export default function ContactsList({ companyId }: ContactsListProps) {
                 companies={companies}
                 onEdit={handleEditContact}
                 onDelete={handleDeleteContact}
+                onOpen={(id) => window.location.href = `/crm/dashboard/contacts/${id}`}
               />
             ))}
           </div>

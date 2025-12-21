@@ -62,7 +62,7 @@ const mockRecommendations: Recommendation[] = [
     description: 'Minęło 10 dni od ostatniego przeglądu. Regularne przeglądy zwiększają produktywność o 25%.',
     impact: 'high',
     effort: 'medium',
-    category: 'GTD',
+    category: 'Produktywność',
     aiConfidence: 96
   }
 ];

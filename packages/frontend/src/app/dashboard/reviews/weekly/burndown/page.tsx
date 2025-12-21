@@ -151,7 +151,7 @@ export default function WeeklyReviewBurndownPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Weekly Review Burndown</h1>
-          <p className="text-gray-600">Track your GTD weekly review progress and task completion over time</p>
+          <p className="text-gray-600">Śledź postępy w przeglądzie tygodniowym i realizacji zadań</p>
         </div>
         <div className="flex items-center space-x-4">
           <button

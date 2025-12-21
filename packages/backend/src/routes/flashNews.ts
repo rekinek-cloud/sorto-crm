@@ -306,7 +306,7 @@ router.get('/', authenticateToken, async (req, res) => {
     const systemNews: FlashNewsItem[] = [
       {
         id: 'system-welcome',
-        content: '🚀 Witaj w CRM-GTD Smart! System jest gotowy do pracy.',
+        content: '🚀 Witaj w STREAMS! System jest gotowy do pracy.',
         type: 'info',
         priority: 'low',
         source: 'manual',

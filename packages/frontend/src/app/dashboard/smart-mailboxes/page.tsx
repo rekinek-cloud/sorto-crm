@@ -287,7 +287,7 @@ export default function SmartMailboxesPage() {
       await gtdInboxApi.quickCapture(inboxItem)
       toast.success(`Dodano do ${action === 'INBOX' ? 'Inbox' : action === 'DO' ? 'Do zrobienia' : 'Odlozone'}`)
     } catch {
-      toast.error('Blad GTD')
+      toast.error('Błąd przetwarzania')
     }
   }
 
@@ -992,7 +992,7 @@ export default function SmartMailboxesPage() {
           onComplete={() => {
             setShowGTDModal(false)
             setCurrentMessage(null)
-            toast.success('Wiadomosc przetworzona przez GTD')
+            toast.success('Wiadomość przetworzona')
           }}
         />
       )}

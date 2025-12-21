@@ -2655,6 +2655,7 @@ model precise_goals {
   created_at      DateTime? @default(now()) @db.Timestamp(6)
   updated_at      DateTime? @default(now()) @db.Timestamp(6)
   achieved_at     DateTime? @db.Timestamp(6)
+  outlet          String?   // Ujście - gdzie trafi rezultat, kto jest beneficjentem (RZUT)
   streams         Stream?   @relation(fields: [stream_id], references: [id], onUpdate: NoAction)
 }
 

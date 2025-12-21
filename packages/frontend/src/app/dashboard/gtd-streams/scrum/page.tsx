@@ -730,7 +730,7 @@ export default function StreamsScrumPage() {
             </button>
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Streams Scrum Board</h1>
-              <p className="text-gray-600">Agile development workflow for GTD streams</p>
+              <p className="text-gray-600">Agile development workflow for streams</p>
             </div>
           </div>
         </div>

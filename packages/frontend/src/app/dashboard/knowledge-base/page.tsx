@@ -18,7 +18,7 @@ const mockArticles: Article[] = [
     id: '1',
     title: 'Wprowadzenie do metodologii SORTO STREAMS',
     category: 'Produktywność',
-    tags: ['GTD', 'STREAMS', 'podstawy'],
+    tags: ['STREAMS', 'podstawy'],
     excerpt: 'Kompletny przewodnik po systemie zarządzania zadaniami i strumieniami pracy...',
     updatedAt: '2025-11-28',
     views: 156

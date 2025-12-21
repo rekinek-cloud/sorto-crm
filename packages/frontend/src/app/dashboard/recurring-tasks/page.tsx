@@ -115,7 +115,7 @@ export default function RecurringTasksPage() {
 
   const [projects] = useState([
     { id: '1', name: 'CRM Integration Project' },
-    { id: '2', name: 'GTD System Enhancement' },
+    { id: '2', name: 'System Enhancement' },
     { id: '3', name: 'Smart Mailboxes Development' },
     { id: '4', name: 'Mobile App Development' },
     { id: '5', name: 'AI Analytics Platform' }

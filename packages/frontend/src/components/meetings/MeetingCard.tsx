@@ -22,9 +22,10 @@ interface MeetingCardProps {
   onEdit: (meeting: Meeting) => void;
   onDelete: (id: string) => void;
   onStatusChange: (id: string, status: 'IN_PROGRESS' | 'COMPLETED' | 'CANCELED' | 'SCHEDULED') => void;
+  onClick?: (meeting: Meeting) => void;
 }
 
-export default function MeetingCard({ meeting, onEdit, onDelete, onStatusChange }: MeetingCardProps) {
+export default function MeetingCard({ meeting, onEdit, onDelete, onStatusChange, onClick }: MeetingCardProps) {
   const statusColors = meetingsApi.getStatusColor(meeting.status);
   const timeRange = meetingsApi.formatTimeRange(meeting.startTime, meeting.endTime);
   const duration = meetingsApi.formatDuration(meeting.startTime, meeting.endTime);
@@ -37,11 +38,19 @@ export default function MeetingCard({ meeting, onEdit, onDelete, onStatusChange 
     onStatusChange(meeting.id, newStatus as any);
   };
 
+  const handleCardClick = (e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest('button') || (e.target as HTMLElement).closest('a')) {
+      return;
+    }
+    onClick?.(meeting);
+  };
+
   return (
     <motion.div
-      className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200"
+      className={`bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 ${onClick ? 'cursor-pointer' : ''}`}
       whileHover={{ y: -2 }}
       transition={{ duration: 0.2 }}
+      onClick={handleCardClick}
     >
       <div className="p-6">
         {/* Header */}

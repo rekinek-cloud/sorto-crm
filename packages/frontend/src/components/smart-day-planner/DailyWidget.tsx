@@ -829,11 +829,11 @@ const DailyWidget: React.FC<DailyWidgetProps> = ({
                           <span>🎯 {suggestion.context}</span>
                           <span className={`px-2 py-1 rounded ${
                             suggestion.source === 'SCHEDULED_LATER' ? 'bg-blue-100 text-blue-700' :
-                            suggestion.source === 'GTD_INBOX' ? 'bg-purple-100 text-purple-700' :
+                            suggestion.source === 'SOURCE' ? 'bg-purple-100 text-purple-700' :
                             'bg-orange-100 text-orange-700'
                           }`}>
                             {suggestion.source === 'SCHEDULED_LATER' ? 'Zaplanowane później' :
-                             suggestion.source === 'GTD_INBOX' ? 'GTD Inbox' :
+                             suggestion.source === 'SOURCE' ? 'Źródło' :
                              'Quick Win'}
                           </span>
                         </div>

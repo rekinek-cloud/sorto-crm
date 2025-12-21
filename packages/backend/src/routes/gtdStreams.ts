@@ -48,11 +48,11 @@ router.get('/', async (req, res) => {
   try {
     const { organizationId } = req.user;
 
-    // Get all streams for the organization
+    // Get all streams for the organization (exclude ARCHIVED and TEMPLATE)
     const streams = await prisma.stream.findMany({
       where: {
         organizationId: organizationId,
-        status: 'ACTIVE'
+        status: { in: ['ACTIVE', 'FLOWING', 'FROZEN'] }
       },
       select: {
         id: true,
@@ -60,6 +60,7 @@ router.get('/', async (req, res) => {
         description: true,
         color: true,
         icon: true,
+        pattern: true,        // STREAMS pattern (project, continuous, reference, pipeline, client, etc.)
         gtdRole: true,
         streamType: true,
         status: true,
@@ -97,7 +98,7 @@ router.get('/', async (req, res) => {
     console.error('Error fetching GTD streams:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch GTD streams'
+      error: 'Failed to fetch streams'
     });
   }
 });
@@ -145,7 +146,7 @@ router.post('/', async (req, res) => {
       });
     }
     console.error('Error creating GTD stream:', error);
-    res.status(500).json({ error: 'Failed to create GTD stream' });
+    res.status(500).json({ error: 'Failed to create stream' });
   }
 });
 
@@ -169,7 +170,7 @@ router.get('/by-role/:role', async (req, res) => {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
-        error: 'Invalid GTD role'
+        error: 'Invalid role'
       });
     }
     console.error('Error fetching streams by role:', error);
@@ -194,11 +195,11 @@ router.put('/:id/role', async (req, res) => {
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({
-        error: 'Invalid GTD role'
+        error: 'Invalid role'
       });
     }
     console.error('Error assigning GTD role:', error);
-    res.status(500).json({ error: 'Failed to assign GTD role' });
+    res.status(500).json({ error: 'Failed to assign role' });
   }
 });
 
@@ -286,7 +287,7 @@ router.get('/:id/config', async (req, res) => {
     const config = await streamService.getGTDConfig(id);
 
     if (!config) {
-      return res.status(404).json({ error: 'GTD configuration not found' });
+      return res.status(404).json({ error: 'Configuration not found' });
     }
 
     res.json({
@@ -295,7 +296,7 @@ router.get('/:id/config', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching GTD config:', error);
-    res.status(500).json({ error: 'Failed to fetch GTD configuration' });
+    res.status(500).json({ error: 'Failed to fetch configuration' });
   }
 });
 
@@ -313,7 +314,7 @@ router.put('/:id/config', async (req, res) => {
     });
   } catch (error) {
     console.error('Error updating GTD config:', error);
-    res.status(500).json({ error: 'Failed to update GTD configuration' });
+    res.status(500).json({ error: 'Failed to update configuration' });
   }
 });
 
@@ -331,7 +332,7 @@ router.post('/:id/config/reset', async (req, res) => {
     });
 
     if (!stream || !stream.gtdRole) {
-      return res.status(404).json({ error: 'GTD stream not found' });
+      return res.status(404).json({ error: 'Stream not found' });
     }
 
     const config = await gtdConfigManager.resetToDefaultConfig(id, stream.gtdRole);
@@ -342,7 +343,7 @@ router.post('/:id/config/reset', async (req, res) => {
     });
   } catch (error) {
     console.error('Error resetting GTD config:', error);
-    res.status(500).json({ error: 'Failed to reset GTD configuration' });
+    res.status(500).json({ error: 'Failed to reset configuration' });
   }
 });
 
@@ -562,7 +563,7 @@ router.get('/stats', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching GTD stats:', error);
-    res.status(500).json({ error: 'Failed to fetch GTD statistics' });
+    res.status(500).json({ error: 'Failed to fetch statistics' });
   }
 });
 

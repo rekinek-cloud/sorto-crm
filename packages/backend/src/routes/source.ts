@@ -47,7 +47,7 @@ router.get('/test-public', async (req, res) => {
     const total = unprocessed + processed;
 
     res.json({
-      message: 'GTD Inbox API is working',
+      message: 'Source API is working',
       timestamp: new Date().toISOString(),
       testData: sampleItems,
       stats: {

@@ -388,10 +388,10 @@ router.get('/users/:userId', async (req, res) => {
         lastLoginAt: true,
         createdAt: true,
         updatedAt: true,
-        managerRelations: {
+        user_relations_user_relations_managerIdTousers: {
           where: { isActive: true },
           include: {
-            employee: {
+            users_user_relations_employeeIdTousers: {
               select: {
                 id: true,
                 firstName: true,
@@ -401,13 +401,13 @@ router.get('/users/:userId', async (req, res) => {
                 role: true
               }
             },
-            permissions: true
+            user_relation_permissions: true
           }
         },
-        employeeRelations: {
+        user_relations_user_relations_employeeIdTousers: {
           where: { isActive: true },
           include: {
-            manager: {
+            users_user_relations_managerIdTousers: {
               select: {
                 id: true,
                 firstName: true,
@@ -417,7 +417,7 @@ router.get('/users/:userId', async (req, res) => {
                 role: true
               }
             },
-            permissions: true
+            user_relation_permissions: true
           }
         }
       }

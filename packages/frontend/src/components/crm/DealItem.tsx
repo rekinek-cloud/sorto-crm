@@ -9,9 +9,10 @@ interface DealItemProps {
   contacts: Contact[];
   onEdit: (deal: Deal) => void;
   onDelete: (id: string) => void;
+  onOpen?: (id: string) => void;
 }
 
-export default function DealItem({ deal, companies, contacts, onEdit, onDelete }: DealItemProps) {
+export default function DealItem({ deal, companies, contacts, onEdit, onDelete, onOpen }: DealItemProps) {
   const getCompanyName = () => {
     if (deal.company) return deal.company.name;
     if (deal.companyId) {
@@ -67,7 +68,10 @@ export default function DealItem({ deal, companies, contacts, onEdit, onDelete }
   };
 
   return (
-    <div className="p-6 hover:bg-gray-50 transition-colors">
+    <div
+      className="p-6 hover:bg-gray-50 transition-colors cursor-pointer"
+      onClick={() => onOpen?.(deal.id)}
+    >
       <div className="flex items-center justify-between">
         {/* Deal Info */}
         <div className="flex-1 min-w-0">
@@ -166,7 +170,7 @@ export default function DealItem({ deal, companies, contacts, onEdit, onDelete }
           {/* Actions */}
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => onEdit(deal)}
+              onClick={(e) => { e.stopPropagation(); onEdit(deal); }}
               className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
               title="Edit deal"
             >
@@ -175,7 +179,7 @@ export default function DealItem({ deal, companies, contacts, onEdit, onDelete }
               </svg>
             </button>
             <button
-              onClick={() => onDelete(deal.id)}
+              onClick={(e) => { e.stopPropagation(); onDelete(deal.id); }}
               className="p-2 text-gray-400 hover:text-red-600 transition-colors"
               title="Delete deal"
             >

@@ -238,7 +238,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
           {boardType === 'sales_pipeline' && 'Pipeline Sprzedaży'}
-          {boardType === 'gtd_context' && 'Pipeline GTD - Konteksty'}
+          {boardType === 'gtd_context' && 'Pipeline - Konteksty'}
           {boardType === 'priority' && 'Pipeline Priorytetów'}
           {boardType === 'deal_size' && 'Pipeline Wielkości Dealów'}
         </h2>

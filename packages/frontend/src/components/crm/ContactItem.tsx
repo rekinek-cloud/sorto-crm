@@ -8,9 +8,10 @@ interface ContactItemProps {
   companies: Company[];
   onEdit: (contact: Contact) => void;
   onDelete: (id: string) => void;
+  onOpen?: (id: string) => void;
 }
 
-export default function ContactItem({ contact, companies, onEdit, onDelete }: ContactItemProps) {
+export default function ContactItem({ contact, companies, onEdit, onDelete, onOpen }: ContactItemProps) {
   const getCompanyName = () => {
     // Check assigned company first (new relationship)
     if (contact.assignedCompany) {
@@ -41,7 +42,10 @@ export default function ContactItem({ contact, companies, onEdit, onDelete }: Co
   };
 
   return (
-    <div className="p-6 hover:bg-gray-50 transition-colors">
+    <div
+      className="p-6 hover:bg-gray-50 transition-colors cursor-pointer"
+      onClick={() => onOpen?.(contact.id)}
+    >
       <div className="flex items-center justify-between">
         {/* Contact Info */}
         <div className="flex-1 min-w-0">
@@ -74,17 +78,19 @@ export default function ContactItem({ contact, companies, onEdit, onDelete }: Co
                   <span>{contact.department}</span>
                 )}
                 {contact.email && (
-                  <a 
+                  <a
                     href={`mailto:${contact.email}`}
                     className="text-primary-600 hover:text-primary-700"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     {contact.email}
                   </a>
                 )}
                 {contact.phone && (
-                  <a 
+                  <a
                     href={`tel:${contact.phone}`}
                     className="text-primary-600 hover:text-primary-700"
+                    onClick={(e) => e.stopPropagation()}
                   >
                     {contact.phone}
                   </a>
@@ -105,6 +111,7 @@ export default function ContactItem({ contact, companies, onEdit, onDelete }: Co
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-xs text-gray-500 hover:text-primary-600 transition-colors"
+                        onClick={(e) => e.stopPropagation()}
                       >
                         {socialLink.domain}
                       </a>
@@ -140,7 +147,7 @@ export default function ContactItem({ contact, companies, onEdit, onDelete }: Co
         {/* Actions */}
         <div className="flex items-center space-x-2 ml-6">
           <button
-            onClick={() => onEdit(contact)}
+            onClick={(e) => { e.stopPropagation(); onEdit(contact); }}
             className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
             title="Edit contact"
           >
@@ -149,7 +156,7 @@ export default function ContactItem({ contact, companies, onEdit, onDelete }: Co
             </svg>
           </button>
           <button
-            onClick={() => onDelete(contact.id)}
+            onClick={(e) => { e.stopPropagation(); onDelete(contact.id); }}
             className="p-2 text-gray-400 hover:text-red-600 transition-colors"
             title="Delete contact"
           >

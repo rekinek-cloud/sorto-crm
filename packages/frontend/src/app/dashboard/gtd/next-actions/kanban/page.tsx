@@ -283,7 +283,7 @@ export default function NextActionsKanbanPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Next Actions Kanban</h1>
-          <p className="text-gray-600">Organize your actions by GTD contexts</p>
+          <p className="text-gray-600">Organizuj akcje według kontekstów</p>
         </div>
         <div className="flex items-center space-x-4">
           <button
@@ -407,7 +407,7 @@ export default function NextActionsKanbanPage() {
                 <span className="text-lg">❓</span>
                 <div>
                   <h3 className="text-sm font-semibold text-gray-900">No Context</h3>
-                  <p className="text-xs text-gray-600">Actions without GTD context - assign them!</p>
+                  <p className="text-xs text-gray-600">Akcje bez kontekstu - przypisz je!</p>
                 </div>
               </div>
               <span className="text-xs font-medium px-2 py-1 bg-yellow-500 text-white rounded-full">
@@ -465,7 +465,7 @@ export default function NextActionsKanbanPage() {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700">GTD Context</label>
+                    <label className="block text-sm font-medium text-gray-700">Kontekst</label>
                     <select
                       name="context"
                       required

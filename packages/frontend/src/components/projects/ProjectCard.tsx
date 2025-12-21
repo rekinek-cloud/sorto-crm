@@ -15,18 +15,20 @@ interface ProjectCardProps {
   project: Project;
   onEdit: (project: Project) => void;
   onDelete: (id: string) => void;
+  onOpen?: (id: string) => void;
 }
 
-export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardProps) {
+export default function ProjectCard({ project, onEdit, onDelete, onOpen }: ProjectCardProps) {
   const progress = project.stats?.progress || 0;
   const taskCount = project.stats?.totalTasks || 0;
   const completedTasks = project.stats?.completedTasks || 0;
 
   return (
     <motion.div
-      className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200"
+      className="bg-white rounded-lg shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200 cursor-pointer"
       whileHover={{ y: -2 }}
       transition={{ duration: 0.2 }}
+      onClick={() => onOpen?.(project.id)}
     >
       <div className="p-6">
         {/* Header */}
@@ -61,13 +63,13 @@ export default function ProjectCard({ project, onEdit, onDelete }: ProjectCardPr
             </button>
             <div className="absolute right-0 top-8 bg-white rounded-md shadow-lg border border-gray-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
               <button
-                onClick={() => onEdit(project)}
+                onClick={(e) => { e.stopPropagation(); onEdit(project); }}
                 className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
               >
                 Edit
               </button>
               <button
-                onClick={() => onDelete(project.id)}
+                onClick={(e) => { e.stopPropagation(); onDelete(project.id); }}
                 className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
               >
                 Delete

@@ -270,6 +270,7 @@ export default function CompaniesList() {
                 company={company}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
+                onOpen={(id) => window.location.href = `/crm/dashboard/companies/${id}`}
               />
             ))}
           </div>

@@ -80,7 +80,7 @@ export const TaskList: React.FC<TaskListProps> = ({
         {
           id: '1',
           title: 'Przygotować prezentację produktu',
-          description: 'Kompletna prezentacja CRM-GTD Smart dla klienta TechStartup',
+          description: 'Kompletna prezentacja CRM Smart dla klienta TechStartup',
           priority: 'high',
           gtdContext: '@computer',
           estimatedTime: 120,
@@ -93,13 +93,13 @@ export const TaskList: React.FC<TaskListProps> = ({
         {
           id: '2', 
           title: 'Zadzwonić do klienta RetailChain',
-          description: 'Omówić szczegóły wdrożenia GTD w organizacji',
+          description: 'Omówić szczegóły wdrożenia systemu w organizacji',
           priority: 'urgent',
           gtdContext: '@calls',
           estimatedTime: 30,
           assignee: { id: '2', name: 'Anna Nowak', avatar: '' },
           dueDate: new Date(), // dziś
-          deal: { id: '2', title: 'GTD System Training', company: 'RetailChain Poland' },
+          deal: { id: '2', title: 'System Training', company: 'RetailChain Poland' },
           completed: false,
           createdAt: new Date()
         },

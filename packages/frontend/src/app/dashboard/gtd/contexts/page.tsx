@@ -185,7 +185,7 @@ export default function ContextsPage() {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">GTD Contexts</h1>
+          <h1 className="text-2xl font-bold text-gray-900">Konteksty</h1>
           <p className="text-gray-600">Organize tasks by location, tool, or situation</p>
         </div>
         <button 
@@ -393,7 +393,7 @@ export default function ContextsPage() {
 
       {/* Context Tips */}
       <div className="bg-blue-50 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-blue-900 mb-3">💡 GTD Context Tips</h3>
+        <h3 className="text-lg font-semibold text-blue-900 mb-3">💡 Wskazówki dotyczące kontekstów</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
           <div>
             <strong>@calls:</strong> Phone calls when you have your phone
@@ -448,7 +448,7 @@ export default function ContextsPage() {
                     placeholder="@custom-context"
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
                   />
-                  <p className="text-xs text-gray-500 mt-1">Start with @ for GTD convention</p>
+                  <p className="text-xs text-gray-500 mt-1">Rozpocznij od @ dla konwencji kontekstów</p>
                 </div>
 
                 <div>

@@ -157,7 +157,7 @@ Zasugeruj:
             { name: 'description', type: 'string', required: true, description: 'Opis zadania' },
             { name: 'estimatedHours', type: 'number', required: false, description: 'Szacowany czas' },
             { name: 'priority', type: 'string', required: false, description: 'Priorytet zadania' },
-            { name: 'context', type: 'string', required: false, description: 'Kontekst GTD' }
+            { name: 'context', type: 'string', required: false, description: 'Kontekst' }
           ],
           modelPreferences: {
             temperature: 0.4,

@@ -35,7 +35,7 @@ export default function ViewTypeSwitcher({
   };
 
   const categoryDescriptions = {
-    perspective: 'Poziomy abstrakcji GTD',
+    perspective: 'Poziomy abstrakcji',
     time: 'Pilność i terminy',
     organization: 'Struktura biznesowa',
     execution: 'Sposób wykonania',

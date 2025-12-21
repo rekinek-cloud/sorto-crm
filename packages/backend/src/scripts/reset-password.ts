@@ -4,17 +4,26 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 async function main() {
-  const password = 'Password123!';
+  const password = 'demo123';
   const passwordHash = await bcrypt.hash(password, 10);
   console.log('Generated hash:', passwordHash);
 
-  const result = await prisma.user.update({
-    where: { email: 'owner@demo.com' },
-    data: { passwordHash }
-  });
+  // Reset all demo users
+  const demoUsers = ['owner@demo.com', 'admin@demo.com', 'manager@demo.com', 'member@demo.com'];
 
-  console.log('Password reset for:', result.email);
-  console.log('New password:', password);
+  for (const email of demoUsers) {
+    try {
+      const result = await prisma.user.update({
+        where: { email },
+        data: { passwordHash }
+      });
+      console.log('Password reset for:', result.email);
+    } catch (e) {
+      console.log('User not found:', email);
+    }
+  }
+
+  console.log('New password for all demo users:', password);
 }
 
 main()

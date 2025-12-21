@@ -52,6 +52,7 @@ import offersRoutes from './routes/offers';
 import invoicesRoutes from './routes/invoices';
 import aiConfigRoutes from './routes/aiConfig';
 import aiPromptsRoutes from './routes/aiPrompts';
+import aiKnowledgeRoutes from './routes/aiKnowledge';
 import vectorSearchRoutes from './routes/vectorSearch';
 import flowRoutes from './routes/flow';
 import flowConversationRoutes from './routes/flowConversation';
@@ -179,6 +180,7 @@ apiRouter.use('/invoices', invoicesRoutes);
 apiRouter.use('/calendar', calendarRoutes);
 apiRouter.use('/admin/ai-config', aiConfigRoutes);
 apiRouter.use('/ai/prompts', aiPromptsRoutes);
+apiRouter.use('/ai-knowledge', aiKnowledgeRoutes);  // AI Knowledge Chat
 apiRouter.use('/vector-search', vectorSearchRoutes);
 apiRouter.use('/flow', flowRoutes);  // Flow Engine - GTD AI Processing
 apiRouter.use('/flow/conversation', flowConversationRoutes);  // Flow Conversation - Dialogowe przetwarzanie
