@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Company, CompanyFilters } from '@/types/crm';
 import { companiesApi } from '@/lib/api/companies';
 import CompanyItem from './CompanyItem';
 import CompanyForm from './CompanyForm';
 
 export default function CompaniesList() {
+  const router = useRouter();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -270,7 +272,7 @@ export default function CompaniesList() {
                 company={company}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
-                onOpen={(id) => window.location.href = `/crm/dashboard/companies/${id}`}
+                onOpen={(id) => router.push(`/dashboard/companies/${id}`)}
               />
             ))}
           </div>

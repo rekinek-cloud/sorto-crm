@@ -121,15 +121,19 @@ router.get('/:id', async (req, res) => {
       },
       include: {
         assignedContacts: {
-          include: {
-            user: {
-              select: { id: true, email: true, firstName: true, lastName: true }
-            }
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            status: true,
+            position: true
           }
         },
         deals: {
           include: {
-            assignedTo: {
+            owner: {
               select: { id: true, email: true, firstName: true, lastName: true }
             }
           }
