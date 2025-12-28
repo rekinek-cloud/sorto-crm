@@ -59,6 +59,7 @@ import flowConversationRoutes from './routes/flowConversation';
 import userHierarchyRoutes from './routes/userHierarchy';
 import internalRoutes from './routes/internal';
 import aiInsightsRoutes from './routes/aiInsights';
+import usersRoutes from './routes/users';
 
 const app = express();
 
@@ -189,6 +190,7 @@ apiRouter.use('/flow', flowRoutes);  // Flow Engine - GTD AI Processing
 apiRouter.use('/flow/conversation', flowConversationRoutes);  // Flow Conversation - Dialogowe przetwarzanie
 apiRouter.use('/user-hierarchy', userHierarchyRoutes);  // Zarządzanie użytkownikami w organizacji
 apiRouter.use('/internal', internalRoutes);  // Internal API dla service-to-service (RAG)
+apiRouter.use('/users', usersRoutes);  // Zarządzanie użytkownikami
 
 // STREAMS Migration - nowe endpointy
 apiRouter.use('/source', sourceRoutes);           // Źródło (ex gtdInbox)

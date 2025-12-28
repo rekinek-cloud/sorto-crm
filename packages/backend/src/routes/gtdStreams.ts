@@ -133,6 +133,7 @@ router.post('/', async (req, res) => {
 
     res.status(201).json({
       success: true,
+      id: stream.id,
       data: {
         stream,
         gtdConfig: config

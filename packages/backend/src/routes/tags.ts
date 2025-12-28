@@ -13,17 +13,10 @@ router.get('/', authenticateToken, async (req, res) => {
 
     const tags = await prisma.tag.findMany({
       where: { organizationId },
-      include: {
-        _count: {
-          select: {
-            taskTags: true
-          }
-        }
-      },
       orderBy: { name: 'asc' }
     });
 
-    res.json({ tags });
+    res.json({ data: tags, total: tags.length });
   } catch (error) {
     logger.error('Error fetching tags:', error);
     res.status(500).json({ message: 'Internal server error' });

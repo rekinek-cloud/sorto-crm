@@ -176,8 +176,10 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
     );
 
     res.status(201).json({
+      success: true,
+      id: item.id,
       message: 'Inbox item created successfully',
-      item
+      data: item
     });
   } catch (error) {
     console.error('Error creating inbox item:', error);

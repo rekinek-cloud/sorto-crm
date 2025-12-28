@@ -9,7 +9,7 @@ const prisma = new PrismaClient();
 // Get all meetings with optional filtering
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const { organizationId, userId } = req.user!;
+    const { organizationId } = req.user!;
     const {
       page = '1',
       limit = '20',
@@ -78,7 +78,7 @@ router.get('/', authenticateToken, async (req, res) => {
               firstName: true,
               lastName: true,
               email: true,
-              company: {
+              assignedCompany: {
                 select: {
                   id: true,
                   name: true
@@ -254,7 +254,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 // Create new meeting
 router.post('/', authenticateToken, async (req, res) => {
   try {
-    const { organizationId, userId } = req.user!;
+    const { id: userId, organizationId } = req.user!;
     const {
       title,
       description,
@@ -339,9 +339,9 @@ router.post('/', authenticateToken, async (req, res) => {
         location: location?.trim() || null,
         meetingUrl: meetingUrl?.trim() || null,
         agenda: agenda?.trim() || null,
-        organizationId,
-        organizedById: userId,
-        contactId: contactId || null
+        organization: { connect: { id: organizationId } },
+        organizedBy: { connect: { id: userId } },
+        ...(contactId && { contact: { connect: { id: contactId } } })
       },
       include: {
         organizedBy: {
@@ -358,7 +358,7 @@ router.post('/', authenticateToken, async (req, res) => {
             firstName: true,
             lastName: true,
             email: true,
-            company: {
+            assignedCompany: {
               select: {
                 id: true,
                 name: true
@@ -380,7 +380,7 @@ router.post('/', authenticateToken, async (req, res) => {
 // Update meeting
 router.put('/:id', authenticateToken, async (req, res) => {
   try {
-    const { organizationId, userId } = req.user!;
+    const { id: userId, organizationId } = req.user!;
     const { id } = req.params;
     const {
       title,
