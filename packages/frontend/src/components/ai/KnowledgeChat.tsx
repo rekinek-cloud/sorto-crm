@@ -19,6 +19,8 @@ import {
   Settings
 } from 'lucide-react';
 import apiClient from '@/lib/api/client';
+import { ragClient } from '@/lib/api/ragClient';
+import { useAuth } from '@/lib/auth/context';
 
 interface KnowledgeMessage {
   id: string;
@@ -100,6 +102,7 @@ const actionIcons = {
 };
 
 export function KnowledgeChat({ initialQuestion, context = 'general', className }: KnowledgeChatProps) {
+  const { user, organization } = useAuth();
   const [messages, setMessages] = useState<KnowledgeMessage[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -107,6 +110,7 @@ export function KnowledgeChat({ initialQuestion, context = 'general', className 
   const [providers, setProviders] = useState<AIProvider[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<string>('');
   const [loadingProviders, setLoadingProviders] = useState(true);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -166,6 +170,11 @@ export function KnowledgeChat({ initialQuestion, context = 'general', className 
   const handleSendMessage = async (question: string = input) => {
     if (!question.trim() || isLoading) return;
 
+    if (!user?.id || !organization?.id) {
+      console.error('User or organization not available');
+      return;
+    }
+
     const userMessage: KnowledgeMessage = {
       id: Date.now().toString(),
       type: 'user',
@@ -178,28 +187,35 @@ export function KnowledgeChat({ initialQuestion, context = 'general', className 
     setIsLoading(true);
 
     try {
-      const response = await apiClient.post('/ai-knowledge/query', {
-        question,
-        context,
-        providerId: selectedProvider
+      const startTime = Date.now();
+
+      // Use RAG service directly for semantic search
+      const response = await ragClient.post('/query/', {
+        query: question,
+        userId: user.id,
+        organizationId: organization.id,
+        conversationId: conversationId || undefined,
+        limit: 5
       });
 
-      if (response.data.success) {
-        const assistantMessage: KnowledgeMessage = {
-          id: (Date.now() + 1).toString(),
-          type: 'assistant',
-          content: response.data.data.answer,
-          timestamp: new Date(),
-          data: response.data.data.data,
-          insights: response.data.data.insights,
-          actions: response.data.data.actions,
-          visualizations: response.data.data.visualizations,
-          executionTime: response.data.data.executionTime,
-          confidence: response.data.data.confidence
-        };
+      const executionTime = Date.now() - startTime;
+      const data = response.data;
 
-        setMessages(prev => [...prev, assistantMessage]);
+      // Update conversation ID for context continuity
+      if (data.conversationId) {
+        setConversationId(data.conversationId);
       }
+
+      const assistantMessage: KnowledgeMessage = {
+        id: (Date.now() + 1).toString(),
+        type: 'assistant',
+        content: data.answer || 'Brak odpowiedzi',
+        timestamp: new Date(),
+        executionTime,
+        confidence: data.confidence || 0.85
+      };
+
+      setMessages(prev => [...prev, assistantMessage]);
     } catch (error: any) {
       console.error('Failed to send message:', error);
 
