@@ -34,14 +34,14 @@ function QuickAddModal({ isOpen, onClose, type }: QuickAddModalProps) {
       const endpoint = type === 'task'
         ? '/tasks'
         : type === 'note'
-        ? '/gtd-inbox'
-        : '/deals';
+        ? '/source'
+        : '/tasks';  // Deal tworzy zadanie typu deal
 
       const body = type === 'task'
         ? { title, status: 'TODO', priority: 'MEDIUM' }
         : type === 'note'
         ? { content: title, sourceType: 'NOTE' }
-        : { title, stage: 'PROSPECT', value: 0 };
+        : { title, status: 'TODO', priority: 'MEDIUM', description: 'Deal utworzony przez Quick Actions' };
 
       await apiClient.post(endpoint, body);
 

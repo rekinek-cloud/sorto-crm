@@ -438,6 +438,7 @@ export function KnowledgeChat({ initialQuestion, context = 'general', className 
             />
           </div>
           <Button
+            type="button"
             onClick={() => handleSendMessage()}
             disabled={!input.trim() || isLoading}
             className="px-4 py-2 h-auto bg-blue-600 hover:bg-blue-700"

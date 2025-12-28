@@ -35,7 +35,7 @@ export default function RAGSearchPage() {
   const [filters, setFilters] = useState({
     type: 'all',
     timeRange: 'all',
-    minRelevance: 0.5
+    minRelevance: 0.3
   });
   const [ragEnabled, setRagEnabled] = useState(true);
   const [searchHistory, setSearchHistory] = useState<string[]>([]);
@@ -62,17 +62,21 @@ export default function RAGSearchPage() {
     saveToHistory(finalQuery);
 
     try {
-      // Real RAG search using actual vector database (test endpoint)
-      const response = await fetch('/api/v1/test-rag-search/search', {
+      // Real RAG search using actual vector database
+      const token = document.cookie.split('; ').find(row => row.startsWith('access_token='))?.split('=')[1];
+      const response = await fetch('/crm/api/v1/vector-search/search', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token && { 'Authorization': `Bearer ${token}` }),
         },
         body: JSON.stringify({
           query: finalQuery,
-          limit: 10,
+          limit: 500, // wysoki limit - filtrowanie głównie przez czas
+          threshold: filters.minRelevance,
           filters: {
             type: filters.type,
+            timeRange: filters.timeRange,
             minRelevance: filters.minRelevance
           }
         })
@@ -84,7 +88,30 @@ export default function RAGSearchPage() {
 
       const data = await response.json();
       if (data.success) {
-        setResults(data.data);
+        // Map API response to expected UI format
+        const mappedResults: RAGSearchResponse = {
+          query: data.data.query,
+          results: data.data.results.map((r: any) => ({
+            id: r.id,
+            type: r.entityType || 'unknown',
+            title: r.title,
+            content: r.content,
+            metadata: {
+              source: r.metadata?.source || 'database',
+              author: r.metadata?.author,
+              createdAt: r.metadata?.processingDate || new Date().toISOString(),
+              tags: r.metadata?.tags || []
+            },
+            relevanceScore: r.similarity || 0,
+            vectorSimilarity: r.similarity || 0,
+            semanticMatch: (r.similarity || 0) > 0.5
+          })),
+          totalResults: data.data.totalResults || data.data.results.length,
+          searchTime: data.data.searchTime || 0,
+          searchMethod: 'semantic',
+          suggestions: data.data.suggestions || []
+        };
+        setResults(mappedResults);
       } else {
         throw new Error(data.error || 'Search failed');
       }
@@ -200,10 +227,12 @@ export default function RAGSearchPage() {
               onChange={(e) => setFilters({...filters, timeRange: e.target.value})}
               className="border border-gray-300 rounded px-3 py-1 text-sm"
             >
-              <option value="all">Wszystkie daty</option>
+              <option value="all">Cały okres</option>
+              <option value="today">Dzisiaj</option>
               <option value="week">Ostatni tydzień</option>
               <option value="month">Ostatni miesiąc</option>
               <option value="quarter">Ostatni kwartał</option>
+              <option value="year">Ostatni rok</option>
             </select>
 
             <div className="flex items-center space-x-2">
@@ -250,7 +279,7 @@ export default function RAGSearchPage() {
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 <span className="text-sm text-gray-600">
-                  Znaleziono {results.totalResults} wyników w {results.searchTime}ms
+                  Znaleziono {results.totalResults} wyników ({results.searchTime}ms)
                 </span>
                 <div className={`px-2 py-1 rounded-full text-xs font-medium ${
                   results.searchMethod === 'semantic' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
