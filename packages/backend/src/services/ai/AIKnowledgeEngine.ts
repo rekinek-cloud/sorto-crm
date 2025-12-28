@@ -8,6 +8,7 @@ export interface KnowledgeQuery {
   organizationId: string;
   context?: 'dashboard' | 'projects' | 'deals' | 'tasks' | 'general';
   providerId?: string;
+  ragContext?: string; // Context from RAG vector search
 }
 
 export interface KnowledgeResponse {
@@ -82,38 +83,47 @@ export class AIKnowledgeEngine {
    */
   async queryKnowledge(query: KnowledgeQuery): Promise<KnowledgeResponse> {
     const startTime = Date.now();
-    
+
     try {
       // 1. Parse and classify the question
       const intent = await this.parseIntent(query.question);
-      
-      // 2. Gather relevant data based on intent
-      const data = await this.gatherData(intent, query);
-      
-      // 3. Analyze data and generate insights
-      const insights = await this.generateInsights(data, intent, query);
-      
-      // 4. Create action items
-      const actions = await this.generateActions(insights, query);
-      
-      // 5. Prepare visualizations if needed
-      const visualizations = await this.prepareVisualizations(data, intent);
-      
-      // 6. Generate natural language response
-      const answer = await this.generateResponse(data, insights, intent, query);
-      
+
+      // 2. Check if RAG context is available - if so, prioritize RAG-based response
+      const hasRagContext = query.ragContext && query.ragContext.trim().length > 100;
+
+      // 3. Gather relevant data based on intent (skip if RAG context is primary)
+      let data = {};
+      if (!hasRagContext || intent.type !== 'general') {
+        data = await this.gatherData(intent, query);
+      }
+
+      // 4. Analyze data and generate insights (minimal if RAG-based)
+      const insights = hasRagContext ? [] : await this.generateInsights(data, intent, query);
+
+      // 5. Create action items (minimal if RAG-based)
+      const actions = hasRagContext ? [] : await this.generateActions(insights, query);
+
+      // 6. Prepare visualizations if needed (skip if RAG-based)
+      const visualizations = hasRagContext ? [] : await this.prepareVisualizations(data, intent);
+
+      // 7. Generate natural language response
+      // Use RAG-focused response if RAG context is available
+      const answer = hasRagContext
+        ? await this.generateRAGResponse(query)
+        : await this.generateResponse(data, insights, intent, query);
+
       const executionTime = Date.now() - startTime;
-      
+
       return {
         answer,
-        confidence: this.calculateConfidence(data, insights),
+        confidence: hasRagContext ? 0.85 : this.calculateConfidence(data, insights),
         data,
         insights,
         actions,
         visualizations,
         executionTime
       };
-      
+
     } catch (error: any) {
       console.error('Knowledge query error:', error?.message || error);
       console.error('Full error:', JSON.stringify(error, null, 2));
@@ -846,6 +856,98 @@ export class AIKnowledgeEngine {
   }
 
   /**
+   * Generate response based primarily on RAG context
+   * Used when RAG context is available and should be the primary source of information
+   */
+  private async generateRAGResponse(query: KnowledgeQuery): Promise<string> {
+    try {
+      console.log('🔍 Generating RAG-based response for:', query.question);
+
+      // Get AI router for the organization
+      const aiRouter = await this.getAIRouter(query.organizationId);
+
+      // Get available AI providers
+      const availableProviders = await this.getAvailableAIProviders(query.organizationId);
+
+      if (availableProviders.length === 0) {
+        console.log('NO AI PROVIDERS FOUND - USING RAG FALLBACK');
+        return this.generateRAGFallbackResponse(query.ragContext || '', query.question);
+      }
+
+      const selectedModel = availableProviders[0];
+
+      // RAG-focused prompt
+      const systemPrompt = `Jesteś asystentem AI analizującym dane z bazy wiedzy CRM.
+Twoim zadaniem jest odpowiedzieć na pytanie użytkownika WYŁĄCZNIE na podstawie dostarczonych dokumentów.
+
+ZASADY:
+- Odpowiadaj po polsku
+- Bazuj TYLKO na dostarczonych dokumentach - NIE wymyślaj informacji
+- Jeśli w dokumentach nie ma odpowiedzi, powiedz wprost że nie znalazłeś tej informacji
+- Podaj konkretne dane z dokumentów (tytuły, treści, liczby)
+- Formatuj odpowiedź czytelnie z użyciem emoji i list
+- Jeśli dokumenty zawierają wiele wyników, podsumuj je liczbowo`;
+
+      const userPrompt = `PYTANIE UŻYTKOWNIKA: "${query.question}"
+
+DOKUMENTY Z BAZY WIEDZY:
+${query.ragContext}
+
+Na podstawie powyższych dokumentów, odpowiedz na pytanie użytkownika. Podaj konkretne informacje z dokumentów.`;
+
+      const aiRequest = {
+        model: selectedModel.name,
+        messages: [
+          { role: 'system' as const, content: systemPrompt },
+          { role: 'user' as const, content: userPrompt }
+        ],
+        config: {
+          temperature: 0.3, // Lower temperature for more factual responses
+          maxTokens: 1500
+        }
+      };
+
+      console.log('Sending RAG request to AI...');
+      const aiResponse = await aiRouter.executeAIRequest(selectedModel.id, aiRequest);
+      return aiResponse.content;
+
+    } catch (error) {
+      console.error('RAG response generation failed:', error);
+      return this.generateRAGFallbackResponse(query.ragContext || '', query.question);
+    }
+  }
+
+  /**
+   * Fallback response when AI is not available but RAG context exists
+   */
+  private generateRAGFallbackResponse(ragContext: string, question: string): string {
+    // Parse RAG context to extract useful info
+    const lines = ragContext.split('\n').filter(l => l.trim());
+    const documentCount = lines.filter(l => l.includes('[') || l.includes('Typ:')).length;
+
+    if (documentCount === 0) {
+      return `❌ Nie znaleziono dokumentów pasujących do zapytania: "${question}"
+
+Spróbuj:
+• Użyć innych słów kluczowych
+• Zadać bardziej ogólne pytanie
+• Sprawdzić sekcję RAG Search bezpośrednio`;
+    }
+
+    // Extract some content from RAG
+    const preview = lines.slice(0, 10).join('\n');
+
+    return `📚 Znaleziono dokumenty pasujące do zapytania: "${question}"
+
+**Liczba dokumentów:** ~${documentCount}
+
+**Fragment wyników:**
+${preview}
+
+_Uwaga: Asystent AI jest chwilowo niedostępny. Powyżej znajduje się surowy kontekst z bazy wiedzy. Użyj sekcji RAG Search aby zobaczyć pełne wyniki._`;
+  }
+
+  /**
    * Generate natural language response using AI
    */
   private async generateResponse(data: any, insights: Insight[], intent: any, query: KnowledgeQuery): Promise<string> {
@@ -872,17 +974,21 @@ export class AIKnowledgeEngine {
       let systemPrompt: string;
       let userPrompt: string;
 
+      // Prepare RAG context section if available
+      const ragSection = query.ragContext ? `\n\nKONTEKST Z BAZY WIEDZY (RAG):\n${query.ragContext}` : '';
+
       if (compiledPrompt) {
         // Use prompt from database
         console.log('USING PROMPT FROM DATABASE: UNIVERSAL_ANALYZE');
         systemPrompt = compiledPrompt.systemPrompt;
-        userPrompt = compiledPrompt.userPrompt;
+        userPrompt = compiledPrompt.userPrompt + ragSection;
       } else {
         // Fallback to hardcoded prompt
         console.log('PROMPT NOT FOUND - USING HARDCODED FALLBACK');
         systemPrompt = `Jesteś inteligentnym asystentem analizującym dane systemu STREAMS.
         Odpowiadaj po polsku, konkretnie i pomocnie.
         Bazuj TYLKO na dostarczonych danych, nie wymyślaj informacji.
+        Jeśli dostarczono kontekst z bazy wiedzy (RAG), wykorzystaj go w odpowiedzi.
         Formatuj odpowiedź z użyciem emoji i list gdzie to stosowne.`;
 
         userPrompt = `PYTANIE: "${query.question}"
@@ -892,6 +998,7 @@ ${contextSummary}
 
 ZIDENTYFIKOWANE INSIGHTS:
 ${insightsSummary}
+${ragSection}
 
 Przeanalizuj te dane i odpowiedz na pytanie użytkownika. Podaj konkretne zalecenia i następne kroki.`;
       }
@@ -1049,21 +1156,34 @@ Przeanalizuj te dane i odpowiedz na pytanie użytkownika. Podaj konkretne zalece
    * Fallback to static responses when AI is not available
    */
   private generateStaticResponse(data: any, insights: Insight[], intent: any): string {
-    // Keep existing static response methods as fallback
-    switch (intent.type) {
-      case 'streams':
-        return this.generateStreamResponse(data, insights);
-      case 'projects':
-        return this.generateProjectResponse(data, insights);
-      case 'deals':
-        return this.generateDealResponse(data, insights);
-      case 'tasks':
-        return this.generateTaskResponse(data, insights);
-      case 'productivity':
-        return this.generateProductivityResponse(data, insights);
-      default:
-        return this.generateGeneralResponse(data, insights);
-    }
+    // Return honest message when AI is not available instead of fake responses
+    const typeMessages: Record<string, string> = {
+      streams: 'strumieni',
+      projects: 'projektów',
+      deals: 'transakcji',
+      tasks: 'zadań',
+      productivity: 'produktywności',
+      communication: 'komunikacji'
+    };
+
+    const typeMsg = typeMessages[intent.type] || 'danych';
+
+    return `⚠️ **Asystent AI jest chwilowo niedostępny**
+
+Nie mogę teraz przeanalizować Twojego pytania dotyczącego ${typeMsg}.
+
+**Co możesz zrobić:**
+• Spróbuj ponownie za chwilę
+• Sprawdź dane bezpośrednio w odpowiedniej sekcji aplikacji
+• Użyj wyszukiwania RAG do znalezienia konkretnych informacji
+
+**Dostępne sekcje:**
+• Strumienie → menu "Wszystkie strumienie"
+• Projekty → menu "Projekty"
+• Zadania → menu "Zadania"
+• RAG Search → semantyczne wyszukiwanie w bazie wiedzy
+
+_Przepraszamy za niedogodności._`;
   }
 
   /**

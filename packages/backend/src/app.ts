@@ -57,6 +57,8 @@ import vectorSearchRoutes from './routes/vectorSearch';
 import flowRoutes from './routes/flow';
 import flowConversationRoutes from './routes/flowConversation';
 import userHierarchyRoutes from './routes/userHierarchy';
+import internalRoutes from './routes/internal';
+import aiInsightsRoutes from './routes/aiInsights';
 
 const app = express();
 
@@ -181,10 +183,12 @@ apiRouter.use('/calendar', calendarRoutes);
 apiRouter.use('/admin/ai-config', aiConfigRoutes);
 apiRouter.use('/ai/prompts', aiPromptsRoutes);
 apiRouter.use('/ai-knowledge', aiKnowledgeRoutes);  // AI Knowledge Chat
+apiRouter.use('/ai-insights', aiInsightsRoutes);    // AI Insights dla Dashboard
 apiRouter.use('/vector-search', vectorSearchRoutes);
 apiRouter.use('/flow', flowRoutes);  // Flow Engine - GTD AI Processing
 apiRouter.use('/flow/conversation', flowConversationRoutes);  // Flow Conversation - Dialogowe przetwarzanie
 apiRouter.use('/user-hierarchy', userHierarchyRoutes);  // Zarządzanie użytkownikami w organizacji
+apiRouter.use('/internal', internalRoutes);  // Internal API dla service-to-service (RAG)
 
 // STREAMS Migration - nowe endpointy
 apiRouter.use('/source', sourceRoutes);           // Źródło (ex gtdInbox)

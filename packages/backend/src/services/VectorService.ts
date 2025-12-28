@@ -10,6 +10,7 @@ export interface VectorSearchOptions {
     entityId?: string;
     language?: string;
     source?: string;
+    timeRange?: 'all' | 'today' | 'week' | 'month' | 'quarter' | 'year';
   };
   useCache?: boolean;
   cacheExpiry?: number; // TTL in minutes
@@ -141,7 +142,7 @@ export class VectorService {
     try {
       // Generate cache key
       const cacheKey = this.generateCacheKey(query, filters, limit, threshold);
-      
+
       // Check cache first
       if (useCache) {
         const cached = await this.getFromCache(organizationId, cacheKey);
@@ -167,6 +168,38 @@ export class VectorService {
       if (filters.language) whereClause.language = filters.language;
       if (filters.source) whereClause.source = filters.source;
 
+      // Apply time range filter
+      if (filters.timeRange && filters.timeRange !== 'all') {
+        const now = new Date();
+        let fromDate: Date;
+
+        switch (filters.timeRange) {
+          case 'today':
+            fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            break;
+          case 'week':
+            fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+            break;
+          case 'month':
+            fromDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+            break;
+          case 'quarter':
+            fromDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+            break;
+          case 'year':
+            fromDate = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+            break;
+          default:
+            fromDate = new Date(0); // epoch
+        }
+
+        whereClause.processingDate = {
+          gte: fromDate
+        };
+
+        logger.info(`Applying time filter: ${filters.timeRange} (from: ${fromDate.toISOString()})`);
+      }
+
       // Mock vector similarity search (replace with actual pgvector queries)
       const documents = await this.prisma.vector_documents.findMany({
         where: whereClause,
@@ -174,11 +207,11 @@ export class VectorService {
       });
 
       // Calculate similarities and filter
-      const results: VectorSearchResult[] = [];
-      
+      let results: VectorSearchResult[] = [];
+
       for (const doc of documents) {
         const similarity = this.calculateCosineSimilarity(queryEmbedding, doc.embedding);
-        
+
         if (similarity >= threshold) {
           results.push({
             id: doc.id,
@@ -196,6 +229,13 @@ export class VectorService {
             }
           });
         }
+      }
+
+      // If no results from vector search, fallback to text search
+      if (results.length === 0) {
+        logger.info(`Vector search returned 0 results, falling back to text search for: "${query}" (org: ${organizationId})`);
+        results = await this.textSearchFallback(organizationId, query, whereClause, limit);
+        logger.info(`Text search fallback returned ${results.length} results: ${results.slice(0,3).map(r => r.title).join(', ')}`);
       }
 
       // Sort by similarity and limit results
@@ -548,20 +588,32 @@ export class VectorService {
 
   private async generateEmbedding(text: string): Promise<number[]> {
     try {
-      // Try to get an active AI provider for embeddings
+      // Try to get an active AI provider for embeddings (case-insensitive search)
       const provider = await this.prisma.ai_providers.findFirst({
         where: {
           status: 'ACTIVE',
-          name: 'openai'
+          OR: [
+            { name: 'openai' },
+            { name: 'OpenAI' }
+          ]
         }
       });
 
-      if (provider && provider.config && (provider.config as any).apiKey) {
-        return await this.generateOpenAIEmbedding(text, (provider.config as any).apiKey);
+      const apiKey = provider?.config && (provider.config as any).apiKey;
+
+      if (apiKey && apiKey.length > 10) {
+        return await this.generateOpenAIEmbedding(text, apiKey);
+      }
+
+      // Try environment variable as fallback
+      const envApiKey = process.env.OPENAI_API_KEY;
+      if (envApiKey && envApiKey.length > 10) {
+        logger.info('Using OpenAI API key from environment');
+        return await this.generateOpenAIEmbedding(text, envApiKey);
       }
 
       // Fallback to mock embedding generation
-      logger.warn('No active AI provider found, using mock embeddings');
+      logger.warn('No OpenAI API key found, using mock embeddings (limited functionality)');
       return this.generateMockEmbedding(text);
     } catch (error) {
       logger.error('Embedding generation failed, falling back to mock:', error);
@@ -633,6 +685,192 @@ export class VectorService {
     return crypto.createHash('md5').update(data).digest('hex');
   }
 
+  /**
+   * Text search fallback when vector similarity returns no results
+   * Uses ILIKE for text matching with Polish word normalization
+   */
+  private async textSearchFallback(
+    organizationId: string,
+    query: string,
+    baseWhere: any,
+    limit: number
+  ): Promise<VectorSearchResult[]> {
+    try {
+      logger.info(`Performing text search fallback for: "${query}" (org: ${organizationId})`);
+
+      // Normalize query for Polish language
+      const normalizedQuery = this.normalizePolishQuery(query);
+
+      // Polish stop words to filter out (common short words that match too much)
+      const polishStopWords = new Set([
+        'od', 'do', 'w', 'z', 'na', 'po', 'za', 'ze', 'we', 'ku', 'o', 'u', 'i', 'a',
+        'ze', 'to', 'co', 'czy', 'jak', 'nie', 'tak', 'dla', 'bez', 'ale', 'lub',
+        'czy', 'juz', 'sie', 'jest', 'sa', 'byl', 'byla', 'byly', 'ktory', 'ktora',
+        'pokaz', 'wyswietl', 'znajdz', 'szukaj', 'daj', 'maile', 'mail', 'email', 'emaile'
+      ]);
+
+      const rawTerms = normalizedQuery
+        .split(/\s+/)
+        .filter(term => term.length >= 3 && !polishStopWords.has(term));
+
+      // Apply simple Polish stemming (remove common suffixes for names)
+      const searchTerms = rawTerms.map(term => this.simplePolishStem(term));
+      logger.info(`Search terms after normalization, stop words, and stemming: [${searchTerms.join(', ')}]`);
+
+      if (searchTerms.length === 0) {
+        logger.warn(`No search terms after normalization for query: "${query}"`);
+        return [];
+      }
+
+      // Build OR conditions for each search term
+      const orConditions = searchTerms.flatMap(term => [
+        { title: { contains: term, mode: 'insensitive' as const } },
+        { content: { contains: term, mode: 'insensitive' as const } }
+      ]);
+
+      const whereClause = {
+        ...baseWhere,
+        organizationId,
+        OR: orConditions
+      };
+      logger.info(`Text search WHERE clause: ${JSON.stringify(whereClause, null, 2)}`);
+
+      const documents = await this.prisma.vector_documents.findMany({
+        where: whereClause,
+        take: limit * 2,
+        orderBy: { processingDate: 'desc' }
+      });
+
+      logger.info(`Text search fallback found ${documents.length} documents: ${documents.slice(0,3).map(d => d.title).join(', ')}`);
+
+      // Calculate text-based relevance score and filter out zero-relevance results
+      const results = documents
+        .map(doc => {
+          const relevance = this.calculateTextRelevance(doc.title, doc.content, searchTerms);
+          return {
+            id: doc.id,
+            title: doc.title,
+            content: doc.content,
+            entityType: doc.entityType,
+            entityId: doc.entityId,
+            similarity: relevance,
+            metadata: {
+              source: doc.source,
+              language: doc.language,
+              chunkIndex: doc.chunkIndex,
+              totalChunks: doc.totalChunks,
+              processingDate: doc.processingDate.toISOString()
+            }
+          };
+        })
+        .filter(doc => doc.similarity > 0); // Only return documents with actual matches
+
+      logger.info(`After relevance filtering: ${results.length} documents with matches`);
+      return results;
+    } catch (error) {
+      logger.error('Text search fallback failed:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Normalize Polish query - remove diacritics and common suffixes
+   */
+  private normalizePolishQuery(query: string): string {
+    // Polish diacritics mapping
+    const polishMap: Record<string, string> = {
+      'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n',
+      'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
+      'Ą': 'A', 'Ć': 'C', 'Ę': 'E', 'Ł': 'L', 'Ń': 'N',
+      'Ó': 'O', 'Ś': 'S', 'Ź': 'Z', 'Ż': 'Z'
+    };
+
+    let normalized = query;
+
+    // Replace Polish characters
+    for (const [polish, ascii] of Object.entries(polishMap)) {
+      normalized = normalized.replace(new RegExp(polish, 'g'), ascii);
+    }
+
+    return normalized.toLowerCase().trim();
+  }
+
+  /**
+   * Simple Polish stemmer - removes common suffixes from names
+   * This helps match "Aleksandry" to "Aleksandra", "Wojciechowskiej" to "Wojciechowsk", etc.
+   */
+  private simplePolishStem(word: string): string {
+    // Common Polish name/noun suffixes (ordered by length, longest first)
+    const suffixes = [
+      'owskiej', 'owski', 'owska', 'owej', 'owym', 'owego',
+      'skiej', 'skich', 'skiego', 'ska', 'ski', 'skie',
+      'owej', 'owym', 'owych', 'owa', 'owy', 'owe',
+      'ami', 'ach', 'om', 'ow',
+      'ej', 'em', 'ie', 'ego', 'emu',
+      'ą', 'ę', 'y', 'i', 'a', 'u', 'e'
+    ];
+
+    let stemmed = word.toLowerCase();
+
+    // Only stem words longer than 4 characters to avoid over-stemming
+    if (stemmed.length <= 4) {
+      return stemmed;
+    }
+
+    for (const suffix of suffixes) {
+      if (stemmed.endsWith(suffix) && stemmed.length - suffix.length >= 3) {
+        stemmed = stemmed.slice(0, -suffix.length);
+        break; // Only remove one suffix
+      }
+    }
+
+    return stemmed;
+  }
+
+  /**
+   * Calculate text-based relevance score
+   */
+  private calculateTextRelevance(title: string, content: string, searchTerms: string[]): number {
+    const titleLower = title.toLowerCase();
+    const contentLower = content.toLowerCase();
+    let score = 0;
+    let matchedTerms = 0;
+
+    for (const term of searchTerms) {
+      const termLower = term.toLowerCase();
+
+      // Title matches are worth more
+      if (titleLower.includes(termLower)) {
+        score += 0.4;
+        matchedTerms++;
+      }
+
+      // Content matches
+      if (contentLower.includes(termLower)) {
+        score += 0.2;
+        matchedTerms++;
+      }
+
+      // Exact word match bonus
+      const titleWords = titleLower.split(/\s+/);
+      const contentWords = contentLower.split(/\s+/);
+
+      if (titleWords.includes(termLower)) {
+        score += 0.2;
+      }
+      if (contentWords.includes(termLower)) {
+        score += 0.1;
+      }
+    }
+
+    // Normalize by number of search terms
+    const maxPossibleScore = searchTerms.length * 0.9;
+    const normalizedScore = Math.min(score / maxPossibleScore, 1.0);
+
+    // Ensure minimum score if any term matched
+    return matchedTerms > 0 ? Math.max(normalizedScore, 0.5) : 0;
+  }
+
   private async getFromCache(organizationId: string, cacheKey: string): Promise<VectorSearchResponse | null> {
     try {
       const cached = await this.prisma.vector_cache.findFirst({
@@ -682,6 +920,7 @@ export class VectorService {
           updatedAt: new Date()
         },
         create: {
+          id: `cache-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
           cacheKey,
           queryText,
           results: results as any,
@@ -689,7 +928,9 @@ export class VectorService {
           organizationId,
           filters: {},
           limit: results.results.length,
-          threshold: results.threshold
+          threshold: results.threshold,
+          createdAt: new Date(),
+          updatedAt: new Date()
         }
       });
     } catch (error) {

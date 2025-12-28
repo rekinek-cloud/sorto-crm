@@ -2,9 +2,14 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { authenticateUser } from '../shared/middleware/auth';
 import { AIKnowledgeEngine, KnowledgeQuery } from '../services/ai/AIKnowledgeEngine';
+import { RAGService } from '../services/ai/RAGService';
+import { VectorService } from '../services/VectorService';
+import { PrismaClient } from '@prisma/client';
 
 const router = Router();
+const prisma = new PrismaClient();
 const knowledgeEngine = new AIKnowledgeEngine();
+const vectorService = new VectorService(prisma);
 
 // Validation schemas
 const querySchema = z.object({
@@ -77,7 +82,7 @@ router.post('/clear-cache', async (req, res) => {
 
 /**
  * POST /api/v1/ai-knowledge/query
- * Main endpoint for knowledge queries
+ * Main endpoint for knowledge queries - now with RAG integration
  */
 router.post('/query', async (req, res) => {
   try {
@@ -88,13 +93,87 @@ router.post('/query', async (req, res) => {
     });
 
     const { question, context, providerId } = querySchema.parse(req.body);
-    
+
+    // Use VectorService for better text search with Polish stemming
+    let ragContext = '';
+    let ragSources: any[] = [];
+
+    try {
+      // Get relevant documents using VectorService (better text search)
+      // Note: searchSimilar(organizationId, query, options) returns VectorSearchResponse
+      console.log('🔍 Calling VectorService.searchSimilar with:', {
+        orgId: req.user.organizationId,
+        question: question.substring(0, 50)
+      });
+
+      const searchResponse = await vectorService.searchSimilar(req.user.organizationId, question, {
+        limit: 15,
+        threshold: 0.2,
+        filters: {},
+        useCache: false // Avoid cache errors
+      });
+
+      console.log('✅ VectorService returned:', {
+        totalResults: searchResponse.totalResults,
+        fromCache: searchResponse.fromCache,
+        firstResult: searchResponse.results[0]?.title
+      });
+
+      const searchResults = searchResponse.results;
+
+      if (searchResults && searchResults.length > 0) {
+        // Build RAG context from results
+        ragContext = '=== Dokumenty z bazy wiedzy ===\n\n';
+        let tokenCount = 0;
+        const maxTokens = 4000;
+
+        for (const result of searchResults) {
+          const docText = `[${result.entityType}] ${result.title}\n${result.content}\n\n---\n\n`;
+          const docTokens = Math.ceil(docText.length / 4);
+
+          if (tokenCount + docTokens > maxTokens) break;
+
+          ragContext += docText;
+          tokenCount += docTokens;
+        }
+
+        // Build sources for response
+        ragSources = searchResults.slice(0, 5).map(r => ({
+          type: r.entityType,
+          title: r.title.substring(0, 100),
+          content: r.content.substring(0, 200) + '...',
+          similarity: Math.round((r.similarity || 0) * 100)
+        }));
+
+        console.log(`📚 VectorService found ${searchResults.length} relevant documents`);
+      }
+    } catch (ragError: any) {
+      console.warn('Vector search failed, trying RAGService fallback:', ragError?.message || ragError);
+
+      // Fallback to RAGService
+      try {
+        const ragService = new RAGService(prisma, req.user.organizationId);
+        await ragService.initialize();
+        ragContext = await ragService.getContext(question, 3000);
+        const fallbackResults = await ragService.search(question, 5);
+        ragSources = fallbackResults.map(r => ({
+          type: r.sourceType,
+          title: r.content.substring(0, 100),
+          content: r.content.substring(0, 200) + '...',
+          similarity: Math.round(r.similarity * 100)
+        }));
+      } catch (fallbackError) {
+        console.warn('RAGService fallback also failed:', fallbackError);
+      }
+    }
+
     const query: KnowledgeQuery = {
       question,
       userId: req.user.id,
       organizationId: req.user.organizationId,
       context,
-      providerId
+      providerId,
+      ragContext // Pass RAG context to the knowledge engine
     };
 
     const response = await knowledgeEngine.queryKnowledge(query);
@@ -104,7 +183,11 @@ router.post('/query', async (req, res) => {
 
     res.json({
       success: true,
-      data: response
+      data: {
+        ...response,
+        ragSources: ragSources.length > 0 ? ragSources : undefined,
+        ragEnabled: ragContext.length > 0
+      }
     });
 
   } catch (error) {
@@ -246,6 +329,167 @@ router.post('/suggestions', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Failed to fetch suggestions'
+    });
+  }
+});
+
+// ===== RAG ENDPOINTS =====
+
+/**
+ * POST /api/v1/ai-knowledge/rag/index
+ * Index all CRM data into vector store
+ */
+router.post('/rag/index', async (req, res) => {
+  try {
+    console.log('🔄 Starting RAG indexing for org:', req.user.organizationId);
+
+    const ragService = new RAGService(prisma, req.user.organizationId);
+    await ragService.initialize();
+
+    const result = await ragService.indexAllData();
+
+    console.log(`✅ RAG indexing complete: ${result.success} success, ${result.failed} failed`);
+
+    res.json({
+      success: true,
+      data: {
+        message: 'Indexing complete',
+        indexed: result.success,
+        failed: result.failed
+      }
+    });
+  } catch (error) {
+    console.error('RAG indexing error:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to index data'
+    });
+  }
+});
+
+/**
+ * POST /api/v1/ai-knowledge/rag/search
+ * Semantic search in vector store
+ */
+router.post('/rag/search', async (req, res) => {
+  try {
+    const { query, limit = 10 } = req.body;
+
+    if (!query || !query.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Query is required'
+      });
+    }
+
+    const ragService = new RAGService(prisma, req.user.organizationId);
+    await ragService.initialize();
+
+    const results = await ragService.search(query, limit);
+
+    res.json({
+      success: true,
+      data: {
+        query,
+        results,
+        count: results.length
+      }
+    });
+  } catch (error) {
+    console.error('RAG search error:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Search failed'
+    });
+  }
+});
+
+/**
+ * GET /api/v1/ai-knowledge/rag/stats
+ * Get RAG indexing statistics
+ */
+router.get('/rag/stats', async (req, res) => {
+  try {
+    const ragService = new RAGService(prisma, req.user.organizationId);
+    await ragService.initialize();
+
+    const stats = await ragService.getStats();
+
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    console.error('RAG stats error:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get stats'
+    });
+  }
+});
+
+/**
+ * POST /api/v1/ai-knowledge/rag/query
+ * RAG-enhanced AI query - combines vector search with AI generation
+ */
+router.post('/rag/query', async (req, res) => {
+  try {
+    const startTime = Date.now();
+    const { question, providerId } = req.body;
+
+    if (!question || !question.trim()) {
+      return res.status(400).json({
+        success: false,
+        error: 'Question is required'
+      });
+    }
+
+    console.log(`🤖 RAG Query from ${req.user.email}: "${question}"`);
+
+    // Initialize RAG service
+    const ragService = new RAGService(prisma, req.user.organizationId);
+    await ragService.initialize();
+
+    // Get relevant context from vector store
+    const ragContext = await ragService.getContext(question, 3000);
+
+    // Search for relevant documents
+    const searchResults = await ragService.search(question, 5);
+
+    // Build enhanced query with RAG context
+    const query: KnowledgeQuery = {
+      question,
+      userId: req.user.id,
+      organizationId: req.user.organizationId,
+      context: 'general',
+      providerId,
+      ragContext // Pass RAG context to the engine
+    };
+
+    // Get AI response with RAG context
+    const response = await knowledgeEngine.queryKnowledge(query);
+
+    const executionTime = Date.now() - startTime;
+
+    res.json({
+      success: true,
+      data: {
+        ...response,
+        ragSources: searchResults.map(r => ({
+          type: r.sourceType,
+          content: r.content.substring(0, 200) + '...',
+          similarity: Math.round(r.similarity * 100)
+        })),
+        ragEnabled: true,
+        executionTime
+      }
+    });
+
+  } catch (error) {
+    console.error('RAG query error:', error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'RAG query failed'
     });
   }
 });

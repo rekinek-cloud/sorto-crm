@@ -41,7 +41,7 @@ export class EmailService {
       this.isConfigured = true;
       logger.info('Email service configured successfully');
     } else {
-      logger.warn('Email service not configured - emails will be logged only');
+      logger.info('Email service not configured - emails will be logged only (optional)');
       this.isConfigured = false;
     }
   }

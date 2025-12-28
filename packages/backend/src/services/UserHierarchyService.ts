@@ -1,7 +1,11 @@
-import { PrismaClient, UserDataScope, UserRelationType, UserInheritanceRule, User, UserRelation, UserPermission, UserAction, UserAccessType } from '@prisma/client';
+import { PrismaClient, UserDataScope, UserRelationType, UserInheritanceRule, User, user_relations, user_permissions, UserAction, UserAccessType } from '@prisma/client';
 import { z } from 'zod';
 
 const prisma = new PrismaClient();
+
+// Alias for compatibility
+type UserRelation = user_relations;
+type UserPermission = user_permissions;
 
 // DTOs for user hierarchy
 export const CreateUserRelationDto = z.object({
@@ -98,7 +102,7 @@ export class UserHierarchyService {
     }
 
     // Sprawdź czy relacja już istnieje
-    const existingRelation = await prisma.userRelation.findFirst({
+    const existingRelation = await prisma.user_relations.findFirst({
       where: {
         managerId: input.managerId,
         employeeId: input.employeeId,
@@ -118,18 +122,26 @@ export class UserHierarchyService {
     }
 
     // Utwórz relację
-    const relation = await prisma.userRelation.create({
+    const relation = await prisma.user_relations.create({
       data: {
-        ...input,
+        id: `rel-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        managerId: input.managerId,
+        employeeId: input.employeeId,
+        relationType: input.relationType,
+        description: input.description,
+        inheritanceRule: input.inheritanceRule,
+        canDelegate: input.canDelegate,
+        canApprove: input.canApprove,
         startsAt: input.startsAt ? new Date(input.startsAt) : null,
         endsAt: input.endsAt ? new Date(input.endsAt) : null,
         createdById,
-        organizationId: manager.organizationId
+        organizationId: manager.organizationId,
+        updatedAt: new Date()
       },
       include: {
-        manager: true,
-        employee: true,
-        permissions: true
+        users_user_relations_managerIdTousers: true,
+        users_user_relations_employeeIdTousers: true,
+        user_permissions: true
       }
     });
 
@@ -145,23 +157,23 @@ export class UserHierarchyService {
    */
   async getUserHierarchy(userId: string, params: HierarchyQuery = {}): Promise<UserHierarchyTree> {
     const query = HierarchyQueryDto.parse(params);
-    
+
     // Pobierz użytkownika z relacjami
     const user = await prisma.user.findUnique({
       where: { id: userId },
       include: {
-        managerRelations: {
+        user_relations_user_relations_managerIdTousers: {
           where: { isActive: query.includeInactive ? undefined : true },
           include: {
-            manager: true,
-            permissions: query.includePermissions
+            users_user_relations_employeeIdTousers: true,
+            user_permissions: query.includePermissions
           }
         },
-        employeeRelations: {
+        user_relations_user_relations_employeeIdTousers: {
           where: { isActive: query.includeInactive ? undefined : true },
           include: {
-            employee: true,
-            permissions: query.includePermissions
+            users_user_relations_managerIdTousers: true,
+            user_permissions: query.includePermissions
           }
         }
       }
@@ -172,7 +184,7 @@ export class UserHierarchyService {
     }
 
     // Pobierz managerów (w górę hierarchii)
-    const managers = query.direction !== 'down' 
+    const managers = query.direction !== 'down'
       ? await this.getHierarchyUpwards(userId, query.depth, query.includeInactive)
       : [];
 
@@ -184,12 +196,20 @@ export class UserHierarchyService {
     // Sprawdź cykle
     const hasCycles = await this.detectCycles(userId);
 
+    // Map relations for compatibility
+    const userWithHierarchy = {
+      ...user,
+      managerRelations: user.user_relations_user_relations_employeeIdTousers || [],
+      employeeRelations: user.user_relations_user_relations_managerIdTousers || []
+    };
+
     return {
-      user: user as UserWithHierarchy,
+      user: userWithHierarchy as unknown as UserWithHierarchy,
       managers,
       employees,
       depth: query.depth,
-      totalRelations: user.managerRelations.length + user.employeeRelations.length,
+      totalRelations: (user.user_relations_user_relations_managerIdTousers?.length || 0) +
+                      (user.user_relations_user_relations_employeeIdTousers?.length || 0),
       hasCycles
     };
   }
@@ -259,7 +279,7 @@ export class UserHierarchyService {
    * Usuwa relację hierarchiczną
    */
   async deleteRelation(relationId: string, userId: string): Promise<void> {
-    const relation = await prisma.userRelation.findUnique({
+    const relation = await prisma.user_relations.findUnique({
       where: { id: relationId },
       select: { managerId: true, employeeId: true, organizationId: true }
     });
@@ -279,12 +299,12 @@ export class UserHierarchyService {
     }
 
     // Admin/Owner może usuwać wszystkie relacje, inni tylko swoje
-    if (user.role !== 'ADMIN' && user.role !== 'OWNER' && 
+    if (user.role !== 'ADMIN' && user.role !== 'OWNER' &&
         userId !== relation.managerId && userId !== relation.employeeId) {
       throw new Error('Access denied');
     }
 
-    await prisma.userRelation.delete({
+    await prisma.user_relations.delete({
       where: { id: relationId }
     });
 
@@ -297,47 +317,62 @@ export class UserHierarchyService {
    * Pobiera statystyki hierarchii dla organizacji
    */
   async getHierarchyStats(organizationId: string): Promise<HierarchyStats> {
-    const [
-      totalRelations,
-      activeRelations,
-      relationsByType,
-      usersCount,
-      usersWithHierarchy
-    ] = await Promise.all([
-      prisma.userRelation.count({ where: { organizationId } }),
-      prisma.userRelation.count({ where: { organizationId, isActive: true } }),
-      prisma.userRelation.groupBy({
-        by: ['relationType'],
-        where: { organizationId, isActive: true },
-        _count: true
-      }),
-      prisma.user.count({ where: { organizationId } }),
-      prisma.user.count({
-        where: {
-          organizationId,
-          OR: [
-            { managerRelations: { some: { isActive: true } } },
-            { employeeRelations: { some: { isActive: true } } }
-          ]
-        }
-      })
-    ]);
+    try {
+      const [
+        totalRelations,
+        activeRelations,
+        relationsByType,
+        usersCount,
+        usersWithHierarchy
+      ] = await Promise.all([
+        prisma.user_relations.count({ where: { organizationId } }),
+        prisma.user_relations.count({ where: { organizationId, isActive: true } }),
+        prisma.user_relations.groupBy({
+          by: ['relationType'],
+          where: { organizationId, isActive: true },
+          _count: true
+        }),
+        prisma.user.count({ where: { organizationId } }),
+        prisma.user.count({
+          where: {
+            organizationId,
+            OR: [
+              { user_relations_user_relations_managerIdTousers: { some: { isActive: true } } },
+              { user_relations_user_relations_employeeIdTousers: { some: { isActive: true } } }
+            ]
+          }
+        })
+      ]);
 
-    const relationsByTypeMap = relationsByType.reduce((acc, item) => {
-      acc[item.relationType] = item._count;
-      return acc;
-    }, {} as Record<string, number>);
+      const relationsByTypeMap = (relationsByType || []).reduce((acc, item) => {
+        acc[item.relationType] = item._count || 0;
+        return acc;
+      }, {} as Record<string, number>);
 
-    return {
-      totalRelations,
-      activeRelations,
-      inactiveRelations: totalRelations - activeRelations,
-      relationsByType: relationsByTypeMap,
-      usersWithHierarchy,
-      hierarchyPenetration: usersCount > 0 ? (usersWithHierarchy / usersCount) * 100 : 0,
-      averageTeamSize: usersWithHierarchy > 0 ? activeRelations / usersWithHierarchy : 0,
-      maxDepth: await this.calculateMaxDepth(organizationId)
-    };
+      return {
+        totalRelations: totalRelations || 0,
+        activeRelations: activeRelations || 0,
+        inactiveRelations: (totalRelations || 0) - (activeRelations || 0),
+        relationsByType: relationsByTypeMap,
+        usersWithHierarchy: usersWithHierarchy || 0,
+        hierarchyPenetration: usersCount > 0 ? ((usersWithHierarchy || 0) / usersCount) * 100 : 0,
+        averageTeamSize: usersWithHierarchy > 0 ? (activeRelations || 0) / usersWithHierarchy : 0,
+        maxDepth: await this.calculateMaxDepth(organizationId)
+      };
+    } catch (error) {
+      console.error('Error in getHierarchyStats:', error);
+      // Return default stats on error
+      return {
+        totalRelations: 0,
+        activeRelations: 0,
+        inactiveRelations: 0,
+        relationsByType: {},
+        usersWithHierarchy: 0,
+        hierarchyPenetration: 0,
+        averageTeamSize: 0,
+        maxDepth: 0
+      };
+    }
   }
 
   /**
@@ -362,8 +397,9 @@ export class UserHierarchyService {
 
     if (!user) return;
 
-    await prisma.userAccessLog.create({
+    await prisma.user_access_logs.create({
       data: {
+        id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         userId,
         targetUserId,
         relationId,
@@ -443,7 +479,7 @@ export class UserHierarchyService {
 
     // Manager ma ograniczony dostęp
     if (user.role === 'MANAGER') {
-      const managerScopes = [UserDataScope.PROFILE, UserDataScope.TASKS, UserDataScope.PROJECTS, UserDataScope.SCHEDULE];
+      const managerScopes: UserDataScope[] = [UserDataScope.PROFILE, UserDataScope.TASKS, UserDataScope.PROJECTS, UserDataScope.SCHEDULE];
       return {
         hasAccess: managerScopes.includes(dataScope),
         accessLevel: 'MANAGER',
@@ -479,7 +515,7 @@ export class UserHierarchyService {
     action: UserAction
   ): Promise<UserAccessResult> {
     // Znajdź relacje między użytkownikami
-    const relations = await prisma.userRelation.findMany({
+    const relations = await prisma.user_relations.findMany({
       where: {
         OR: [
           { managerId: userId, employeeId: targetUserId },
@@ -487,7 +523,7 @@ export class UserHierarchyService {
         ],
         isActive: true
       },
-      include: { permissions: true }
+      include: { user_permissions: true }
     });
 
     for (const relation of relations) {
@@ -512,14 +548,14 @@ export class UserHierarchyService {
    * Ocenia dostęp przez konkretną relację
    */
   private async evaluateRelationAccess(
-    relation: UserRelation & { permissions: UserPermission[] },
+    relation: UserRelation & { user_permissions: UserPermission[] },
     isManager: boolean,
     dataScope: UserDataScope,
     action: UserAction
   ): Promise<Omit<UserAccessResult, 'via' | 'reason'>> {
     // Sprawdź czy relacja pozwala na dziedziczenie uprawnień
     const canInherit = this.canInheritAccess(relation.inheritanceRule, isManager);
-    
+
     if (!canInherit) {
       return {
         hasAccess: false,
@@ -532,7 +568,8 @@ export class UserHierarchyService {
     }
 
     // Sprawdź konkretne uprawnienia
-    const relevantPermissions = relation.permissions.filter(
+    const permissions = relation.user_permissions || [];
+    const relevantPermissions = permissions.filter(
       p => (p.dataScope === dataScope || p.dataScope === UserDataScope.ALL) && p.action === action
     );
 
@@ -594,7 +631,7 @@ export class UserHierarchyService {
     action: UserAction,
     isManager: boolean
   ): Omit<UserAccessResult, 'via' | 'reason'> {
-    const baseResult = {
+    const baseResult: { inheritanceChain: string[]; directAccess: boolean } = {
       inheritanceChain: [],
       directAccess: false
     };
@@ -602,7 +639,7 @@ export class UserHierarchyService {
     switch (relationType) {
       case UserRelationType.MANAGES:
         if (isManager) {
-          const managerScopes = [UserDataScope.PROFILE, UserDataScope.TASKS, UserDataScope.PROJECTS, UserDataScope.SCHEDULE, UserDataScope.PERFORMANCE];
+          const managerScopes: UserDataScope[] = [UserDataScope.PROFILE, UserDataScope.TASKS, UserDataScope.PROJECTS, UserDataScope.SCHEDULE, UserDataScope.PERFORMANCE];
           return {
             hasAccess: managerScopes.includes(dataScope),
             accessLevel: 'MANAGER',
@@ -621,7 +658,7 @@ export class UserHierarchyService {
         }
 
       case UserRelationType.LEADS:
-        const leadScopes = [UserDataScope.PROFILE, UserDataScope.TASKS, UserDataScope.PROJECTS];
+        const leadScopes: UserDataScope[] = [UserDataScope.PROFILE, UserDataScope.TASKS, UserDataScope.PROJECTS];
         return {
           hasAccess: isManager && leadScopes.includes(dataScope),
           accessLevel: 'ELEVATED',
@@ -631,9 +668,10 @@ export class UserHierarchyService {
         };
 
       case UserRelationType.COLLABORATES:
-        const collabScopes = [UserDataScope.PROFILE, UserDataScope.TASKS, UserDataScope.PROJECTS];
+        const collabScopes: UserDataScope[] = [UserDataScope.PROFILE, UserDataScope.TASKS, UserDataScope.PROJECTS];
+        const allowedActions: UserAction[] = [UserAction.VIEW, UserAction.EDIT];
         return {
-          hasAccess: collabScopes.includes(dataScope) && [UserAction.VIEW, UserAction.EDIT].includes(action),
+          hasAccess: collabScopes.includes(dataScope) && allowedActions.includes(action),
           accessLevel: 'STANDARD',
           grantedScopes: collabScopes,
           deniedScopes: [UserDataScope.PERFORMANCE, UserDataScope.SETTINGS],
@@ -714,28 +752,31 @@ export class UserHierarchyService {
     visited.add(userId);
 
     // Pobierz bezpośrednich managerów
-    const managerRelations = await prisma.userRelation.findMany({
+    const managerRelations = await prisma.user_relations.findMany({
       where: {
         employeeId: userId,
         ...(includeInactive ? {} : { isActive: true })
       },
       include: {
-        manager: {
+        users_user_relations_managerIdTousers: {
           include: {
-            managerRelations: { where: { isActive: true } },
-            employeeRelations: { where: { isActive: true } }
+            user_relations_user_relations_managerIdTousers: { where: { isActive: true } },
+            user_relations_user_relations_employeeIdTousers: { where: { isActive: true } }
           }
         },
-        permissions: true
+        user_permissions: true
       }
     });
 
     const managers: UserWithHierarchy[] = [];
 
     for (const relation of managerRelations) {
-      const manager = relation.manager as UserWithHierarchy;
-      manager.managerRelations = [];
-      manager.employeeRelations = [];
+      const managerUser = relation.users_user_relations_managerIdTousers;
+      const manager = {
+        ...managerUser,
+        managerRelations: [],
+        employeeRelations: []
+      } as UserWithHierarchy;
       managers.push(manager);
 
       // Rekurencyjnie pobierz managerów managerów
@@ -769,28 +810,31 @@ export class UserHierarchyService {
     visited.add(userId);
 
     // Pobierz bezpośrednich podwładnych
-    const employeeRelations = await prisma.userRelation.findMany({
+    const employeeRelations = await prisma.user_relations.findMany({
       where: {
         managerId: userId,
         ...(includeInactive ? {} : { isActive: true })
       },
       include: {
-        employee: {
+        users_user_relations_employeeIdTousers: {
           include: {
-            managerRelations: { where: { isActive: true } },
-            employeeRelations: { where: { isActive: true } }
+            user_relations_user_relations_managerIdTousers: { where: { isActive: true } },
+            user_relations_user_relations_employeeIdTousers: { where: { isActive: true } }
           }
         },
-        permissions: true
+        user_permissions: true
       }
     });
 
     const employees: UserWithHierarchy[] = [];
 
     for (const relation of employeeRelations) {
-      const employee = relation.employee as UserWithHierarchy;
-      employee.managerRelations = [];
-      employee.employeeRelations = [];
+      const employeeUser = relation.users_user_relations_employeeIdTousers;
+      const employee = {
+        ...employeeUser,
+        managerRelations: [],
+        employeeRelations: []
+      } as UserWithHierarchy;
       employees.push(employee);
 
       // Rekurencyjnie pobierz podwładnych podwładnych
@@ -831,7 +875,7 @@ export class UserHierarchyService {
       visited.add(currentId);
 
       // Pobierz wszystkich podwładnych currentId
-      const subordinates = await prisma.userRelation.findMany({
+      const subordinates = await prisma.user_relations.findMany({
         where: {
           managerId: currentId,
           isActive: true
@@ -861,7 +905,7 @@ export class UserHierarchyService {
       recursionStack.add(nodeId);
 
       // Pobierz wszystkich podwładnych
-      const subordinates = await prisma.userRelation.findMany({
+      const subordinates = await prisma.user_relations.findMany({
         where: {
           managerId: nodeId,
           isActive: true
@@ -922,13 +966,13 @@ export class UserHierarchyService {
       visited.add(userId);
 
       // Sprawdź relacje w dół (jako manager)
-      const subordinateRelations = await prisma.userRelation.findMany({
+      const subordinateRelations = await prisma.user_relations.findMany({
         where: {
           managerId: userId,
           isActive: true,
           inheritanceRule: { not: UserInheritanceRule.NO_INHERITANCE }
         },
-        include: { permissions: true }
+        include: { user_permissions: true }
       });
 
       for (const relation of subordinateRelations) {
@@ -972,32 +1016,37 @@ export class UserHierarchyService {
    * Używa iteracyjnego BFS dla każdego root node
    */
   private async calculateMaxDepth(organizationId: string): Promise<number> {
-    // Znajdź wszystkich userów bez managerów (root nodes)
-    const allUsers = await prisma.user.findMany({
-      where: { organizationId },
-      select: { id: true }
-    });
+    try {
+      // Znajdź wszystkich userów bez managerów (root nodes)
+      const allUsers = await prisma.user.findMany({
+        where: { organizationId },
+        select: { id: true }
+      });
 
-    const usersWithManagers = await prisma.userRelation.findMany({
-      where: {
-        organizationId,
-        isActive: true
-      },
-      select: { employeeId: true },
-      distinct: ['employeeId']
-    });
+      const usersWithManagers = await prisma.user_relations.findMany({
+        where: {
+          organizationId,
+          isActive: true
+        },
+        select: { employeeId: true },
+        distinct: ['employeeId']
+      });
 
-    const managedUserIds = new Set(usersWithManagers.map(r => r.employeeId));
-    const rootUsers = allUsers.filter(u => !managedUserIds.has(u.id));
+      const managedUserIds = new Set(usersWithManagers.map(r => r.employeeId));
+      const rootUsers = allUsers.filter(u => !managedUserIds.has(u.id));
 
-    let maxDepth = 0;
+      let maxDepth = 0;
 
-    for (const root of rootUsers) {
-      const depth = await this.calculateDepthFromNode(root.id);
-      maxDepth = Math.max(maxDepth, depth);
+      for (const root of rootUsers) {
+        const depth = await this.calculateDepthFromNode(root.id);
+        maxDepth = Math.max(maxDepth, depth);
+      }
+
+      return maxDepth;
+    } catch (error) {
+      console.error('Error calculating max depth:', error);
+      return 0;
     }
-
-    return maxDepth;
   }
 
   /**
@@ -1007,7 +1056,7 @@ export class UserHierarchyService {
     if (visited.has(userId)) return 0;
     visited.add(userId);
 
-    const subordinates = await prisma.userRelation.findMany({
+    const subordinates = await prisma.user_relations.findMany({
       where: {
         managerId: userId,
         isActive: true

@@ -12,13 +12,15 @@ const vectorService = new VectorService(prisma);
 // Validation schemas
 const searchSchema = z.object({
   query: z.string().min(1, 'Query is required'),
-  limit: z.number().min(1).max(50).optional().default(10),
-  threshold: z.number().min(0).max(1).optional().default(0.7),
+  limit: z.number().min(1).max(1000).optional().default(100),
+  threshold: z.number().min(0).max(1).optional().default(0.3),
   filters: z.object({
     entityType: z.string().optional(),
     entityId: z.string().optional(),
     language: z.string().optional(),
-    source: z.string().optional()
+    source: z.string().optional(),
+    timeRange: z.enum(['all', 'today', 'week', 'month', 'quarter', 'year']).optional().default('all'),
+    type: z.string().optional() // alias for entityType from frontend
   }).optional().default({}),
   useCache: z.boolean().optional().default(true)
 });
@@ -51,12 +53,18 @@ router.post('/search', async (req, res) => {
     const { query, limit, threshold, filters, useCache } = searchSchema.parse(req.body);
     const organizationId = req.user.organizationId;
 
-    logger.info(`Vector search: "${query}" by ${req.user.email}`);
+    // Map frontend 'type' to backend 'entityType'
+    const mappedFilters = {
+      ...filters,
+      entityType: filters.type && filters.type !== 'all' ? filters.type : filters.entityType
+    };
+
+    logger.info(`Vector search: "${query}" by ${req.user.email} (timeRange: ${filters.timeRange}, limit: ${limit})`);
 
     const results = await vectorService.searchSimilar(organizationId, query, {
       limit,
       threshold,
-      filters,
+      filters: mappedFilters,
       useCache
     });
 
@@ -278,6 +286,150 @@ router.post('/cache/cleanup', async (req, res) => {
     res.status(500).json({
       success: false,
       error: 'Cache cleanup failed'
+    });
+  }
+});
+
+/**
+ * POST /api/v1/vector-search/index-all
+ * Index all entities for RAG (tasks, projects, contacts, deals, companies, knowledge)
+ */
+router.post('/index-all', async (req, res) => {
+  try {
+    const organizationId = req.user.organizationId;
+    const { force = false } = req.body;
+
+    logger.info(`Starting full RAG indexing for org ${organizationId} (force: ${force})`);
+
+    const results = {
+      tasks: 0,
+      projects: 0,
+      contacts: 0,
+      deals: 0,
+      companies: 0,
+      knowledge: 0,
+      streams: 0,
+      errors: [] as string[]
+    };
+
+    // Index all entity types
+    try {
+      results.tasks = await syncTasks(organizationId, undefined, force);
+    } catch (e: any) {
+      results.errors.push(`Tasks: ${e.message}`);
+    }
+
+    try {
+      results.projects = await syncProjects(organizationId, undefined, force);
+    } catch (e: any) {
+      results.errors.push(`Projects: ${e.message}`);
+    }
+
+    try {
+      results.contacts = await syncContacts(organizationId, undefined, force);
+    } catch (e: any) {
+      results.errors.push(`Contacts: ${e.message}`);
+    }
+
+    try {
+      results.deals = await syncDeals(organizationId, undefined, force);
+    } catch (e: any) {
+      results.errors.push(`Deals: ${e.message}`);
+    }
+
+    try {
+      results.companies = await syncCompanies(organizationId, undefined, force);
+    } catch (e: any) {
+      results.errors.push(`Companies: ${e.message}`);
+    }
+
+    try {
+      results.knowledge = await syncKnowledge(organizationId, undefined, force);
+    } catch (e: any) {
+      results.errors.push(`Knowledge: ${e.message}`);
+    }
+
+    try {
+      const streamResult = await vectorService.indexStreams(organizationId);
+      results.streams = streamResult.indexed;
+    } catch (e: any) {
+      results.errors.push(`Streams: ${e.message}`);
+    }
+
+    const totalIndexed = results.tasks + results.projects + results.contacts +
+                         results.deals + results.companies + results.knowledge + results.streams;
+
+    logger.info(`RAG indexing complete: ${totalIndexed} documents indexed`);
+
+    res.json({
+      success: true,
+      data: {
+        totalIndexed,
+        breakdown: results,
+        message: `Zaindeksowano ${totalIndexed} dokumentów do bazy wektorowej`
+      }
+    });
+
+  } catch (error) {
+    logger.error('Full RAG indexing error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Indeksowanie RAG nie powiodło się'
+    });
+  }
+});
+
+/**
+ * GET /api/v1/vector-search/status
+ * Get RAG system status and statistics
+ */
+router.get('/status', async (req, res) => {
+  try {
+    const organizationId = req.user.organizationId;
+
+    // Get document counts
+    const [vectorDocs, ragEmbeddings, cacheEntries] = await Promise.all([
+      prisma.vector_documents.count({ where: { organizationId } }),
+      prisma.$queryRawUnsafe<any[]>(`
+        SELECT COUNT(*)::int as count FROM rag_embeddings WHERE organization_id = $1
+      `, organizationId),
+      prisma.vector_cache.count({ where: { organizationId } })
+    ]);
+
+    // Check if OpenAI is configured
+    const openAIProvider = await prisma.ai_providers.findFirst({
+      where: {
+        status: 'ACTIVE',
+        OR: [{ name: 'openai' }, { name: 'OpenAI' }]
+      }
+    });
+
+    const hasOpenAIKey = openAIProvider?.config &&
+                         (openAIProvider.config as any).apiKey?.length > 10;
+
+    res.json({
+      success: true,
+      data: {
+        status: hasOpenAIKey ? 'operational' : 'limited',
+        embeddingsProvider: hasOpenAIKey ? 'OpenAI' : 'Mock (ograniczona funkcjonalność)',
+        documentCounts: {
+          vectorDocuments: vectorDocs,
+          ragEmbeddings: ragEmbeddings[0]?.count || 0,
+          cacheEntries
+        },
+        configuration: {
+          hasOpenAIKey,
+          embeddingModel: 'text-embedding-3-small',
+          embeddingDimension: 1536
+        }
+      }
+    });
+
+  } catch (error) {
+    logger.error('RAG status error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Nie udało się pobrać statusu RAG'
     });
   }
 });

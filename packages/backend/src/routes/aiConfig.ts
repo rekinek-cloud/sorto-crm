@@ -729,17 +729,48 @@ router.put('/providers/:providerId/config',
   async (req, res) => {
     try {
       const { providerId } = req.params;
-      const config = req.body;
+      const newConfig = req.body;
+      const organizationId = req.user!.organizationId;
 
-      // In real app, update configuration
-      logger.info(`AI provider ${providerId} config updated by ${req.user!.email}`);
+      // Find the provider
+      const provider = await prisma.aIProvider.findFirst({
+        where: {
+          id: providerId,
+          organizationId
+        }
+      });
+
+      if (!provider) {
+        throw new AppError('Provider not found', 404);
+      }
+
+      // Merge existing config with new config
+      const existingConfig = (provider.config as Record<string, any>) || {};
+      const mergedConfig = { ...existingConfig, ...newConfig };
+
+      // Update provider configuration in database
+      const updatedProvider = await prisma.aIProvider.update({
+        where: { id: providerId },
+        data: {
+          config: mergedConfig,
+          updatedAt: new Date()
+        }
+      });
+
+      logger.info(`AI provider ${provider.name} (${providerId}) config updated by ${req.user!.email}`);
 
       res.json({
         success: true,
-        message: 'Provider configuration updated successfully'
+        message: 'Provider configuration updated successfully',
+        data: {
+          id: updatedProvider.id,
+          name: updatedProvider.name,
+          config: updatedProvider.config
+        }
       });
     } catch (error) {
       logger.error('Failed to update provider config:', error);
+      if (error instanceof AppError) throw error;
       throw new AppError('Failed to update provider configuration', 500);
     }
   }

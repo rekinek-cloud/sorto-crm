@@ -64,7 +64,7 @@ export class AIRouter {
           this.providers.set(providerConfig.name, provider);
           console.log(`✅ ${providerConfig.name} provider initialized successfully`);
         } else {
-          console.log(`❌ ${providerConfig.name} provider validation failed`);
+          console.log(`ℹ️ ${providerConfig.name} provider skipped (no API key configured)`);
         }
       } catch (error) {
         console.error(`Failed to initialize provider ${providerConfig.name}:`, error);

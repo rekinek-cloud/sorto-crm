@@ -45,7 +45,7 @@ export class InvoiceService {
       this.fakturowniaClient = createFakturowniaClient(fakturowniaConfig);
       logger.info('Fakturownia client initialized');
     } else {
-      logger.warn('Fakturownia configuration missing');
+      logger.info('Fakturownia integration not configured (optional)');
     }
   }
 

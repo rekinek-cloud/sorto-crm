@@ -1,12 +1,17 @@
 /**
  * 🧠 Vector Store Service
  * Manages embeddings and semantic search for Voice AI
+ * Updated: Now uses pgvector for native similarity search
  */
 
 import { PrismaClient } from '@prisma/client';
 import OpenAI from 'openai';
 import { z } from 'zod';
 import { getAIConfigService } from './AIConfigService';
+
+// Use pgvector with text-embedding-3-large (3072 dimensions)
+const EMBEDDING_MODEL = 'text-embedding-3-large';
+const EMBEDDING_DIMENSION = 3072;
 
 export interface VectorDocument {
   id: string;
@@ -47,51 +52,53 @@ export interface SearchOptions {
 
 /**
  * Vector Store for semantic search and RAG
+ * Uses pgvector for native similarity search in PostgreSQL
  */
 export class VectorStore {
   private prisma: PrismaClient;
   private aiConfigService: any;
-  private embeddingDimension = 1536;
+  private embeddingDimension = EMBEDDING_DIMENSION;
+  private usePgVector = true; // Enable pgvector
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
     this.aiConfigService = getAIConfigService(prisma);
 
-    console.log('🧠 VectorStore initialized with AI config service');
+    console.log(`🧠 VectorStore initialized (pgvector mode, ${EMBEDDING_DIMENSION} dimensions)`);
   }
 
   /**
-   * Create embedding for text content
+   * Create embedding for text content using text-embedding-3-large
    */
   async createEmbedding(text: string, organizationId: string): Promise<number[]> {
     try {
       console.log(`🔢 Creating embedding for: "${text.substring(0, 100)}..."`);
-      
+
       // Get OpenAI client from config service
       const openaiClient = await this.aiConfigService.getOpenAIClient(organizationId);
-      const config = await this.aiConfigService.getOpenAIConfig(organizationId);
-      
+
+      // Use text-embedding-3-large for better quality
       const response = await openaiClient.embeddings.create({
-        model: config.embeddingModel,
-        input: text.trim(),
+        model: EMBEDDING_MODEL,
+        input: text.trim().substring(0, 8000), // Limit text length
         encoding_format: 'float',
       });
 
       const embedding = response.data[0].embedding;
-      console.log(`✅ Embedding created: ${embedding.length} dimensions`);
-      
+      console.log(`✅ Embedding created: ${embedding.length} dimensions (model: ${EMBEDDING_MODEL})`);
+
       // Update usage statistics
       await this.aiConfigService.updateUsageStats(
         organizationId,
         'openai',
-        config.embeddingModel,
+        EMBEDDING_MODEL,
         {
-          promptTokens: Math.ceil(text.length / 4), // Rough estimate
+          promptTokens: Math.ceil(text.length / 4),
           completionTokens: 0,
           totalTokens: Math.ceil(text.length / 4)
         }
       );
-      
+
       return embedding;
     } catch (error) {
       console.error('Embedding creation failed:', error);
@@ -100,40 +107,43 @@ export class VectorStore {
   }
 
   /**
-   * Store document with embedding
+   * Store document with embedding using pgvector
    */
   async storeDocument(document: Omit<VectorDocument, 'embedding'>): Promise<VectorDocument> {
     try {
       console.log(`📥 Storing document: ${document.metadata.type}/${document.id}`);
-      
+
       // Create embedding for content
       const embedding = await this.createEmbedding(document.content, document.metadata.organizationId);
-      
+      const embeddingStr = `[${embedding.join(',')}]`;
+
       const fullDocument: VectorDocument = {
         ...document,
         embedding
       };
 
-      // Store in database (using JSON for embeddings since pgvector not available)
-      await this.prisma.$executeRaw`
+      // Store in database with pgvector
+      await this.prisma.$executeRawUnsafe(`
         INSERT INTO vectors (
-          id, content, metadata, embedding_data, created_at, updated_at
+          id, content, metadata, embedding, embedding_data, created_at, updated_at
         ) VALUES (
-          ${document.id},
-          ${document.content},
-          ${JSON.stringify(document.metadata)},
-          ${JSON.stringify(embedding)},
+          $1,
+          $2,
+          $3::jsonb,
+          $4::vector(${EMBEDDING_DIMENSION}),
+          $5,
           NOW(),
           NOW()
         )
         ON CONFLICT (id) DO UPDATE SET
           content = EXCLUDED.content,
           metadata = EXCLUDED.metadata,
+          embedding = EXCLUDED.embedding,
           embedding_data = EXCLUDED.embedding_data,
           updated_at = NOW()
-      `;
+      `, document.id, document.content, JSON.stringify(document.metadata), embeddingStr, JSON.stringify(embedding));
 
-      console.log(`✅ Document stored: ${document.id}`);
+      console.log(`✅ Document stored with pgvector: ${document.id}`);
       return fullDocument;
     } catch (error) {
       console.error('Document storage failed:', error);
@@ -169,99 +179,91 @@ export class VectorStore {
   }
 
   /**
-   * Search documents by semantic similarity
+   * Search documents by semantic similarity using pgvector
+   * Uses native PostgreSQL vector operators for high performance
    */
   async search(query: string, options: SearchOptions = {}): Promise<SearchResult[]> {
     try {
-      console.log(`🔍 Searching for: "${query}"`);
-      
-      // Create embedding for search query
+      console.log(`🔍 [PGVECTOR] Searching for: "${query.substring(0, 50)}..."`);
+
       if (!options.organizationId) {
         throw new Error('organizationId is required for search');
       }
+
+      // Create embedding for search query
       const queryEmbedding = await this.createEmbedding(query, options.organizationId);
-      
-      // Build WHERE clause based on options
-      let whereClause = 'WHERE 1=1';
-      const params: any[] = [JSON.stringify(queryEmbedding)];
-      let paramIndex = 1;
+      const embeddingStr = `[${queryEmbedding.join(',')}]`;
 
-      if (options.userId) {
-        whereClause += ` AND (metadata->>'userId' = $${++paramIndex} OR metadata->>'type' = 'knowledge')`;
-        params.push(options.userId);
-      }
+      const limit = options.limit || 10;
+      const threshold = options.threshold || 0.5;
 
-      if (options.organizationId) {
-        whereClause += ` AND metadata->>'organizationId' = $${++paramIndex}`;
-        params.push(options.organizationId);
-      }
-
+      // Build type filter
+      let typeFilter = '';
       if (options.types && options.types.length > 0) {
-        whereClause += ` AND metadata->>'type' = ANY($${++paramIndex})`;
-        params.push(options.types);
+        const types = options.types.map(t => `'${t}'`).join(',');
+        typeFilter = `AND metadata->>'type' = ANY(ARRAY[${types}])`;
       }
 
+      // Build source filter
+      let sourceFilter = '';
       if (options.sources && options.sources.length > 0) {
-        whereClause += ` AND metadata->>'source' = ANY($${++paramIndex})`;
-        params.push(options.sources);
+        const sources = options.sources.map(s => `'${s}'`).join(',');
+        sourceFilter = `AND metadata->>'source' = ANY(ARRAY[${sources}])`;
       }
 
-      if (!options.includeExternal) {
-        whereClause += ` AND metadata->>'type' != 'external'`;
-      }
+      // External filter
+      const externalFilter = !options.includeExternal
+        ? "AND metadata->>'type' != 'external'"
+        : '';
 
-      if (options.dateRange) {
-        whereClause += ` AND (metadata->>'createdAt')::timestamp BETWEEN $${++paramIndex} AND $${++paramIndex}`;
-        params.push(options.dateRange.from.toISOString(), options.dateRange.to.toISOString());
-      }
+      // User filter
+      const userFilter = options.userId
+        ? `AND (metadata->>'userId' = '${options.userId}' OR metadata->>'type' = 'knowledge')`
+        : '';
 
-      // Execute semantic search query (using JavaScript cosine similarity since no pgvector)
-      const rawResults = await this.prisma.$queryRaw<Array<{
+      // Execute pgvector native similarity search
+      const rawResults = await this.prisma.$queryRawUnsafe<Array<{
         id: string;
         content: string;
-        metadata: string;
-        embedding_data: string;
-      }>>`
-        SELECT 
+        metadata: any;
+        similarity: number;
+      }>>(`
+        SELECT
           id,
           content,
           metadata,
-          embedding_data
+          1 - (embedding <=> $1::vector(${EMBEDDING_DIMENSION})) as similarity
         FROM vectors
-        ${whereClause}
-      `;
+        WHERE metadata->>'organizationId' = $2
+          AND embedding IS NOT NULL
+          ${typeFilter}
+          ${sourceFilter}
+          ${externalFilter}
+          ${userFilter}
+          AND 1 - (embedding <=> $1::vector(${EMBEDDING_DIMENSION})) > $3
+        ORDER BY embedding <=> $1::vector(${EMBEDDING_DIMENSION})
+        LIMIT $4
+      `, embeddingStr, options.organizationId, threshold, limit);
 
-      // Calculate cosine similarity in JavaScript
-      const results = rawResults.map(row => {
-        const docEmbedding = JSON.parse(row.embedding_data);
-        const similarity = this.calculateCosineSimilarity(queryEmbedding, docEmbedding);
-        
+      // Transform results
+      const searchResults: SearchResult[] = rawResults.map(row => {
+        const metadata = typeof row.metadata === 'string'
+          ? JSON.parse(row.metadata)
+          : row.metadata;
+
         return {
-          id: row.id,
-          content: row.content,
-          metadata: row.metadata,
-          similarity
-        };
-      }).sort((a, b) => b.similarity - a.similarity)
-        .slice(0, options.limit || 10);
-
-      // Filter by threshold and transform results
-      const threshold = options.threshold || 0.5;
-      const searchResults: SearchResult[] = results
-        .filter(row => row.similarity >= threshold)
-        .map(row => ({
           document: {
             id: row.id,
             content: row.content,
-            metadata: JSON.parse(row.metadata),
-            embedding: [] // Don't return embeddings in search results
+            metadata,
+            embedding: [] // Don't return embeddings
           },
           similarity: row.similarity,
-          relevanceScore: this.calculateRelevanceScore(row.similarity, JSON.parse(row.metadata))
-        }))
-        .sort((a, b) => b.relevanceScore - a.relevanceScore);
+          relevanceScore: this.calculateRelevanceScore(row.similarity, metadata)
+        };
+      }).sort((a, b) => b.relevanceScore - a.relevanceScore);
 
-      console.log(`✅ Search completed: ${searchResults.length} results (threshold: ${threshold})`);
+      console.log(`✅ [PGVECTOR] Search completed: ${searchResults.length} results (threshold: ${threshold})`);
       return searchResults;
     } catch (error) {
       console.error('Vector search failed:', error);
