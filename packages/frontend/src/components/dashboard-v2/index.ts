@@ -1,13 +1,6 @@
-/**
- * Dashboard V2 - Bento Grid Components
- * Modern dashboard with widgets and AI integration
- */
-
-// Core components
-export { BentoGrid } from './BentoGrid';
-export { BentoCard, BentoCardSkeleton } from './BentoCard';
-
-// Widgets
+// Dashboard V2 Components - Bento Grid Layout
+export { BentoGrid, BentoItem } from './BentoGrid';
+export { BentoCard, MiniStat, ProgressBar } from './BentoCard';
 export { PipelineWidget } from './PipelineWidget';
 export { TasksWidget } from './TasksWidget';
 export { GoalsTodayWidget } from './GoalsTodayWidget';
@@ -17,5 +10,5 @@ export { AIInsightsWidget } from './AIInsightsWidget';
 export { QuickActionsWidget } from './QuickActionsWidget';
 export { ActivityFeedWidget } from './ActivityFeedWidget';
 
-// Default export
-export { BentoGrid as default } from './BentoGrid';
+// Re-export types
+export type { BentoCardVariant, BentoCardSize } from './BentoCard';

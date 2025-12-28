@@ -8,19 +8,20 @@ const WORKING_PAGES = [
   { path: '/crm/dashboard/source', title: 'Source' },
 ];
 
-// Strony ktore moga zwracac 404 (jeszcze nie zdeployowane)
+// Strony ktore istnieja w /dashboard/
 const PAGES_TO_TEST = [
   { path: '/crm/dashboard/team', title: 'Zespol' },
-  { path: '/crm/gtd', title: 'GTD' },
-  { path: '/crm/gtd/inbox', title: 'Inbox' },
-  { path: '/crm/gtd/projects', title: 'Projekty' },
-  { path: '/crm/clients', title: 'Klienci' },
-  { path: '/crm/deals', title: 'Transakcje' },
-  { path: '/crm/deals/pipeline', title: 'Pipeline' },
-  { path: '/crm/calendar', title: 'Kalendarz' },
-  { path: '/crm/settings', title: 'Ustawienia' },
-  { path: '/crm/ai/assistant', title: 'AI Asystent' },
-  { path: '/crm/reports', title: 'Raporty' },
+  { path: '/crm/dashboard/contacts', title: 'Kontakty' },
+  { path: '/crm/dashboard/companies', title: 'Firmy' },
+  { path: '/crm/dashboard/deals', title: 'Transakcje' },
+  { path: '/crm/dashboard/pipeline', title: 'Pipeline' },
+  { path: '/crm/dashboard/calendar', title: 'Kalendarz' },
+  { path: '/crm/dashboard/settings', title: 'Ustawienia' },
+  { path: '/crm/dashboard/ai-assistant', title: 'AI Asystent' },
+  { path: '/crm/dashboard/reports', title: 'Raporty' },
+  { path: '/crm/dashboard/tasks', title: 'Zadania' },
+  { path: '/crm/dashboard/projects', title: 'Projekty' },
+  { path: '/crm/dashboard/streams', title: 'Strumienie' },
 ];
 
 test.describe('CRM - Strony dzialajace (HTTP 200)', () => {
@@ -37,6 +38,9 @@ test.describe('CRM - Strony dzialajace (HTTP 200)', () => {
 
       // Sprawdz czy strona ma podstawowa strukture HTML
       await expect(page.locator('body')).toBeVisible();
+
+      // Wait for page to stabilize (handle client-side redirects)
+      await page.waitForTimeout(1000);
 
       // Sprawdz czy strona ma zawartosc
       const html = await page.content();
@@ -176,7 +180,7 @@ test.describe('CRM - Bezpieczenstwo i bledy', () => {
   });
 
   test('Strona logowania laduje sie poprawnie', async ({ page }) => {
-    const response = await page.goto('/auth/login', { waitUntil: 'domcontentloaded' });
+    const response = await page.goto('/crm/auth/login', { waitUntil: 'domcontentloaded' });
     expect(response?.status()).toBe(200);
 
     // Sprawdz czy formularz logowania istnieje
@@ -185,7 +189,7 @@ test.describe('CRM - Bezpieczenstwo i bledy', () => {
   });
 
   test('Strona rejestracji laduje sie poprawnie', async ({ page }) => {
-    const response = await page.goto('/auth/register', { waitUntil: 'domcontentloaded' });
+    const response = await page.goto('/crm/auth/register', { waitUntil: 'domcontentloaded' });
     expect(response?.status()).toBe(200);
   });
 });

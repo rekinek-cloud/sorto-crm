@@ -1,169 +1,185 @@
-/**
- * BentoCard - Universal card component for dashboard widgets
- */
-
 'use client';
 
-import { ReactNode } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
+import { LucideIcon, TrendingUp, TrendingDown } from 'lucide-react';
 
-type CardSize = 'sm' | 'md' | 'lg' | 'xl' | 'wide' | 'tall';
-type CardVariant = 'default' | 'gradient' | 'glass' | 'neon' | 'solid';
-type GradientColor = 'purple' | 'blue' | 'green' | 'orange' | 'pink' | 'cyan' | 'amber';
+export type BentoCardVariant = 'default' | 'glass' | 'gradient' | 'neon';
+export type BentoCardSize = 'sm' | 'md' | 'lg' | 'xl';
 
 interface BentoCardProps {
-  title?: string;
-  icon?: string;
-  size?: CardSize;
-  variant?: CardVariant;
-  gradient?: GradientColor;
+  title: string;
+  subtitle?: string;
+  icon?: LucideIcon;
+  iconColor?: string;
+  value?: string | number;
   trend?: {
     value: number;
     label?: string;
-    direction?: 'up' | 'down';
   };
-  children: ReactNode;
-  className?: string;
-  onClick?: () => void;
+  variant?: BentoCardVariant;
+  size?: BentoCardSize;
   loading?: boolean;
+  onClick?: () => void;
+  className?: string;
+  children?: React.ReactNode;
+  footer?: React.ReactNode;
+  headerAction?: React.ReactNode;
 }
-
-const sizeClasses: Record<CardSize, string> = {
-  sm: 'col-span-1 row-span-1',
-  md: 'col-span-1 row-span-1 sm:col-span-1',
-  lg: 'col-span-1 row-span-2 sm:col-span-2 sm:row-span-1',
-  xl: 'col-span-1 row-span-2 sm:col-span-2 lg:col-span-2 lg:row-span-2',
-  wide: 'col-span-1 sm:col-span-2',
-  tall: 'col-span-1 row-span-2'
-};
-
-const gradientClasses: Record<GradientColor, string> = {
-  purple: 'bg-gradient-to-br from-purple-500 to-indigo-600',
-  blue: 'bg-gradient-to-br from-blue-500 to-cyan-500',
-  green: 'bg-gradient-to-br from-emerald-500 to-teal-500',
-  orange: 'bg-gradient-to-br from-orange-500 to-red-500',
-  pink: 'bg-gradient-to-br from-pink-500 to-rose-500',
-  cyan: 'bg-gradient-to-br from-cyan-400 to-blue-500',
-  amber: 'bg-gradient-to-br from-amber-400 to-orange-500'
-};
-
-const variantClasses: Record<CardVariant, string> = {
-  default: 'bg-white border border-gray-200 shadow-sm',
-  gradient: '', // Will use gradientClasses
-  glass: 'bg-white/80 backdrop-blur-lg border border-white/30 shadow-xl',
-  neon: 'bg-gray-900 border border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.3)]',
-  solid: 'bg-gray-50 border border-gray-100'
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20, scale: 0.95 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      type: 'spring',
-      stiffness: 260,
-      damping: 20
-    }
-  }
-};
 
 export function BentoCard({
   title,
-  icon,
-  size = 'md',
-  variant = 'default',
-  gradient = 'purple',
+  subtitle,
+  icon: Icon,
+  iconColor = "text-blue-400",
+  value,
   trend,
-  children,
-  className = '',
+  variant = "glass",
+  size = "md",
+  loading = false,
   onClick,
-  loading = false
+  className = "",
+  children,
+  footer,
+  headerAction,
 }: BentoCardProps) {
-  const isGradient = variant === 'gradient';
-  const isNeon = variant === 'neon';
-  const textColor = isGradient || isNeon ? 'text-white' : 'text-gray-900';
-  const subTextColor = isGradient || isNeon ? 'text-white/70' : 'text-gray-500';
+  const variantStyles: Record<BentoCardVariant, string> = {
+    default: "bg-white border-slate-200 shadow-sm",
+    glass: "bg-white/80 backdrop-blur-xl border-slate-200 shadow-sm",
+    gradient: "bg-gradient-to-br from-white to-slate-50 border-slate-200 shadow-sm",
+    neon: "bg-white border-blue-200 shadow-md shadow-blue-100",
+  };
 
-  return (
-    <motion.div
-      variants={itemVariants}
-      whileHover={onClick ? { scale: 1.02, transition: { duration: 0.2 } } : undefined}
-      className={`
-        ${sizeClasses[size]}
-        ${isGradient ? gradientClasses[gradient] : variantClasses[variant]}
-        rounded-2xl p-5 overflow-hidden relative
-        ${onClick ? 'cursor-pointer' : ''}
-        ${className}
-      `}
-      onClick={onClick}
-    >
-      {/* Loading overlay */}
+  const sizeStyles: Record<BentoCardSize, string> = {
+    sm: "p-3",
+    md: "p-4",
+    lg: "p-5",
+    xl: "p-6",
+  };
+
+  const isClickable = typeof onClick === "function";
+
+  const baseClasses = [
+    "relative rounded-2xl border overflow-hidden",
+    "transition-all duration-300 ease-out",
+    variantStyles[variant],
+    sizeStyles[size],
+    isClickable ? "cursor-pointer hover:border-slate-300 hover:shadow-md" : "",
+    className
+  ].filter(Boolean).join(" ");
+
+  const content = (
+    <>
       {loading && (
-        <div className="absolute inset-0 bg-white/50 backdrop-blur-sm flex items-center justify-center z-10 rounded-2xl">
-          <div className="w-6 h-6 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-20 rounded-2xl">
+          <div className="w-6 h-6 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
         </div>
       )}
 
-      {/* Header */}
-      {(title || icon) && (
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            {icon && <span className="text-xl">{icon}</span>}
-            {title && (
-              <h3 className={`font-semibold ${textColor} text-sm uppercase tracking-wide`}>
-                {title}
-              </h3>
+      <div className="flex items-start justify-between mb-3">
+        <div className="flex items-center gap-3">
+          {Icon && (
+            <div className={"p-2 rounded-xl bg-slate-100 " + iconColor}>
+              <Icon className="w-5 h-5" />
+            </div>
+          )}
+          <div>
+            <h3 className="font-semibold text-slate-800 text-sm">{title}</h3>
+            {subtitle && (
+              <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
             )}
           </div>
+        </div>
+        {headerAction}
+      </div>
+
+      {(value !== undefined || trend) && (
+        <div className="flex items-end justify-between mb-3">
+          {value !== undefined && (
+            <div className="text-2xl font-bold text-slate-800">{value}</div>
+          )}
           {trend && (
-            <div className={`flex items-center gap-1 text-xs font-medium ${
-              trend.direction === 'up'
-                ? (isGradient ? 'text-green-200' : 'text-green-600')
-                : (isGradient ? 'text-red-200' : 'text-red-600')
-            }`}>
-              <span>{trend.direction === 'up' ? '▲' : '▼'}</span>
+            <div className={"flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full " + (trend.value >= 0 ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600")}>
+              {trend.value >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
               <span>{Math.abs(trend.value)}%</span>
-              {trend.label && <span className={subTextColor}>{trend.label}</span>}
+              {trend.label && <span className="text-slate-400 ml-1">{trend.label}</span>}
             </div>
           )}
         </div>
       )}
 
-      {/* Content */}
-      <div className={`${textColor} h-full`}>
-        {children}
-      </div>
+      {children && <div className="flex-1">{children}</div>}
 
-      {/* Decorative elements for gradient cards */}
-      {isGradient && (
-        <>
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
-          <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-black/10 rounded-full blur-xl" />
-        </>
+      {footer && (
+        <div className="mt-3 pt-3 border-t border-slate-100">{footer}</div>
       )}
+    </>
+  );
 
-      {/* Neon glow effect */}
-      {isNeon && (
-        <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-purple-500/10 to-blue-500/10 pointer-events-none" />
-      )}
-    </motion.div>
+  if (isClickable) {
+    return (
+      <motion.div
+        whileHover={{ scale: 1.01, y: -2 }}
+        whileTap={{ scale: 0.99 }}
+        onClick={onClick}
+        className={baseClasses}
+      >
+        {content}
+      </motion.div>
+    );
+  }
+
+  return <div className={baseClasses}>{content}</div>;
+}
+
+interface MiniStatProps {
+  label: string;
+  value: string | number;
+  color?: string;
+}
+
+export function MiniStat({ label, value, color = "text-blue-600" }: MiniStatProps) {
+  return (
+    <div className="flex items-center justify-between py-1">
+      <span className="text-xs text-slate-500">{label}</span>
+      <span className={"text-sm font-semibold " + color}>{value}</span>
+    </div>
   );
 }
 
-// Skeleton loader for BentoCard
-export function BentoCardSkeleton({ size = 'md' }: { size?: CardSize }) {
+interface ProgressBarProps {
+  value: number;
+  max?: number;
+  color?: string;
+  showLabel?: boolean;
+  size?: "sm" | "md";
+}
+
+export function ProgressBar({
+  value,
+  max = 100,
+  color = "bg-blue-500",
+  showLabel = false,
+  size = "sm",
+}: ProgressBarProps) {
+  const percentage = Math.min((value / max) * 100, 100);
+
   return (
-    <div className={`${sizeClasses[size]} bg-gray-100 rounded-2xl p-5 animate-pulse`}>
-      <div className="flex items-center gap-2 mb-3">
-        <div className="w-6 h-6 bg-gray-200 rounded" />
-        <div className="w-24 h-4 bg-gray-200 rounded" />
+    <div className="w-full">
+      <div className={"w-full bg-slate-200 rounded-full overflow-hidden " + (size === "sm" ? "h-1.5" : "h-2.5")}>
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: percentage + "%" }}
+          transition={{ duration: 0.5, ease: "easeOut" }}
+          className={"h-full rounded-full " + color}
+        />
       </div>
-      <div className="space-y-2">
-        <div className="w-full h-8 bg-gray-200 rounded" />
-        <div className="w-2/3 h-4 bg-gray-200 rounded" />
-      </div>
+      {showLabel && (
+        <div className="flex justify-between mt-1">
+          <span className="text-xs text-slate-500">{value}</span>
+          <span className="text-xs text-slate-400">{max}</span>
+        </div>
+      )}
     </div>
   );
 }

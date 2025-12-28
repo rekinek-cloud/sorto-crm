@@ -1,21 +1,16 @@
-/**
- * QuickActionsWidget - Quick action buttons
- */
-
 'use client';
 
+import React from 'react';
+import { Plus, FileText, Users, Calendar, Mail, Briefcase } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BentoCard } from './BentoCard';
-import { useRouter } from 'next/navigation';
 
 interface QuickAction {
   id: string;
-  icon: string;
   label: string;
+  icon: React.ElementType;
   color: string;
-  hoverColor: string;
-  path?: string;
-  onClick?: () => void;
+  onClick: () => void;
 }
 
 interface QuickActionsWidgetProps {
@@ -23,112 +18,75 @@ interface QuickActionsWidgetProps {
   onCreateDeal?: () => void;
   onCreateMeeting?: () => void;
   onCreateNote?: () => void;
-}
-
-const defaultActions: QuickAction[] = [
-  {
-    id: 'task',
-    icon: '✅',
-    label: 'Zadanie',
-    color: 'bg-blue-50 text-blue-600',
-    hoverColor: 'hover:bg-blue-100'
-  },
-  {
-    id: 'deal',
-    icon: '💰',
-    label: 'Deal',
-    color: 'bg-green-50 text-green-600',
-    hoverColor: 'hover:bg-green-100'
-  },
-  {
-    id: 'meeting',
-    icon: '📅',
-    label: 'Spotkanie',
-    color: 'bg-purple-50 text-purple-600',
-    hoverColor: 'hover:bg-purple-100'
-  },
-  {
-    id: 'note',
-    icon: '📝',
-    label: 'Notatka',
-    color: 'bg-orange-50 text-orange-600',
-    hoverColor: 'hover:bg-orange-100'
-  }
-];
-
-// Action button component
-function ActionButton({ action, onClick }: { action: QuickAction; onClick?: () => void }) {
-  return (
-    <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={onClick}
-      className={`
-        flex flex-col items-center justify-center p-3 rounded-xl
-        ${action.color} ${action.hoverColor}
-        transition-colors min-w-[70px]
-      `}
-    >
-      <span className="text-2xl mb-1">{action.icon}</span>
-      <span className="text-xs font-medium">{action.label}</span>
-    </motion.button>
-  );
+  onCreateContact?: () => void;
 }
 
 export function QuickActionsWidget({
   onCreateTask,
   onCreateDeal,
   onCreateMeeting,
-  onCreateNote
+  onCreateNote,
+  onCreateContact,
 }: QuickActionsWidgetProps) {
-  const router = useRouter();
-
-  const handleAction = (actionId: string) => {
-    switch (actionId) {
-      case 'task':
-        if (onCreateTask) {
-          onCreateTask();
-        } else {
-          router.push('/dashboard/tasks?create=true');
-        }
-        break;
-      case 'deal':
-        if (onCreateDeal) {
-          onCreateDeal();
-        } else {
-          router.push('/dashboard/deals?create=true');
-        }
-        break;
-      case 'meeting':
-        if (onCreateMeeting) {
-          onCreateMeeting();
-        } else {
-          router.push('/dashboard/calendar?create=meeting');
-        }
-        break;
-      case 'note':
-        if (onCreateNote) {
-          onCreateNote();
-        } else {
-          router.push('/dashboard/source?create=note');
-        }
-        break;
-    }
-  };
+  const actions: QuickAction[] = [
+    {
+      id: 'task',
+      label: 'Zadanie',
+      icon: Plus,
+      color: 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200',
+      onClick: onCreateTask || (() => {}),
+    },
+    {
+      id: 'deal',
+      label: 'Deal',
+      icon: Briefcase,
+      color: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200',
+      onClick: onCreateDeal || (() => {}),
+    },
+    {
+      id: 'meeting',
+      label: 'Spotkanie',
+      icon: Calendar,
+      color: 'bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200',
+      onClick: onCreateMeeting || (() => {}),
+    },
+    {
+      id: 'note',
+      label: 'Notatka',
+      icon: FileText,
+      color: 'bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-200',
+      onClick: onCreateNote || (() => {}),
+    },
+    {
+      id: 'contact',
+      label: 'Kontakt',
+      icon: Users,
+      color: 'bg-pink-50 text-pink-600 hover:bg-pink-100 border border-pink-200',
+      onClick: onCreateContact || (() => {}),
+    },
+  ];
 
   return (
     <BentoCard
-      title="Quick Actions"
-      icon="⚡"
+      title="Szybkie akcje"
+      subtitle="Utworz nowy element"
+      icon={Plus}
+      iconColor="text-green-600"
       variant="glass"
     >
-      <div className="grid grid-cols-2 gap-2 h-full">
-        {defaultActions.map((action) => (
-          <ActionButton
+      <div className="grid grid-cols-2 gap-2">
+        {actions.map((action, index) => (
+          <motion.button
             key={action.id}
-            action={action}
-            onClick={() => handleAction(action.id)}
-          />
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: index * 0.05 }}
+            onClick={action.onClick}
+            className={"flex items-center gap-2 p-2.5 rounded-xl transition-colors " + action.color}
+          >
+            <action.icon className="w-4 h-4" />
+            <span className="text-xs font-medium">{action.label}</span>
+          </motion.button>
         ))}
       </div>
     </BentoCard>

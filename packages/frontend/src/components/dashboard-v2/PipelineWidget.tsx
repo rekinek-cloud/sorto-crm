@@ -1,100 +1,73 @@
-/**
- * PipelineWidget - Shows pipeline value with mini chart
- */
-
 'use client';
 
-import { BentoCard } from './BentoCard';
+import React from 'react';
+import { TrendingUp, DollarSign } from 'lucide-react';
+import { BentoCard, ProgressBar } from './BentoCard';
 import { PipelineForecast } from '@/lib/api/dashboardApi';
 
 interface PipelineWidgetProps {
   data: PipelineForecast | null;
   loading?: boolean;
+  onClick?: () => void;
 }
 
-// Mini bar chart component
-function MiniBarChart({ data }: { data: Array<{ stage: string; weightedValue: number }> }) {
-  if (!data || data.length === 0) return null;
-
-  const maxValue = Math.max(...data.map(d => d.weightedValue), 1);
-
-  return (
-    <div className="flex items-end gap-1 h-10 mt-2">
-      {data.slice(0, 6).map((item, index) => {
-        const height = (item.weightedValue / maxValue) * 100;
-        return (
-          <div
-            key={index}
-            className="flex-1 bg-white/30 rounded-t transition-all hover:bg-white/50"
-            style={{ height: `${Math.max(height, 10)}%` }}
-            title={`${item.stage}: ${item.weightedValue.toLocaleString('pl-PL')} PLN`}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-// Health indicator
-function HealthBadge({ status, score }: { status: string; score: number }) {
-  const colors = {
-    healthy: 'bg-green-400/30 text-green-100',
-    warning: 'bg-yellow-400/30 text-yellow-100',
-    critical: 'bg-red-400/30 text-red-100'
-  };
-
-  return (
-    <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${colors[status as keyof typeof colors] || colors.warning}`}>
-      {score}%
-    </span>
-  );
-}
-
-export function PipelineWidget({ data, loading = false }: PipelineWidgetProps) {
-  const revenue = data?.totalWeightedRevenue || 0;
-  const health = data?.pipelineHealth || { score: 0, status: 'warning', issues: [] };
-  const forecasts = data?.forecasts || [];
-
-  // Format currency
+export function PipelineWidget({ data, loading = false, onClick }: PipelineWidgetProps) {
   const formatCurrency = (value: number) => {
     if (value >= 1000000) {
-      return `${(value / 1000000).toFixed(1)}M PLN`;
+      return (value / 1000000).toFixed(1) + "M PLN";
     }
     if (value >= 1000) {
-      return `${(value / 1000).toFixed(0)}k PLN`;
+      return (value / 1000).toFixed(0) + "K PLN";
     }
-    return `${value.toLocaleString('pl-PL')} PLN`;
+    return value.toFixed(0) + " PLN";
+  };
+
+  const healthColors: Record<string, string> = {
+    healthy: "bg-emerald-500",
+    warning: "bg-yellow-500",
+    critical: "bg-red-500",
   };
 
   return (
     <BentoCard
       title="Pipeline"
-      icon="📊"
-      variant="gradient"
-      gradient="purple"
+      subtitle="Prognoza przychodu"
+      icon={DollarSign}
+      iconColor="text-emerald-600"
+      value={data ? formatCurrency(data.totalWeightedRevenue) : "-"}
+      trend={data ? { value: 15, label: "vs tydzień" } : undefined}
       loading={loading}
+      onClick={onClick}
+      variant="glass"
     >
-      <div className="flex flex-col h-full justify-between">
-        <div>
-          <div className="text-3xl font-bold mb-1">
-            {formatCurrency(revenue)}
+      {data && (
+        <div className="space-y-3 mt-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-slate-500">Zdrowie pipeline:</span>
+            <div className="flex items-center gap-1">
+              <div className={"w-2 h-2 rounded-full " + (healthColors[data.pipelineHealth.status] || "bg-slate-500")} />
+              <span className="text-xs text-slate-800 font-medium capitalize">{data.pipelineHealth.score}%</span>
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-white/70 text-sm">
-            <span>Ważona wartość</span>
-            <HealthBadge status={health.status} score={health.score} />
-          </div>
+          
+          <ProgressBar
+            value={data.pipelineHealth.score}
+            max={100}
+            color={healthColors[data.pipelineHealth.status] || "bg-blue-500"}
+          />
+
+          {data.forecasts.length > 0 && (
+            <div className="grid grid-cols-2 gap-2 mt-3">
+              {data.forecasts.slice(0, 4).map((forecast, i) => (
+                <div key={i} className="text-xs">
+                  <span className="text-slate-500">{forecast.stage}:</span>
+                  <span className="text-slate-800 font-medium ml-1">{formatCurrency(forecast.weightedValue)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
-
-        {/* Mini chart */}
-        <MiniBarChart data={forecasts} />
-
-        {/* Issues hint */}
-        {health.issues && health.issues.length > 0 && (
-          <div className="text-xs text-white/60 mt-2 truncate">
-            {health.issues[0]}
-          </div>
-        )}
-      </div>
+      )}
     </BentoCard>
   );
 }
