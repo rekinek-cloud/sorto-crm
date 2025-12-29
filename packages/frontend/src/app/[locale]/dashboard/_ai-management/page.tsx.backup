@@ -1,0 +1,728 @@
+'use client';
+
+import React, { useState, useEffect, useCallback } from 'react';
+import { motion } from 'framer-motion';
+import { toast } from 'react-hot-toast';
+import { Tab } from '@headlessui/react';
+import {
+  PlusIcon,
+  Cog6ToothIcon,
+  SparklesIcon,
+  ServerIcon,
+  BoltIcon,
+  ChartBarIcon,
+  AdjustmentsHorizontalIcon,
+} from '@heroicons/react/24/outline';
+
+// Import komponenty z istniejących stron
+import { aiConfigApi, type AIModel, type AIProvider } from '@/lib/api/aiConfig';
+import { aiRulesApi, AIRule, RulesFilters } from '@/lib/api/aiRules';
+import AIRuleForm from '@/components/ai/AIRuleForm';
+import AIModelModal from '@/components/modals/AIModelModal';
+import AIProviderModal from '@/components/modals/AIProviderModal';
+
+// Auto-replies types (temporary until API is created)
+interface AutoReply {
+  id: string;
+  name: string;
+  subject: string;
+  content: string;
+  enabled: boolean;
+  triggerType: 'simple' | 'ai-enhanced';
+  conditions: {
+    fromEmail?: string;
+    keywords?: string[];
+    subject?: string;
+  };
+  aiModel?: string;
+  aiPrompt?: string;
+  sentCount: number;
+  lastSent?: string;
+}
+
+function classNames(...classes: string[]) {
+  return classes.filter(Boolean).join(' ');
+}
+
+export default function AIManagementPage() {
+  const [selectedTab, setSelectedTab] = useState(0);
+  
+  // States dla Providers & Models
+  const [providers, setProviders] = useState<AIProvider[]>([]);
+  const [models, setModels] = useState<AIModel[]>([]);
+  const [isProviderModalOpen, setIsProviderModalOpen] = useState(false);
+  const [isModelModalOpen, setIsModelModalOpen] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<AIProvider | null>(null);
+  const [selectedModel, setSelectedModel] = useState<AIModel | null>(null);
+  
+  // States dla AI Rules
+  const [rules, setRules] = useState<AIRule[]>([]);
+  const [isRuleFormOpen, setIsRuleFormOpen] = useState(false);
+  const [selectedRule, setSelectedRule] = useState<AIRule | null>(null);
+  const [filters, setFilters] = useState<RulesFilters>({});
+  
+  // States dla Auto-Replies
+  const [autoReplies, setAutoReplies] = useState<AutoReply[]>([]);
+  const [isAutoReplyFormOpen, setIsAutoReplyFormOpen] = useState(false);
+  const [selectedAutoReply, setSelectedAutoReply] = useState<AutoReply | null>(null);
+  
+  const [isLoading, setIsLoading] = useState(true);
+
+  const tabs = [
+    {
+      name: 'Providerzy AI',
+      icon: ServerIcon,
+      description: 'Zarządzaj providerami AI i konfiguracją API',
+    },
+    {
+      name: 'Modele AI',
+      icon: BoltIcon,
+      description: 'Konfiguruj dostępne modele i ich parametry',
+    },
+    {
+      name: 'Reguły AI',
+      icon: SparklesIcon,
+      description: 'Twórz i zarządzaj regułami automatyzacji AI',
+    },
+    {
+      name: 'Auto-Replies',
+      icon: PlusIcon,
+      description: 'Automatyczne odpowiedzi z AI i prostą logiką',
+    },
+    {
+      name: 'Statystyki',
+      icon: ChartBarIcon,
+      description: 'Monitoruj użycie i wydajność AI',
+    },
+  ];
+
+  // Mock data dla auto-replies (do momentu implementacji API)
+  const loadMockAutoReplies = () => {
+    const mockAutoReplies: AutoReply[] = [
+      {
+        id: '1',
+        name: 'Potwierdzenie otrzymania zapytania',
+        subject: 'Potwierdzenie otrzymania Twojego zapytania',
+        content: 'Dziękujemy za zapytanie. Skontaktujemy się w ciągu 24h.',
+        enabled: true,
+        triggerType: 'simple',
+        conditions: {
+          keywords: ['zapytanie', 'oferta', 'cena']
+        },
+        sentCount: 45,
+        lastSent: '2025-06-20T10:30:00Z'
+      },
+      {
+        id: '2',
+        name: 'AI Draft Oferty',
+        subject: 'Wstępna oferta dla Twojego projektu',
+        content: 'AI przygotowało wstępną ofertę...',
+        enabled: true,
+        triggerType: 'ai-enhanced',
+        conditions: {
+          keywords: ['projekt', 'wycena', 'budżet']
+        },
+        aiModel: 'gpt-4',
+        aiPrompt: 'Na podstawie treści emaila przygotuj profesjonalną ofertę wstępną',
+        sentCount: 12,
+        lastSent: '2025-06-21T09:15:00Z'
+      }
+    ];
+    setAutoReplies(mockAutoReplies);
+  };
+
+  // Load data for all tabs
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const [providersData, modelsData, rulesResponse] = await Promise.all([
+        aiConfigApi.getProviders(),
+        aiConfigApi.getModels(),
+        aiRulesApi.getRules(filters),
+      ]);
+      
+      setProviders(Array.isArray(providersData) ? providersData : []);
+      setModels(Array.isArray(modelsData) ? modelsData : []);
+      setRules(Array.isArray(rulesResponse?.rules) ? rulesResponse.rules : []);
+      
+      // Load mock auto-replies
+      loadMockAutoReplies();
+    } catch (error) {
+      console.error('Error loading AI data:', error);
+      toast.error('Błąd podczas ładowania danych AI');
+      // Set empty arrays as fallback
+      setProviders([]);
+      setModels([]);
+      setRules([]);
+      setAutoReplies([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filters]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  // Provider handlers
+  const handleProviderSubmit = async (provider: AIProvider) => {
+    try {
+      if (selectedProvider) {
+        await aiConfigApi.updateProvider(selectedProvider.id, provider);
+        toast.success('Provider zaktualizowany');
+      } else {
+        await aiConfigApi.createProvider(provider);
+        toast.success('Provider utworzony');
+      }
+      await loadData();
+      setIsProviderModalOpen(false);
+      setSelectedProvider(null);
+    } catch (error) {
+      toast.error('Błąd podczas zapisywania providera');
+    }
+  };
+
+  const handleProviderDelete = async (id: string) => {
+    if (confirm('Czy na pewno chcesz usunąć tego providera?')) {
+      try {
+        await aiConfigApi.deleteProvider(id);
+        toast.success('Provider usunięty');
+        await loadData();
+      } catch (error) {
+        toast.error('Błąd podczas usuwania providera');
+      }
+    }
+  };
+
+  // Model handlers
+  const handleModelSubmit = async (model: AIModel) => {
+    try {
+      if (selectedModel) {
+        await aiConfigApi.updateModel(selectedModel.id, model);
+        toast.success('Model zaktualizowany');
+      } else {
+        await aiConfigApi.createModel(model);
+        toast.success('Model utworzony');
+      }
+      await loadData();
+      setIsModelModalOpen(false);
+      setSelectedModel(null);
+    } catch (error) {
+      toast.error('Błąd podczas zapisywania modelu');
+    }
+  };
+
+  const handleModelDelete = async (id: string) => {
+    if (confirm('Czy na pewno chcesz usunąć ten model?')) {
+      try {
+        await aiConfigApi.deleteModel(id);
+        toast.success('Model usunięty');
+        await loadData();
+      } catch (error) {
+        toast.error('Błąd podczas usuwania modelu');
+      }
+    }
+  };
+
+  // Rule handlers
+  const handleRuleSubmit = async (rule: AIRule) => {
+    try {
+      await loadData();
+      setIsRuleFormOpen(false);
+      setSelectedRule(null);
+    } catch (error) {
+      toast.error('Błąd podczas zapisywania reguły');
+    }
+  };
+
+  const handleRuleDelete = async (id: string) => {
+    if (confirm('Czy na pewno chcesz usunąć tę regułę?')) {
+      try {
+        await aiRulesApi.deleteRule(id);
+        toast.success('Reguła usunięta');
+        await loadData();
+      } catch (error) {
+        toast.error('Błąd podczas usuwania reguły');
+      }
+    }
+  };
+
+  const handleRuleToggle = async (id: string, enabled: boolean) => {
+    try {
+      await aiRulesApi.toggleRule(id);
+      toast.success(enabled ? 'Reguła wyłączona' : 'Reguła włączona');
+      await loadData();
+    } catch (error) {
+      toast.error('Błąd podczas zmiany statusu reguły');
+    }
+  };
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="p-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg">
+            <AdjustmentsHorizontalIcon className="w-6 h-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Zarządzanie AI</h1>
+            <p className="text-gray-600">Centralne zarządzanie systemem sztucznej inteligencji</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs Navigation */}
+      <Tab.Group selectedIndex={selectedTab} onChange={setSelectedTab}>
+        <Tab.List className="flex space-x-1 rounded-xl bg-blue-900/20 p-1 mb-8">
+          {tabs.map((tab, index) => (
+            <Tab
+              key={index}
+              className={({ selected }) =>
+                classNames(
+                  'w-full rounded-lg py-2.5 px-4 text-sm font-medium leading-5',
+                  'ring-white ring-opacity-60 ring-offset-2 ring-offset-blue-400 focus:outline-none focus:ring-2',
+                  selected
+                    ? 'bg-white text-blue-700 shadow'
+                    : 'text-blue-100 hover:bg-white/[0.12] hover:text-white'
+                )
+              }
+            >
+              <div className="flex items-center space-x-2">
+                <tab.icon className="w-5 h-5" />
+                <span>{tab.name}</span>
+              </div>
+            </Tab>
+          ))}
+        </Tab.List>
+
+        <Tab.Panels>
+          {/* Providers Tab */}
+          <Tab.Panel>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Providerzy AI</h2>
+                  <p className="text-gray-600">Zarządzaj konfiguracją providerów AI</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedProvider(null);
+                    setIsProviderModalOpen(true);
+                  }}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  <PlusIcon className="w-5 h-5" />
+                  <span>Dodaj Provider</span>
+                </button>
+              </div>
+
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {providers.length === 0 ? (
+                    <div className="col-span-full text-center py-8 text-gray-500">
+                      Brak providerów AI. Dodaj pierwszego providera.
+                    </div>
+                  ) : (
+                    providers.map((provider) => (
+                  <div key={provider.id} className="bg-white rounded-lg shadow border p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-medium text-gray-900">{provider.name}</h3>
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        provider.enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {provider.enabled ? 'Aktywny' : 'Nieaktywny'}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 text-sm mb-4">{provider.type}</p>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => {
+                          setSelectedProvider(provider);
+                          setIsProviderModalOpen(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-800 text-sm"
+                      >
+                        Edytuj
+                      </button>
+                      <button
+                        onClick={() => handleProviderDelete(provider.id)}
+                        className="text-red-600 hover:text-red-800 text-sm"
+                      >
+                        Usuń
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              )}
+            </div>
+          )}
+            </motion.div>
+          </Tab.Panel>
+
+          {/* Models Tab */}
+          <Tab.Panel>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Modele AI</h2>
+                  <p className="text-gray-600">Konfiguruj dostępne modele AI</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedModel(null);
+                    setIsModelModalOpen(true);
+                  }}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  <PlusIcon className="w-5 h-5" />
+                  <span>Dodaj Model</span>
+                </button>
+              </div>
+
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {models.length === 0 ? (
+                    <div className="col-span-full text-center py-8 text-gray-500">
+                      Brak modeli AI. Dodaj pierwszy model.
+                    </div>
+                  ) : (
+                    models.map((model) => (
+                  <div key={model.id} className="bg-white rounded-lg shadow border p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-medium text-gray-900">{model.name}</h3>
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        model.enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {model.enabled ? 'Aktywny' : 'Nieaktywny'}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 text-sm mb-2">Provider: {model.providerId}</p>
+                    <p className="text-gray-600 text-sm mb-4">Model: {model.modelId}</p>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => {
+                          setSelectedModel(model);
+                          setIsModelModalOpen(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-800 text-sm"
+                      >
+                        Edytuj
+                      </button>
+                      <button
+                        onClick={() => handleModelDelete(model.id)}
+                        className="text-red-600 hover:text-red-800 text-sm"
+                      >
+                        Usuń
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </Tab.Panel>
+
+          {/* Rules Tab */}
+          <Tab.Panel>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Reguły AI</h2>
+                  <p className="text-gray-600">Zarządzaj regułami automatyzacji AI</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedRule(null);
+                    setIsRuleFormOpen(true);
+                  }}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  <PlusIcon className="w-5 h-5" />
+                  <span>Nowa Reguła</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {rules.map((rule) => (
+                  <div key={rule.id} className="bg-white rounded-lg shadow border p-6">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-medium text-gray-900">{rule.name}</h3>
+                      <span className={`px-2 py-1 text-xs rounded-full ${
+                        rule.enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {rule.enabled ? 'Aktywna' : 'Nieaktywna'}
+                      </span>
+                    </div>
+                    <p className="text-gray-600 text-sm mb-2">{rule.description}</p>
+                    <p className="text-gray-600 text-sm mb-4">Moduł: {rule.module}</p>
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => {
+                          setSelectedRule(rule);
+                          setIsRuleFormOpen(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-800 text-sm"
+                      >
+                        Edytuj
+                      </button>
+                      <button
+                        onClick={() => handleRuleToggle(rule.id, rule.enabled)}
+                        className="text-yellow-600 hover:text-yellow-800 text-sm"
+                      >
+                        {rule.enabled ? 'Wyłącz' : 'Włącz'}
+                      </button>
+                      <button
+                        onClick={() => handleRuleDelete(rule.id)}
+                        className="text-red-600 hover:text-red-800 text-sm"
+                      >
+                        Usuń
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </Tab.Panel>
+
+          {/* Auto-Replies Tab */}
+          <Tab.Panel>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Automatyczne Odpowiedzi</h2>
+                  <p className="text-gray-600">Zarządzaj automatycznymi odpowiedziami z AI i prostą logiką</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setSelectedAutoReply(null);
+                    setIsAutoReplyFormOpen(true);
+                  }}
+                  className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  <PlusIcon className="w-5 h-5" />
+                  <span>Nowa Auto-Reply</span>
+                </button>
+              </div>
+
+              {isLoading ? (
+                <div className="flex justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {autoReplies.length === 0 ? (
+                    <div className="col-span-full text-center py-8 text-gray-500">
+                      Brak automatycznych odpowiedzi. Dodaj pierwszą auto-reply.
+                    </div>
+                  ) : (
+                    autoReplies.map((autoReply) => (
+                      <div key={autoReply.id} className="bg-white rounded-lg shadow border p-6">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-medium text-gray-900">{autoReply.name}</h3>
+                          <div className="flex items-center space-x-2">
+                            <span className={`px-2 py-1 text-xs rounded-full ${
+                              autoReply.enabled ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {autoReply.enabled ? 'Aktywna' : 'Nieaktywna'}
+                            </span>
+                            <span className={`px-2 py-1 text-xs rounded-full ${
+                              autoReply.triggerType === 'ai-enhanced' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {autoReply.triggerType === 'ai-enhanced' ? 'AI' : 'Prosta'}
+                            </span>
+                          </div>
+                        </div>
+                        <p className="text-gray-600 text-sm mb-2">{autoReply.subject}</p>
+                        <p className="text-gray-600 text-sm mb-4">Wysłane: {autoReply.sentCount} razy</p>
+                        {autoReply.conditions.keywords && (
+                          <div className="mb-4">
+                            <p className="text-gray-500 text-xs mb-1">Słowa kluczowe:</p>
+                            <div className="flex flex-wrap gap-1">
+                              {autoReply.conditions.keywords.map((keyword, idx) => (
+                                <span key={idx} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
+                                  {keyword}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => {
+                              setSelectedAutoReply(autoReply);
+                              setIsAutoReplyFormOpen(true);
+                            }}
+                            className="text-blue-600 hover:text-blue-800 text-sm"
+                          >
+                            Edytuj
+                          </button>
+                          <button
+                            onClick={() => {
+                              // Toggle auto-reply status
+                              setAutoReplies(prev => prev.map(ar => 
+                                ar.id === autoReply.id ? {...ar, enabled: !ar.enabled} : ar
+                              ));
+                              toast.success(autoReply.enabled ? 'Auto-reply wyłączona' : 'Auto-reply włączona');
+                            }}
+                            className="text-yellow-600 hover:text-yellow-800 text-sm"
+                          >
+                            {autoReply.enabled ? 'Wyłącz' : 'Włącz'}
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm('Czy na pewno chcesz usunąć tę auto-reply?')) {
+                                setAutoReplies(prev => prev.filter(ar => ar.id !== autoReply.id));
+                                toast.success('Auto-reply usunięta');
+                              }
+                            }}
+                            className="text-red-600 hover:text-red-800 text-sm"
+                          >
+                            Usuń
+                          </button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </motion.div>
+          </Tab.Panel>
+
+          {/* Statistics Tab */}
+          <Tab.Panel>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-6"
+            >
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Statystyki AI</h2>
+                <p className="text-gray-600">Monitoruj użycie i wydajność systemów AI</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="bg-white rounded-lg shadow border p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Aktywne Providerzy</h3>
+                  <p className="text-3xl font-bold text-blue-600">{providers.filter(p => p.enabled).length}</p>
+                  <p className="text-gray-600 text-sm">z {providers.length} total</p>
+                </div>
+                
+                <div className="bg-white rounded-lg shadow border p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Aktywne Modele</h3>
+                  <p className="text-3xl font-bold text-green-600">{models.filter(m => m.enabled).length}</p>
+                  <p className="text-gray-600 text-sm">z {models.length} total</p>
+                </div>
+                
+                <div className="bg-white rounded-lg shadow border p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Aktywne Reguły</h3>
+                  <p className="text-3xl font-bold text-purple-600">{rules.filter(r => r.enabled).length}</p>
+                  <p className="text-gray-600 text-sm">z {rules.length} total</p>
+                </div>
+                
+                <div className="bg-white rounded-lg shadow border p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Auto-Replies</h3>
+                  <p className="text-3xl font-bold text-orange-600">{autoReplies.filter(ar => ar.enabled).length}</p>
+                  <p className="text-gray-600 text-sm">z {autoReplies.length} total</p>
+                  <p className="text-gray-500 text-xs mt-1">
+                    AI: {autoReplies.filter(ar => ar.triggerType === 'ai-enhanced').length}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+                <div className="bg-white rounded-lg shadow border p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Wysłane Auto-Replies</h3>
+                  <div className="space-y-3">
+                    {autoReplies.slice(0, 3).map((ar) => (
+                      <div key={ar.id} className="flex justify-between items-center">
+                        <span className="text-gray-600 text-sm">{ar.name}</span>
+                        <span className="text-blue-600 font-medium">{ar.sentCount}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="bg-white rounded-lg shadow border p-6">
+                  <h3 className="text-lg font-medium text-gray-900 mb-4">Typy Auto-Replies</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 text-sm">Proste reguły</span>
+                      <span className="text-blue-600 font-medium">
+                        {autoReplies.filter(ar => ar.triggerType === 'simple').length}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600 text-sm">AI-Enhanced</span>
+                      <span className="text-purple-600 font-medium">
+                        {autoReplies.filter(ar => ar.triggerType === 'ai-enhanced').length}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </Tab.Panel>
+        </Tab.Panels>
+      </Tab.Group>
+
+      {/* Modals */}
+      {isProviderModalOpen && (
+        <AIProviderModal
+          provider={selectedProvider}
+          onSubmit={handleProviderSubmit}
+          onCancel={() => {
+            setIsProviderModalOpen(false);
+            setSelectedProvider(null);
+          }}
+        />
+      )}
+
+      {isModelModalOpen && (
+        <AIModelModal
+          model={selectedModel}
+          providers={providers}
+          onSubmit={handleModelSubmit}
+          onCancel={() => {
+            setIsModelModalOpen(false);
+            setSelectedModel(null);
+          }}
+        />
+      )}
+
+      {isRuleFormOpen && (
+        <AIRuleForm
+          rule={selectedRule}
+          onSubmit={handleRuleSubmit}
+          onCancel={() => {
+            setIsRuleFormOpen(false);
+            setSelectedRule(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}

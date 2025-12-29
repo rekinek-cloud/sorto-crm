@@ -5,6 +5,7 @@ import { Bot, Send, Sparkles, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { BentoCard } from './BentoCard';
 import { ChatMessage } from '@/lib/api/dashboardApi';
+import { useTranslations } from 'next-intl';
 
 interface AIAssistantWidgetProps {
   messages: ChatMessage[];
@@ -13,20 +14,21 @@ interface AIAssistantWidgetProps {
   onClear: () => void;
 }
 
-const suggestedQuestions = [
-  "Jakie mam zadania na dzis?",
-  "Pokaz moje strumienie",
-  "Jakie deale sa otwarte?",
-];
-
 export function AIAssistantWidget({
   messages,
   loading = false,
   onSendMessage,
   onClear,
 }: AIAssistantWidgetProps) {
+  const t = useTranslations('dashboard.aiAssistant');
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const suggestedQuestions = [
+    "What tasks do I have today?",
+    "Show my streams",
+    "What deals are open?",
+  ];
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -48,7 +50,7 @@ export function AIAssistantWidget({
 
   return (
     <BentoCard
-      title="AI Asystent"
+      title={t('title')}
       subtitle="STREAMS RAG"
       icon={Bot}
       iconColor="text-cyan-600"
@@ -57,7 +59,7 @@ export function AIAssistantWidget({
         <button
           onClick={onClear}
           className="p-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
-          title="Wyczysc czat"
+          title="Clear chat"
         >
           <RefreshCw className="w-4 h-4 text-slate-500" />
         </button>
@@ -87,7 +89,7 @@ export function AIAssistantWidget({
                   </div>
                   {msg.sources && msg.sources.length > 0 && (
                     <div className="mt-2 pt-2 border-t border-slate-200">
-                      <span className="text-xs text-slate-500">Zrodla: {msg.sources.length}</span>
+                      <span className="text-xs text-slate-500">Sources: {msg.sources.length}</span>
                     </div>
                   )}
                 </div>
@@ -130,7 +132,7 @@ export function AIAssistantWidget({
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Zapytaj o cokolwiek..."
+            placeholder={t('placeholder')}
             disabled={loading}
             className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:border-cyan-400 disabled:opacity-50"
           />

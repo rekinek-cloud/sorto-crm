@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
+const createNextIntlPlugin = require('next-intl/plugin');
 
-// Determine basePath based on version  
+const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
+
+// Determine basePath based on version
 const isV2 = process.env.NEXT_PUBLIC_APP_VERSION === '2.0.0-dev';
 const isV1 = process.env.NEXT_PUBLIC_APP_VERSION === '1.0.0';
 
@@ -43,4 +46,4 @@ const nextConfig = {
 
 };
 
-module.exports = nextConfig;
+module.exports = withNextIntl(nextConfig);

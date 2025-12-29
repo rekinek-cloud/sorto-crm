@@ -4,6 +4,7 @@ import React from 'react';
 import { CheckSquare, AlertTriangle, Clock } from 'lucide-react';
 import { BentoCard, MiniStat, ProgressBar } from './BentoCard';
 import { DashboardStats } from '@/lib/api/dashboardApi';
+import { useTranslations } from 'next-intl';
 
 interface TasksWidgetProps {
   data: DashboardStats | null;
@@ -12,14 +13,15 @@ interface TasksWidgetProps {
 }
 
 export function TasksWidget({ data, loading = false, onClick }: TasksWidgetProps) {
+  const t = useTranslations('dashboard.tasks');
   const completionRate = data && data.totalTasks > 0
     ? Math.round((data.completedTasks / data.totalTasks) * 100)
     : 0;
 
   return (
     <BentoCard
-      title="Zadania"
-      subtitle="Status pracy"
+      title={t('title')}
+      subtitle="Status"
       icon={CheckSquare}
       iconColor="text-blue-600"
       value={data ? data.activeTasks.toString() : "-"}
@@ -29,8 +31,8 @@ export function TasksWidget({ data, loading = false, onClick }: TasksWidgetProps
     >
       {data && (
         <div className="space-y-3">
-          <div className="text-xs text-slate-500 -mt-1">do zrobienia</div>
-          
+          <div className="text-xs text-slate-500 -mt-1">{t('todo')}</div>
+
           <ProgressBar
             value={completionRate}
             max={100}
@@ -39,16 +41,16 @@ export function TasksWidget({ data, loading = false, onClick }: TasksWidgetProps
 
           <div className="space-y-1">
             <MiniStat
-              label="Ukonczone"
+              label={t('completed')}
               value={data.completedTasks}
               color="text-emerald-600"
             />
-            
+
             {data.overdueCount > 0 && (
               <div className="flex items-center justify-between py-1">
                 <span className="text-xs text-slate-500 flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3 text-red-500" />
-                  Zalegle
+                  {t('overdue')}
                 </span>
                 <span className="text-sm font-semibold text-red-600">{data.overdueCount}</span>
               </div>
@@ -58,7 +60,7 @@ export function TasksWidget({ data, loading = false, onClick }: TasksWidgetProps
               <div className="flex items-center justify-between py-1">
                 <span className="text-xs text-slate-500 flex items-center gap-1">
                   <Clock className="w-3 h-3 text-orange-500" />
-                  Pilne
+                  Urgent
                 </span>
                 <span className="text-sm font-semibold text-orange-600">{data.urgentTasks}</span>
               </div>

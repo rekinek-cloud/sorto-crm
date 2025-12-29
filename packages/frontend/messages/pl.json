@@ -1,4 +1,57 @@
 {
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Witaj",
+    "overview": "Przegląd",
+    "pipeline": {
+      "title": "Pipeline",
+      "value": "Wartość",
+      "trend": "vs poprzedni tydzień",
+      "noData": "Brak danych pipeline"
+    },
+    "tasks": {
+      "title": "Zadania",
+      "todo": "do zrobienia",
+      "overdue": "zaległe",
+      "completed": "ukończone",
+      "noTasks": "Brak zadań"
+    },
+    "goals": {
+      "title": "Cele dnia",
+      "completed": "ukończone",
+      "progress": "postęp",
+      "noGoals": "Brak celów na dziś"
+    },
+    "aiAssistant": {
+      "title": "Asystent AI",
+      "placeholder": "Zapytaj o cokolwiek...",
+      "suggestions": "Sugestie",
+      "loading": "AI myśli...",
+      "error": "Błąd połączenia z AI"
+    },
+    "weekly": {
+      "title": "Trend tygodnia",
+      "completed": "Ukończone",
+      "created": "Nowe",
+      "productivity": "Produktywność"
+    },
+    "insights": {
+      "title": "AI Insights",
+      "noInsights": "Brak nowych insight'ów"
+    },
+    "quickActions": {
+      "title": "Szybkie akcje",
+      "newTask": "Nowe zadanie",
+      "newDeal": "Nowy deal",
+      "newMeeting": "Nowe spotkanie",
+      "newNote": "Nowa notatka",
+      "newContact": "Nowy kontakt"
+    },
+    "activity": {
+      "title": "Ostatnia aktywność",
+      "noActivity": "Brak aktywności"
+    }
+  },
   "navigation": {
     "dashboard": "Pulpit",
     "projects": "Projekty",
@@ -154,5 +207,36 @@
     "thisWeek": "Ten tydzień",
     "lastWeek": "Ostatni tydzień",
     "nextWeek": "Następny tydzień"
+  },
+  "auth": {
+    "login": {
+      "title": "Zaloguj się do swojego konta",
+      "subtitle": "Lub",
+      "createAccount": "utwórz nowe konto",
+      "email": "Adres email",
+      "emailPlaceholder": "Wprowadź swój email",
+      "password": "Hasło",
+      "passwordPlaceholder": "Wprowadź swoje hasło",
+      "rememberMe": "Zapamiętaj mnie",
+      "forgotPassword": "Zapomniałeś hasła?",
+      "submit": "Zaloguj się",
+      "noAccount": "Nie masz konta?",
+      "register": "Zarejestruj się za darmo",
+      "demoCredentials": "Dane demonstracyjne:",
+      "owner": "Właściciel",
+      "admin": "Administrator",
+      "manager": "Kierownik",
+      "member": "Członek"
+    },
+    "register": {
+      "title": "Utwórz nowe konto",
+      "subtitle": "Lub",
+      "loginExisting": "zaloguj się do istniejącego",
+      "name": "Imię i nazwisko",
+      "namePlaceholder": "Wprowadź swoje imię",
+      "submit": "Zarejestruj się",
+      "hasAccount": "Masz już konto?",
+      "login": "Zaloguj się"
+    }
   }
 }

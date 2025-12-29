@@ -4,6 +4,7 @@ import React from 'react';
 import { TrendingUp, DollarSign } from 'lucide-react';
 import { BentoCard, ProgressBar } from './BentoCard';
 import { PipelineForecast } from '@/lib/api/dashboardApi';
+import { useTranslations } from 'next-intl';
 
 interface PipelineWidgetProps {
   data: PipelineForecast | null;
@@ -12,6 +13,7 @@ interface PipelineWidgetProps {
 }
 
 export function PipelineWidget({ data, loading = false, onClick }: PipelineWidgetProps) {
+  const t = useTranslations('dashboard.pipeline');
   const formatCurrency = (value: number) => {
     if (value >= 1000000) {
       return (value / 1000000).toFixed(1) + "M PLN";
@@ -30,12 +32,12 @@ export function PipelineWidget({ data, loading = false, onClick }: PipelineWidge
 
   return (
     <BentoCard
-      title="Pipeline"
-      subtitle="Prognoza przychodu"
+      title={t('title')}
+      subtitle={t('value')}
       icon={DollarSign}
       iconColor="text-emerald-600"
       value={data ? formatCurrency(data.totalWeightedRevenue) : "-"}
-      trend={data ? { value: 15, label: "vs tydzień" } : undefined}
+      trend={data ? { value: 15, label: t('trend') } : undefined}
       loading={loading}
       onClick={onClick}
       variant="glass"
@@ -43,7 +45,7 @@ export function PipelineWidget({ data, loading = false, onClick }: PipelineWidge
       {data && (
         <div className="space-y-3 mt-2">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500">Zdrowie pipeline:</span>
+            <span className="text-xs text-slate-500">Pipeline health:</span>
             <div className="flex items-center gap-1">
               <div className={"w-2 h-2 rounded-full " + (healthColors[data.pipelineHealth.status] || "bg-slate-500")} />
               <span className="text-xs text-slate-800 font-medium capitalize">{data.pipelineHealth.score}%</span>

@@ -1,39 +1,52 @@
 'use client';
 
-import { useState } from 'react';
+import { useLocale } from 'next-intl';
+import { useRouter, usePathname } from 'next/navigation';
 
 const languages = [
-  { code: 'pl', name: 'Polski', flag: '🇵🇱' },
-  { code: 'en', name: 'English', flag: '🇺🇸' }
+  { code: 'pl', name: 'PL', flag: '🇵🇱' },
+  { code: 'en', name: 'EN', flag: '🇬🇧' }
 ];
 
 export function LanguageSwitcher() {
-  const [locale, setLocale] = useState('pl');
+  const currentLocale = useLocale();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const switchLanguage = (newLocale: string) => {
-    setLocale(newLocale);
-    // Language switching will be implemented when i18n is configured
-    console.log('Language switched to:', newLocale);
+    if (newLocale === currentLocale) return;
+
+    // Replace current locale in path
+    const segments = pathname.split('/');
+    if (languages.some(l => l.code === segments[1])) {
+      segments[1] = newLocale;
+    } else {
+      segments.unshift('', newLocale);
+    }
+
+    const newPath = segments.join('/').replace('//', '/');
+    router.push(newPath);
+
+    // Save preference to cookie
+    document.cookie = `NEXT_LOCALE=${newLocale};path=/;max-age=31536000`;
   };
 
   return (
-    <div className="relative">
-      <select
-        value={locale}
-        onChange={(e) => switchLanguage(e.target.value)}
-        className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-      >
-        {languages.map((lang) => (
-          <option key={lang.code} value={lang.code}>
-            {lang.flag} {lang.name}
-          </option>
-        ))}
-      </select>
-      <div className="absolute inset-y-0 right-0 flex items-center px-2 pointer-events-none">
-        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </div>
+    <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-lg p-0.5">
+      {languages.map((lang) => (
+        <button
+          key={lang.code}
+          onClick={() => switchLanguage(lang.code)}
+          className={`px-2 py-1 rounded-md text-xs font-medium transition-colors flex items-center gap-1 ${
+            currentLocale === lang.code
+              ? 'bg-white dark:bg-slate-700 text-slate-800 dark:text-white shadow-sm'
+              : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
+          }`}
+        >
+          <span>{lang.flag}</span>
+          <span>{lang.name}</span>
+        </button>
+      ))}
     </div>
   );
 }

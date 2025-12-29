@@ -1,4 +1,57 @@
 {
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome",
+    "overview": "Overview",
+    "pipeline": {
+      "title": "Pipeline",
+      "value": "Value",
+      "trend": "vs last week",
+      "noData": "No pipeline data"
+    },
+    "tasks": {
+      "title": "Tasks",
+      "todo": "to do",
+      "overdue": "overdue",
+      "completed": "completed",
+      "noTasks": "No tasks"
+    },
+    "goals": {
+      "title": "Daily Goals",
+      "completed": "completed",
+      "progress": "progress",
+      "noGoals": "No goals for today"
+    },
+    "aiAssistant": {
+      "title": "AI Assistant",
+      "placeholder": "Ask anything...",
+      "suggestions": "Suggestions",
+      "loading": "AI is thinking...",
+      "error": "AI connection error"
+    },
+    "weekly": {
+      "title": "Weekly Trend",
+      "completed": "Completed",
+      "created": "New",
+      "productivity": "Productivity"
+    },
+    "insights": {
+      "title": "AI Insights",
+      "noInsights": "No new insights"
+    },
+    "quickActions": {
+      "title": "Quick Actions",
+      "newTask": "New Task",
+      "newDeal": "New Deal",
+      "newMeeting": "New Meeting",
+      "newNote": "New Note",
+      "newContact": "New Contact"
+    },
+    "activity": {
+      "title": "Recent Activity",
+      "noActivity": "No activity"
+    }
+  },
   "navigation": {
     "dashboard": "Dashboard",
     "projects": "Projects",
@@ -154,5 +207,36 @@
     "thisWeek": "This Week",
     "lastWeek": "Last Week",
     "nextWeek": "Next Week"
+  },
+  "auth": {
+    "login": {
+      "title": "Sign in to your account",
+      "subtitle": "Or",
+      "createAccount": "create a new account",
+      "email": "Email address",
+      "emailPlaceholder": "Enter your email",
+      "password": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "rememberMe": "Remember me",
+      "forgotPassword": "Forgot password?",
+      "submit": "Sign in",
+      "noAccount": "Don't have an account?",
+      "register": "Sign up for free",
+      "demoCredentials": "Demo credentials:",
+      "owner": "Owner",
+      "admin": "Administrator",
+      "manager": "Manager",
+      "member": "Member"
+    },
+    "register": {
+      "title": "Create a new account",
+      "subtitle": "Or",
+      "loginExisting": "sign in to existing",
+      "name": "Full name",
+      "namePlaceholder": "Enter your name",
+      "submit": "Sign up",
+      "hasAccount": "Already have an account?",
+      "login": "Sign in"
+    }
   }
 }

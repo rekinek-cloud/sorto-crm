@@ -4,6 +4,7 @@ import React from 'react';
 import { Target, Trophy, TrendingUp } from 'lucide-react';
 import { BentoCard, ProgressBar } from './BentoCard';
 import { GoalsOverview } from '@/lib/api/dashboardApi';
+import { useTranslations } from 'next-intl';
 
 interface GoalsTodayWidgetProps {
   data: GoalsOverview | null;
@@ -12,10 +13,12 @@ interface GoalsTodayWidgetProps {
 }
 
 export function GoalsTodayWidget({ data, loading = false, onClick }: GoalsTodayWidgetProps) {
+  const t = useTranslations('dashboard.goals');
+
   return (
     <BentoCard
-      title="Cele"
-      subtitle="Postep realizacji"
+      title={t('title')}
+      subtitle={t('progress')}
       icon={Target}
       iconColor="text-purple-600"
       loading={loading}

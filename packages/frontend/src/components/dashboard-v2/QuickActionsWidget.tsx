@@ -4,6 +4,7 @@ import React from 'react';
 import { Plus, FileText, Users, Calendar, Mail, Briefcase } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BentoCard } from './BentoCard';
+import { useTranslations } from 'next-intl';
 
 interface QuickAction {
   id: string;
@@ -28,38 +29,40 @@ export function QuickActionsWidget({
   onCreateNote,
   onCreateContact,
 }: QuickActionsWidgetProps) {
+  const t = useTranslations('dashboard.quickActions');
+
   const actions: QuickAction[] = [
     {
       id: 'task',
-      label: 'Zadanie',
+      label: t('newTask'),
       icon: Plus,
       color: 'bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200',
       onClick: onCreateTask || (() => {}),
     },
     {
       id: 'deal',
-      label: 'Deal',
+      label: t('newDeal'),
       icon: Briefcase,
       color: 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200',
       onClick: onCreateDeal || (() => {}),
     },
     {
       id: 'meeting',
-      label: 'Spotkanie',
+      label: t('newMeeting'),
       icon: Calendar,
       color: 'bg-purple-50 text-purple-600 hover:bg-purple-100 border border-purple-200',
       onClick: onCreateMeeting || (() => {}),
     },
     {
       id: 'note',
-      label: 'Notatka',
+      label: t('newNote'),
       icon: FileText,
       color: 'bg-orange-50 text-orange-600 hover:bg-orange-100 border border-orange-200',
       onClick: onCreateNote || (() => {}),
     },
     {
       id: 'contact',
-      label: 'Kontakt',
+      label: t('newContact'),
       icon: Users,
       color: 'bg-pink-50 text-pink-600 hover:bg-pink-100 border border-pink-200',
       onClick: onCreateContact || (() => {}),
@@ -68,8 +71,8 @@ export function QuickActionsWidget({
 
   return (
     <BentoCard
-      title="Szybkie akcje"
-      subtitle="Utworz nowy element"
+      title={t('title')}
+      subtitle="Create new"
       icon={Plus}
       iconColor="text-green-600"
       variant="glass"

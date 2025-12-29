@@ -1,10 +1,17 @@
-// i18n configuration stub - next-intl will be configured when needed
-const locales = ['pl', 'en'];
+import { getRequestConfig } from 'next-intl/server';
+import { routing } from './routing';
 
-// Stub function for request config
-export default function getRequestConfigStub() {
+export default getRequestConfig(async ({ requestLocale }) => {
+  // Get locale from request or use default
+  let locale = await requestLocale;
+
+  // Validate that the incoming `locale` parameter is valid
+  if (!locale || !routing.locales.includes(locale as any)) {
+    locale = routing.defaultLocale;
+  }
+
   return {
-    locale: 'pl',
-    messages: {}
+    locale,
+    messages: (await import(`../../messages/${locale}.json`)).default
   };
-}
+});

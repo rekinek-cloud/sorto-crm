@@ -5,6 +5,7 @@ import { Lightbulb, AlertTriangle, TrendingUp, Zap, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { BentoCard } from './BentoCard';
 import { AIInsight } from '@/lib/api/dashboardApi';
+import { useTranslations } from 'next-intl';
 
 interface AIInsightsWidgetProps {
   insights: AIInsight[];
@@ -34,12 +35,13 @@ const priorityColors: Record<string, string> = {
 };
 
 export function AIInsightsWidget({ insights, loading = false, onClick }: AIInsightsWidgetProps) {
+  const t = useTranslations('dashboard.insights');
   const displayInsights = insights.slice(0, 4);
 
   return (
     <BentoCard
-      title="AI Insights"
-      subtitle="Automatyczne spostrzezenia"
+      title={t('title')}
+      subtitle="Auto-generated"
       icon={Lightbulb}
       iconColor="text-yellow-600"
       loading={loading}
@@ -49,7 +51,7 @@ export function AIInsightsWidget({ insights, loading = false, onClick }: AIInsig
       <div className="space-y-2">
         {displayInsights.length === 0 ? (
           <div className="text-center py-4 text-slate-500 text-sm">
-            Brak nowych spostrzezen
+            {t('noInsights')}
           </div>
         ) : (
           displayInsights.map((insight, index) => {
