@@ -1,13 +1,13 @@
 {
   "dashboard": {
-    "title": "Dashboard",
+    "title": "Pulpit",
     "welcome": "Witaj",
     "overview": "Przegląd",
     "pipeline": {
-      "title": "Pipeline",
+      "title": "Lejek sprzedaży",
       "value": "Wartość",
       "trend": "vs poprzedni tydzień",
-      "noData": "Brak danych pipeline"
+      "noData": "Brak danych lejka"
     },
     "tasks": {
       "title": "Zadania",
@@ -36,13 +36,13 @@
       "productivity": "Produktywność"
     },
     "insights": {
-      "title": "AI Insights",
-      "noInsights": "Brak nowych insight'ów"
+      "title": "Spostrzeżenia AI",
+      "noInsights": "Brak nowych spostrzeżeń"
     },
     "quickActions": {
       "title": "Szybkie akcje",
       "newTask": "Nowe zadanie",
-      "newDeal": "Nowy deal",
+      "newDeal": "Nowa transakcja",
       "newMeeting": "Nowe spotkanie",
       "newNote": "Nowa notatka",
       "newContact": "Nowy kontakt"
@@ -121,11 +121,11 @@
     "filters": "Filtry",
     "autoReply": "Automatyczne odpowiedzi",
     "unifiedInbox": "Zunifikowana skrzynka",
-    "rulesManager": "Rules Manager",
+    "rulesManager": "Menedżer reguł",
     "channels": "Kanały",
     "processingRules": "Reguły przetwarzania",
-    "emailFilters": "Filtry Email",
-    "smartMailboxes": "Smart Mailboxes"
+    "emailFilters": "Filtry e-mail",
+    "smartMailboxes": "Inteligentne skrzynki"
   },
   "crm": {
     "companies": "Firmy",
@@ -150,17 +150,17 @@
     "recurringTasks": "Zadania cykliczne"
   },
   "tools": {
-    "aiAssistant": "AI Assistant",
+    "aiAssistant": "Asystent AI",
     "aiManagement": "Zarządzanie AI",
-    "phase2Demo": "Phase 2 Demo",
+    "phase2Demo": "Demo fazy 2",
     "smartAnalysis": "Analiza SMART",
     "smartDetails": "Szczegóły SMART",
     "smartImprovements": "Ulepszenia SMART",
     "smartTemplates": "Szablony SMART",
-    "emailAnalysis": "Analiza email",
+    "emailAnalysis": "Analiza e-mail",
     "autoReplies": "Automatyczne odpowiedzi",
     "knowledgeBase": "Baza wiedzy",
-    "relationMap": "Mapa Powiązań",
+    "relationMap": "Mapa powiązań",
     "timeline": "Oś czasu",
     "analytics": "Analityka",
     "metadata": "Metadane"
