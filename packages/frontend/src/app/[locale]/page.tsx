@@ -3,13 +3,19 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { getTranslations } from 'next-intl/server';
 
-export default async function LandingPage() {
+export default async function LandingPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+
   // Check if user is authenticated - redirect to dashboard
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('access_token');
 
   if (accessToken) {
-    redirect('/dashboard');
+    redirect(`/${locale}/dashboard`);
   }
 
   const t = await getTranslations('landing');
@@ -20,19 +26,19 @@ export default async function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
+            <Link href={`/${locale}`} className="flex items-center space-x-2">
               <div className="text-2xl font-bold text-primary-600">🌊</div>
               <span className="text-xl font-bold text-gray-900">STREAMS</span>
             </Link>
             <div className="flex items-center space-x-4">
               <Link
-                href="/auth/login"
+                href={`/${locale}/auth/login`}
                 className="text-gray-600 hover:text-gray-900 font-medium"
               >
                 {t('login')}
               </Link>
               <Link
-                href="/auth/register"
+                href={`/${locale}/auth/register`}
                 className="btn btn-primary"
               >
                 {t('startFree')}
@@ -54,7 +60,7 @@ export default async function LandingPage() {
           </p>
           <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
             <Link
-              href="/auth/register"
+              href={`/${locale}/auth/register`}
               className="btn btn-primary btn-lg text-lg px-8 py-4"
             >
               {t('ctaStart')}
@@ -202,7 +208,7 @@ export default async function LandingPage() {
                 </li>
               </ul>
               <Link
-                href="/auth/register"
+                href={`/${locale}/auth/register`}
                 className="mt-8 block w-full btn btn-outline text-center"
               >
                 {t('choosePlan')}
@@ -241,7 +247,7 @@ export default async function LandingPage() {
                 </li>
               </ul>
               <Link
-                href="/auth/register"
+                href={`/${locale}/auth/register`}
                 className="mt-8 block w-full bg-white text-primary-600 font-medium py-3 px-4 rounded-lg text-center hover:bg-gray-100 transition-colors"
               >
                 {t('choosePlan')}
@@ -274,7 +280,7 @@ export default async function LandingPage() {
                 </li>
               </ul>
               <Link
-                href="/auth/register"
+                href={`/${locale}/auth/register`}
                 className="mt-8 block w-full btn btn-outline text-center"
               >
                 {t('contactUs')}
@@ -294,7 +300,7 @@ export default async function LandingPage() {
             {t('ctaDescription')}
           </p>
           <Link
-            href="/auth/register"
+            href={`/${locale}/auth/register`}
             className="mt-8 inline-block bg-white text-primary-600 font-semibold py-4 px-8 rounded-lg text-lg hover:bg-gray-100 transition-colors"
           >
             {t('ctaButton')}
@@ -311,13 +317,13 @@ export default async function LandingPage() {
               <span className="text-xl font-bold text-white">STREAMS</span>
             </div>
             <div className="flex space-x-6">
-              <Link href="/terms" className="hover:text-white transition-colors">
+              <Link href={`/${locale}/terms`} className="hover:text-white transition-colors">
                 {t('terms')}
               </Link>
-              <Link href="/privacy" className="hover:text-white transition-colors">
+              <Link href={`/${locale}/privacy`} className="hover:text-white transition-colors">
                 {t('privacy')}
               </Link>
-              <Link href="/auth/login" className="hover:text-white transition-colors">
+              <Link href={`/${locale}/auth/login`} className="hover:text-white transition-colors">
                 {t('login')}
               </Link>
             </div>
