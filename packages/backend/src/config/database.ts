@@ -225,6 +225,17 @@ export const setupRowLevelSecurity = async (): Promise<void> => {
 
     // Organizations table - users can only see their own organization
     try {
+      // Check column type for organizations.id
+      const orgColumnCheck = await prisma.$queryRawUnsafe<Array<{ data_type: string }>>(`
+        SELECT data_type FROM information_schema.columns
+        WHERE table_name = 'organizations' AND column_name = 'id'
+      `);
+
+      const orgIdType = orgColumnCheck.length > 0 ? orgColumnCheck[0].data_type : 'text';
+      const orgCastExpression = orgIdType === 'uuid'
+        ? `current_setting('app.current_org_id', true)::uuid`
+        : `current_setting('app.current_org_id', true)`;
+
       await prisma.$executeRawUnsafe(`
         ALTER TABLE "organizations" ENABLE ROW LEVEL SECURITY;
       `);
@@ -236,10 +247,10 @@ export const setupRowLevelSecurity = async (): Promise<void> => {
       await prisma.$executeRawUnsafe(`
         CREATE POLICY organizations_member_access ON "organizations"
         FOR ALL TO app_user
-        USING ("id" = current_setting('app.current_org_id', true)::uuid);
+        USING ("id" = ${orgCastExpression});
       `);
 
-      logger.info('RLS enabled for table: organizations');
+      logger.info(`RLS enabled for table: organizations (id type: ${orgIdType})`);
     } catch (error) {
       logger.warn('Failed to setup RLS for organizations:', error);
     }
