@@ -17,6 +17,11 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Handle root path - redirect to default locale
+  if (path === '/' || path === '') {
+    return NextResponse.redirect(new URL('/pl', request.url));
+  }
+
   // Check if it's an auth page - don't require auth
   const isAuthPage = path.includes('/auth/');
 
