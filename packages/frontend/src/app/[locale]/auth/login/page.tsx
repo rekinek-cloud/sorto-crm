@@ -58,17 +58,6 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Demo Credentials */}
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <h3 className="text-sm font-medium text-blue-900 mb-2">{t('demoCredentials')}</h3>
-          <div className="text-xs text-blue-800 space-y-1">
-            <div><strong>{t('owner')}:</strong> owner@demo.com / demo123</div>
-            <div><strong>{t('admin')}:</strong> admin@demo.com / demo123</div>
-            <div><strong>{t('manager')}:</strong> manager@demo.com / demo123</div>
-            <div><strong>{t('member')}:</strong> member@demo.com / demo123</div>
-          </div>
-        </div>
-
         {/* Login Form */}
         <form className="mt-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
           <div className="space-y-4">
