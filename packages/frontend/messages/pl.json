@@ -239,6 +239,19 @@
       "login": "Zaloguj się"
     }
   },
+  "errors": {
+    "generic": "Wystąpił błąd",
+    "notFound": "Nie znaleziono strony",
+    "unauthorized": "Brak dostępu",
+    "forbidden": "Dostęp zabroniony",
+    "serverError": "Błąd serwera",
+    "networkError": "Błąd połączenia",
+    "validationError": "Błąd walidacji",
+    "sessionExpired": "Sesja wygasła",
+    "tryAgain": "Spróbuj ponownie",
+    "goBack": "Wróć",
+    "goHome": "Strona główna"
+  },
   "landing": {
     "login": "Zaloguj się",
     "startFree": "Rozpocznij za darmo",

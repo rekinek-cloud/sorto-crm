@@ -239,6 +239,19 @@
       "login": "Sign in"
     }
   },
+  "errors": {
+    "generic": "An error occurred",
+    "notFound": "Page not found",
+    "unauthorized": "Unauthorized access",
+    "forbidden": "Access forbidden",
+    "serverError": "Server error",
+    "networkError": "Network error",
+    "validationError": "Validation error",
+    "sessionExpired": "Session expired",
+    "tryAgain": "Try again",
+    "goBack": "Go back",
+    "goHome": "Go to home"
+  },
   "landing": {
     "login": "Log in",
     "startFree": "Start for free",
