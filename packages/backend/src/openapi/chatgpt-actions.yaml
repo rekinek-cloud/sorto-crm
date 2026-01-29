@@ -1,0 +1,303 @@
+openapi: 3.1.0
+info:
+  title: Sorto CRM API for ChatGPT
+  description: |
+    API do integracji Sorto CRM z ChatGPT Actions.
+    Umożliwia wyszukiwanie w CRM, pobieranie szczegółów, tworzenie notatek,
+    zarządzanie zadaniami i sprawdzanie statystyk pipeline.
+  version: 1.0.0
+  contact:
+    name: Sorto CRM Support
+    url: https://sorto.ai
+
+servers:
+  - url: https://crm.dev.sorto.ai/api/v1
+    description: DEV Server
+
+security:
+  - BearerAuth: []
+
+paths:
+  /mcp/actions/search:
+    post:
+      operationId: searchCRM
+      summary: Szukaj w CRM
+      description: |
+        Wyszukuje firmy, kontakty, leady, deale i zadania.
+        Rozumie naturalny język, np. "firmy z IT", "leady z Poznania", "zadania na dziś".
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - query
+              properties:
+                query:
+                  type: string
+                  description: Zapytanie w naturalnym języku
+                  example: "firmy z branży IT w Warszawie"
+      responses:
+        '200':
+          description: Lista wyników wyszukiwania
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        type:
+                          type: string
+                          enum: [company, contact, deal, task, stream]
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        summary:
+                          type: string
+        '401':
+          description: Brak autoryzacji
+        '500':
+          description: Błąd serwera
+
+  /mcp/actions/details:
+    post:
+      operationId: getDetails
+      summary: Pobierz szczegóły obiektu
+      description: Pobiera szczegółowe informacje o firmie, kontakcie, dealu, zadaniu lub streamie.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - type
+                - id
+              properties:
+                type:
+                  type: string
+                  enum: [company, contact, deal, task, stream]
+                  description: Typ obiektu
+                id:
+                  type: string
+                  format: uuid
+                  description: ID obiektu (UUID)
+      responses:
+        '200':
+          description: Szczegóły obiektu
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: object
+                    description: Szczegóły obiektu (różne w zależności od typu)
+        '404':
+          description: Obiekt nie znaleziony
+        '401':
+          description: Brak autoryzacji
+
+  /mcp/actions/notes:
+    post:
+      operationId: createNote
+      summary: Dodaj notatkę
+      description: Dodaje notatkę do firmy, kontaktu lub deala.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - target_type
+                - target_id
+                - content
+              properties:
+                target_type:
+                  type: string
+                  enum: [company, contact, deal]
+                  description: Typ obiektu, do którego dodajemy notatkę
+                target_id:
+                  type: string
+                  format: uuid
+                  description: ID obiektu (UUID)
+                content:
+                  type: string
+                  description: Treść notatki
+                  example: "Rozmowa telefoniczna - klient zainteresowany ofertą"
+      responses:
+        '201':
+          description: Notatka utworzona
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  noteId:
+                    type: string
+                  message:
+                    type: string
+        '404':
+          description: Obiekt docelowy nie znaleziony
+        '401':
+          description: Brak autoryzacji
+
+  /mcp/actions/tasks:
+    post:
+      operationId: listTasks
+      summary: Lista zadań
+      description: Pobiera listę zadań z możliwością filtrowania.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                filter:
+                  type: string
+                  enum: [today, overdue, this_week, all]
+                  default: today
+                  description: |
+                    Filtr zadań:
+                    - today: zadania na dziś (domyślne)
+                    - overdue: zadania zaległe
+                    - this_week: zadania na ten tydzień
+                    - all: wszystkie zadania
+      responses:
+        '200':
+          description: Lista zadań
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  tasks:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                        dueDate:
+                          type: string
+                          format: date-time
+                        priority:
+                          type: string
+                          enum: [LOW, MEDIUM, HIGH, URGENT]
+                        status:
+                          type: string
+                        relatedTo:
+                          type: string
+                          description: Powiązany obiekt (firma/kontakt/deal)
+        '401':
+          description: Brak autoryzacji
+
+  /mcp/actions/pipeline-stats:
+    get:
+      operationId: getPipelineStats
+      summary: Statystyki pipeline
+      description: |
+        Pobiera statystyki pipeline sprzedaży:
+        - Liczba leadów na każdym etapie
+        - Wartość deali
+        - Wskaźniki konwersji
+      responses:
+        '200':
+          description: Statystyki pipeline
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  stats:
+                    type: object
+                    properties:
+                      totalDeals:
+                        type: integer
+                      totalValue:
+                        type: number
+                      stages:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                            count:
+                              type: integer
+                            value:
+                              type: number
+                      conversionRate:
+                        type: number
+                        description: Wskaźnik konwersji (%)
+        '401':
+          description: Brak autoryzacji
+
+components:
+  schemas:
+    SearchResult:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [company, contact, deal, task, stream]
+        id:
+          type: string
+        name:
+          type: string
+        summary:
+          type: string
+    Task:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        dueDate:
+          type: string
+          format: date-time
+        priority:
+          type: string
+          enum: [LOW, MEDIUM, HIGH, URGENT]
+        status:
+          type: string
+        relatedTo:
+          type: string
+    PipelineStage:
+      type: object
+      properties:
+        name:
+          type: string
+        count:
+          type: integer
+        value:
+          type: number
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: API Key
+      description: |
+        Użyj klucza API wygenerowanego w panelu administracyjnym Sorto CRM.
+        Format: Bearer <TWÓJ_KLUCZ_API>
