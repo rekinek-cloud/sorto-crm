@@ -60,6 +60,7 @@ import userHierarchyRoutes from './routes/userHierarchy';
 import internalRoutes from './routes/internal';
 import aiInsightsRoutes from './routes/aiInsights';
 import usersRoutes from './routes/users';
+import industriesRoutes from './routes/industries';
 
 const app = express();
 
@@ -191,6 +192,7 @@ apiRouter.use('/flow/conversation', flowConversationRoutes);  // Flow Conversati
 apiRouter.use('/user-hierarchy', userHierarchyRoutes);  // Zarządzanie użytkownikami w organizacji
 apiRouter.use('/internal', internalRoutes);  // Internal API dla service-to-service (RAG)
 apiRouter.use('/users', usersRoutes);  // Zarządzanie użytkownikami
+apiRouter.use('/industries', industriesRoutes);  // Industry templates
 
 // STREAMS Migration - nowe endpointy
 apiRouter.use('/source', sourceRoutes);           // Źródło (ex gtdInbox)

@@ -4251,3 +4251,23 @@ enum ViewType {
   CALENDAR
   LIST
 }
+
+model IndustryTemplate {
+  id             String   @id @default(uuid())
+  slug           String   @unique
+  name           String
+  description    String?
+  icon           String?
+  color          String   @default("#3B82F6")
+  category       String
+  streams        Json     @default("[]")
+  pipelineStages Json     @default("[]")
+  taskCategories Json     @default("[]")
+  customFields   Json     @default("[]")
+  workflows      Json     @default("[]")
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@map("industry_templates")
+}
