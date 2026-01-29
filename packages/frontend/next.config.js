@@ -15,8 +15,8 @@ console.log('Next.js Config Loading:', {
 });
 
 const nextConfig = {
-  // Standalone output disabled - using npm run start for stability
-  // output: 'standalone',
+  // Standalone output for Docker production builds
+  output: 'standalone',
 
   // CRM System - basePath i assetPrefix dla plików statycznych
   basePath: '/crm',
