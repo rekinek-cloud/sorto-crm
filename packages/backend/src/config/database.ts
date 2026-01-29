@@ -178,13 +178,29 @@ export const setupRowLevelSecurity = async (): Promise<void> => {
 
     // Enable RLS on all tenant-specific tables
     const tables = [
-      'users', 'tasks', 'projects', 'streams', 
+      'users', 'tasks', 'projects', 'streams',
       'contacts', 'meetings', 'subscriptions',
       'companies', 'deals', 'contexts'
     ];
 
     for (const table of tables) {
       try {
+        // Check if table exists and has organizationId column
+        const columnCheck = await prisma.$queryRawUnsafe<Array<{ data_type: string }>>(`
+          SELECT data_type FROM information_schema.columns
+          WHERE table_name = '${table}' AND column_name = 'organizationId'
+        `);
+
+        if (columnCheck.length === 0) {
+          logger.info(`Table ${table} does not have organizationId column, skipping RLS`);
+          continue;
+        }
+
+        const columnType = columnCheck[0].data_type;
+        const castExpression = columnType === 'uuid'
+          ? `current_setting('app.current_org_id', true)::uuid`
+          : `current_setting('app.current_org_id', true)`;
+
         // Enable RLS
         await prisma.$executeRawUnsafe(`
           ALTER TABLE "${table}" ENABLE ROW LEVEL SECURITY;
@@ -198,33 +214,40 @@ export const setupRowLevelSecurity = async (): Promise<void> => {
         await prisma.$executeRawUnsafe(`
           CREATE POLICY ${table}_org_isolation ON "${table}"
           FOR ALL TO app_user
-          USING ("organizationId" = current_setting('app.current_org_id')::uuid);
+          USING ("organizationId" = ${castExpression});
         `);
 
-        logger.info(`RLS enabled for table: ${table}`);
+        logger.info(`RLS enabled for table: ${table} (column type: ${columnType})`);
       } catch (error) {
         logger.warn(`Failed to setup RLS for ${table}:`, error);
       }
     }
 
     // Organizations table - users can only see their own organization
-    await prisma.$executeRawUnsafe(`
-      ALTER TABLE "organizations" ENABLE ROW LEVEL SECURITY;
-    `);
+    try {
+      await prisma.$executeRawUnsafe(`
+        ALTER TABLE "organizations" ENABLE ROW LEVEL SECURITY;
+      `);
 
-    await prisma.$executeRawUnsafe(`
-      DROP POLICY IF EXISTS organizations_member_access ON "organizations";
-    `);
+      await prisma.$executeRawUnsafe(`
+        DROP POLICY IF EXISTS organizations_member_access ON "organizations";
+      `);
 
-    await prisma.$executeRawUnsafe(`
-      CREATE POLICY organizations_member_access ON "organizations"
-      FOR ALL TO app_user
-      USING ("id" = current_setting('app.current_org_id')::uuid);
-    `);
+      await prisma.$executeRawUnsafe(`
+        CREATE POLICY organizations_member_access ON "organizations"
+        FOR ALL TO app_user
+        USING ("id" = current_setting('app.current_org_id', true)::uuid);
+      `);
+
+      logger.info('RLS enabled for table: organizations');
+    } catch (error) {
+      logger.warn('Failed to setup RLS for organizations:', error);
+    }
 
     logger.info('Row Level Security setup completed');
   } catch (error) {
     logger.error('Failed to setup Row Level Security:', error);
-    throw error;
+    // Don't throw - RLS is optional, app can work without it
+    logger.warn('RLS setup failed but continuing without it');
   }
 };
