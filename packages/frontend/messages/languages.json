@@ -1,0 +1,20 @@
+{
+  "languages": [
+    {
+      "code": "pl",
+      "name": "Polski",
+      "isDefault": true
+    },
+    {
+      "code": "en",
+      "name": "English",
+      "isDefault": false
+    },
+    {
+      "code": "de",
+      "name": "Deutsch",
+      "isDefault": false
+    }
+  ],
+  "defaultLanguage": "pl"
+}

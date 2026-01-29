@@ -242,6 +242,8 @@
   "errors": {
     "generic": "An error occurred",
     "notFound": "Page not found",
+    "pageNotFound": "Page not found",
+    "notFoundMessage": "Sorry, the page you are looking for does not exist or has been moved.",
     "unauthorized": "Unauthorized access",
     "forbidden": "Access forbidden",
     "serverError": "Server error",

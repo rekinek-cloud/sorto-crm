@@ -242,6 +242,8 @@
   "errors": {
     "generic": "Wystąpił błąd",
     "notFound": "Nie znaleziono strony",
+    "pageNotFound": "Strona nie została znaleziona",
+    "notFoundMessage": "Przepraszamy, strona której szukasz nie istnieje lub została przeniesiona.",
     "unauthorized": "Brak dostępu",
     "forbidden": "Dostęp zabroniony",
     "serverError": "Błąd serwera",
