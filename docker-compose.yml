@@ -76,7 +76,7 @@ services:
       - "traefik.http.middlewares.strip-crm-prefix.stripprefix.prefixes=/crm"
       - "traefik.http.services.crm-api.loadbalancer.server.port=3001"
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3001/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3001/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -110,7 +110,7 @@ services:
       - "traefik.http.middlewares.crm-redirect.redirectregex.permanent=false"
       - "traefik.http.services.crm.loadbalancer.server.port=3000"
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/crm/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/crm/pl"]
       interval: 30s
       timeout: 10s
       retries: 3
