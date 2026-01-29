@@ -104,10 +104,14 @@ services:
       - "traefik.http.routers.crm.entrypoints=websecure"
       - "traefik.http.routers.crm.rule=Host(`crm.dev.sorto.ai`)"
       - "traefik.http.routers.crm.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.crm.middlewares=crm-redirect"
+      - "traefik.http.routers.crm.middlewares=crm-chain"
+      - "traefik.http.middlewares.crm-chain.chain.middlewares=crm-redirect,crm-locale-redirect"
       - "traefik.http.middlewares.crm-redirect.redirectregex.regex=^https://crm.dev.sorto.ai/?$$"
-      - "traefik.http.middlewares.crm-redirect.redirectregex.replacement=https://crm.dev.sorto.ai/crm/"
+      - "traefik.http.middlewares.crm-redirect.redirectregex.replacement=https://crm.dev.sorto.ai/crm/pl"
       - "traefik.http.middlewares.crm-redirect.redirectregex.permanent=false"
+      - "traefik.http.middlewares.crm-locale-redirect.redirectregex.regex=^https://crm.dev.sorto.ai/crm/?$$"
+      - "traefik.http.middlewares.crm-locale-redirect.redirectregex.replacement=https://crm.dev.sorto.ai/crm/pl"
+      - "traefik.http.middlewares.crm-locale-redirect.redirectregex.permanent=false"
       - "traefik.http.services.crm.loadbalancer.server.port=3000"
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/crm/pl"]
