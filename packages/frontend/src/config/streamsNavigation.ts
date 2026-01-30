@@ -192,6 +192,7 @@ export const streamsNavigation: NavItem[] = [
     icon: ChartBar,
     iconWeight: 'duotone',
     children: [
+      { name: 'Produktywność', href: '/dashboard/productivity', icon: ChartLine, iconWeight: 'duotone' },
       { name: 'Tygodniowy', href: '/dashboard/reviews/weekly', icon: CalendarBlank, iconWeight: 'duotone' },
       { name: 'Miesięczny', href: '/dashboard/reviews/monthly', icon: Calendar, iconWeight: 'duotone' },
       { name: 'Kwartalny', href: '/dashboard/reviews/quarterly', icon: CalendarCheck, iconWeight: 'duotone' },
