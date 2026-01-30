@@ -61,6 +61,8 @@ import internalRoutes from './routes/internal';
 import aiInsightsRoutes from './routes/aiInsights';
 import usersRoutes from './routes/users';
 import industriesRoutes from './routes/industries';
+import devHubRoutes from './routes/devHub';
+import infrastructureRoutes from './routes/infrastructure';
 
 const app = express();
 
@@ -193,6 +195,8 @@ apiRouter.use('/user-hierarchy', userHierarchyRoutes);  // Zarządzanie użytkow
 apiRouter.use('/internal', internalRoutes);  // Internal API dla service-to-service (RAG)
 apiRouter.use('/users', usersRoutes);  // Zarządzanie użytkownikami
 apiRouter.use('/industries', industriesRoutes);  // Industry templates
+apiRouter.use('/dev-hub', devHubRoutes);  // Dev Hub - zarządzanie kontenerami
+apiRouter.use('/infrastructure', infrastructureRoutes);  // Infrastructure Dashboard
 
 // STREAMS Migration - nowe endpointy
 apiRouter.use('/source', sourceRoutes);           // Źródło (ex gtdInbox)
