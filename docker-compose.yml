@@ -54,6 +54,7 @@ services:
     volumes:
       - /home/dev:/home/dev:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /root/.config/gh:/root/.config/gh:ro
     depends_on:
       postgres:
         condition: service_healthy

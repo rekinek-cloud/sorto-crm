@@ -5,12 +5,14 @@ FROM node:18-alpine
 # Set working directory
 WORKDIR /app
 
-# Install dependencies for native modules and Docker CLI for infrastructure monitoring
+# Install dependencies for native modules, Docker CLI and GitHub CLI
 RUN apk add --no-cache \
     python3 \
     make \
     g++ \
     docker-cli \
+    github-cli \
+    git \
     && ln -sf python3 /usr/bin/python
 
 # Copy package files
