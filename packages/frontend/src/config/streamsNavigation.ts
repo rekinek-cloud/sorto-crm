@@ -206,6 +206,8 @@ export const streamsNavigation: NavItem[] = [
     iconWeight: 'duotone',
     children: [
       { name: 'AI Assistant', href: '/dashboard/ai-assistant', icon: Robot, iconWeight: 'duotone' },
+      { name: 'AI Insights', href: '/dashboard/ai-insights', icon: Sparkle, iconWeight: 'duotone' },
+      { name: 'Prompty AI', href: '/dashboard/ai-prompts', icon: ChatCircle, iconWeight: 'duotone' },
       { name: 'Zarządzanie AI', href: '/dashboard/ai-management', icon: Brain, iconWeight: 'duotone' },
       { name: 'Reguły AI', href: '/dashboard/ai-rules', icon: Sparkle, iconWeight: 'duotone' },
       { name: 'Wyszukiwanie AI', href: '/dashboard/search', icon: MagnifyingGlass, iconWeight: 'duotone' },
@@ -224,6 +226,7 @@ export const streamsNavigation: NavItem[] = [
     iconWeight: 'duotone',
     children: [
       { name: 'Tagi', href: '/dashboard/tags', icon: Tag, iconWeight: 'duotone' },
+      { name: 'Konteksty GTD', href: '/dashboard/contexts', icon: At, iconWeight: 'duotone' },
       { name: 'Nawyki', href: '/dashboard/habits', icon: Lightning, iconWeight: 'duotone' },
       { name: 'Zadania cykliczne', href: '/dashboard/recurring-tasks', icon: ArrowsClockwise, iconWeight: 'duotone' },
       { name: 'Delegowane', href: '/dashboard/delegated', icon: UserSwitch, iconWeight: 'duotone' },
