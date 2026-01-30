@@ -16,6 +16,12 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Build-time environment variables (NEXT_PUBLIC_* are baked into JS bundle)
+ARG NEXT_PUBLIC_API_URL=https://crm.dev.sorto.ai/api
+ARG NEXT_PUBLIC_APP_URL=https://crm.dev.sorto.ai
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
+
 # Build the application
 RUN npm run build
 
