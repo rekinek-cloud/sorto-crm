@@ -22,6 +22,10 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   ChartBarIcon,
+  CloudArrowDownIcon,
+  FolderIcon,
+  ArrowDownTrayIcon,
+  CodeBracketIcon,
 } from '@heroicons/react/24/outline';
 
 // Types
@@ -63,6 +67,28 @@ interface DatabaseStatus {
   status: 'online' | 'offline' | 'unknown';
   version?: string;
   connections?: number;
+}
+
+interface GitHubRepo {
+  name: string;
+  description: string;
+  updatedAt: string;
+  isPrivate: boolean;
+  defaultBranch: string;
+  installed: boolean;
+  path: string | null;
+  localCommit?: string;
+  remoteCommit?: string;
+  upToDate?: boolean;
+  hasUncommittedChanges?: boolean;
+}
+
+interface GitHubReposData {
+  organization: string;
+  totalRepos: number;
+  installedCount: number;
+  notInstalledCount: number;
+  repos: GitHubRepo[];
 }
 
 interface Overview {
@@ -270,6 +296,187 @@ function DatabaseCard({ db }: { db: DatabaseStatus }) {
         }`}>
           {db.status}
         </span>
+      </div>
+    </div>
+  );
+}
+
+function GitHubReposSection() {
+  const [repos, setRepos] = useState<GitHubReposData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [cloning, setCloning] = useState<string | null>(null);
+  const [pulling, setPulling] = useState<string | null>(null);
+  const [filter, setFilter] = useState<'all' | 'installed' | 'new'>('all');
+
+  const fetchRepos = useCallback(async () => {
+    setLoading(true);
+    try {
+      const data = await api('/github/repos');
+      setRepos(data);
+    } catch (error) {
+      toast.error('Failed to fetch GitHub repos');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRepos();
+  }, [fetchRepos]);
+
+  const handleClone = async (repoName: string) => {
+    setCloning(repoName);
+    try {
+      const result = await api(`/github/repos/${repoName}/clone`, { method: 'POST' });
+      if (result.success) {
+        toast.success(`Repository ${repoName} cloned successfully`);
+        fetchRepos();
+      } else {
+        toast.error(result.message || 'Clone failed');
+      }
+    } catch (error) {
+      toast.error('Failed to clone repository');
+    } finally {
+      setCloning(null);
+    }
+  };
+
+  const handlePull = async (repoName: string) => {
+    setPulling(repoName);
+    try {
+      const result = await api(`/github/repos/${repoName}/pull`, { method: 'POST' });
+      if (result.success) {
+        toast.success(`Pulled latest changes for ${repoName}`);
+        fetchRepos();
+      } else {
+        toast.error(result.message || 'Pull failed');
+      }
+    } catch (error) {
+      toast.error('Failed to pull repository');
+    } finally {
+      setPulling(null);
+    }
+  };
+
+  const filteredRepos = repos?.repos.filter(repo => {
+    if (filter === 'installed') return repo.installed;
+    if (filter === 'new') return !repo.installed;
+    return true;
+  }) || [];
+
+  if (loading) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border p-6">
+        <div className="flex items-center justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm border p-6">
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-3">
+          <CodeBracketIcon className="w-5 h-5 text-gray-600" />
+          <h2 className="text-lg font-semibold text-gray-900">GitHub Repositories</h2>
+          {repos && (
+            <span className="text-sm text-gray-500">
+              ({repos.installedCount} installed / {repos.notInstalledCount} available)
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as any)}
+            className="px-3 py-1.5 border rounded-lg text-sm"
+          >
+            <option value="all">All repos</option>
+            <option value="installed">Installed</option>
+            <option value="new">Not installed</option>
+          </select>
+          <button
+            onClick={fetchRepos}
+            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+          >
+            <ArrowPathIcon className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="space-y-2 max-h-96 overflow-y-auto">
+        {filteredRepos.map(repo => (
+          <div
+            key={repo.name}
+            className={`flex items-center justify-between p-3 rounded-lg ${
+              repo.installed ? 'bg-green-50 border border-green-200' : 'bg-gray-50 border border-gray-200'
+            }`}
+          >
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className={`w-2 h-2 rounded-full ${repo.installed ? 'bg-green-500' : 'bg-gray-400'}`} />
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-gray-900 truncate">{repo.name}</span>
+                  {repo.isPrivate && (
+                    <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded">private</span>
+                  )}
+                  {repo.installed && repo.hasUncommittedChanges && (
+                    <span className="px-1.5 py-0.5 bg-orange-100 text-orange-700 text-xs rounded">uncommitted</span>
+                  )}
+                  {repo.installed && repo.upToDate === false && (
+                    <span className="px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded">updates available</span>
+                  )}
+                </div>
+                {repo.description && (
+                  <p className="text-sm text-gray-500 truncate">{repo.description}</p>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 ml-4">
+              {repo.installed ? (
+                <>
+                  <span className="text-xs text-gray-500">
+                    {repo.localCommit || '---'}
+                  </span>
+                  <button
+                    onClick={() => handlePull(repo.name)}
+                    disabled={pulling === repo.name || repo.hasUncommittedChanges}
+                    className="flex items-center gap-1 px-3 py-1.5 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={repo.hasUncommittedChanges ? 'Commit changes first' : 'Pull latest'}
+                  >
+                    {pulling === repo.name ? (
+                      <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <CloudArrowDownIcon className="w-4 h-4" />
+                    )}
+                    Pull
+                  </button>
+                </>
+              ) : (
+                <button
+                  onClick={() => handleClone(repo.name)}
+                  disabled={cloning === repo.name}
+                  className="flex items-center gap-1 px-3 py-1.5 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200 disabled:opacity-50"
+                >
+                  {cloning === repo.name ? (
+                    <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <ArrowDownTrayIcon className="w-4 h-4" />
+                  )}
+                  Clone
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+
+        {filteredRepos.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            No repositories found
+          </div>
+        )}
       </div>
     </div>
   );
@@ -538,6 +745,9 @@ export default function InfrastructurePage() {
           ))}
         </div>
       </div>
+
+      {/* GitHub Repositories */}
+      <GitHubReposSection />
 
       {/* Log Viewer Modal */}
       {selectedContainer && (

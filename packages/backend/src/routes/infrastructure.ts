@@ -266,4 +266,82 @@ router.get('/databases', async (req: Request, res: Response) => {
   }
 });
 
+// ============================================
+// GITHUB REPOSITORIES
+// ============================================
+
+/**
+ * GET /github/repos
+ * Lista repozytoriów z GitHub
+ */
+router.get('/github/repos', async (req: Request, res: Response) => {
+  try {
+    const repos = await infrastructureService.getGitHubRepos();
+    res.json(repos);
+  } catch (error) {
+    logger.error('Error getting GitHub repos:', error);
+    res.status(500).json({ error: 'Failed to get GitHub repositories' });
+  }
+});
+
+/**
+ * GET /github/repos/new
+ * Nowe repozytoria (niezainstalowane)
+ */
+router.get('/github/repos/new', async (req: Request, res: Response) => {
+  try {
+    const repos = await infrastructureService.getNewGitHubRepos();
+    res.json(repos);
+  } catch (error) {
+    logger.error('Error getting new repos:', error);
+    res.status(500).json({ error: 'Failed to get new repositories' });
+  }
+});
+
+/**
+ * POST /github/repos/:name/clone
+ * Sklonuj repozytorium
+ */
+router.post('/github/repos/:name/clone', async (req: Request, res: Response) => {
+  try {
+    const { branch } = req.body;
+    const result = await infrastructureService.cloneGitHubRepo(req.params.name, branch);
+    if (!result.success) {
+      return res.status(400).json({ error: result.message });
+    }
+    res.json(result);
+  } catch (error) {
+    logger.error('Error cloning repo:', error);
+    res.status(500).json({ error: 'Failed to clone repository' });
+  }
+});
+
+/**
+ * GET /github/sync-status
+ * Status synchronizacji repozytoriów
+ */
+router.get('/github/sync-status', async (req: Request, res: Response) => {
+  try {
+    const status = await infrastructureService.getReposSyncStatus();
+    res.json(status);
+  } catch (error) {
+    logger.error('Error getting sync status:', error);
+    res.status(500).json({ error: 'Failed to get sync status' });
+  }
+});
+
+/**
+ * POST /github/repos/:name/pull
+ * Pull najnowszych zmian
+ */
+router.post('/github/repos/:name/pull', async (req: Request, res: Response) => {
+  try {
+    const result = await infrastructureService.pullGitHubRepo(req.params.name);
+    res.json(result);
+  } catch (error) {
+    logger.error('Error pulling repo:', error);
+    res.status(500).json({ error: 'Failed to pull repository' });
+  }
+});
+
 export default router;

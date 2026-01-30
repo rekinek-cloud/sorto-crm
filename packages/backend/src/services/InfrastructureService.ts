@@ -469,6 +469,231 @@ class InfrastructureService {
       return [];
     }
   }
+
+  // ============================================
+  // GITHUB REPOSITORIES
+  // ============================================
+
+  private GITHUB_ORG = 'rekinek-cloud';
+
+  /**
+   * Lista repozytoriów z GitHub z informacją czy są zainstalowane
+   */
+  async getGitHubRepos(): Promise<{
+    organization: string;
+    totalRepos: number;
+    installedCount: number;
+    notInstalledCount: number;
+    repos: any[];
+  }> {
+    try {
+      // Pobierz repozytoria z GitHub
+      const { stdout: ghOutput } = await execAsync(
+        `gh repo list ${this.GITHUB_ORG} --json name,description,updatedAt,isPrivate,defaultBranchRef --limit 100`
+      );
+      const repos = JSON.parse(ghOutput);
+
+      // Pobierz listę zainstalowanych aplikacji
+      const { stdout: installedApps } = await execAsync(`ls -1 ${APPS_DIR}`);
+      const installed = new Set(installedApps.trim().split('\n').filter(Boolean));
+
+      // Mapuj repozytoria
+      const result = repos.map((repo: any) => ({
+        name: repo.name,
+        description: repo.description || '',
+        updatedAt: repo.updatedAt,
+        isPrivate: repo.isPrivate,
+        defaultBranch: repo.defaultBranchRef?.name || 'main',
+        installed: installed.has(repo.name),
+        path: installed.has(repo.name) ? `${APPS_DIR}/${repo.name}` : null
+      }));
+
+      // Sortuj: niezainstalowane najpierw
+      result.sort((a: any, b: any) => {
+        if (a.installed !== b.installed) return a.installed ? 1 : -1;
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      });
+
+      return {
+        organization: this.GITHUB_ORG,
+        totalRepos: result.length,
+        installedCount: result.filter((r: any) => r.installed).length,
+        notInstalledCount: result.filter((r: any) => !r.installed).length,
+        repos: result
+      };
+    } catch (error: any) {
+      logger.error('Error fetching GitHub repos:', error);
+      throw new Error(`Failed to fetch GitHub repos: ${error.message}`);
+    }
+  }
+
+  /**
+   * Tylko niezainstalowane repozytoria
+   */
+  async getNewGitHubRepos(): Promise<{ newReposCount: number; repos: any[] }> {
+    try {
+      const { repos } = await this.getGitHubRepos();
+      const newRepos = repos.filter((r: any) => !r.installed);
+      return { newReposCount: newRepos.length, repos: newRepos };
+    } catch (error: any) {
+      throw error;
+    }
+  }
+
+  /**
+   * Sklonuj repozytorium z GitHub
+   */
+  async cloneGitHubRepo(repoName: string, branch: string = 'main'): Promise<{
+    success: boolean;
+    message: string;
+    path?: string;
+    hasDockerCompose?: boolean;
+  }> {
+    const targetDir = `${APPS_DIR}/${repoName}`;
+
+    try {
+      // Sprawdź czy już istnieje
+      try {
+        await execAsync(`test -d ${targetDir}`);
+        return { success: false, message: `Repository ${repoName} already exists at ${targetDir}` };
+      } catch {
+        // Nie istnieje - kontynuuj
+      }
+
+      // Klonuj
+      await execAsync(
+        `gh repo clone ${this.GITHUB_ORG}/${repoName} ${targetDir} -- --branch ${branch}`,
+        { timeout: 120000 }
+      );
+
+      // Sprawdź docker-compose
+      let hasDockerCompose = false;
+      try {
+        await execAsync(`test -f ${targetDir}/docker-compose.yml`);
+        hasDockerCompose = true;
+      } catch {}
+
+      logger.info(`Cloned repository ${repoName} to ${targetDir}`);
+
+      return {
+        success: true,
+        message: `Repository ${repoName} cloned successfully`,
+        path: targetDir,
+        hasDockerCompose
+      };
+    } catch (error: any) {
+      logger.error(`Error cloning repo ${repoName}:`, error);
+      return { success: false, message: error.message };
+    }
+  }
+
+  /**
+   * Status synchronizacji wszystkich repozytoriów
+   */
+  async getReposSyncStatus(): Promise<{
+    summary: { total: number; installed: number; notInstalled: number; needsUpdate: number; hasUncommitted: number };
+    repos: any[];
+  }> {
+    try {
+      const { repos: ghRepos } = await this.getGitHubRepos();
+      const results: any[] = [];
+
+      for (const repo of ghRepos) {
+        if (!repo.installed) {
+          results.push({
+            name: repo.name,
+            installed: false,
+            inGitHub: true,
+            updatedAt: repo.updatedAt
+          });
+          continue;
+        }
+
+        const appDir = `${APPS_DIR}/${repo.name}`;
+        let status: any = {
+          name: repo.name,
+          installed: true,
+          inGitHub: true
+        };
+
+        try {
+          // Fetch latest
+          await execAsync(`cd ${appDir} && git fetch origin 2>/dev/null`);
+
+          const { stdout: localCommit } = await execAsync(
+            `cd ${appDir} && git rev-parse HEAD 2>/dev/null`
+          );
+          const { stdout: remoteCommit } = await execAsync(
+            `cd ${appDir} && git rev-parse origin/${repo.defaultBranch} 2>/dev/null`
+          );
+
+          status.localCommit = localCommit.trim().substring(0, 7);
+          status.remoteCommit = remoteCommit.trim().substring(0, 7);
+          status.upToDate = localCommit.trim() === remoteCommit.trim();
+
+          // Sprawdź niezacommitowane zmiany
+          const { stdout: gitStatus } = await execAsync(
+            `cd ${appDir} && git status --porcelain 2>/dev/null`
+          );
+          status.hasUncommittedChanges = gitStatus.trim().length > 0;
+        } catch {
+          status.gitError = true;
+        }
+
+        results.push(status);
+      }
+
+      const summary = {
+        total: results.length,
+        installed: results.filter(r => r.installed).length,
+        notInstalled: results.filter(r => !r.installed).length,
+        needsUpdate: results.filter(r => r.installed && r.upToDate === false).length,
+        hasUncommitted: results.filter(r => r.hasUncommittedChanges).length
+      };
+
+      return { summary, repos: results };
+    } catch (error: any) {
+      throw error;
+    }
+  }
+
+  /**
+   * Pull najnowszych zmian z GitHub
+   */
+  async pullGitHubRepo(repoName: string): Promise<{
+    success: boolean;
+    message: string;
+    output?: string;
+  }> {
+    const appDir = `${APPS_DIR}/${repoName}`;
+
+    try {
+      // Sprawdź czy istnieje
+      await execAsync(`test -d ${appDir}`);
+
+      // Sprawdź czy są niezacommitowane zmiany
+      const { stdout: gitStatus } = await execAsync(`cd ${appDir} && git status --porcelain`);
+      if (gitStatus.trim().length > 0) {
+        return {
+          success: false,
+          message: `Repository has uncommitted changes. Please commit or stash them first.`
+        };
+      }
+
+      // Pull
+      const { stdout, stderr } = await execAsync(
+        `cd ${appDir} && git pull origin main 2>&1 || git pull origin master 2>&1`
+      );
+
+      return {
+        success: true,
+        message: 'Pull successful',
+        output: stdout + stderr
+      };
+    } catch (error: any) {
+      return { success: false, message: error.message };
+    }
+  }
 }
 
 export const infrastructureService = new InfrastructureService();
