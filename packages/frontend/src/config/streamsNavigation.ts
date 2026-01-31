@@ -303,6 +303,17 @@ export const streamsNavigation: NavItem[] = [
       { name: 'Informacje', href: '/dashboard/info', icon: Info, iconWeight: 'duotone' },
     ],
   },
+
+  // === SORTO (wewnętrzne) ===
+  {
+    name: 'SORTO',
+    icon: Sparkle,
+    iconWeight: 'duotone',
+    children: [
+      { name: 'AI Conversations', href: '/dashboard/ai-sync', icon: ChatCircle, iconWeight: 'duotone' },
+      { name: 'Dev Hub', href: '/dashboard/admin/dev-hub', icon: HardDrives, iconWeight: 'duotone' },
+    ],
+  },
 ];
 
 /**
