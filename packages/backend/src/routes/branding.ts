@@ -5,7 +5,7 @@
 import { Router, Request, Response } from 'express';
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware } from '../shared/middleware/auth';
 import { subscriptionService } from '../services/SubscriptionService';
 import { logger } from '../config/logger';
 

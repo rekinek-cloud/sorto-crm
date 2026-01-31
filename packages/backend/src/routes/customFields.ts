@@ -6,7 +6,7 @@ import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { CustomFieldType, EntityType } from '@prisma/client';
 import { customFieldsService } from '../services/CustomFieldsService';
-import { authMiddleware } from '../middleware/auth';
+import { authMiddleware } from '../shared/middleware/auth';
 import { subscriptionService } from '../services/SubscriptionService';
 import { logger } from '../config/logger';
 
