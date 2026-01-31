@@ -112,10 +112,15 @@ model Organization {
   ai_prompt_overrides     ai_prompt_overrides[]
 
   // Flow Engine relations
-  flow_learned_patterns     flow_learned_patterns[]
-  flow_automation_rules     flow_automation_rules[]
-  flow_processing_history   flow_processing_history[]
-  flow_conversations        flow_conversations[]
+  flow_learned_patterns   flow_learned_patterns[]
+  flow_automation_rules   flow_automation_rules[]
+  flow_processing_history flow_processing_history[]
+  flow_conversations      flow_conversations[]
+
+  // AI Conversations Sync relations
+  aiConversations AiConversation[]
+  aiSyncStatuses  AiSyncStatus[]
+  aiAppMappings   AiAppMapping[]
 
   @@map("organizations")
 }
@@ -205,10 +210,10 @@ model User {
   promptVersionChanges                                     ai_prompt_versions[]
 
   // Flow Engine relations
-  flow_learned_patterns                                    flow_learned_patterns[]
-  flow_automation_rules                                    flow_automation_rules[]
-  flow_processing_history                                  flow_processing_history[]
-  flow_conversations                                       flow_conversations[]
+  flow_learned_patterns   flow_learned_patterns[]
+  flow_automation_rules   flow_automation_rules[]
+  flow_processing_history flow_processing_history[]
+  flow_conversations      flow_conversations[]
 
   @@map("users")
 }
@@ -225,14 +230,14 @@ model RefreshToken {
 }
 
 model VerificationToken {
-  id        String                 @id @default(uuid())
-  token     String                 @unique
+  id        String                @id @default(uuid())
+  token     String                @unique
   type      VerificationTokenType
   userId    String
   expiresAt DateTime
   usedAt    DateTime?
-  createdAt DateTime               @default(now())
-  user      User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime              @default(now())
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([token])
   @@index([userId, type])
@@ -299,10 +304,20 @@ model Stream {
   timeline                                            Timeline[]
 
   // Flow Engine relations
-  flow_learned_patterns                               flow_learned_patterns[]
-  flow_automation_rules                               flow_automation_rules[]
-  flow_conversations_proposed                         flow_conversations[] @relation("ProposedStream")
-  flow_conversations_final                            flow_conversations[] @relation("FinalStream")
+  flow_learned_patterns       flow_learned_patterns[]
+  flow_automation_rules       flow_automation_rules[]
+  flow_conversations_proposed flow_conversations[]    @relation("ProposedStream")
+  flow_conversations_final    flow_conversations[]    @relation("FinalStream")
+
+  // AI Knowledge Base fields (for REFERENCE streams)
+  aiSource             AiSource?
+  aiConversationsCount Int?      @default(0) @map("ai_conversations_count")
+  aiMessagesCount      Int?      @default(0) @map("ai_messages_count")
+  aiLastSyncAt         DateTime? @map("ai_last_sync_at")
+  aiKeywords           String[]  @default([]) @map("ai_keywords")
+
+  // AI Conversations Sync relations
+  aiConversations AiConversation[]
 
   @@index([horizonLevel])
   @@index([streamType])
@@ -410,7 +425,7 @@ model Project {
   tasks                   Task[]
 
   // Flow Engine relations
-  flow_automation_rules   flow_automation_rules[]
+  flow_automation_rules flow_automation_rules[]
 
   @@map("projects")
 }
@@ -1781,30 +1796,30 @@ model InboxItem {
   dealId             String?
 
   // Flow Engine - rozszerzone pola
-  elementType           FlowElementType?        // Typ elementu (EMAIL, VOICE, etc.)
-  rawContent            String?                 @db.Text  // Surowa treść (przed przetworzeniem)
-  flowStatus            FlowProcessingStatus    @default(PENDING)  // Status przetwarzania Flow
-  aiAnalysis            Json?                   // Wynik analizy AI
-  suggestedAction       FlowAction?             // Sugerowana akcja AI
-  suggestedStreams      Json?                   // Sugerowane streamy [{streamId, confidence, reason}]
-  userDecision          FlowAction?             // Decyzja użytkownika (jeśli inna niż sugerowana)
-  userDecisionReason    String?                 // Powód innej decyzji
-  splitFromId           String?                 // ID elementu źródłowego (jeśli powstał z podziału)
-  aiConfidence          Float?                  // Pewność AI (0-1)
-  aiReasoning           String?                 @db.Text  // Uzasadnienie AI
-  processingTimeMs      Int?                    // Czas przetwarzania w ms
+  elementType        FlowElementType? // Typ elementu (EMAIL, VOICE, etc.)
+  rawContent         String?              @db.Text // Surowa treść (przed przetworzeniem)
+  flowStatus         FlowProcessingStatus @default(PENDING) // Status przetwarzania Flow
+  aiAnalysis         Json? // Wynik analizy AI
+  suggestedAction    FlowAction? // Sugerowana akcja AI
+  suggestedStreams   Json? // Sugerowane streamy [{streamId, confidence, reason}]
+  userDecision       FlowAction? // Decyzja użytkownika (jeśli inna niż sugerowana)
+  userDecisionReason String? // Powód innej decyzji
+  splitFromId        String? // ID elementu źródłowego (jeśli powstał z podziału)
+  aiConfidence       Float? // Pewność AI (0-1)
+  aiReasoning        String?              @db.Text // Uzasadnienie AI
+  processingTimeMs   Int? // Czas przetwarzania w ms
 
-  capturedBy         User                @relation("InboxCapturedBy", fields: [capturedById], references: [id])
-  company            Company?            @relation(fields: [companyId], references: [id])
-  contact            Contact?            @relation(fields: [contactId], references: [id])
-  organization       Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  project            Project?            @relation(fields: [projectId], references: [id])
-  resultingTask      Task?               @relation(fields: [resultingTaskId], references: [id])
-  stream             Stream?             @relation("InboxToStream", fields: [streamId], references: [id])
-  task               Task?               @relation("InboxLinkedTask", fields: [taskId], references: [id])
-  splitFrom          InboxItem?          @relation("InboxSplit", fields: [splitFromId], references: [id])
-  splitItems         InboxItem[]         @relation("InboxSplit")
-  flowConversations  flow_conversations[]
+  capturedBy        User                 @relation("InboxCapturedBy", fields: [capturedById], references: [id])
+  company           Company?             @relation(fields: [companyId], references: [id])
+  contact           Contact?             @relation(fields: [contactId], references: [id])
+  organization      Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  project           Project?             @relation(fields: [projectId], references: [id])
+  resultingTask     Task?                @relation(fields: [resultingTaskId], references: [id])
+  stream            Stream?              @relation("InboxToStream", fields: [streamId], references: [id])
+  task              Task?                @relation("InboxLinkedTask", fields: [taskId], references: [id])
+  splitFrom         InboxItem?           @relation("InboxSplit", fields: [splitFromId], references: [id])
+  splitItems        InboxItem[]          @relation("InboxSplit")
+  flowConversations flow_conversations[]
 
   @@index([capturedAt])
   @@index([organizationId, processed])
@@ -2101,33 +2116,33 @@ model ai_predictions {
 }
 
 model ai_prompt_templates {
-  id                   String                  @id
-  code                 String?                 // np. 'SOURCE_ANALYZE'
-  name                 String
-  description          String?
-  category             String?                 // SOURCE, STREAM, TASK, etc.
-  version              Int                     @default(1)
-  status               AITemplateStatus        @default(ACTIVE)
-  isSystem             Boolean                 @default(false) // Systemowe = niemodyfikowalne
-  systemPrompt         String?                 @db.Text
-  userPromptTemplate   String                  @db.Text
-  variables            Json                    @default("{}")
-  modelId              String?
-  defaultModel         String?                 @default("gpt-4o-mini")
-  defaultTemperature   Float                   @default(0.3)
-  maxTokens            Int                     @default(1000)
-  outputSchema         Json?
-  organizationId       String
-  createdById          String?
-  createdAt            DateTime                @default(now())
-  updatedAt            DateTime
-  ai_executions        ai_executions[]
-  ai_models            ai_models?              @relation(fields: [modelId], references: [id])
-  organizations        Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  ai_rules             ai_rules[]
-  versions             ai_prompt_versions[]
-  overrides            ai_prompt_overrides[]
-  createdBy            User?                   @relation(fields: [createdById], references: [id])
+  id                 String                @id
+  code               String? // np. 'SOURCE_ANALYZE'
+  name               String
+  description        String?
+  category           String? // SOURCE, STREAM, TASK, etc.
+  version            Int                   @default(1)
+  status             AITemplateStatus      @default(ACTIVE)
+  isSystem           Boolean               @default(false) // Systemowe = niemodyfikowalne
+  systemPrompt       String?               @db.Text
+  userPromptTemplate String                @db.Text
+  variables          Json                  @default("{}")
+  modelId            String?
+  defaultModel       String?               @default("gpt-4o-mini")
+  defaultTemperature Float                 @default(0.3)
+  maxTokens          Int                   @default(1000)
+  outputSchema       Json?
+  organizationId     String
+  createdById        String?
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime
+  ai_executions      ai_executions[]
+  ai_models          ai_models?            @relation(fields: [modelId], references: [id])
+  organizations      Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ai_rules           ai_rules[]
+  versions           ai_prompt_versions[]
+  overrides          ai_prompt_overrides[]
+  createdBy          User?                 @relation(fields: [createdById], references: [id])
 
   @@index([organizationId, code])
   @@index([category])
@@ -2135,17 +2150,17 @@ model ai_prompt_templates {
 }
 
 model ai_prompt_versions {
-  id             String              @id @default(uuid())
-  promptId       String
-  version        Int
-  systemPrompt   String?             @db.Text
-  userPromptTemplate String          @db.Text
-  variables      Json                @default("{}")
-  changedById    String?
-  changeReason   String?
-  createdAt      DateTime            @default(now())
-  prompt         ai_prompt_templates @relation(fields: [promptId], references: [id], onDelete: Cascade)
-  changedBy      User?               @relation(fields: [changedById], references: [id])
+  id                 String              @id @default(uuid())
+  promptId           String
+  version            Int
+  systemPrompt       String?             @db.Text
+  userPromptTemplate String              @db.Text
+  variables          Json                @default("{}")
+  changedById        String?
+  changeReason       String?
+  createdAt          DateTime            @default(now())
+  prompt             ai_prompt_templates @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  changedBy          User?               @relation(fields: [changedById], references: [id])
 
   @@unique([promptId, version])
   @@index([promptId])
@@ -2655,7 +2670,7 @@ model precise_goals {
   created_at      DateTime? @default(now()) @db.Timestamp(6)
   updated_at      DateTime? @default(now()) @db.Timestamp(6)
   achieved_at     DateTime? @db.Timestamp(6)
-  outlet          String?   // Ujście - gdzie trafi rezultat, kto jest beneficjentem (RZUT)
+  outlet          String? // Ujście - gdzie trafi rezultat, kto jest beneficjentem (RZUT)
   streams         Stream?   @relation(fields: [stream_id], references: [id], onUpdate: NoAction)
 }
 
@@ -3145,33 +3160,33 @@ model view_configurations {
 // Flow Engine - wzorce uczone z decyzji użytkownika
 // ============================================
 model flow_learned_patterns {
-  id                String        @id @default(uuid())
-  organizationId    String
-  userId            String
+  id             String @id @default(uuid())
+  organizationId String
+  userId         String
 
   // Wzorzec wejściowy
-  elementType       FlowElementType
-  contentPattern    String?       @db.Text   // Wzorzec treści (regex lub keywords)
-  senderPattern     String?                  // Wzorzec nadawcy
-  subjectPattern    String?                  // Wzorzec tematu
+  elementType    FlowElementType
+  contentPattern String?         @db.Text // Wzorzec treści (regex lub keywords)
+  senderPattern  String? // Wzorzec nadawcy
+  subjectPattern String? // Wzorzec tematu
 
   // Nauczona decyzja
-  learnedAction     FlowAction               // Akcja która została wybrana
-  learnedStreamId   String?                  // Stream do którego trafiło
+  learnedAction   FlowAction // Akcja która została wybrana
+  learnedStreamId String? // Stream do którego trafiło
 
   // Statystyki
-  occurrences       Int           @default(1)  // Ile razy zastosowane
-  confidence        Float         @default(0.5) // Pewność wzorca (0-1)
-  lastUsedAt        DateTime      @default(now())
+  occurrences Int      @default(1) // Ile razy zastosowane
+  confidence  Float    @default(0.5) // Pewność wzorca (0-1)
+  lastUsedAt  DateTime @default(now())
 
   // Metadane
-  isActive          Boolean       @default(true)
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  organization      Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  learnedStream     Stream?       @relation(fields: [learnedStreamId], references: [id])
+  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  learnedStream Stream?      @relation(fields: [learnedStreamId], references: [id])
 
   @@index([organizationId, userId])
   @@index([elementType, isActive])
@@ -3182,39 +3197,39 @@ model flow_learned_patterns {
 // Flow Engine - reguły automatyzacji
 // ============================================
 model flow_automation_rules {
-  id                String        @id @default(uuid())
-  organizationId    String
-  userId            String
+  id             String @id @default(uuid())
+  organizationId String
+  userId         String
 
   // Definicja reguły
-  name              String
-  description       String?
-  isActive          Boolean       @default(true)
-  priority          Int           @default(0)    // Wyższy = ważniejszy
+  name        String
+  description String?
+  isActive    Boolean @default(true)
+  priority    Int     @default(0) // Wyższy = ważniejszy
 
   // Warunki (JSON array)
-  conditions        Json          // [{field, operator, value}]
+  conditions Json // [{field, operator, value}]
 
   // Akcja do wykonania
-  action            FlowAction
-  targetStreamId    String?                      // Docelowy stream
-  targetProjectId   String?                      // Docelowy projekt
+  action          FlowAction
+  targetStreamId  String? // Docelowy stream
+  targetProjectId String? // Docelowy projekt
 
   // Opcje
-  autoExecute       Boolean       @default(false) // Automatyczne wykonanie bez potwierdzenia
-  notifyOnMatch     Boolean       @default(true)  // Powiadom o dopasowaniu
+  autoExecute   Boolean @default(false) // Automatyczne wykonanie bez potwierdzenia
+  notifyOnMatch Boolean @default(true) // Powiadom o dopasowaniu
 
   // Statystyki
-  executionCount    Int           @default(0)
-  lastExecutedAt    DateTime?
+  executionCount Int       @default(0)
+  lastExecutedAt DateTime?
 
-  createdAt         DateTime      @default(now())
-  updatedAt         DateTime      @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  organization      Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  targetStream      Stream?       @relation(fields: [targetStreamId], references: [id])
-  targetProject     Project?      @relation(fields: [targetProjectId], references: [id])
+  organization  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user          User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  targetStream  Stream?      @relation(fields: [targetStreamId], references: [id])
+  targetProject Project?     @relation(fields: [targetProjectId], references: [id])
 
   @@index([organizationId, isActive])
   @@index([priority])
@@ -3225,15 +3240,15 @@ model flow_automation_rules {
 // Flow Engine - historia przetwarzania
 // ============================================
 model flow_processing_history {
-  id                String        @id @default(uuid())
-  organizationId    String
-  userId            String
-  inboxItemId       String
+  id             String @id @default(uuid())
+  organizationId String
+  userId         String
+  inboxItemId    String
 
   // Przebieg przetwarzania
-  startedAt         DateTime      @default(now())
-  completedAt       DateTime?
-  processingTimeMs  Int?
+  startedAt        DateTime  @default(now())
+  completedAt      DateTime?
+  processingTimeMs Int?
 
   // Wynik analizy AI
   aiAnalysis        Json?
@@ -3241,19 +3256,19 @@ model flow_processing_history {
   aiConfidence      Float?
 
   // Decyzja końcowa
-  finalAction       FlowAction?
-  finalStreamId     String?
-  wasUserOverride   Boolean       @default(false)  // Czy użytkownik zmienił sugestię
-  userFeedback      String?                        // Feedback użytkownika
+  finalAction     FlowAction?
+  finalStreamId   String?
+  wasUserOverride Boolean     @default(false) // Czy użytkownik zmienił sugestię
+  userFeedback    String? // Feedback użytkownika
 
   // Wzorzec który został użyty (jeśli jakikolwiek)
-  matchedPatternId  String?
-  matchedRuleId     String?
+  matchedPatternId String?
+  matchedRuleId    String?
 
-  createdAt         DateTime      @default(now())
+  createdAt DateTime @default(now())
 
-  organization      Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([organizationId, createdAt])
   @@index([inboxItemId])
@@ -3264,41 +3279,41 @@ model flow_processing_history {
 // Flow Engine - konwersacje dialogowe
 // ============================================
 model flow_conversations {
-  id                  String        @id @default(uuid())
-  organizationId      String        @map("organization_id")
-  userId              String        @map("user_id")
-  inboxItemId         String        @map("inbox_item_id")
+  id             String @id @default(uuid())
+  organizationId String @map("organization_id")
+  userId         String @map("user_id")
+  inboxItemId    String @map("inbox_item_id")
 
   // Status konwersacji
-  status              FlowConversationStatus @default(ACTIVE)
+  status FlowConversationStatus @default(ACTIVE)
 
   // Propozycje AI (mogą być modyfikowane)
-  proposedAction      FlowAction?   @map("proposed_action")
-  proposedStreamId    String?       @map("proposed_stream_id")
-  proposedTaskTitle   String?       @map("proposed_task_title") @db.Text
-  proposedPriority    String?       @map("proposed_priority")
-  aiConfidence        Float?        @map("ai_confidence")
+  proposedAction    FlowAction? @map("proposed_action")
+  proposedStreamId  String?     @map("proposed_stream_id")
+  proposedTaskTitle String?     @map("proposed_task_title") @db.Text
+  proposedPriority  String?     @map("proposed_priority")
+  aiConfidence      Float?      @map("ai_confidence")
 
   // Wynik końcowy
-  finalAction         FlowAction?   @map("final_action")
-  finalStreamId       String?       @map("final_stream_id")
-  finalTaskTitle      String?       @map("final_task_title") @db.Text
-  finalPriority       String?       @map("final_priority")
+  finalAction    FlowAction? @map("final_action")
+  finalStreamId  String?     @map("final_stream_id")
+  finalTaskTitle String?     @map("final_task_title") @db.Text
+  finalPriority  String?     @map("final_priority")
 
   // Śledzenie modyfikacji
-  userModifications   Json?         @map("user_modifications")  // [{field, from, to, timestamp}]
+  userModifications Json? @map("user_modifications") // [{field, from, to, timestamp}]
 
-  completedAt         DateTime?     @map("completed_at")
-  createdAt           DateTime      @default(now()) @map("created_at")
-  updatedAt           DateTime      @updatedAt @map("updated_at")
+  completedAt DateTime? @map("completed_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
 
   // Relacje
-  organization        Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  inboxItem           InboxItem     @relation(fields: [inboxItemId], references: [id], onDelete: Cascade)
-  proposedStream      Stream?       @relation("ProposedStream", fields: [proposedStreamId], references: [id])
-  finalStream         Stream?       @relation("FinalStream", fields: [finalStreamId], references: [id])
-  messages            flow_conversation_messages[]
+  organization   Organization                 @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  inboxItem      InboxItem                    @relation(fields: [inboxItemId], references: [id], onDelete: Cascade)
+  proposedStream Stream?                      @relation("ProposedStream", fields: [proposedStreamId], references: [id])
+  finalStream    Stream?                      @relation("FinalStream", fields: [finalStreamId], references: [id])
+  messages       flow_conversation_messages[]
 
   @@index([organizationId, status])
   @@index([inboxItemId])
@@ -3306,15 +3321,15 @@ model flow_conversations {
 }
 
 model flow_conversation_messages {
-  id              String      @id @default(uuid())
-  conversationId  String      @map("conversation_id")
-  role            String      // 'user' | 'assistant' | 'system'
-  content         String      @db.Text
-  metadata        Json?       // Dodatkowe dane (np. propozycja, modyfikacja)
+  id             String @id @default(uuid())
+  conversationId String @map("conversation_id")
+  role           String // 'user' | 'assistant' | 'system'
+  content        String @db.Text
+  metadata       Json? // Dodatkowe dane (np. propozycja, modyfikacja)
 
-  createdAt       DateTime    @default(now()) @map("created_at")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  conversation    flow_conversations @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  conversation flow_conversations @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 
   @@index([conversationId, createdAt])
   @@map("flow_conversation_messages")
@@ -4012,25 +4027,25 @@ enum FlowElementType {
 
 // Flow Engine - sugerowane akcje
 enum FlowAction {
-  ZROB_TERAZ        // Natychmiast, < 2 min
-  ZAPLANUJ          // Zaplanuj na konkretny czas
-  PROJEKT           // Dodaj do projektu
-  KIEDYS_MOZE       // Someday/Maybe
-  REFERENCJA        // Materiał referencyjny
-  USUN              // Usuń
+  ZROB_TERAZ // Natychmiast, < 2 min
+  ZAPLANUJ // Zaplanuj na konkretny czas
+  PROJEKT // Dodaj do projektu
+  KIEDYS_MOZE // Someday/Maybe
+  REFERENCJA // Materiał referencyjny
+  USUN // Usuń
 }
 
 // Flow Engine - status przetwarzania
 enum FlowProcessingStatus {
-  PENDING           // Oczekuje na przetworzenie
-  ANALYZING         // Trwa analiza AI
+  PENDING // Oczekuje na przetworzenie
+  ANALYZING // Trwa analiza AI
   AWAITING_DECISION // Oczekuje na decyzję użytkownika
-  PROCESSED         // Przetworzone
-  SPLIT             // Podzielone na elementy
-  ERROR             // Błąd przetwarzania
-  FROZEN            // Zamrożone na później (ZAMROZ)
-  REFERENCE         // Materiał referencyjny (REFERENCJA)
-  DELETED           // Usunięte (USUN)
+  PROCESSED // Przetworzone
+  SPLIT // Podzielone na elementy
+  ERROR // Błąd przetwarzania
+  FROZEN // Zamrożone na później (ZAMROZ)
+  REFERENCE // Materiał referencyjny (REFERENCJA)
+  DELETED // Usunięte (USUN)
 }
 
 enum InheritanceRule {
@@ -4115,6 +4130,7 @@ enum StreamType {
   AREA
   CONTEXT
   CUSTOM
+  REFERENCE
 }
 
 enum SuggestionStatus {
@@ -4252,6 +4268,20 @@ enum ViewType {
   LIST
 }
 
+// AI Conversations Sync Enums
+enum AiSource {
+  CHATGPT
+  CLAUDE
+  DEEPSEEK
+}
+
+enum SyncStatus {
+  IDLE
+  SYNCING
+  ERROR
+  COMPLETED
+}
+
 model IndustryTemplate {
   id             String   @id @default(uuid())
   slug           String   @unique
@@ -4270,4 +4300,133 @@ model IndustryTemplate {
   updatedAt      DateTime @updatedAt
 
   @@map("industry_templates")
+}
+
+// ============================================
+// AI CONVERSATIONS SYNC MODELS
+// ============================================
+
+model AiConversation {
+  id             String  @id @default(uuid())
+  organizationId String  @map("organization_id")
+  streamId       String? @map("stream_id")
+
+  // Source info
+  source     AiSource
+  externalId String   @map("external_id")
+  hash       String   @unique
+
+  // Data
+  title               String
+  appName             String? @map("app_name")
+  classificationScore Float?  @map("classification_score")
+
+  // Stats
+  messageCount Int  @default(0) @map("message_count")
+  tokenCount   Int? @map("token_count")
+
+  // Dates
+  sourceCreatedAt DateTime? @map("source_created_at")
+  sourceUpdatedAt DateTime? @map("source_updated_at")
+  importedAt      DateTime  @default(now()) @map("imported_at")
+
+  // RAG
+  isIndexed Boolean   @default(false) @map("is_indexed")
+  indexedAt DateTime? @map("indexed_at")
+
+  // Relations
+  organization Organization            @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  stream       Stream?                 @relation(fields: [streamId], references: [id], onDelete: SetNull)
+  messages     AiConversationMessage[]
+  chunks       AiConversationChunk[]
+
+  @@index([organizationId, source])
+  @@index([organizationId, appName])
+  @@index([streamId])
+  @@index([hash])
+  @@map("ai_conversations")
+}
+
+model AiConversationMessage {
+  id             String @id @default(uuid())
+  conversationId String @map("conversation_id")
+
+  role         String
+  content      String @db.Text
+  messageIndex Int    @map("message_index")
+
+  // Metadata
+  model     String?
+  tokens    Int?
+  timestamp DateTime?
+
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("ai_conversation_messages")
+}
+
+model AiConversationChunk {
+  id             String @id @default(uuid())
+  conversationId String @map("conversation_id")
+
+  content    String @db.Text
+  chunkIndex Int    @map("chunk_index")
+  tokenCount Int    @map("token_count")
+
+  // Note: Vector embedding added via raw SQL (pgvector)
+  // embedding    Unsupported("vector(1536)")?
+
+  conversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId])
+  @@map("ai_conversation_chunks")
+}
+
+model AiSyncStatus {
+  id             String   @id @default(uuid())
+  organizationId String   @map("organization_id")
+  source         AiSource
+
+  // Status
+  status       SyncStatus @default(IDLE)
+  lastSyncAt   DateTime?  @map("last_sync_at")
+  lastFileHash String?    @map("last_file_hash")
+  lastError    String?    @map("last_error")
+
+  // Stats
+  conversationsCount Int @default(0) @map("conversations_count")
+
+  // Dropbox
+  dropboxPath   String? @map("dropbox_path")
+  dropboxCursor String? @map("dropbox_cursor")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, source])
+  @@map("ai_sync_status")
+}
+
+model AiAppMapping {
+  id             String @id @default(uuid())
+  organizationId String @map("organization_id")
+
+  appName   String   @map("app_name")
+  appStatus String?  @map("app_status")
+  keywords  String[]
+
+  // Linked Stream (auto-created)
+  streamId String? @map("stream_id")
+
+  // Stats
+  conversationsCount Int @default(0) @map("conversations_count")
+  messagesCount      Int @default(0) @map("messages_count")
+
+  // Settings
+  autoCreateStream Boolean @default(true) @map("auto_create_stream")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, appName])
+  @@map("ai_app_mappings")
 }

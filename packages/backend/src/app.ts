@@ -63,6 +63,7 @@ import usersRoutes from './routes/users';
 import industriesRoutes from './routes/industries';
 import devHubRoutes from './routes/devHub';
 import infrastructureRoutes from './routes/infrastructure';
+import aiSyncRoutes from './routes/aiSync';
 
 const app = express();
 
@@ -197,6 +198,7 @@ apiRouter.use('/users', usersRoutes);  // Zarządzanie użytkownikami
 apiRouter.use('/industries', industriesRoutes);  // Industry templates
 apiRouter.use('/dev-hub', devHubRoutes);  // Dev Hub - zarządzanie kontenerami
 apiRouter.use('/infrastructure', infrastructureRoutes);  // Infrastructure Dashboard
+apiRouter.use('/ai-sync', aiSyncRoutes);  // AI Conversations Sync (ChatGPT/Claude/DeepSeek)
 
 // STREAMS Migration - nowe endpointy
 apiRouter.use('/source', sourceRoutes);           // Źródło (ex gtdInbox)
