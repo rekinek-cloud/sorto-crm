@@ -76,6 +76,8 @@ import codingCenterRoutes from './routes/codingCenter';
 import aiChatRoutes from './routes/aiChat';
 import ragRoutes from './routes/rag';
 import geminiRoutes from './routes/gemini';
+import unifiedRulesRoutes from './routes/unifiedRules';
+import searchRoutes from './routes/search';
 // TODO: Fix import issues in these routes
 // import customFieldsRoutes from './routes/customFields';
 // import brandingRoutes from './routes/branding';
@@ -231,6 +233,8 @@ apiRouter.use('/coding-center', codingCenterRoutes);  // Coding Center - projekt
 apiRouter.use('/ai-chat', aiChatRoutes);  // AI Chat - Qwen API (unlimited)
 apiRouter.use('/rag', ragRoutes);  // RAG - Retrieval-Augmented Generation
 apiRouter.use('/gemini', geminiRoutes);  // Gemini - Vision, Caching, 1M context
+apiRouter.use('/unified-rules', unifiedRulesRoutes);  // Unified Rules - zunifikowany system reguł
+apiRouter.use('/search', searchRoutes);  // Search - wyszukiwanie
 // TODO: Fix import issues in these routes
 // apiRouter.use('/custom-fields', customFieldsRoutes);  // Custom Fields - pola niestandardowe
 // apiRouter.use('/branding', brandingRoutes);  // Branding - logo i kolory
