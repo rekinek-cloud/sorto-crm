@@ -6,7 +6,7 @@ import { Router, Request, Response } from 'express';
 import Stripe from 'stripe';
 import { z } from 'zod';
 import { subscriptionService } from '../services/SubscriptionService';
-import { authMiddleware } from '../shared/middleware/auth';
+import { authenticateToken as authMiddleware } from '../shared/middleware/auth';
 import { logger } from '../config/logger';
 import { PLAN_PRICING, PLAN_LIMITS } from '../config/planLimits';
 
