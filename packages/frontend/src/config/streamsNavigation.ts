@@ -217,6 +217,9 @@ export const streamsNavigation: NavItem[] = [
       { name: 'Voice TTS', href: '/dashboard/voice', icon: Microphone, iconWeight: 'duotone' },
       { name: 'Graf relacji', href: '/dashboard/graph', icon: Graph, iconWeight: 'duotone' },
       { name: 'Reguły uniwersalne', href: '/dashboard/universal-rules', icon: FlowArrow, iconWeight: 'duotone' },
+      { name: 'AI Chat (Qwen)', href: '/dashboard/ai-chat', icon: ChatCircle, iconWeight: 'duotone' },
+      { name: 'Flow Engine', href: '/dashboard/flow', icon: FlowArrow, iconWeight: 'duotone' },
+      { name: 'Flow Conversation', href: '/dashboard/flow/conversation', icon: ChatCircle, iconWeight: 'duotone' },
     ],
   },
 
@@ -272,6 +275,7 @@ export const streamsNavigation: NavItem[] = [
     children: [
       { name: 'Członkowie', href: '/dashboard/team', icon: UsersThree, iconWeight: 'duotone' },
       { name: 'Użytkownicy', href: '/dashboard/users', icon: Users, iconWeight: 'duotone' },
+      { name: 'Hierarchia', href: '/dashboard/team/hierarchy', icon: TreeStructure, iconWeight: 'duotone' },
     ],
   },
 
@@ -300,6 +304,7 @@ export const streamsNavigation: NavItem[] = [
     children: [
       { name: 'Infrastruktura', href: '/dashboard/infrastructure', icon: HardDrives, iconWeight: 'duotone' },
       { name: 'Klucze MCP', href: '/dashboard/admin/mcp-keys', icon: Key, iconWeight: 'duotone' },
+      { name: 'Konfiguracja AI', href: '/dashboard/admin/ai-config', icon: Sliders, iconWeight: 'duotone' },
       { name: 'Zgłoszenia błędów', href: '/dashboard/admin/bug-reports', icon: Bug, iconWeight: 'duotone' },
       { name: 'Informacje', href: '/dashboard/info', icon: Info, iconWeight: 'duotone' },
     ],
