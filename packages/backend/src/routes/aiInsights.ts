@@ -165,7 +165,7 @@ router.get('/global',
       allInsights = streamInsights.flat();
 
       // Add organization-level insights
-      const orgInsights = await this.generateOrganizationInsights(organizationId, timeframe);
+      const orgInsights = await generateOrganizationInsights(organizationId, timeframe);
       allInsights.push(...orgInsights);
 
       // Apply filters
@@ -183,7 +183,7 @@ router.get('/global',
         const priorityOrder = { critical: 4, high: 3, medium: 2, low: 1 };
         const aPriority = priorityOrder[a.priority as keyof typeof priorityOrder] || 0;
         const bPriority = priorityOrder[b.priority as keyof typeof priorityOrder] || 0;
-        
+
         if (aPriority !== bPriority) return bPriority - aPriority;
         return b.confidence - a.confidence;
       });
@@ -197,9 +197,9 @@ router.get('/global',
           insights: allInsights,
           meta: {
             total: allInsights.length,
-            byType: this.groupInsightsByType(allInsights),
-            byPriority: this.groupInsightsByPriority(allInsights),
-            avgConfidence: allInsights.length > 0 
+            byType: groupInsightsByType(allInsights),
+            byPriority: groupInsightsByPriority(allInsights),
+            avgConfidence: allInsights.length > 0
               ? Math.round(allInsights.reduce((sum, i) => sum + i.confidence, 0) / allInsights.length)
               : 0,
             streamsAnalyzed: streams.length
@@ -366,7 +366,7 @@ router.get('/communication/:channelId',
         });
       }
 
-      const insights = await this.generateCommunicationInsights(channel);
+      const insights = await generateCommunicationInsights(channel);
 
       res.json({
         success: true,
@@ -380,8 +380,8 @@ router.get('/communication/:channelId',
           stats: {
             totalMessages: channel.messages.length,
             uniqueContacts: new Set(channel.messages.map(m => m.contactId).filter(Boolean)).size,
-            avgResponseTime: await this.calculateAvgResponseTime(channel.messages),
-            sentimentTrend: await this.calculateSentimentTrend(channel.messages)
+            avgResponseTime: await calculateAvgResponseTime(channel.messages),
+            sentimentTrend: await calculateSentimentTrend(channel.messages)
           }
         }
       });

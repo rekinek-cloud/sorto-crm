@@ -149,6 +149,309 @@ const UnifiedRuleCreateSchema = z.object({
 
 const UnifiedRuleUpdateSchema = UnifiedRuleCreateSchema.partial();
 
+// ⚠️ IMPORTANT: Static routes MUST come BEFORE dynamic /:id routes!
+
+// GET /api/v1/unified-rules/stats/overview - Statystyki przeglądu
+router.get('/stats/overview', async (req: any, res) => {
+  try {
+    // Mockowe dane dla testów - pozwala na przetestowanie frontend bez bazy danych
+    const mockStats = {
+      totalRules: 9,
+      activeRules: 6,
+      inactiveRules: 3,
+      rulesByType: [
+        { ruleType: 'PROCESSING', _count: 3 },
+        { ruleType: 'EMAIL_FILTER', _count: 2 },
+        { ruleType: 'AUTO_REPLY', _count: 2 },
+        { ruleType: 'AI_RULE', _count: 1 },
+        { ruleType: 'SMART_MAILBOX', _count: 1 }
+      ],
+      executions24h: 47,
+      successRate: 97.8,
+      avgExecutionTime: 189
+    };
+
+    res.json({
+      success: true,
+      data: mockStats,
+      message: 'TEMP: Using mock data for frontend testing'
+    });
+  } catch (error) {
+    console.error('Error fetching unified rules stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch unified rules stats'
+    });
+  }
+});
+
+// GET /api/v1/unified-rules/stats/overview-test - Statystyki przeglądu (TEST)
+router.get('/stats/overview-test', async (req, res) => {
+  try {
+    const mockStats = {
+      totalRules: 5,
+      activeRules: 3,
+      inactiveRules: 2,
+      rulesByType: [
+        { ruleType: 'PROCESSING', _count: 2 },
+        { ruleType: 'EMAIL_FILTER', _count: 1 },
+        { ruleType: 'AUTO_REPLY', _count: 1 },
+        { ruleType: 'AI_ANALYSIS', _count: 1 }
+      ],
+      executions24h: 24,
+      successRate: 95.5,
+      avgExecutionTime: 234
+    };
+
+    res.json({
+      success: true,
+      data: mockStats,
+      message: 'TEST ENDPOINT - Mock data for development'
+    });
+  } catch (error) {
+    console.error('Error in test stats endpoint:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch test stats'
+    });
+  }
+});
+
+// GET /api/v1/unified-rules/mock - Lista mockowych reguł (dla testów)
+router.get('/mock', async (req: any, res) => {
+  try {
+    const { type, status, category, search, page = '1', limit = '50' } = req.query;
+
+    // Mockowe reguły dla testów
+    const mockRules = [
+      {
+        id: 'rule-1',
+        name: 'Auto-zadania z pilnych emaili',
+        description: 'Automatycznie tworzy zadania HIGH priority dla wiadomości z słowami "PILNE", "URGENT"',
+        ruleType: 'PROCESSING',
+        category: 'EMAIL_PROCESSING',
+        status: 'ACTIVE',
+        priority: 90,
+        triggerType: 'EVENT_BASED',
+        triggerEvents: ['message_received'],
+        conditions: { subjectContains: ['PILNE', 'URGENT'], minUrgencyScore: 80 },
+        actions: { createTask: { priority: 'HIGH', context: '@calls' } },
+        executionCount: 23,
+        successCount: 22,
+        errorCount: 1,
+        lastExecuted: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        fallbackModelIds: []
+      },
+      {
+        id: 'rule-2',
+        name: 'Filtr newsletterów',
+        description: 'Automatycznie archiwizuje newslettery z pominięciem analizy AI',
+        ruleType: 'EMAIL_FILTER',
+        category: 'FILTERING',
+        status: 'ACTIVE',
+        priority: 50,
+        triggerType: 'EVENT_BASED',
+        triggerEvents: ['message_received'],
+        conditions: { subjectContains: ['newsletter', 'unsubscribe'], maxUrgencyScore: 30 },
+        actions: { categorize: 'ARCHIVE', skipAIAnalysis: true },
+        executionCount: 156,
+        successCount: 156,
+        errorCount: 0,
+        lastExecuted: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        fallbackModelIds: []
+      },
+      {
+        id: 'rule-3',
+        name: 'Odpowiedź poza godzinami pracy',
+        description: 'Auto-odpowiedź wieczorem i w weekendy',
+        ruleType: 'AUTO_REPLY',
+        category: 'COMMUNICATION',
+        status: 'ACTIVE',
+        priority: 70,
+        triggerType: 'EVENT_BASED',
+        triggerEvents: ['message_received'],
+        conditions: { timeRange: { start: '18:00', end: '08:00' } },
+        actions: { sendAutoReply: { template: 'Dziękuję za wiadomość. Odpowiem w najbliższym dniu roboczym.' } },
+        executionCount: 12,
+        successCount: 12,
+        errorCount: 0,
+        lastExecuted: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        fallbackModelIds: []
+      },
+      {
+        id: 'rule-4',
+        name: 'Analiza pilności projektów',
+        description: 'Automatyczna ocena pilności nowych projektów przez AI',
+        ruleType: 'AI_RULE',
+        category: 'AI_ANALYSIS',
+        status: 'ACTIVE',
+        priority: 80,
+        triggerType: 'EVENT_BASED',
+        triggerEvents: ['project_created'],
+        conditions: { entityType: 'project', analysisType: 'urgency' },
+        actions: { runAIAnalysis: { modelId: 'gpt-4', analysisType: 'urgency' } },
+        executionCount: 8,
+        successCount: 7,
+        errorCount: 1,
+        lastExecuted: new Date().toISOString(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        fallbackModelIds: []
+      },
+      {
+        id: 'rule-5',
+        name: 'VIP Mailbox Organization',
+        description: 'Automatyczne sortowanie wiadomości VIP do dedykowanej skrzynki',
+        ruleType: 'SMART_MAILBOX',
+        category: 'ORGANIZATION',
+        status: 'INACTIVE',
+        priority: 85,
+        triggerType: 'EVENT_BASED',
+        triggerEvents: ['message_received'],
+        conditions: { smartFilters: [{ name: 'VIP', condition: 'sender=@bigcorp.com' }] },
+        actions: { organizeIntoMailbox: { name: 'VIP Klienci', priority: 'HIGH' } },
+        executionCount: 0,
+        successCount: 0,
+        errorCount: 0,
+        lastExecuted: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        fallbackModelIds: []
+      }
+    ];
+
+    // Apply filtering
+    let filteredRules = mockRules;
+
+    if (type && type !== 'ALL') {
+      filteredRules = filteredRules.filter(rule => rule.ruleType === type);
+    }
+
+    if (status && status !== 'ALL') {
+      filteredRules = filteredRules.filter(rule => rule.status === status);
+    }
+
+    if (search) {
+      const searchLower = search.toString().toLowerCase();
+      filteredRules = filteredRules.filter(rule =>
+        rule.name.toLowerCase().includes(searchLower) ||
+        (rule.description && rule.description.toLowerCase().includes(searchLower))
+      );
+    }
+
+    const pageNum = parseInt(page as string);
+    const limitNum = parseInt(limit as string);
+    const total = filteredRules.length;
+    const skip = (pageNum - 1) * limitNum;
+    const paginatedRules = filteredRules.slice(skip, skip + limitNum);
+
+    res.json({
+      success: true,
+      data: {
+        rules: paginatedRules,
+        pagination: {
+          page: pageNum,
+          limit: limitNum,
+          total,
+          pages: Math.ceil(total / limitNum)
+        }
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching unified rules:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch unified rules'
+    });
+  }
+});
+
+// GET /api/v1/unified-rules/templates - Szablony reguł
+router.get('/templates', authenticateToken, async (req: AuthenticatedRequest, res) => {
+  try {
+    const templates = [
+      {
+        id: 'vip-email-processing',
+        name: 'VIP Email Processing',
+        description: 'Automatyczne przetwarzanie emaili od VIP kontaktów',
+        ruleType: 'PROCESSING',
+        category: 'MESSAGE_PROCESSING',
+        conditions: {
+          senderDomain: 'vipcompany.com',
+          priority: 'HIGH'
+        },
+        actions: {
+          createTask: {
+            title: 'Respond to VIP email',
+            priority: 'HIGH',
+            context: '@calls'
+          },
+          categorize: 'VIP',
+          notify: {
+            channels: ['email', 'slack'],
+            message: 'VIP email received'
+          }
+        }
+      },
+      {
+        id: 'spam-filter',
+        name: 'Spam Email Filter',
+        description: 'Automatyczne filtrowanie i usuwanie spamu',
+        ruleType: 'EMAIL_FILTER',
+        category: 'FILTERING',
+        conditions: {
+          keywords: ['viagra', 'lottery', 'winner'],
+          minUrgencyScore: 0,
+          maxUrgencyScore: 20
+        },
+        actions: {
+          categorize: 'SPAM',
+          autoDelete: true,
+          skipAIAnalysis: true
+        }
+      },
+      {
+        id: 'out-of-office-reply',
+        name: 'Out of Office Auto-Reply',
+        description: 'Automatyczna odpowiedź podczas nieobecności',
+        ruleType: 'AUTO_REPLY',
+        category: 'COMMUNICATION',
+        conditions: {
+          timeRange: {
+            start: '18:00',
+            end: '08:00',
+            timezone: 'Europe/Warsaw'
+          }
+        },
+        actions: {
+          sendAutoReply: {
+            template: 'I am currently out of office. I will respond to your email as soon as possible.',
+            subject: 'Out of Office',
+            delay: 0
+          }
+        }
+      }
+    ];
+
+    res.json({
+      success: true,
+      data: templates
+    });
+  } catch (error) {
+    console.error('Error fetching rule templates:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch rule templates'
+    });
+  }
+});
+
 // GET /api/v1/unified-rules - Lista wszystkich reguł
 router.get('/', async (req: any, res) => {
   try {
@@ -700,40 +1003,6 @@ router.get('/:id/executions', authenticateToken, async (req: AuthenticatedReques
   }
 });
 
-// GET /api/v1/unified-rules/stats/overview - Statystyki przeglądu
-router.get('/stats/overview', async (req: any, res) => {
-  try {
-    // Mockowe dane dla testów - pozwala na przetestowanie frontend bez bazy danych
-    const mockStats = {
-      totalRules: 9,
-      activeRules: 6,
-      inactiveRules: 3,
-      rulesByType: [
-        { ruleType: 'PROCESSING', _count: 3 },
-        { ruleType: 'EMAIL_FILTER', _count: 2 },
-        { ruleType: 'AUTO_REPLY', _count: 2 },
-        { ruleType: 'AI_RULE', _count: 1 },
-        { ruleType: 'SMART_MAILBOX', _count: 1 }
-      ],
-      executions24h: 47,
-      successRate: 97.8,
-      avgExecutionTime: 189
-    };
-    
-    res.json({
-      success: true,
-      data: mockStats,
-      message: 'TEMP: Using mock data for frontend testing'
-    });
-  } catch (error) {
-    console.error('Error fetching unified rules stats:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch unified rules stats'
-    });
-  }
-});
-
 // POST /api/v1/unified-rules/process-message - Przetwórz wiadomość przez reguły
 router.post('/process-message', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
@@ -832,119 +1101,6 @@ router.post('/process-task', authenticateToken, async (req: AuthenticatedRequest
     res.status(500).json({
       success: false,
       error: 'Failed to process task through unified rules'
-    });
-  }
-});
-
-// GET /api/v1/unified-rules/stats/overview-test - Statystyki przeglądu (TEST - bez autoryzacji)
-router.get('/stats/overview-test', async (req, res) => {
-  try {
-    // Mockowe dane dla testów
-    const mockStats = {
-      totalRules: 5,
-      activeRules: 3,
-      inactiveRules: 2,
-      rulesByType: [
-        { ruleType: 'PROCESSING', _count: 2 },
-        { ruleType: 'EMAIL_FILTER', _count: 1 },
-        { ruleType: 'AUTO_REPLY', _count: 1 },
-        { ruleType: 'AI_ANALYSIS', _count: 1 }
-      ],
-      executions24h: 24,
-      successRate: 95.5,
-      avgExecutionTime: 234
-    };
-    
-    res.json({
-      success: true,
-      data: mockStats,
-      message: 'TEST ENDPOINT - Mock data for development'
-    });
-  } catch (error) {
-    console.error('Error in test stats endpoint:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch test stats'
-    });
-  }
-});
-
-// GET /api/v1/unified-rules/templates - Szablony reguł
-router.get('/templates', authenticateToken, async (req: AuthenticatedRequest, res) => {
-  try {
-    const templates = [
-      {
-        id: 'vip-email-processing',
-        name: 'VIP Email Processing',
-        description: 'Automatyczne przetwarzanie emaili od VIP kontaktów',
-        ruleType: 'PROCESSING',
-        category: 'MESSAGE_PROCESSING',
-        conditions: {
-          senderDomain: 'vipcompany.com',
-          priority: 'HIGH'
-        },
-        actions: {
-          createTask: {
-            title: 'Respond to VIP email',
-            priority: 'HIGH',
-            context: '@calls'
-          },
-          categorize: 'VIP',
-          notify: {
-            channels: ['email', 'slack'],
-            message: 'VIP email received'
-          }
-        }
-      },
-      {
-        id: 'spam-filter',
-        name: 'Spam Email Filter',
-        description: 'Automatyczne filtrowanie i usuwanie spamu',
-        ruleType: 'EMAIL_FILTER',
-        category: 'FILTERING',
-        conditions: {
-          keywords: ['viagra', 'lottery', 'winner'],
-          minUrgencyScore: 0,
-          maxUrgencyScore: 20
-        },
-        actions: {
-          categorize: 'SPAM',
-          autoDelete: true,
-          skipAIAnalysis: true
-        }
-      },
-      {
-        id: 'out-of-office-reply',
-        name: 'Out of Office Auto-Reply',
-        description: 'Automatyczna odpowiedź podczas nieobecności',
-        ruleType: 'AUTO_REPLY',
-        category: 'COMMUNICATION',
-        conditions: {
-          timeRange: {
-            start: '18:00',
-            end: '08:00',
-            timezone: 'Europe/Warsaw'
-          }
-        },
-        actions: {
-          sendAutoReply: {
-            template: 'I am currently out of office. I will respond to your email as soon as possible.',
-            subject: 'Out of Office',
-            delay: 0
-          }
-        }
-      }
-    ];
-    
-    res.json({
-      success: true,
-      data: templates
-    });
-  } catch (error) {
-    console.error('Error fetching rule templates:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to fetch rule templates'
     });
   }
 });
