@@ -74,6 +74,7 @@ import {
   Table,
   CreditCard,
   CalendarCheck,
+  Terminal,
 } from 'phosphor-react';
 
 export interface NavItem {
@@ -310,6 +311,7 @@ export const streamsNavigation: NavItem[] = [
     icon: Sparkle,
     iconWeight: 'duotone',
     children: [
+      { name: 'Coding Center', href: '/dashboard/coding-center', icon: Terminal, iconWeight: 'duotone' },
       { name: 'AI Conversations', href: '/dashboard/ai-sync', icon: ChatCircle, iconWeight: 'duotone' },
       { name: 'Dev Hub', href: '/dashboard/admin/dev-hub', icon: HardDrives, iconWeight: 'duotone' },
     ],

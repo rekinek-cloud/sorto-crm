@@ -64,6 +64,7 @@ import industriesRoutes from './routes/industries';
 import devHubRoutes from './routes/devHub';
 import infrastructureRoutes from './routes/infrastructure';
 import aiSyncRoutes from './routes/aiSync';
+import codingCenterRoutes from './routes/codingCenter';
 
 const app = express();
 
@@ -199,6 +200,7 @@ apiRouter.use('/industries', industriesRoutes);  // Industry templates
 apiRouter.use('/dev-hub', devHubRoutes);  // Dev Hub - zarządzanie kontenerami
 apiRouter.use('/infrastructure', infrastructureRoutes);  // Infrastructure Dashboard
 apiRouter.use('/ai-sync', aiSyncRoutes);  // AI Conversations Sync (ChatGPT/Claude/DeepSeek)
+apiRouter.use('/coding-center', codingCenterRoutes);  // Coding Center - projekty i narzędzia
 
 // STREAMS Migration - nowe endpointy
 apiRouter.use('/source', sourceRoutes);           // Źródło (ex gtdInbox)
