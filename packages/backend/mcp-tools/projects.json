@@ -1,58 +1,401 @@
 [
   {
-    "name": "sorto-crm",
-    "path": "/home/dev/apps/sorto-crm",
+    "name": "Aurabase",
+    "path": "/home/dev/apps/Aurabase",
     "status": "running",
     "stream": "dev-hub",
-    "description": "CRM Streams - główna aplikacja"
+    "description": ""
   },
   {
-    "name": "retronova",
-    "path": "/home/dev/apps/retronova",
+    "name": "DuoFit",
+    "path": "/home/dev/apps/DuoFit",
     "status": "running",
     "stream": "dev-hub",
-    "description": "Retronova - gra retro"
+    "description": ""
   },
   {
-    "name": "verbamind",
-    "path": "/home/dev/apps/verbamind",
+    "name": "Focusvox-emer",
+    "path": "/home/dev/apps/Focusvox-emer",
     "status": "running",
     "stream": "dev-hub",
-    "description": "VerbaMind - asystent głosowy"
+    "description": ""
   },
   {
-    "name": "focusphoto",
-    "path": "/home/dev/apps/focusphoto",
+    "name": "LuminaSpot",
+    "path": "/home/dev/apps/LuminaSpot",
     "status": "running",
     "stream": "dev-hub",
-    "description": "FocusPhoto - aplikacja foto"
+    "description": ""
   },
   {
-    "name": "flyball",
-    "path": "/home/dev/apps/flyball",
+    "name": "Nano-Studio",
+    "path": "/home/dev/apps/Nano-Studio",
     "status": "running",
     "stream": "dev-hub",
-    "description": "Flyball - zarządzanie zawodami"
+    "description": ""
   },
   {
-    "name": "kangur",
-    "path": "/home/dev/apps/kangur",
+    "name": "Synergy-gem",
+    "path": "/home/dev/apps/Synergy-gem",
     "status": "running",
     "stream": "dev-hub",
-    "description": "Kangur AI Platform"
+    "description": ""
   },
   {
-    "name": "picar",
-    "path": "/home/dev/apps/picar",
+    "name": "Synergyfit",
+    "path": "/home/dev/apps/Synergyfit",
     "status": "running",
     "stream": "dev-hub",
-    "description": "PiCar - projekt robotyki"
+    "description": ""
+  },
+  {
+    "name": "agent",
+    "path": "/home/dev/apps/agent",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "astro",
+    "path": "/home/dev/apps/astro",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "aurabase",
+    "path": "/home/dev/apps/aurabase",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "boa",
+    "path": "/home/dev/apps/boa",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "booking",
+    "path": "/home/dev/apps/booking",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "colorcraft",
+    "path": "/home/dev/apps/colorcraft",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "contentdna",
+    "path": "/home/dev/apps/contentdna",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "data-pilot",
+    "path": "/home/dev/apps/data-pilot",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "datapilot",
+    "path": "/home/dev/apps/datapilot",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "datapilotsaas",
+    "path": "/home/dev/apps/datapilotsaas",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "ebyt",
+    "path": "/home/dev/apps/ebyt",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "expopulse",
+    "path": "/home/dev/apps/expopulse",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
   },
   {
     "name": "exposcan",
     "path": "/home/dev/apps/exposcan",
     "status": "running",
     "stream": "dev-hub",
-    "description": "ExpoScan - skanowanie wizytówek"
+    "description": ""
+  },
+  {
+    "name": "expotalk",
+    "path": "/home/dev/apps/expotalk",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "flyball",
+    "path": "/home/dev/apps/flyball",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "flyball-photos-manager",
+    "path": "/home/dev/apps/flyball-photos-manager",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "flyball-repo",
+    "path": "/home/dev/apps/flyball-repo",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "focus-photo",
+    "path": "/home/dev/apps/focus-photo",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "focusphoto",
+    "path": "/home/dev/apps/focusphoto",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "focusphoto-emer",
+    "path": "/home/dev/apps/focusphoto-emer",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "focusvox",
+    "path": "/home/dev/apps/focusvox",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "focusvox-emer",
+    "path": "/home/dev/apps/focusvox-emer",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "homeassistant",
+    "path": "/home/dev/apps/homeassistant",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "hrm",
+    "path": "/home/dev/apps/hrm",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "jaros",
+    "path": "/home/dev/apps/jaros",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "kangur",
+    "path": "/home/dev/apps/kangur",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "kangur-ai-platform",
+    "path": "/home/dev/apps/kangur-ai-platform",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "luminaspot",
+    "path": "/home/dev/apps/luminaspot",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "manekin",
+    "path": "/home/dev/apps/manekin",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "nano-studio",
+    "path": "/home/dev/apps/nano-studio",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "photoalbum",
+    "path": "/home/dev/apps/photoalbum",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "picar",
+    "path": "/home/dev/apps/picar",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "rag-service",
+    "path": "/home/dev/apps/rag-service",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "restaurant",
+    "path": "/home/dev/apps/restaurant",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "retronova",
+    "path": "/home/dev/apps/retronova",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "sorto",
+    "path": "/home/dev/apps/sorto",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "sorto-crm",
+    "path": "/home/dev/apps/sorto-crm",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "sorto-photo",
+    "path": "/home/dev/apps/sorto-photo",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "synergy-gem",
+    "path": "/home/dev/apps/synergy-gem",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "synergyfit",
+    "path": "/home/dev/apps/synergyfit",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "thermomix",
+    "path": "/home/dev/apps/thermomix",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "thermomix-zero-waste",
+    "path": "/home/dev/apps/thermomix-zero-waste",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "ube",
+    "path": "/home/dev/apps/ube",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "verbamind",
+    "path": "/home/dev/apps/verbamind",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "vocalize-web",
+    "path": "/home/dev/apps/vocalize-web",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "wordloomer",
+    "path": "/home/dev/apps/wordloomer",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "wordpress",
+    "path": "/home/dev/apps/wordpress",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "yogabook",
+    "path": "/home/dev/apps/yogabook",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "yt-whisper",
+    "path": "/home/dev/apps/yt-whisper",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
+  },
+  {
+    "name": "yt-whisper-web",
+    "path": "/home/dev/apps/yt-whisper-web",
+    "status": "running",
+    "stream": "dev-hub",
+    "description": ""
   }
 ]
