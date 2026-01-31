@@ -48,6 +48,7 @@
     "stripe": "^13.5.0",
     "uuid": "^9.0.0",
     "winston": "^3.10.0",
+    "ws": "^8.19.0",
     "zod": "^3.22.2"
   },
   "devDependencies": {
