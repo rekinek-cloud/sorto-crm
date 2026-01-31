@@ -3,9 +3,17 @@ import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
 import expressWinston from 'express-winston';
+import { createServer } from 'http';
+import { WebSocketServer, WebSocket } from 'ws';
 import { connectDatabases, setupRowLevelSecurity } from './config/database';
 import config from './config';
 import logger, { morganStream } from './config/logger';
+import {
+  createTerminalSession,
+  handleTerminalInput,
+  resizeTerminal,
+  killTerminalSession,
+} from './services/terminalService';
 import { errorHandler, notFoundHandler } from './shared/middleware/error';
 import { generalRateLimit } from './shared/middleware/rateLimit';
 import { scheduledTasksService } from './services/scheduledTasks';
@@ -271,13 +279,54 @@ const startServer = async (): Promise<void> => {
     // Start scheduled tasks
     scheduledTasksService.startAll();
 
+    // Create HTTP server
+    const server = createServer(app);
+
+    // Setup WebSocket server for terminal
+    const wss = new WebSocketServer({ server, path: '/ws/terminal' });
+
+    wss.on('connection', (ws: WebSocket, req) => {
+      const url = new URL(req.url || '', `http://${req.headers.host}`);
+      const projectPath = url.searchParams.get('path') || '/home/dev/apps';
+      const sessionId = `terminal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
+      logger.info(`Terminal WebSocket connected: ${sessionId} -> ${projectPath}`);
+
+      createTerminalSession(sessionId, ws, projectPath);
+
+      ws.on('message', (message: Buffer) => {
+        try {
+          const msg = JSON.parse(message.toString());
+          if (msg.type === 'input') {
+            handleTerminalInput(sessionId, msg.data);
+          } else if (msg.type === 'resize') {
+            resizeTerminal(sessionId, msg.cols, msg.rows);
+          }
+        } catch (e) {
+          // Raw input (for backwards compatibility)
+          handleTerminalInput(sessionId, message.toString());
+        }
+      });
+
+      ws.on('close', () => {
+        logger.info(`Terminal WebSocket closed: ${sessionId}`);
+        killTerminalSession(sessionId);
+      });
+
+      ws.on('error', (error) => {
+        logger.error(`Terminal WebSocket error: ${sessionId}`, error);
+        killTerminalSession(sessionId);
+      });
+    });
+
     // Start HTTP server - bind to 0.0.0.0 for network access
-    const server = app.listen(config.PORT, '0.0.0.0', () => {
+    server.listen(config.PORT, '0.0.0.0', () => {
       logger.info(`🚀 Server running on port ${config.PORT}`);
       logger.info(`📊 Environment: ${config.NODE_ENV}`);
       logger.info(`🔗 Local: http://localhost:${config.PORT}/health`);
       logger.info(`🌐 Network: http://YOUR_IP:${config.PORT}/health`);
       logger.info(`📚 API docs: http://localhost:${config.PORT}/api/v1`);
+      logger.info(`🖥️  Terminal WebSocket: ws://localhost:${config.PORT}/ws/terminal`);
     });
 
     // Graceful shutdown
