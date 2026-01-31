@@ -6,7 +6,7 @@ import {
   AiConversationsService,
   SyncOrchestratorService,
 } from '../modules/ai-conversations-sync/services';
-import { AiSourceType, SyncStatusType } from '../modules/ai-conversations-sync/types';
+import { AiSourceType } from '../modules/ai-conversations-sync/types';
 
 const router = Router();
 const prisma = new PrismaClient();
@@ -19,8 +19,6 @@ const syncOrchestrator = new SyncOrchestratorService(prisma);
 const syncSchema = z.object({
   source: z.enum(['CHATGPT', 'CLAUDE', 'DEEPSEEK']),
   jsonContent: z.string().min(1, 'JSON content is required'),
-  indexAfterImport: z.boolean().optional().default(false),
-  createStreams: z.boolean().optional().default(true),
 });
 
 const searchSchema = z.object({
@@ -30,37 +28,23 @@ const searchSchema = z.object({
   source: z.enum(['CHATGPT', 'CLAUDE', 'DEEPSEEK']).optional(),
 });
 
-const listSchema = z.object({
-  source: z.enum(['CHATGPT', 'CLAUDE', 'DEEPSEEK']).optional(),
-  appName: z.string().optional(),
-  streamId: z.string().optional(),
-  isIndexed: z.boolean().optional(),
-  skip: z.number().min(0).optional().default(0),
-  take: z.number().min(1).max(100).optional().default(50),
-});
-
 // Apply authentication middleware
 router.use(authenticateUser);
 
 /**
  * POST /api/v1/ai-sync/import
  * Import conversations from JSON file
+ * Uses existing vector_documents table via VectorService
  */
-router.post('/import', async (req: Request, res: Response) => {
+router.post('/import', async (req: Request, res: Response): Promise<void> => {
   try {
-    const { source, jsonContent, indexAfterImport, createStreams } = syncSchema.parse(req.body);
+    const { source, jsonContent } = syncSchema.parse(req.body);
     const organizationId = req.user.organizationId;
-    const userId = req.user.id;
 
     const result = await syncOrchestrator.syncFromJson(
       organizationId,
-      userId,
       source as AiSourceType,
-      jsonContent,
-      {
-        indexAfterImport,
-        createStreams,
-      }
+      jsonContent
     );
 
     res.json({
@@ -78,9 +62,9 @@ router.post('/import', async (req: Request, res: Response) => {
 
 /**
  * POST /api/v1/ai-sync/search
- * Search conversations using vector similarity
+ * Search conversations using VectorService
  */
-router.post('/search', async (req: Request, res: Response) => {
+router.post('/search', async (req: Request, res: Response): Promise<void> => {
   try {
     const { query, limit, appName, source } = searchSchema.parse(req.body);
     const organizationId = req.user.organizationId;
@@ -106,28 +90,21 @@ router.post('/search', async (req: Request, res: Response) => {
 
 /**
  * GET /api/v1/ai-sync/conversations
- * List conversations
+ * List conversations from vector_documents
  */
-router.get('/conversations', async (req: Request, res: Response) => {
+router.get('/conversations', async (req: Request, res: Response): Promise<void> => {
   try {
-    const params = listSchema.parse({
-      source: req.query.source,
-      appName: req.query.appName,
-      streamId: req.query.streamId,
-      isIndexed: req.query.isIndexed === 'true' ? true : req.query.isIndexed === 'false' ? false : undefined,
-      skip: req.query.skip ? Number(req.query.skip) : 0,
-      take: req.query.take ? Number(req.query.take) : 50,
-    });
-
     const organizationId = req.user.organizationId;
+    const source = req.query.source as AiSourceType | undefined;
+    const appName = req.query.appName as string | undefined;
+    const skip = req.query.skip ? Number(req.query.skip) : 0;
+    const take = req.query.take ? Number(req.query.take) : 50;
 
     const conversations = await conversationsService.getConversations(organizationId, {
-      source: params.source as AiSourceType | undefined,
-      appName: params.appName,
-      streamId: params.streamId,
-      isIndexed: params.isIndexed,
-      skip: params.skip,
-      take: params.take,
+      source,
+      appName,
+      skip,
+      take,
     });
 
     res.json({
@@ -145,27 +122,19 @@ router.get('/conversations', async (req: Request, res: Response) => {
 
 /**
  * GET /api/v1/ai-sync/conversations/:id
- * Get single conversation with messages
+ * Get single conversation
  */
 router.get('/conversations/:id', async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
+    const organizationId = req.user.organizationId;
 
-    const conversation = await conversationsService.getConversation(id);
+    const conversation = await conversationsService.getConversation(organizationId, id);
 
     if (!conversation) {
       res.status(404).json({
         success: false,
         error: 'Conversation not found',
-      });
-      return;
-    }
-
-    // Check organization access
-    if (conversation.organizationId !== req.user.organizationId) {
-      res.status(403).json({
-        success: false,
-        error: 'Access denied',
       });
       return;
     }
@@ -192,17 +161,7 @@ router.delete('/conversations/:id', async (req: Request, res: Response): Promise
     const { id } = req.params;
     const organizationId = req.user.organizationId;
 
-    // Verify ownership
-    const conversation = await conversationsService.getConversation(id);
-    if (!conversation || conversation.organizationId !== organizationId) {
-      res.status(404).json({
-        success: false,
-        error: 'Conversation not found',
-      });
-      return;
-    }
-
-    await conversationsService.deleteConversation(id);
+    await conversationsService.deleteConversation(organizationId, id);
 
     res.json({
       success: true,
@@ -218,94 +177,10 @@ router.delete('/conversations/:id', async (req: Request, res: Response): Promise
 });
 
 /**
- * POST /api/v1/ai-sync/conversations/:id/index
- * Index conversation for RAG
- */
-router.post('/conversations/:id/index', async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { id } = req.params;
-    const organizationId = req.user.organizationId;
-
-    // Verify ownership
-    const conversation = await conversationsService.getConversation(id);
-    if (!conversation || conversation.organizationId !== organizationId) {
-      res.status(404).json({
-        success: false,
-        error: 'Conversation not found',
-      });
-      return;
-    }
-
-    const chunksCount = await conversationsService.indexConversation(id);
-
-    res.json({
-      success: true,
-      data: {
-        conversationId: id,
-        chunksCreated: chunksCount,
-      },
-    });
-  } catch (error) {
-    console.error('AI Sync index error:', error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Index failed',
-    });
-  }
-});
-
-/**
- * POST /api/v1/ai-sync/index-all
- * Index all unindexed conversations
- */
-router.post('/index-all', async (req: Request, res: Response) => {
-  try {
-    const organizationId = req.user.organizationId;
-
-    const result = await syncOrchestrator.indexAllUnindexed(organizationId);
-
-    res.json({
-      success: true,
-      data: result,
-    });
-  } catch (error) {
-    console.error('AI Sync index-all error:', error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Index all failed',
-    });
-  }
-});
-
-/**
- * GET /api/v1/ai-sync/status
- * Get sync status for all sources
- */
-router.get('/status', async (req: Request, res: Response) => {
-  try {
-    const organizationId = req.user.organizationId;
-    const source = req.query.source as AiSourceType | undefined;
-
-    const status = await conversationsService.getSyncStatus(organizationId, source);
-
-    res.json({
-      success: true,
-      data: status,
-    });
-  } catch (error) {
-    console.error('AI Sync status error:', error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Status failed',
-    });
-  }
-});
-
-/**
  * GET /api/v1/ai-sync/summary
  * Get sync summary statistics
  */
-router.get('/summary', async (req: Request, res: Response) => {
+router.get('/summary', async (req: Request, res: Response): Promise<void> => {
   try {
     const organizationId = req.user.organizationId;
 
@@ -320,52 +195,6 @@ router.get('/summary', async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Summary failed',
-    });
-  }
-});
-
-/**
- * GET /api/v1/ai-sync/app-mappings
- * Get app mappings
- */
-router.get('/app-mappings', async (req: Request, res: Response) => {
-  try {
-    const organizationId = req.user.organizationId;
-
-    const mappings = await conversationsService.getAppMappings(organizationId);
-
-    res.json({
-      success: true,
-      data: mappings,
-    });
-  } catch (error) {
-    console.error('AI Sync app-mappings error:', error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'App mappings failed',
-    });
-  }
-});
-
-/**
- * POST /api/v1/ai-sync/reclassify
- * Re-classify all conversations
- */
-router.post('/reclassify', async (req: Request, res: Response) => {
-  try {
-    const organizationId = req.user.organizationId;
-
-    const result = await syncOrchestrator.reclassifyAll(organizationId);
-
-    res.json({
-      success: true,
-      data: result,
-    });
-  } catch (error) {
-    console.error('AI Sync reclassify error:', error);
-    res.status(500).json({
-      success: false,
-      error: error instanceof Error ? error.message : 'Reclassify failed',
     });
   }
 });
