@@ -7,7 +7,7 @@ import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import { authMiddleware } from '../middleware/auth';
 import { subscriptionService } from '../services/SubscriptionService';
-import { logger } from '../utils/logger';
+import { logger } from '../config/logger';
 
 const router = Router();
 const prisma = new PrismaClient();

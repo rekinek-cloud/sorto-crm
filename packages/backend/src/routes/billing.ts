@@ -7,7 +7,7 @@ import Stripe from 'stripe';
 import { z } from 'zod';
 import { subscriptionService } from '../services/SubscriptionService';
 import { authMiddleware } from '../middleware/auth';
-import { logger } from '../utils/logger';
+import { logger } from '../config/logger';
 import { PLAN_PRICING, PLAN_LIMITS } from '../config/planLimits';
 
 const router = Router();

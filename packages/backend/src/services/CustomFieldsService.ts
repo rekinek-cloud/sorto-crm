@@ -3,7 +3,7 @@
  */
 
 import { PrismaClient, CustomFieldType, EntityType, CustomFieldDefinition, CustomFieldValue } from '@prisma/client';
-import { logger } from '../utils/logger';
+import { logger } from '../config/logger';
 
 const prisma = new PrismaClient();
 
