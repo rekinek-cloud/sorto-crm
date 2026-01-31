@@ -170,7 +170,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       Cookies.remove('refresh_token');
       
       toast.success('Logged out successfully');
-      router.push('/');
+      window.location.href = '/';
     }
   };
 
