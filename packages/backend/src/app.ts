@@ -76,21 +76,22 @@ import codingCenterRoutes from './routes/codingCenter';
 import aiChatRoutes from './routes/aiChat';
 import ragRoutes from './routes/rag';
 import geminiRoutes from './routes/gemini';
-import customFieldsRoutes from './routes/customFields';
-import brandingRoutes from './routes/branding';
-import emailAccountsRoutes from './routes/emailAccounts';
-import autoRepliesRoutes from './routes/autoReplies';
-import aiV2Routes from './routes/aiV2';
-import pipelineAnalyticsRoutes from './routes/pipelineAnalytics';
-import universalRulesRoutes from './routes/universalRules';
-import graphRoutes from './routes/graph';
-import realVectorSearchRoutes from './routes/realVectorSearch';
-import modernEmailRoutes from './routes/modernEmail';
-import voiceSimpleRoutes from './routes/voice-simple';
-import bugReportsRoutes from './routes/bugReports';
-import aiRulesRoutes from './routes/aiRules';
-import filesRoutes from './routes/files';
-import weeklyReviewRoutes from './routes/weeklyReview';
+// TODO: Fix import issues in these routes
+// import customFieldsRoutes from './routes/customFields';
+// import brandingRoutes from './routes/branding';
+// import emailAccountsRoutes from './routes/emailAccounts';
+// import autoRepliesRoutes from './routes/autoReplies';
+// import aiV2Routes from './routes/aiV2';
+// import pipelineAnalyticsRoutes from './routes/pipelineAnalytics';
+// import universalRulesRoutes from './routes/universalRules';
+// import graphRoutes from './routes/graph';
+// import realVectorSearchRoutes from './routes/realVectorSearch';
+// import modernEmailRoutes from './routes/modernEmail';
+// import voiceSimpleRoutes from './routes/voice-simple';
+// import bugReportsRoutes from './routes/bugReports';
+// import aiRulesRoutes from './routes/aiRules';
+// import filesRoutes from './routes/files';
+// import weeklyReviewRoutes from './routes/weeklyReview';
 
 const app = express();
 
@@ -230,21 +231,22 @@ apiRouter.use('/coding-center', codingCenterRoutes);  // Coding Center - projekt
 apiRouter.use('/ai-chat', aiChatRoutes);  // AI Chat - Qwen API (unlimited)
 apiRouter.use('/rag', ragRoutes);  // RAG - Retrieval-Augmented Generation
 apiRouter.use('/gemini', geminiRoutes);  // Gemini - Vision, Caching, 1M context
-apiRouter.use('/custom-fields', customFieldsRoutes);  // Custom Fields - pola niestandardowe
-apiRouter.use('/branding', brandingRoutes);  // Branding - logo i kolory
-apiRouter.use('/email-accounts', emailAccountsRoutes);  // Email Accounts - IMAP/SMTP
-apiRouter.use('/auto-replies', autoRepliesRoutes);  // Auto Replies - automatyczne odpowiedzi
-apiRouter.use('/ai-v2', aiV2Routes);  // AI V2 - providers & models
-apiRouter.use('/pipeline-analytics', pipelineAnalyticsRoutes);  // Pipeline Analytics
-apiRouter.use('/universal-rules', universalRulesRoutes);  // Universal Rules
-apiRouter.use('/graph', graphRoutes);  // Graph - relacje między encjami
-apiRouter.use('/real-vector-search', realVectorSearchRoutes);  // Real Vector Search - semantyczne
-apiRouter.use('/modern-email', modernEmailRoutes);  // Modern Email - wysyłanie
-apiRouter.use('/voice', voiceSimpleRoutes);  // Voice TTS - synteza mowy
-apiRouter.use('/admin/bug-reports', bugReportsRoutes);  // Bug Reports
-apiRouter.use('/ai-rules', aiRulesRoutes);  // AI Rules
-apiRouter.use('/files', filesRoutes);  // Files - zarządzanie plikami
-apiRouter.use('/weekly-review', weeklyReviewRoutes);  // Weekly Review
+// TODO: Fix import issues in these routes
+// apiRouter.use('/custom-fields', customFieldsRoutes);  // Custom Fields - pola niestandardowe
+// apiRouter.use('/branding', brandingRoutes);  // Branding - logo i kolory
+// apiRouter.use('/email-accounts', emailAccountsRoutes);  // Email Accounts - IMAP/SMTP
+// apiRouter.use('/auto-replies', autoRepliesRoutes);  // Auto Replies - automatyczne odpowiedzi
+// apiRouter.use('/ai-v2', aiV2Routes);  // AI V2 - providers & models
+// apiRouter.use('/pipeline-analytics', pipelineAnalyticsRoutes);  // Pipeline Analytics
+// apiRouter.use('/universal-rules', universalRulesRoutes);  // Universal Rules
+// apiRouter.use('/graph', graphRoutes);  // Graph - relacje między encjami
+// apiRouter.use('/real-vector-search', realVectorSearchRoutes);  // Real Vector Search - semantyczne
+// apiRouter.use('/modern-email', modernEmailRoutes);  // Modern Email - wysyłanie
+// apiRouter.use('/voice', voiceSimpleRoutes);  // Voice TTS - synteza mowy
+// apiRouter.use('/admin/bug-reports', bugReportsRoutes);  // Bug Reports
+// apiRouter.use('/ai-rules', aiRulesRoutes);  // AI Rules
+// apiRouter.use('/files', filesRoutes);  // Files - zarządzanie plikami
+// apiRouter.use('/weekly-review', weeklyReviewRoutes);  // Weekly Review
 
 // STREAMS Migration - nowe endpointy
 apiRouter.use('/source', sourceRoutes);           // Źródło (ex gtdInbox)
