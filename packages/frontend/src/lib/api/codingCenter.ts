@@ -4,6 +4,7 @@ export interface CodingProject {
   name: string;
   path: string;
   status: string;
+  stream: string;
   description: string;
 }
 

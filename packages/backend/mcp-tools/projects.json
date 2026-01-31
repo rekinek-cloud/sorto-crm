@@ -3,48 +3,56 @@
     "name": "sorto-crm",
     "path": "/home/dev/apps/sorto-crm",
     "status": "running",
+    "stream": "dev-hub",
     "description": "CRM Streams - główna aplikacja"
   },
   {
     "name": "retronova",
     "path": "/home/dev/apps/retronova",
     "status": "running",
+    "stream": "dev-hub",
     "description": "Retronova - gra retro"
   },
   {
     "name": "verbamind",
     "path": "/home/dev/apps/verbamind",
     "status": "running",
+    "stream": "dev-hub",
     "description": "VerbaMind - asystent głosowy"
   },
   {
     "name": "focusphoto",
     "path": "/home/dev/apps/focusphoto",
     "status": "running",
+    "stream": "dev-hub",
     "description": "FocusPhoto - aplikacja foto"
   },
   {
     "name": "flyball",
     "path": "/home/dev/apps/flyball",
     "status": "running",
+    "stream": "dev-hub",
     "description": "Flyball - zarządzanie zawodami"
   },
   {
     "name": "kangur",
     "path": "/home/dev/apps/kangur",
     "status": "running",
+    "stream": "dev-hub",
     "description": "Kangur AI Platform"
   },
   {
     "name": "picar",
     "path": "/home/dev/apps/picar",
     "status": "running",
+    "stream": "dev-hub",
     "description": "PiCar - projekt robotyki"
   },
   {
     "name": "exposcan",
     "path": "/home/dev/apps/exposcan",
     "status": "running",
+    "stream": "dev-hub",
     "description": "ExpoScan - skanowanie wizytówek"
   }
 ]

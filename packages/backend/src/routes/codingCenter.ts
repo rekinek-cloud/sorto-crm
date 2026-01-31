@@ -14,6 +14,7 @@ interface Project {
   name: string;
   path: string;
   status: string;
+  stream: string;
   description: string;
 }
 
@@ -76,6 +77,7 @@ router.post('/projects', async (req: Request, res: Response): Promise<void> => {
       name,
       path: projectPath,
       status: 'running',
+      stream: 'dev-hub',
       description: description || ''
     });
 
