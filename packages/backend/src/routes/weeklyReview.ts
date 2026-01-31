@@ -454,11 +454,17 @@ router.get('/stats/burndown', authenticateToken, async (req, res) => {
         return Math.round((completedItems / checklistItems.length) * 100);
       })() : 0;
 
+      // Format week as short day name for frontend compatibility
+      const dayNames = ['Pon', 'Wt', 'Sr', 'Czw', 'Pt', 'Sob', 'Nd'];
+      const weekLabel = `W${week + 1}`;
+
       burndownData.push({
-        week: week + 1,
+        week: weekLabel,  // Frontend expects string
         weekStart: weekStart.toISOString().split('T')[0],
         weekEnd: weekEnd.toISOString().split('T')[0],
-        completedTasks,
+        completed: completedTasks,  // Frontend expects 'completed'
+        created: totalTasks - completedTasks,  // Frontend expects 'created'
+        completedTasks,  // Keep for backward compat
         totalTasks,
         reviewCompletion,
         hasReview: !!weekReview,
