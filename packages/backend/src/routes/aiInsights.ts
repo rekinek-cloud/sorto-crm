@@ -50,7 +50,7 @@ router.get('/streams/:streamId',
     try {
       const { streamId } = req.params;
       const { types, priority, limit } = req.query;
-      const organizationId = req.organization.id;
+      const organizationId = req.user.organizationId;
 
       // Verify stream exists and belongs to organization
       const stream = await prisma.stream.findFirst({
@@ -137,7 +137,7 @@ router.get('/global',
   async (req: any, res) => {
     try {
       const { types, priority, limit, timeframe } = req.query;
-      const organizationId = req.organization.id;
+      const organizationId = req.user.organizationId;
 
       // Get all active streams
       const streams = await prisma.stream.findMany({
@@ -226,7 +226,7 @@ router.post('/actions',
   async (req: any, res) => {
     try {
       const { actionType, actionData, insightId } = req.body;
-      const organizationId = req.organization.id;
+      const organizationId = req.user.organizationId;
       const userId = req.user.id;
 
       logger.info('Executing AI action:', { actionType, insightId, userId });
@@ -342,7 +342,7 @@ router.get('/communication/:channelId',
   async (req: any, res) => {
     try {
       const { channelId } = req.params;
-      const organizationId = req.organization.id;
+      const organizationId = req.user.organizationId;
 
       // Get channel with messages
       const channel = await prisma.communicationChannel.findFirst({
