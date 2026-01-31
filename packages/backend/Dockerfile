@@ -25,6 +25,7 @@ RUN npm install
 # Copy source code
 COPY src/ ./src/
 COPY prisma/ ./prisma/
+COPY mcp-tools/ ./mcp-tools/
 
 # Generate Prisma client
 RUN npx prisma generate
