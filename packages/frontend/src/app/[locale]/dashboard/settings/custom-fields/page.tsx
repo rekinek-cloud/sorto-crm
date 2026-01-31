@@ -10,21 +10,9 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
-import Cookies from 'js-cookie';
+import { customFieldsApi, type CustomFieldDefinition, type EntityType } from '@/lib/api/customFields';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
-
-interface CustomField {
-  id: string;
-  name: string;
-  label: string;
-  description: string | null;
-  fieldType: string;
-  entityType: string;
-  isRequired: boolean;
-  options: string[];
-  sortOrder: number;
-}
+type CustomField = CustomFieldDefinition;
 
 const FIELD_TYPES = [
   { value: 'TEXT', label: 'Tekst', description: 'Pojedyncza linia tekstu' },
@@ -70,16 +58,11 @@ export default function CustomFieldsPage() {
 
   const loadFields = async () => {
     try {
-      const token = Cookies.get('access_token');
-      const response = await fetch(`${API_URL}/custom-fields?entityType=${selectedEntity}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setFields(data.definitions || []);
-      }
+      const { definitions } = await customFieldsApi.getDefinitions(selectedEntity as EntityType);
+      setFields(definitions || []);
     } catch (error) {
       console.error('Failed to load fields:', error);
+      toast.error('Nie udało się pobrać pól');
     } finally {
       setLoading(false);
     }
@@ -92,38 +75,28 @@ export default function CustomFieldsPage() {
     }
 
     try {
-      const token = Cookies.get('access_token');
       const payload = {
-        ...formData,
         name: formData.name || formData.label.toLowerCase().replace(/\s+/g, '_'),
-        options: formData.options ? formData.options.split(',').map((o) => o.trim()) : [],
-        entityType: selectedEntity,
+        label: formData.label,
+        description: formData.description || undefined,
+        fieldType: formData.fieldType as any,
+        entityType: selectedEntity as EntityType,
+        isRequired: formData.isRequired,
+        options: formData.options ? formData.options.split(',').map((o) => o.trim()) : undefined,
       };
 
-      const url = editingField
-        ? `${API_URL}/custom-fields/${editingField.id}`
-        : `${API_URL}/custom-fields`;
-      const method = editingField ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (response.ok) {
-        toast.success(editingField ? 'Pole zaktualizowane' : 'Pole utworzone');
-        resetForm();
-        loadFields();
+      if (editingField) {
+        await customFieldsApi.updateDefinition(editingField.id, payload);
+        toast.success('Pole zaktualizowane');
       } else {
-        const data = await response.json();
-        toast.error(data.error || 'Blad zapisu');
+        await customFieldsApi.createDefinition(payload);
+        toast.success('Pole utworzone');
       }
-    } catch (error) {
-      toast.error('Nie udalo sie zapisac pola');
+      resetForm();
+      loadFields();
+    } catch (error: any) {
+      console.error('Failed to save field:', error);
+      toast.error(error.response?.data?.error || 'Nie udalo sie zapisac pola');
     }
   };
 
@@ -131,20 +104,12 @@ export default function CustomFieldsPage() {
     if (!confirm('Czy na pewno chcesz usunac to pole?')) return;
 
     try {
-      const token = Cookies.get('access_token');
-      const response = await fetch(`${API_URL}/custom-fields/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (response.ok) {
-        toast.success('Pole usuniete');
-        loadFields();
-      } else {
-        toast.error('Nie udalo sie usunac pola');
-      }
+      await customFieldsApi.deleteDefinition(id);
+      toast.success('Pole usuniete');
+      loadFields();
     } catch (error) {
-      toast.error('Blad usuwania');
+      console.error('Failed to delete field:', error);
+      toast.error('Nie udalo sie usunac pola');
     }
   };
 

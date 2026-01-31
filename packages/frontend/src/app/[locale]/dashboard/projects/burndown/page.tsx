@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/context';
 import Cookies from 'js-cookie';
-import { apiClient } from '@/lib/api/client';
+import { projectsApi } from '@/lib/api/projects';
 import { toast } from 'react-hot-toast';
 import {
   ChevronLeftIcon,
@@ -93,14 +93,12 @@ export default function ProjectBurndownPage() {
     
     try {
       setLoading(true);
-      const response = await apiClient.get('/projects', {
-        params: {
-          status: 'IN_PROGRESS',
-          limit: 100
-        }
+      const projectsData = await projectsApi.getProjects({
+        status: 'IN_PROGRESS',
+        limit: 100
       });
-      
-      const projectsWithTasks = response.data.projects || [];
+
+      const projectsWithTasks = (projectsData as any).projects || projectsData || [];
       setProjects(projectsWithTasks);
       
       if (projectsWithTasks.length > 0) {

@@ -14,23 +14,9 @@ import {
   Squares2X2Icon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
-import { apiClient } from '@/lib/api/client';
+import { graphApi, type GraphNode, type GraphLink } from '@/lib/api/graph';
 
-interface GraphNode {
-  id: string;
-  name: string;
-  type: string;
-  originalId: string;
-  metadata?: Record<string, any>;
-}
-
-interface GraphLink {
-  source: string;
-  target: string;
-  type: string;
-  strength: number;
-}
-
+// Types imported from @/lib/api/graph
 interface GraphData {
   nodes: GraphNode[];
   links: GraphLink[];
@@ -62,13 +48,11 @@ export default function GraphPage() {
 
     try {
       setLoading(true);
-      const response = await apiClient.get('/graph/relationships', {
-        params: { entityId, entityType, depth },
-      });
+      const result = await graphApi.getRelationships(entityId, entityType, depth);
 
-      if (response.data.success) {
-        setGraphData(response.data.data);
-        if (response.data.data.nodes.length === 0) {
+      if (result.success) {
+        setGraphData(result.data);
+        if (result.data.nodes.length === 0) {
           toast.error('Nie znaleziono danych dla tej encji');
         }
       }

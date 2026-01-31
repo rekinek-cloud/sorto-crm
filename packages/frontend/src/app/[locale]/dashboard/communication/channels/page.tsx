@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
-import { apiClient } from '@/lib/api/client';
+import { communicationApi, type CommunicationChannel as ApiChannel } from '@/lib/api/communication';
 import {
   PlusIcon,
   XMarkIcon,
@@ -102,9 +102,8 @@ export default function ChannelsPage() {
   const loadChannels = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/communication/channels');
-      const channelsData = response.data;
-      
+      const channelsData = await communicationApi.getChannels();
+
       // Add mock unread counts and last messages for display
       const channelsWithMockData = channelsData.map((channel: any) => ({
         ...channel,
@@ -147,17 +146,12 @@ export default function ChannelsPage() {
     }
 
     try {
-      const response = await apiClient.post('/communication/channels', {
+      const newChannel = await communicationApi.createChannel({
         name: formData.name.trim(),
         type: formData.type,
         config: formData.config,
-        emailAddress: formData.emailAddress || undefined,
-        displayName: formData.displayName || undefined,
-        autoProcess: formData.autoProcess,
-        createTasks: formData.createTasks
+        active: true,
       });
-
-      const newChannel = response.data;
       setChannels(prev => [{ ...newChannel, unreadCount: 0, lastMessage: '', lastMessageAt: new Date().toISOString() }, ...prev]);
       setShowCreateModal(false);
       resetForm();
@@ -183,17 +177,11 @@ export default function ChannelsPage() {
     if (!selectedChannel) return;
 
     try {
-      const response = await apiClient.put(`/communication/channels/${selectedChannel.id}`, {
+      const updatedChannel = await communicationApi.updateChannel(selectedChannel.id, {
         name: formData.name.trim(),
         type: formData.type,
         config: formData.config,
-        emailAddress: formData.emailAddress || undefined,
-        displayName: formData.displayName || undefined,
-        autoProcess: formData.autoProcess,
-        createTasks: formData.createTasks
       });
-
-      const updatedChannel = response.data;
       setChannels(prev => prev.map(channel =>
         channel.id === selectedChannel.id
           ? { ...updatedChannel, unreadCount: channel.unreadCount, lastMessage: channel.lastMessage, lastMessageAt: channel.lastMessageAt }
@@ -216,7 +204,7 @@ export default function ChannelsPage() {
     }
 
     try {
-      await apiClient.delete(`/communication/channels/${channelId}`);
+      await communicationApi.deleteChannel(channelId);
       setChannels(prev => prev.filter(channel => channel.id !== channelId));
       toast.success('Kanał został usunięty');
     } catch (error: any) {
@@ -259,8 +247,7 @@ export default function ChannelsPage() {
       console.log('Starting sync for channel:', channel.id, channel.name, channel.type);
       toast('Synchronizuję wiadomości...', { duration: 3000 });
       
-      const response = await apiClient.post(`/communication/channels/${channel.id}/sync`);
-      const { syncedCount, errors, message } = response.data;
+      const { syncedCount, errors, message } = await communicationApi.syncChannel(channel.id);
       
       console.log('Sync response:', { syncedCount, errors, message });
       
@@ -290,12 +277,9 @@ export default function ChannelsPage() {
       const channel = channels.find(ch => ch.id === channelId);
       if (!channel) return;
 
-      const response = await apiClient.put(`/communication/channels/${channelId}`, {
-        ...channel,
+      const updatedChannel = await communicationApi.updateChannel(channelId, {
         active: !channel.active
       });
-
-      const updatedChannel = response.data;
       setChannels(prev => prev.map(ch =>
         ch.id === channelId
           ? { ...updatedChannel, unreadCount: ch.unreadCount, lastMessage: ch.lastMessage, lastMessageAt: ch.lastMessageAt }

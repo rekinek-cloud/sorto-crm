@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/context';
 import Cookies from 'js-cookie';
-import { apiClient } from '@/lib/api/client';
+import { nextActionsApi } from '@/lib/api/nextActions';
 import { toast } from 'react-hot-toast';
 
 interface NextAction {
@@ -79,13 +79,11 @@ export default function NextActionsKanbanPage() {
     
     try {
       setLoading(true);
-      const response = await apiClient.get('/nextactions', {
-        params: {
-          priority: selectedPriority || undefined,
-          energy: selectedEnergy || undefined,
-        }
+      const data = await nextActionsApi.getNextActions({
+        priority: selectedPriority || undefined,
+        energy: selectedEnergy || undefined,
       });
-      setActions(response.data);
+      setActions(data);
     } catch (error: any) {
       console.error('Error loading next actions:', error);
       toast.error('Failed to load next actions');
@@ -98,10 +96,10 @@ export default function NextActionsKanbanPage() {
     if (!isAuthenticated || !Cookies.get('access_token')) {
       return;
     }
-    
+
     try {
-      const response = await apiClient.get('/tasks/contexts/list-public');
-      setContexts(response.data);
+      const data = await nextActionsApi.getContextsList();
+      setContexts(data);
     } catch (error: any) {
       console.error('Error loading contexts:', error);
     }
@@ -116,7 +114,7 @@ export default function NextActionsKanbanPage() {
     estimatedTime?: string;
   }) => {
     try {
-      await apiClient.post('/nextactions', actionData);
+      await nextActionsApi.createNextAction(actionData);
       toast.success('Next Action created successfully!');
       setShowActionModal(false);
       await loadActions();
@@ -128,7 +126,7 @@ export default function NextActionsKanbanPage() {
 
   const handleCompleteTask = async (actionId: string) => {
     try {
-      await apiClient.post(`/nextactions/${actionId}/complete`);
+      await nextActionsApi.completeNextAction(actionId);
       toast.success('Next Action completed!');
       await loadActions();
     } catch (error: any) {
@@ -139,7 +137,7 @@ export default function NextActionsKanbanPage() {
 
   const handleUpdateContext = async (actionId: string, newContext: string) => {
     try {
-      await apiClient.put(`/nextactions/${actionId}/context`, { context: newContext });
+      await nextActionsApi.updateContext(actionId, newContext);
       toast.success('Context updated');
       await loadActions();
     } catch (error: any) {

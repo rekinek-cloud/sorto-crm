@@ -82,7 +82,34 @@ export interface SalesRepPerformance {
   quotaAttainment: number;
 }
 
+export interface PipelineStage {
+  id: string;
+  name: string;
+  deals: number;
+  value: number;
+  avgDays: number;
+  conversionRate: number;
+  color: string;
+}
+
+export interface PipelineOverview {
+  totalDeals: number;
+  totalValue: number;
+  avgDealValue: number;
+  avgCycleTime: number;
+  winRate: number;
+  stages: PipelineStage[];
+}
+
 export const pipelineAnalyticsApi = {
+  // Get pipeline overview with stages
+  async getOverview(days: string = '30'): Promise<PipelineOverview> {
+    const response = await apiClient.get('/pipeline-analytics/overview', {
+      params: { days }
+    });
+    return response.data;
+  },
+
   // Get conversion rates between stages
   async getConversionRates(timeFrame: string = '30'): Promise<{
     timeFrame: string;

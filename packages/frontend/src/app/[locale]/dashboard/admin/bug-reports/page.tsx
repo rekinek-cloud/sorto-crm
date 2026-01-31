@@ -2,36 +2,19 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth/context';
-import { apiClient } from '@/lib/api/client';
-import { 
-  ExclamationTriangleIcon, 
-  CheckCircleIcon, 
+import { bugReportsApi, type BugReport, type BugPriority, type BugStatus } from '@/lib/api/bugReports';
+import {
+  ExclamationTriangleIcon,
+  CheckCircleIcon,
   ClockIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
 
-interface BugReport {
-  id: string;
-  title: string;
-  description: string;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
-  status: 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | 'WONT_FIX';
-  category?: string;
-  url?: string;
-  userAgent?: string;
-  stepsToReproduce?: string;
-  expectedBehavior?: string;
-  actualBehavior?: string;
+// Extended BugReport interface for admin view
+interface AdminBugReport extends BugReport {
   adminNotes?: string;
   resolution?: string;
   resolvedAt?: string;
-  createdAt: string;
-  updatedAt: string;
-  reporter: {
-    email: string;
-    firstName: string;
-    lastName: string;
-  };
 }
 
 interface BugStats {
@@ -73,14 +56,14 @@ const statusLabels = {
 
 export default function AdminBugReportsPage() {
   const { user } = useAuth();
-  const [bugReports, setBugReports] = useState<BugReport[]>([]);
+  const [bugReports, setBugReports] = useState<AdminBugReport[]>([]);
   const [stats, setStats] = useState<BugStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedBug, setSelectedBug] = useState<BugReport | null>(null);
+  const [selectedBug, setSelectedBug] = useState<AdminBugReport | null>(null);
   const [updating, setUpdating] = useState(false);
   const [filters, setFilters] = useState({
-    status: '',
-    priority: '',
+    status: '' as BugStatus | '',
+    priority: '' as BugPriority | '',
     category: '',
   });
 
@@ -97,13 +80,12 @@ export default function AdminBugReportsPage() {
   const loadBugReports = async () => {
     try {
       setLoading(true);
-      const params = new URLSearchParams();
-      if (filters.status) params.append('status', filters.status);
-      if (filters.priority) params.append('priority', filters.priority);
-      if (filters.category) params.append('category', filters.category);
-
-      const response = await apiClient.get(`/bug-reports?${params.toString()}`);
-      setBugReports(response.data.bugReports || []);
+      const data = await bugReportsApi.getBugReports({
+        status: filters.status || undefined,
+        priority: filters.priority || undefined,
+        category: filters.category as any || undefined,
+      });
+      setBugReports((data.bugReports || []) as AdminBugReport[]);
     } catch (error: any) {
       console.error('Failed to load bug reports:', error);
     } finally {
@@ -113,8 +95,8 @@ export default function AdminBugReportsPage() {
 
   const loadStats = async () => {
     try {
-      const response = await apiClient.get('/bug-reports/stats/overview');
-      setStats(response.data);
+      const data = await bugReportsApi.getStats();
+      setStats(data);
     } catch (error: any) {
       console.error('Failed to load bug stats:', error);
     }
@@ -123,12 +105,12 @@ export default function AdminBugReportsPage() {
   const updateBugStatus = async (bugId: string, status: string, adminNotes?: string, resolution?: string) => {
     try {
       setUpdating(true);
-      await apiClient.patch(`/bug-reports/${bugId}/status`, {
+      await bugReportsApi.updateStatus(bugId, {
         status,
         adminNotes,
         resolution,
       });
-      
+
       // Reload data
       await loadBugReports();
       await loadStats();

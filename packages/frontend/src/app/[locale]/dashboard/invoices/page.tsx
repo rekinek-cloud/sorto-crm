@@ -20,6 +20,10 @@ import {
   FunnelIcon,
   MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
+import { invoicesApi, type Invoice as ApiInvoice, type InvoiceStatus } from '@/lib/api/invoices';
+
+// Map API status to display status
+type DisplayStatus = 'DRAFT' | 'SENT' | 'PAID' | 'OVERDUE' | 'CANCELLED';
 
 interface Invoice {
   id: string;
@@ -29,7 +33,7 @@ interface Invoice {
   clientAddress?: string;
   amount: number;
   currency: string;
-  status: 'DRAFT' | 'SENT' | 'PAID' | 'OVERDUE' | 'CANCELLED';
+  status: DisplayStatus;
   issueDate: string;
   dueDate: string;
   paidDate?: string;
@@ -83,182 +87,53 @@ export default function InvoicesPage() {
     filterInvoices();
   }, [invoices, searchTerm, statusFilter]);
 
-  const loadInvoices = async () => {
-    setTimeout(() => {
-      const mockInvoices: Invoice[] = [
-        {
-          id: '1',
-          number: 'INV-2024-001',
-          clientName: 'TechCorp Sp. z o.o.',
-          clientEmail: 'kontakt@techcorp.pl',
-          clientAddress: 'ul. Technologiczna 15\n00-001 Warszawa',
-          amount: 12300.00,
-          currency: 'PLN',
-          status: 'PAID',
-          issueDate: new Date(Date.now() - 2592000000).toISOString(),
-          dueDate: new Date(Date.now() - 1296000000).toISOString(),
-          paidDate: new Date(Date.now() - 1000000000).toISOString(),
-          description: 'Usługi programistyczne - rozwój aplikacji CRM',
-          items: [
-            {
-              id: '1',
-              description: 'Godziny programistyczne - Senior Developer',
-              quantity: 80,
-              unitPrice: 150,
-              total: 12000
-            },
-            {
-              id: '2',
-              description: 'Konsultacje techniczne',
-              quantity: 2,
-              unitPrice: 150,
-              total: 300
-            }
-          ],
-          taxRate: 23,
-          discountRate: 0,
-          notes: 'Płatność w terminie 14 dni',
-          createdAt: new Date(Date.now() - 2592000000).toISOString(),
-          updatedAt: new Date(Date.now() - 1000000000).toISOString()
-        },
-        {
-          id: '2',
-          number: 'INV-2024-002',
-          clientName: 'StartupBase Ltd.',
-          clientEmail: 'billing@startupbase.com',
-          clientAddress: 'Innovation Hub\n10 Tech Street\nLondon, UK',
-          amount: 8500.00,
-          currency: 'PLN',
-          status: 'SENT',
-          issueDate: new Date(Date.now() - 1296000000).toISOString(),
-          dueDate: new Date(Date.now() + 604800000).toISOString(),
-          description: 'Implementacja systemu zarządzania projektami',
-          items: [
-            {
-              id: '3',
-              description: 'Implementacja backendu',
-              quantity: 40,
-              unitPrice: 180,
-              total: 7200
-            },
-            {
-              id: '4',
-              description: 'Testy i dokumentacja',
-              quantity: 10,
-              unitPrice: 130,
-              total: 1300
-            }
-          ],
-          taxRate: 23,
-          discountRate: 0,
-          createdAt: new Date(Date.now() - 1296000000).toISOString(),
-          updatedAt: new Date(Date.now() - 1296000000).toISOString()
-        },
-        {
-          id: '3',
-          number: 'INV-2024-003',
-          clientName: 'E-commerce Plus Sp. z o.o.',
-          clientEmail: 'finanse@ecommerceplus.pl',
-          clientAddress: 'ul. Handlowa 45\n50-123 Wrocław',
-          amount: 15600.00,
-          currency: 'PLN',
-          status: 'OVERDUE',
-          issueDate: new Date(Date.now() - 2592000000).toISOString(),
-          dueDate: new Date(Date.now() - 604800000).toISOString(),
-          description: 'Rozwój platformy e-commerce - faza 1',
-          items: [
-            {
-              id: '5',
-              description: 'Frontend React/TypeScript',
-              quantity: 60,
-              unitPrice: 160,
-              total: 9600
-            },
-            {
-              id: '6',
-              description: 'Integracja z systemami płatności',
-              quantity: 30,
-              unitPrice: 200,
-              total: 6000
-            }
-          ],
-          taxRate: 23,
-          discountRate: 0,
-          notes: 'Pilne - termin płatności przekroczony',
-          createdAt: new Date(Date.now() - 2592000000).toISOString(),
-          updatedAt: new Date(Date.now() - 2592000000).toISOString()
-        },
-        {
-          id: '4',
-          number: 'INV-2024-004',
-          clientName: 'Digital Agency Pro',
-          clientEmail: 'admin@digitalagency.pl',
-          clientAddress: 'ul. Kreatywna 8\n30-001 Kraków',
-          amount: 6900.00,
-          currency: 'PLN',
-          status: 'DRAFT',
-          issueDate: new Date().toISOString(),
-          dueDate: new Date(Date.now() + 1209600000).toISOString(),
-          description: 'Konsultacje i audyt techniczny',
-          items: [
-            {
-              id: '7',
-              description: 'Audyt infrastruktury IT',
-              quantity: 20,
-              unitPrice: 250,
-              total: 5000
-            },
-            {
-              id: '8',
-              description: 'Raport z rekomendacjami',
-              quantity: 1,
-              unitPrice: 1900,
-              total: 1900
-            }
-          ],
-          taxRate: 23,
-          discountRate: 0,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        {
-          id: '5',
-          number: 'INV-2024-005',
-          clientName: 'FinTech Solutions',
-          clientEmail: 'accounts@fintech.com',
-          amount: 22000.00,
-          currency: 'PLN',
-          status: 'SENT',
-          issueDate: new Date(Date.now() - 604800000).toISOString(),
-          dueDate: new Date(Date.now() + 2419200000).toISOString(),
-          description: 'Aplikacja mobilna do zarządzania finansami',
-          items: [
-            {
-              id: '9',
-              description: 'Rozwój aplikacji mobilnej iOS/Android',
-              quantity: 100,
-              unitPrice: 180,
-              total: 18000
-            },
-            {
-              id: '10',
-              description: 'Backend API i bezpieczeństwo',
-              quantity: 20,
-              unitPrice: 200,
-              total: 4000
-            }
-          ],
-          taxRate: 23,
-          discountRate: 0,
-          notes: 'Projekt w ramach długoterminowej współpracy',
-          createdAt: new Date(Date.now() - 604800000).toISOString(),
-          updatedAt: new Date(Date.now() - 604800000).toISOString()
-        }
-      ];
+  // Map API status to display status
+  const mapStatus = (status: InvoiceStatus): DisplayStatus => {
+    switch (status) {
+      case 'PENDING': return 'DRAFT';
+      case 'CANCELED': return 'CANCELLED';
+      default: return status as DisplayStatus;
+    }
+  };
 
-      setInvoices(mockInvoices);
+  // Map API invoice to display invoice
+  const mapInvoice = (apiInvoice: ApiInvoice): Invoice => ({
+    id: apiInvoice.id,
+    number: apiInvoice.invoiceNumber,
+    clientName: apiInvoice.title,
+    clientEmail: apiInvoice.customerEmail || '',
+    clientAddress: apiInvoice.customerAddress,
+    amount: apiInvoice.totalAmount,
+    currency: apiInvoice.currency,
+    status: mapStatus(apiInvoice.status),
+    issueDate: apiInvoice.createdAt,
+    dueDate: apiInvoice.dueDate || apiInvoice.createdAt,
+    description: apiInvoice.description || '',
+    items: apiInvoice.items.map((item, index) => ({
+      id: item.id || String(index),
+      description: item.customDescription || item.customName || `Pozycja ${index + 1}`,
+      quantity: item.quantity,
+      unitPrice: item.unitPrice,
+      total: item.totalPrice || item.quantity * item.unitPrice,
+    })),
+    taxRate: apiInvoice.totalTax > 0 ? 23 : 0,
+    discountRate: apiInvoice.totalDiscount > 0 ? (apiInvoice.totalDiscount / apiInvoice.subtotal) * 100 : 0,
+    notes: apiInvoice.paymentNotes,
+    createdAt: apiInvoice.createdAt,
+    updatedAt: apiInvoice.updatedAt,
+  });
+
+  const loadInvoices = async () => {
+    try {
+      setIsLoading(true);
+      const { invoices: data } = await invoicesApi.getInvoices({ limit: 100 });
+      setInvoices(data.map(mapInvoice));
+    } catch (error) {
+      console.error('Failed to load invoices:', error);
+      toast.error('Nie udało się pobrać faktur');
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   const filterInvoices = () => {
@@ -276,79 +151,83 @@ export default function InvoicesPage() {
     setFilteredInvoices(filtered);
   };
 
-  const handleCreateInvoice = () => {
+  const handleCreateInvoice = async () => {
     if (!formData.clientName.trim() || !formData.clientEmail.trim()) {
       toast.error('Nazwa klienta i email są wymagane');
       return;
     }
 
-    const newInvoice: Invoice = {
-      id: Date.now().toString(),
-      number: `INV-2024-${String(invoices.length + 1).padStart(3, '0')}`,
-      clientName: formData.clientName.trim(),
-      clientEmail: formData.clientEmail.trim(),
-      clientAddress: formData.clientAddress.trim() || undefined,
-      amount: formData.amount,
-      currency: 'PLN',
-      status: 'DRAFT',
-      issueDate: new Date().toISOString(),
-      dueDate: formData.dueDate || new Date(Date.now() + 1209600000).toISOString(),
-      description: formData.description.trim(),
-      items: formData.items.map((item, index) => ({
-        id: (index + 1).toString(),
-        ...item,
-        total: item.quantity * item.unitPrice
-      })),
-      taxRate: formData.taxRate,
-      discountRate: formData.discountRate,
-      notes: formData.notes.trim() || undefined,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+    try {
+      await invoicesApi.createInvoice({
+        title: formData.clientName.trim(),
+        description: formData.description.trim(),
+        amount: formData.amount,
+        currency: 'PLN',
+        status: 'PENDING',
+        dueDate: formData.dueDate || undefined,
+        customerEmail: formData.clientEmail.trim(),
+        customerAddress: formData.clientAddress.trim() || undefined,
+        paymentNotes: formData.notes.trim() || undefined,
+        items: formData.items.map((item) => ({
+          itemType: 'CUSTOM' as const,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          customDescription: item.description,
+        })),
+      });
 
-    setInvoices(prev => [newInvoice, ...prev]);
-    setFormData({
-      clientName: '',
-      clientEmail: '',
-      clientAddress: '',
-      description: '',
-      amount: 0,
-      dueDate: '',
-      items: [],
-      taxRate: 23,
-      discountRate: 0,
-      notes: ''
-    });
-    setShowCreateModal(false);
-    toast.success('Faktura została utworzona!');
+      setFormData({
+        clientName: '',
+        clientEmail: '',
+        clientAddress: '',
+        description: '',
+        amount: 0,
+        dueDate: '',
+        items: [],
+        taxRate: 23,
+        discountRate: 0,
+        notes: ''
+      });
+      setShowCreateModal(false);
+      toast.success('Faktura została utworzona!');
+      loadInvoices();
+    } catch (error) {
+      console.error('Failed to create invoice:', error);
+      toast.error('Nie udało się utworzyć faktury');
+    }
   };
 
-  const updateInvoiceStatus = (invoiceId: string, status: Invoice['status']) => {
-    setInvoices(prev => prev.map(invoice =>
-      invoice.id === invoiceId
-        ? {
-            ...invoice,
-            status,
-            paidDate: status === 'PAID' ? new Date().toISOString() : undefined,
-            updatedAt: new Date().toISOString()
-          }
-        : invoice
-    ));
+  const updateInvoiceStatus = async (invoiceId: string, status: Invoice['status']) => {
+    try {
+      // Map display status back to API status
+      const apiStatus: InvoiceStatus = status === 'DRAFT' ? 'PENDING' : status === 'CANCELLED' ? 'CANCELED' : status;
+      await invoicesApi.updateInvoice(invoiceId, { status: apiStatus });
 
-    const statusText = {
-      DRAFT: 'Szkic',
-      SENT: 'Wysłana',
-      PAID: 'Zapłacona',
-      OVERDUE: 'Przeterminowana',
-      CANCELLED: 'Anulowana'
-    };
+      const statusText = {
+        DRAFT: 'Szkic',
+        SENT: 'Wysłana',
+        PAID: 'Zapłacona',
+        OVERDUE: 'Przeterminowana',
+        CANCELLED: 'Anulowana'
+      };
 
-    toast.success(`Status faktury zmieniony na: ${statusText[status]}`);
+      toast.success(`Status faktury zmieniony na: ${statusText[status]}`);
+      loadInvoices();
+    } catch (error) {
+      console.error('Failed to update invoice status:', error);
+      toast.error('Nie udało się zmienić statusu faktury');
+    }
   };
 
-  const deleteInvoice = (invoiceId: string) => {
-    setInvoices(prev => prev.filter(invoice => invoice.id !== invoiceId));
-    toast.success('Faktura została usunięta');
+  const deleteInvoice = async (invoiceId: string) => {
+    try {
+      await invoicesApi.deleteInvoice(invoiceId);
+      toast.success('Faktura została usunięta');
+      loadInvoices();
+    } catch (error) {
+      console.error('Failed to delete invoice:', error);
+      toast.error('Nie udało się usunąć faktury');
+    }
   };
 
   const getStatusColor = (status: string) => {

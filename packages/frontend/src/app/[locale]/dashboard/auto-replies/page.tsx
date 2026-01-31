@@ -14,54 +14,9 @@ import {
   XCircleIcon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
-import { apiClient } from '@/lib/api/client';
+import { autoRepliesApi, type AutoReply } from '@/lib/api/autoReplies';
 
-interface AutoReplyConditions {
-  fromEmail?: string;
-  fromDomain?: string;
-  subject?: string;
-  subjectContains?: string[];
-  bodyContains?: string[];
-  hasAttachment?: boolean;
-  timeRange?: {
-    start?: string;
-    end?: string;
-    timezone?: string;
-  };
-  daysOfWeek?: number[];
-}
-
-interface AutoReplyConfig {
-  template: string;
-  subject?: string;
-  delay: number;
-  onlyBusinessHours: boolean;
-  maxRepliesPerSender: number;
-  cooldownPeriod: number;
-}
-
-interface AutoReplyActions {
-  markAsRead?: boolean;
-  addLabel?: string;
-  createTask?: boolean;
-  taskTitle?: string;
-  taskContext?: string;
-  notifyUsers?: string[];
-}
-
-interface AutoReply {
-  id: string;
-  name: string;
-  description?: string;
-  enabled: boolean;
-  priority: number;
-  conditions: AutoReplyConditions;
-  replyConfig: AutoReplyConfig;
-  actions?: AutoReplyActions;
-  _count?: { executions: number };
-  createdAt: string;
-  updatedAt: string;
-}
+// Types imported from @/lib/api/autoReplies
 
 export default function AutoRepliesPage() {
   const [autoReplies, setAutoReplies] = useState<AutoReply[]>([]);
@@ -101,10 +56,9 @@ export default function AutoRepliesPage() {
   const loadAutoReplies = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/auto-replies');
-      const data = response.data.autoReplies || [];
-      // Parse JSON fields
-      setAutoReplies(data.map((ar: any) => ({
+      const { autoReplies: data } = await autoRepliesApi.getAutoReplies();
+      // Parse JSON fields if needed
+      setAutoReplies((data || []).map((ar: any) => ({
         ...ar,
         conditions: typeof ar.conditions === 'string' ? JSON.parse(ar.conditions) : ar.conditions,
         replyConfig: typeof ar.replyConfig === 'string' ? JSON.parse(ar.replyConfig) : ar.replyConfig,
@@ -156,10 +110,10 @@ export default function AutoRepliesPage() {
       };
 
       if (editingRule) {
-        await apiClient.put(`/auto-replies/${editingRule.id}`, payload);
+        await autoRepliesApi.updateAutoReply(editingRule.id, payload);
         toast.success('Regula zaktualizowana');
       } else {
-        await apiClient.post('/auto-replies', payload);
+        await autoRepliesApi.createAutoReply(payload);
         toast.success('Regula utworzona');
       }
 
@@ -175,7 +129,7 @@ export default function AutoRepliesPage() {
     if (!confirm('Czy na pewno chcesz usunac te regule?')) return;
 
     try {
-      await apiClient.delete(`/auto-replies/${id}`);
+      await autoRepliesApi.deleteAutoReply(id);
       toast.success('Regula usunieta');
       loadAutoReplies();
     } catch (error) {
@@ -185,7 +139,7 @@ export default function AutoRepliesPage() {
 
   const handleToggle = async (id: string) => {
     try {
-      await apiClient.post(`/auto-replies/${id}/toggle`);
+      await autoRepliesApi.toggleAutoReply(id);
       toast.success('Status zmieniony');
       loadAutoReplies();
     } catch (error) {

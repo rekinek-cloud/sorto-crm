@@ -10,14 +10,10 @@ import {
   TrashIcon,
   HashtagIcon,
 } from '@heroicons/react/24/outline';
+import { tagsApi, type Tag as ApiTag } from '@/lib/api/tags';
 
-interface Tag {
-  id: string;
-  name: string;
-  color: string;
-  usageCount: number;
-  createdAt: string;
-  updatedAt: string;
+interface Tag extends ApiTag {
+  usageCount: number; // Extended locally, not from API
 }
 
 export default function TagsPage() {
@@ -33,51 +29,57 @@ export default function TagsPage() {
     '#06B6D4', '#84CC16', '#F97316', '#EC4899', '#6366F1'
   ];
 
-  // Mock data for demo
-  useEffect(() => {
-    const mockTags: Tag[] = [
-      { id: '1', name: 'urgent', color: '#EF4444', usageCount: 45, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: '2', name: 'project-alpha', color: '#3B82F6', usageCount: 32, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: '3', name: 'meeting', color: '#10B981', usageCount: 28, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: '4', name: 'research', color: '#8B5CF6', usageCount: 19, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: '5', name: 'review', color: '#F59E0B', usageCount: 15, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: '6', name: 'development', color: '#06B6D4', usageCount: 12, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: '7', name: 'design', color: '#EC4899', usageCount: 8, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
-      { id: '8', name: 'documentation', color: '#84CC16', usageCount: 6, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
-    ];
-    
-    setTimeout(() => {
-      setTags(mockTags);
+  const loadTags = async () => {
+    try {
+      setIsLoading(true);
+      const { data } = await tagsApi.getTags();
+      // API doesn't provide usageCount, so we set it to 0
+      setTags(data.map(tag => ({ ...tag, usageCount: 0 })));
+    } catch (error) {
+      console.error('Failed to load tags:', error);
+      toast.error('Nie udało się pobrać tagów');
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
+  };
+
+  useEffect(() => {
+    loadTags();
   }, []);
 
-  const handleCreateTag = () => {
+  const handleCreateTag = async () => {
     if (!newTagName.trim()) {
-      toast.error('Tag name is required');
+      toast.error('Nazwa tagu jest wymagana');
       return;
     }
 
-    const newTag: Tag = {
-      id: Date.now().toString(),
-      name: newTagName.trim().toLowerCase(),
-      color: newTagColor,
-      usageCount: 0,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    setTags(prev => [...prev, newTag]);
-    setNewTagName('');
-    setNewTagColor('#3B82F6');
-    setIsFormOpen(false);
-    toast.success('Tag created successfully');
+    try {
+      await tagsApi.createTag({
+        name: newTagName.trim().toLowerCase(),
+        color: newTagColor,
+      });
+      setNewTagName('');
+      setNewTagColor('#3B82F6');
+      setIsFormOpen(false);
+      toast.success('Tag utworzony pomyślnie');
+      loadTags();
+    } catch (error) {
+      console.error('Failed to create tag:', error);
+      toast.error('Nie udało się utworzyć tagu');
+    }
   };
 
-  const handleDeleteTag = (id: string) => {
-    if (!confirm('Are you sure you want to delete this tag?')) return;
-    setTags(prev => prev.filter(tag => tag.id !== id));
-    toast.success('Tag deleted successfully');
+  const handleDeleteTag = async (id: string) => {
+    if (!confirm('Czy na pewno chcesz usunąć ten tag?')) return;
+
+    try {
+      await tagsApi.deleteTag(id);
+      toast.success('Tag usunięty pomyślnie');
+      loadTags();
+    } catch (error) {
+      console.error('Failed to delete tag:', error);
+      toast.error('Nie udało się usunąć tagu');
+    }
   };
 
   const handleEditTag = (tag: Tag) => {
@@ -87,20 +89,24 @@ export default function TagsPage() {
     setIsFormOpen(true);
   };
 
-  const handleUpdateTag = () => {
+  const handleUpdateTag = async () => {
     if (!editingTag || !newTagName.trim()) return;
 
-    setTags(prev => prev.map(tag => 
-      tag.id === editingTag.id 
-        ? { ...tag, name: newTagName.trim().toLowerCase(), color: newTagColor, updatedAt: new Date().toISOString() }
-        : tag
-    ));
-    
-    setEditingTag(undefined);
-    setNewTagName('');
-    setNewTagColor('#3B82F6');
-    setIsFormOpen(false);
-    toast.success('Tag updated successfully');
+    try {
+      await tagsApi.updateTag(editingTag.id, {
+        name: newTagName.trim().toLowerCase(),
+        color: newTagColor,
+      });
+      setEditingTag(undefined);
+      setNewTagName('');
+      setNewTagColor('#3B82F6');
+      setIsFormOpen(false);
+      toast.success('Tag zaktualizowany pomyślnie');
+      loadTags();
+    } catch (error) {
+      console.error('Failed to update tag:', error);
+      toast.error('Nie udało się zaktualizować tagu');
+    }
   };
 
   const sortedTags = [...tags].sort((a, b) => b.usageCount - a.usageCount);

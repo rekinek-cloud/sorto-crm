@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRequireAuth } from '@/lib/auth/context';
-import { apiClient } from '@/lib/api/client';
+import { knowledgeApi } from '@/lib/api/knowledge';
 import { motion } from 'framer-motion';
 import {
   DocumentIcon,
@@ -135,25 +135,23 @@ export default function KnowledgePage() {
   };
 
   const loadDocuments = async () => {
-    const params = new URLSearchParams();
-    if (selectedFolder) params.append('folderId', selectedFolder);
-    if (searchQuery) params.append('search', searchQuery);
-
-    const response = await apiClient.get(`/knowledge/documents?${params}`);
-    setDocuments(response.data.data);
+    const response = await knowledgeApi.getDocuments({
+      folderId: selectedFolder || undefined,
+      search: searchQuery || undefined,
+    });
+    setDocuments(response.data);
   };
 
   const loadWikiPages = async () => {
-    const params = new URLSearchParams();
-    if (searchQuery) params.append('search', searchQuery);
-
-    const response = await apiClient.get(`/knowledge/wiki?${params}`);
-    setWikiPages(response.data.data);
+    const response = await knowledgeApi.getWikiPages({
+      search: searchQuery || undefined,
+    });
+    setWikiPages(response.data);
   };
 
   const loadFolders = async () => {
-    const response = await apiClient.get('/knowledge/folders');
-    setFolders(response.data.data);
+    const response = await knowledgeApi.getFolders();
+    setFolders(response.data);
   };
 
   const handleSearch = (query: string) => {

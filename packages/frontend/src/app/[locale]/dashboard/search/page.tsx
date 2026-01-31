@@ -14,7 +14,7 @@ import {
   ClockIcon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
-import { apiClient } from '@/lib/api/client';
+import { realVectorSearchApi } from '@/lib/api/realVectorSearch';
 import debounce from 'lodash/debounce';
 
 interface SearchResult {
@@ -73,18 +73,27 @@ export default function SearchPage() {
     try {
       setLoading(true);
 
-      const endpoint = searchMode === 'semantic' ? '/real-vector-search/search' : '/search';
-      const response = await apiClient.post(endpoint, {
-        query: searchQuery,
-        filters: {
-          types: filters.types.length > 0 ? filters.types : undefined,
-          minScore: filters.minScore,
-        },
-        limit: 20,
-      });
-
-      const data = response.data.results || response.data.data || [];
-      setResults(data);
+      if (searchMode === 'semantic') {
+        const result = await realVectorSearchApi.search(searchQuery, {
+          limit: 20,
+          filters: {
+            minRelevance: filters.minScore,
+          },
+        });
+        const data = result.data?.results || [];
+        setResults(data.map((r: any) => ({
+          id: r.id,
+          type: r.metadata?.entityType || r.type,
+          title: r.title,
+          description: r.content,
+          score: r.relevanceScore,
+          highlights: [],
+          metadata: r.metadata,
+        })));
+      } else {
+        // Fallback to mock for keyword search (no dedicated API)
+        setResults([]);
+      }
 
       // Save to recent searches
       const newRecent = [searchQuery, ...recentSearches.filter((s) => s !== searchQuery)].slice(0, 5);
@@ -92,39 +101,7 @@ export default function SearchPage() {
       localStorage.setItem('recentSearches', JSON.stringify(newRecent));
     } catch (error) {
       console.error('Search failed:', error);
-      // Mock results for demo
-      setResults([
-        {
-          id: '1',
-          type: 'contact',
-          title: 'Jan Kowalski',
-          description: 'CEO w ABC Corp, kontakt od 2023',
-          score: 0.95,
-          highlights: ['Jan <mark>Kowalski</mark> jest CEO...'],
-        },
-        {
-          id: '2',
-          type: 'company',
-          title: 'ABC Corporation',
-          description: 'Firma technologiczna z Warszawy',
-          score: 0.87,
-          highlights: ['<mark>ABC</mark> Corporation specjalizuje sie...'],
-        },
-        {
-          id: '3',
-          type: 'deal',
-          title: 'Wdrozenie systemu CRM',
-          description: 'Wartosc: 150,000 PLN, Etap: Negocjacje',
-          score: 0.82,
-        },
-        {
-          id: '4',
-          type: 'project',
-          title: 'Modernizacja infrastruktury',
-          description: 'Projekt IT dla klienta ABC',
-          score: 0.78,
-        },
-      ]);
+      toast.error('Wyszukiwanie nie powiodlo sie');
     } finally {
       setLoading(false);
     }

@@ -13,14 +13,7 @@ import {
   ClockIcon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
-import { apiClient } from '@/lib/api/client';
-
-interface TTSModel {
-  id: string;
-  name: string;
-  language: string;
-  description?: string;
-}
+import { voiceSimpleApi, type TTSModel } from '@/lib/api/voiceSimple';
 
 interface SynthesisHistory {
   id: string;
@@ -63,8 +56,8 @@ export default function VoicePage() {
 
   const checkHealth = async () => {
     try {
-      const response = await apiClient.get('/voice-simple/health');
-      setHealthStatus(response.data.success ? 'healthy' : 'unhealthy');
+      const data = await voiceSimpleApi.healthCheck();
+      setHealthStatus(data.success ? 'healthy' : 'unhealthy');
     } catch (error) {
       setHealthStatus('unhealthy');
     }
@@ -72,10 +65,8 @@ export default function VoicePage() {
 
   const loadModels = async () => {
     try {
-      const response = await apiClient.get('/voice-simple/models');
-      if (response.data.success) {
-        setModels(response.data.data.models || []);
-      }
+      const data = await voiceSimpleApi.getModels();
+      setModels(data.models || []);
     } catch (error) {
       console.error('Failed to load models:', error);
     }
@@ -95,21 +86,14 @@ export default function VoicePage() {
     try {
       setLoading(true);
 
-      const response = await apiClient.post(
-        '/voice-simple/synthesize',
-        {
-          text,
-          language,
-          personalityLevel,
-          emotion,
-          speed,
-        },
-        {
-          responseType: 'blob',
-        }
-      );
+      const blob = await voiceSimpleApi.synthesize({
+        text,
+        language,
+        personalityLevel,
+        emotion,
+        speed,
+      });
 
-      const blob = new Blob([response.data], { type: 'audio/wav' });
       const url = URL.createObjectURL(blob);
 
       // Cleanup previous URL

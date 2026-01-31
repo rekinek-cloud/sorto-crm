@@ -22,57 +22,9 @@ import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
-import apiClient from '@/lib/api/client';
+import { emailAccountsApi, type EmailAccount, type EmailProvider } from '@/lib/api/emailAccounts';
 
-interface EmailAccount {
-  id: string;
-  name: string;
-  email: string;
-  provider: string;
-  isActive: boolean;
-  status: 'PENDING' | 'ACTIVE' | 'ERROR' | 'DISABLED';
-  lastSyncAt?: string;
-  syncCount: number;
-  syncIntervalMin: number;
-  maxMessages: number;
-  syncFolders: string[];
-  errorMessage?: string;
-  lastErrorAt?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-interface EmailProvider {
-  provider: string;
-  name: string;
-  description: string;
-  imapHost: string;
-  imapPort: number;
-  imapSecure: boolean;
-  smtpHost: string;
-  smtpPort: number;
-  smtpSecure: boolean;
-  helpText: string;
-}
-
-interface CreateAccountData {
-  name: string;
-  email: string;
-  provider: string;
-  imapHost: string;
-  imapPort: number;
-  imapSecure: boolean;
-  imapUsername: string;
-  imapPassword: string;
-  smtpHost: string;
-  smtpPort: number;
-  smtpSecure: boolean;
-  smtpUsername: string;
-  smtpPassword: string;
-  syncIntervalMin: number;
-  maxMessages: number;
-  syncFolders: string[];
-}
+// Types imported from @/lib/api/emailAccounts
 
 interface FormData {
   name: string;
@@ -114,8 +66,8 @@ export default function EmailAccountsPage() {
 
   const loadAccounts = async () => {
     try {
-      const response = await apiClient.get('/email-accounts');
-      setAccounts(response.data.data || []);
+      const { data } = await emailAccountsApi.getAccounts();
+      setAccounts(data || []);
     } catch (error: any) {
       console.error('Failed to load email accounts:', error);
       toast.error('Nie udało się pobrać kont email');
@@ -126,8 +78,8 @@ export default function EmailAccountsPage() {
 
   const loadProviders = async () => {
     try {
-      const response = await apiClient.get('/email-accounts/providers');
-      setProviders(response.data.data || []);
+      const { data } = await emailAccountsApi.getProviders();
+      setProviders(data || []);
     } catch (error: any) {
       console.error('Failed to load providers:', error);
     }
@@ -136,10 +88,10 @@ export default function EmailAccountsPage() {
   const handleSyncAll = async () => {
     setSyncing(true);
     try {
-      const response = await apiClient.post('/email-accounts/sync-all');
-      
-      if (response.data.success) {
-        toast.success(response.data.message || 'Synchronizacja ukończona');
+      const result = await emailAccountsApi.syncAll();
+
+      if (result.success) {
+        toast.success(result.message || 'Synchronizacja ukończona');
         loadAccounts(); // Refresh data
       } else {
         toast.error('Synchronizacja nie powiodła się');
@@ -154,9 +106,9 @@ export default function EmailAccountsPage() {
 
   const handleSyncAccount = async (accountId: string) => {
     try {
-      const response = await apiClient.post(`/email-accounts/${accountId}/sync`);
-      
-      if (response.data.success) {
+      const result = await emailAccountsApi.syncAccount(accountId);
+
+      if (result.success) {
         toast.success('Konto zsynchronizowane');
         loadAccounts();
       } else {
@@ -174,7 +126,7 @@ export default function EmailAccountsPage() {
     }
 
     try {
-      await apiClient.delete(`/email-accounts/${accountId}`);
+      await emailAccountsApi.deleteAccount(accountId);
       toast.success('Konto email zostało usunięte');
       loadAccounts();
     } catch (error: any) {
@@ -196,7 +148,7 @@ export default function EmailAccountsPage() {
 
   const handleTestConnection = async () => {
     if (!selectedProvider) return;
-    
+
     setTestingConnection(true);
     try {
       const testData = {
@@ -213,18 +165,18 @@ export default function EmailAccountsPage() {
         smtpPassword: formData.smtpPassword
       };
 
-      const response = await apiClient.post('/email-accounts/test-connection', testData);
-      
-      if (response.data.success) {
+      const result = await emailAccountsApi.testConnection(testData);
+
+      if (result.success) {
         toast.success('🎉 Połączenie udane! Możesz utworzyć konto.');
         setStep('test');
       } else {
         const errors = [];
-        if (!response.data.data.imap.success) {
-          errors.push(`IMAP: ${response.data.data.imap.error}`);
+        if (!result.data.imap.success) {
+          errors.push(`IMAP: ${result.data.imap.error}`);
         }
-        if (!response.data.data.smtp.success) {
-          errors.push(`SMTP: ${response.data.data.smtp.error}`);
+        if (!result.data.smtp.success) {
+          errors.push(`SMTP: ${result.data.smtp.error}`);
         }
         toast.error(`Błąd połączenia:\n${errors.join('\n')}`);
       }
@@ -238,7 +190,7 @@ export default function EmailAccountsPage() {
 
   const handleCreateAccount = async () => {
     if (!selectedProvider) return;
-    
+
     setCreating(true);
     try {
       const accountData = {
@@ -260,9 +212,9 @@ export default function EmailAccountsPage() {
         syncFolders: formData.syncFolders.split(',').map(f => f.trim())
       };
 
-      const response = await apiClient.post('/email-accounts', accountData);
-      
-      if (response.data.success) {
+      const result = await emailAccountsApi.createAccount(accountData);
+
+      if (result.success) {
         toast.success('✅ Konto email zostało utworzone!');
         setShowCreateModal(false);
         resetForm();

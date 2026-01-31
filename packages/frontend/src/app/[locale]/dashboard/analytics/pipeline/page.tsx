@@ -11,26 +11,7 @@ import {
   FunnelIcon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
-import { apiClient } from '@/lib/api/client';
-
-interface PipelineStage {
-  id: string;
-  name: string;
-  deals: number;
-  value: number;
-  avgDays: number;
-  conversionRate: number;
-  color: string;
-}
-
-interface PipelineStats {
-  totalDeals: number;
-  totalValue: number;
-  avgDealValue: number;
-  avgCycleTime: number;
-  winRate: number;
-  stages: PipelineStage[];
-}
+import { pipelineAnalyticsApi, type PipelineOverview, type PipelineStage } from '@/lib/api/pipelineAnalytics';
 
 const defaultStages: PipelineStage[] = [
   { id: '1', name: 'Nowe', deals: 0, value: 0, avgDays: 0, conversionRate: 100, color: '#6366F1' },
@@ -41,7 +22,7 @@ const defaultStages: PipelineStage[] = [
 ];
 
 export default function PipelineAnalyticsPage() {
-  const [stats, setStats] = useState<PipelineStats>({
+  const [stats, setStats] = useState<PipelineOverview>({
     totalDeals: 0,
     totalValue: 0,
     avgDealValue: 0,
@@ -59,30 +40,13 @@ export default function PipelineAnalyticsPage() {
   const loadStats = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/pipeline-analytics/overview', {
-        params: { days: dateRange },
-      });
-
-      if (response.data) {
-        setStats(response.data);
+      const data = await pipelineAnalyticsApi.getOverview(dateRange);
+      if (data) {
+        setStats(data);
       }
     } catch (error) {
       console.error('Failed to load pipeline stats:', error);
-      // Use mock data for demo
-      setStats({
-        totalDeals: 47,
-        totalValue: 2450000,
-        avgDealValue: 52127,
-        avgCycleTime: 32,
-        winRate: 28.5,
-        stages: [
-          { id: '1', name: 'Nowe', deals: 12, value: 580000, avgDays: 3, conversionRate: 100, color: '#6366F1' },
-          { id: '2', name: 'Kwalifikacja', deals: 15, value: 720000, avgDays: 7, conversionRate: 75, color: '#8B5CF6' },
-          { id: '3', name: 'Propozycja', deals: 10, value: 650000, avgDays: 12, conversionRate: 55, color: '#EC4899' },
-          { id: '4', name: 'Negocjacje', deals: 6, value: 320000, avgDays: 8, conversionRate: 35, color: '#F59E0B' },
-          { id: '5', name: 'Zamkniete wygrane', deals: 4, value: 180000, avgDays: 2, conversionRate: 28.5, color: '#10B981' },
-        ],
-      });
+      toast.error('Nie udało się pobrać danych analityki');
     } finally {
       setLoading(false);
     }

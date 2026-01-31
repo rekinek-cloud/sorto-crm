@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/context';
 import Cookies from 'js-cookie';
-import { apiClient } from '@/lib/api/client';
+import { recurringTasksApi } from '@/lib/api/recurring';
 import { toast } from 'react-hot-toast';
 import {
   ChevronLeftIcon,
@@ -96,13 +96,11 @@ export default function RecurringTasksCalendarPage() {
     
     try {
       setLoading(true);
-      const response = await apiClient.get('/recurring-tasks', {
-        params: {
-          isActive: true,
-          limit: 500
-        }
+      const response = await recurringTasksApi.getTasks({
+        isActive: true,
+        limit: 500
       });
-      setTasks(response.data.tasks || []);
+      setTasks(response.recurringTasks || []);
     } catch (error: any) {
       console.error('Error loading recurring tasks:', error);
       toast.error('Failed to load recurring tasks');

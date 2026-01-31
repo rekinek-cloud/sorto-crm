@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/lib/auth/context';
-import { apiClient } from '@/lib/api/client';
+import { knowledgeApi } from '@/lib/api/knowledge';
 import { motion } from 'framer-motion';
 import {
   DocumentIcon,
@@ -118,8 +118,8 @@ export default function DocumentPage() {
   const loadDocument = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get(`/knowledge/documents/${params.id}`);
-      setDocument(response.data.data);
+      const response = await knowledgeApi.getDocument(params.id as string);
+      setDocument(response.data);
     } catch (error: any) {
       console.error('Failed to load document:', error);
       router.push('/dashboard/knowledge');
@@ -133,9 +133,7 @@ export default function DocumentPage() {
 
     try {
       setAddingComment(true);
-      await apiClient.post(`/knowledge/documents/${document.id}/comments`, {
-        content: newComment
-      });
+      await knowledgeApi.addDocumentComment(document.id, newComment);
       setNewComment('');
       await loadDocument(); // Reload to get updated comments
     } catch (error: any) {

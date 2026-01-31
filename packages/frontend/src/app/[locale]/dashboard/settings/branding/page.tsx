@@ -3,9 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { PaintBrushIcon, PhotoIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
-import Cookies from 'js-cookie';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api/v1';
+import { brandingApi, type OrganizationBranding } from '@/lib/api/branding';
 
 interface Branding {
   logoUrl: string | null;
@@ -55,12 +53,8 @@ export default function BrandingPage() {
 
   const loadBranding = async () => {
     try {
-      const token = Cookies.get('access_token');
-      const response = await fetch(`${API_URL}/branding`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.ok) {
-        const data = await response.json();
+      const data = await brandingApi.getBranding();
+      if (data.branding) {
         setBranding({ ...defaultBranding, ...data.branding });
       }
     } catch (error) {
@@ -73,24 +67,11 @@ export default function BrandingPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const token = Cookies.get('access_token');
-      const response = await fetch(`${API_URL}/branding`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(branding),
-      });
-
-      if (response.ok) {
-        toast.success('Branding zapisany pomyslnie');
-      } else {
-        const data = await response.json();
-        toast.error(data.error || 'Blad zapisu');
-      }
-    } catch (error) {
-      toast.error('Nie udalo sie zapisac brandingu');
+      await brandingApi.updateBranding(branding);
+      toast.success('Branding zapisany pomyslnie');
+    } catch (error: any) {
+      console.error('Failed to save branding:', error);
+      toast.error(error.response?.data?.error || 'Nie udalo sie zapisac brandingu');
     } finally {
       setSaving(false);
     }

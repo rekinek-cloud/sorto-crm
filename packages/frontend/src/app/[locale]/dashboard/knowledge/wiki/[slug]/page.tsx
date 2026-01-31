@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useRequireAuth } from '@/lib/auth/context';
-import { apiClient } from '@/lib/api/client';
+import { knowledgeApi } from '@/lib/api/knowledge';
 import { motion } from 'framer-motion';
 import {
   BookOpenIcon,
@@ -73,8 +73,8 @@ export default function WikiPageView() {
   const loadPage = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get(`/knowledge/wiki/${params.slug}`);
-      setPage(response.data.data);
+      const response = await knowledgeApi.getWikiPage(params.slug as string);
+      setPage(response.data);
     } catch (error: any) {
       console.error('Failed to load wiki page:', error);
       router.push('/dashboard/knowledge');

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/context';
 import Cookies from 'js-cookie';
-import { apiClient } from '@/lib/api/client';
+import { dealsApi } from '@/lib/api/deals';
 import { toast } from 'react-hot-toast';
 
 interface Deal {
@@ -113,15 +113,13 @@ export default function DealsKanbanPage() {
     
     try {
       setLoading(true);
-      const response = await apiClient.get('/deals', {
-        params: {
-          search: searchTerm || undefined,
-          limit: 500
-        }
+      const response = await dealsApi.getDeals({
+        search: searchTerm || undefined,
+        limit: 500
       });
-      
-      setDeals(response.data.deals || []);
-      calculatePipelineStats(response.data.deals || []);
+
+      setDeals(response.deals || []);
+      calculatePipelineStats(response.deals || []);
     } catch (error: any) {
       console.error('Error loading deals:', error);
       toast.error('Failed to load deals');
@@ -157,7 +155,7 @@ export default function DealsKanbanPage() {
         updateData.actualCloseDate = new Date().toISOString();
       }
       
-      await apiClient.put(`/deals/${dealId}`, updateData);
+      await dealsApi.updateDeal(dealId, updateData);
       toast.success('Deal stage updated');
       await loadDeals();
     } catch (error: any) {

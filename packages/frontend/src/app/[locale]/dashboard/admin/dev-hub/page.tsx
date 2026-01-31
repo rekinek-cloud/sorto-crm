@@ -14,7 +14,7 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
-import { apiClient } from '@/lib/api/client';
+import { devHubApi } from '@/lib/api/devHub';
 
 interface Container {
   id: string;
@@ -54,10 +54,8 @@ export default function DevHubPage() {
   const loadContainers = async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get('/dev-hub/containers');
-      if (response.data) {
-        setContainers(response.data.containers || {});
-      }
+      const data = await devHubApi.getContainers();
+      setContainers(data.containers || {});
     } catch (error) {
       console.error('Failed to load containers:', error);
       toast.error('Nie udało się załadować kontenerów');
@@ -68,10 +66,8 @@ export default function DevHubPage() {
 
   const loadSystemResources = async () => {
     try {
-      const response = await apiClient.get('/dev-hub/system-resources');
-      if (response.data) {
-        setSystemResources(response.data);
-      }
+      const data = await devHubApi.getSystemResources();
+      setSystemResources(data);
     } catch (error) {
       console.error('Failed to load system resources:', error);
     }
@@ -80,10 +76,8 @@ export default function DevHubPage() {
   const loadAppStatus = async (app: string) => {
     try {
       setSelectedApp(app);
-      const response = await apiClient.get(`/dev-hub/applications/${app}/status`);
-      if (response.data) {
-        setAppStatus(response.data);
-      }
+      const data = await devHubApi.getAppStatus(app);
+      setAppStatus(data);
     } catch (error) {
       console.error('Failed to load app status:', error);
       toast.error('Nie udało się załadować statusu aplikacji');
@@ -93,7 +87,7 @@ export default function DevHubPage() {
   const handleContainerAction = async (containerName: string, action: 'start' | 'stop' | 'restart') => {
     try {
       setActionLoading(`${containerName}-${action}`);
-      await apiClient.post(`/dev-hub/containers/${containerName}/${action}`);
+      await devHubApi.containerAction(containerName, action);
       toast.success(`Kontener ${containerName} - ${action} wykonane`);
       await loadContainers();
     } catch (error) {
@@ -107,7 +101,7 @@ export default function DevHubPage() {
   const handleDeploy = async (app: string) => {
     try {
       setActionLoading(`deploy-${app}`);
-      await apiClient.post(`/dev-hub/applications/${app}/deploy`);
+      await devHubApi.deployApp(app);
       toast.success(`Aplikacja ${app} - deploy rozpoczęty`);
       await loadContainers();
     } catch (error) {

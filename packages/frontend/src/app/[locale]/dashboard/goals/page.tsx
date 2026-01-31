@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { apiClient } from '@/lib/api/client';
+import { goalsApi } from '@/lib/api/goals';
+import { toast } from 'react-hot-toast';
 
 interface Goal {
   id: string;
@@ -37,11 +38,12 @@ export default function GoalsPage() {
 
   const fetchGoals = async () => {
     try {
-      const response = await apiClient.get('/goals');
-      const data = response.data.data || response.data.goals || [];
-      setGoals(data);
+      const data = await goalsApi.getGoals();
+      const goalsList = data.data || data.goals || [];
+      setGoals(goalsList);
     } catch (error) {
       console.error('Error fetching goals:', error);
+      toast.error('Nie udało się pobrać celów');
     } finally {
       setIsLoading(false);
     }
@@ -51,33 +53,39 @@ export default function GoalsPage() {
     e.preventDefault();
     try {
       if (editingGoal) {
-        await apiClient.put(`/goals/${editingGoal.id}`, formData);
+        await goalsApi.updateGoal(editingGoal.id, formData);
+        toast.success('Cel zaktualizowany');
       } else {
-        await apiClient.post('/goals', formData);
+        await goalsApi.createGoal(formData);
+        toast.success('Cel utworzony');
       }
       fetchGoals();
       closeModal();
     } catch (error) {
       console.error('Error saving goal:', error);
+      toast.error('Nie udało się zapisać celu');
     }
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm('Czy na pewno chcesz usunac ten cel?')) return;
     try {
-      await apiClient.delete(`/goals/${id}`);
+      await goalsApi.deleteGoal(id);
+      toast.success('Cel usunięty');
       fetchGoals();
     } catch (error) {
       console.error('Error deleting goal:', error);
+      toast.error('Nie udało się usunąć celu');
     }
   };
 
   const handleUpdateProgress = async (id: string, currentValue: number) => {
     try {
-      await apiClient.put(`/goals/${id}/progress`, { currentValue });
+      await goalsApi.updateProgress(id, currentValue);
       fetchGoals();
     } catch (error) {
       console.error('Error updating progress:', error);
+      toast.error('Nie udało się zaktualizować postępu');
     }
   };
 

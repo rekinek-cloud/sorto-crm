@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth/context';
 import Cookies from 'js-cookie';
-import { apiClient } from '@/lib/api/client';
+import { weeklyReviewApi } from '@/lib/api/weeklyReview';
 import { toast } from 'react-hot-toast';
 import {
   ChevronLeftIcon,
@@ -63,14 +63,10 @@ export default function WeeklyReviewBurndownPage() {
     
     try {
       setLoading(true);
-      const response = await apiClient.get('/weekly-review/stats/burndown', {
-        params: {
-          weeks: timeRange
-        }
-      });
-      
-      setBurndownData(response.data.burndownData || []);
-      setSummary(response.data.summary || null);
+      const response = await weeklyReviewApi.getBurndownData(timeRange);
+
+      setBurndownData(response.burndownData || []);
+      setSummary(response.summary || null);
     } catch (error: any) {
       console.error('Error loading weekly review burndown data:', error);
       toast.error('Failed to load burndown data');

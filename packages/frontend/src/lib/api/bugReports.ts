@@ -106,7 +106,31 @@ export const bugReportsApi = {
   // Delete bug report
   async deleteBugReport(id: string): Promise<void> {
     await apiClient.delete(`/bug-reports/${id}`);
-  }
+  },
+
+  // Get bug reports statistics (admin)
+  async getStats(): Promise<{
+    totalBugs: number;
+    openBugs: number;
+    resolvedBugs: number;
+    criticalBugs: number;
+  }> {
+    const response = await apiClient.get('/bug-reports/stats/overview');
+    return response.data;
+  },
+
+  // Update bug status (admin)
+  async updateStatus(
+    id: string,
+    data: {
+      status: string;
+      adminNotes?: string;
+      resolution?: string;
+    }
+  ): Promise<BugReport> {
+    const response = await apiClient.patch(`/bug-reports/${id}/status`, data);
+    return response.data;
+  },
 };
 
 // Helper functions for browser info

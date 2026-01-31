@@ -12,30 +12,9 @@ import {
   SparklesIcon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
-import { apiClient } from '@/lib/api/client';
+import { universalRulesApi, type AvailableAnalysis, type ExecutionHistoryItem } from '@/lib/api/universalRules';
 
-interface AvailableAnalysis {
-  type: string;
-  name: string;
-  description: string;
-  estimatedTime: string;
-  aiModel: string;
-}
-
-interface ExecutionHistoryItem {
-  id: string;
-  ruleId: string;
-  ruleName: string;
-  module: string;
-  itemId: string;
-  trigger: 'manual' | 'automatic';
-  success: boolean;
-  executionTime: number;
-  timestamp: string;
-  user: string;
-  aiResponsesCount: number;
-  actionsExecuted: number;
-}
+// Types imported from @/lib/api/universalRules
 
 export default function UniversalRulesPage() {
   const [availableAnalyses, setAvailableAnalyses] = useState<Record<string, AvailableAnalysis[]>>({});
@@ -62,11 +41,11 @@ export default function UniversalRulesPage() {
     try {
       setLoading(true);
       const [analysesRes, historyRes] = await Promise.all([
-        apiClient.get('/universal-rules/available'),
-        apiClient.get('/universal-rules/execution-history?limit=20'),
+        universalRulesApi.getAvailableAnalyses(),
+        universalRulesApi.getExecutionHistory(20),
       ]);
-      setAvailableAnalyses(analysesRes.data.data || {});
-      setExecutionHistory(historyRes.data.data || []);
+      setAvailableAnalyses(analysesRes.data || {});
+      setExecutionHistory(historyRes.data || []);
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
@@ -86,14 +65,10 @@ export default function UniversalRulesPage() {
 
     try {
       setAnalyzing(true);
-      const response = await apiClient.post('/universal-rules/analyze', {
-        module: selectedModule,
-        itemId: testItemId,
-        analysisType: selectedAnalysisType,
-      });
+      const result = await universalRulesApi.analyze(selectedModule as any, testItemId, selectedAnalysisType);
 
-      if (response.data.success) {
-        toast.success(`Analiza zakonczona. Wykonano ${response.data.executedRules} regul.`);
+      if (result.success) {
+        toast.success(`Analiza zakonczona. Wykonano ${result.executedRules} regul.`);
         loadData();
       } else {
         toast.error('Analiza nie powiodla sie');
