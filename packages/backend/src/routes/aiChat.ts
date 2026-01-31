@@ -14,6 +14,10 @@ const router = Router();
 // Initialize service lazily
 let chatService: QwenChatService | null = null;
 
+function isConfigured(): boolean {
+  return !!process.env.QWEN_API_KEY;
+}
+
 function getService(): QwenChatService {
   if (!chatService) {
     const apiKey = process.env.QWEN_API_KEY;
@@ -40,6 +44,15 @@ router.get('/conversations', authenticateToken, async (req: Request, res: Respon
 
     if (!organizationId || !userId) {
       return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Return empty array if not configured
+    if (!isConfigured()) {
+      return res.json({
+        success: true,
+        data: [],
+        warning: 'AI Chat not configured (QWEN_API_KEY missing)',
+      });
     }
 
     const { limit, includeArchived, streamId } = req.query;
@@ -353,6 +366,15 @@ router.post('/chat/stream', authenticateToken, async (req: Request, res: Respons
  */
 router.get('/models', authenticateToken, async (req: Request, res: Response) => {
   try {
+    // Return models even if not configured (just list what would be available)
+    if (!isConfigured()) {
+      return res.json({
+        success: true,
+        data: QWEN_MODELS,
+        warning: 'AI Chat not configured (QWEN_API_KEY missing)',
+      });
+    }
+
     const service = getService();
     const models = service.getAvailableModels();
 
