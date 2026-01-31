@@ -22,7 +22,7 @@ export function createTerminalSession(
     sessions.delete(sessionId);
   }
 
-  const shell = os.platform() === 'win32' ? 'powershell.exe' : 'bash';
+  const shell = os.platform() === 'win32' ? 'powershell.exe' : '/bin/sh';
 
   const ptyProcess = pty.spawn(shell, [], {
     name: 'xterm-256color',
