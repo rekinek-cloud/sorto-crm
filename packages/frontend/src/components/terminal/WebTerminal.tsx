@@ -64,8 +64,10 @@ export default function WebTerminal({ projectPath, onConnectionChange }: WebTerm
 
     // Connect WebSocket
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsHost = process.env.NEXT_PUBLIC_API_URL?.replace(/^https?:\/\//, '').replace(/\/api\/v1$/, '') || window.location.host;
+    const wsHost = process.env.NEXT_PUBLIC_API_URL?.replace(/^https?:\/\//, '').replace(/\/api.*$/, '') || window.location.host;
     const wsUrl = `${wsProtocol}//${wsHost}/ws/terminal?path=${encodeURIComponent(projectPath)}`;
+
+    console.log('WebSocket URL:', wsUrl);
 
     terminal.writeln('\x1b[33mConnecting to terminal...\x1b[0m');
 
