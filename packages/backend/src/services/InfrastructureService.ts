@@ -543,7 +543,7 @@ class InfrastructureService {
   /**
    * Sklonuj repozytorium z GitHub
    */
-  async cloneGitHubRepo(repoName: string, branch: string = 'main'): Promise<{
+  async cloneGitHubRepo(repoName: string, branch?: string): Promise<{
     success: boolean;
     message: string;
     path?: string;
@@ -560,9 +560,10 @@ class InfrastructureService {
         // Nie istnieje - kontynuuj
       }
 
-      // Klonuj
+      // Klonuj - bez --branch jeśli nie podano (obsłuży puste repo i różne domyślne branche)
+      const branchArg = branch ? `-- --branch ${branch}` : '';
       await execAsync(
-        `gh repo clone ${this.GITHUB_ORG}/${repoName} ${targetDir} -- --branch ${branch}`,
+        `gh repo clone ${this.GITHUB_ORG}/${repoName} ${targetDir} ${branchArg}`,
         { timeout: 120000 }
       );
 
