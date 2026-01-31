@@ -1,7 +1,7 @@
 import express from 'express';
 import { z } from 'zod';
 import { authenticateUser } from '../shared/middleware/auth';
-import { validateRequest } from '../shared/middleware/validateRequest';
+import { validateRequest } from '../shared/middleware/validation';
 import { AIInsightsEngine } from '../services/ai/AIInsightsEngine';
 import { prisma } from '../config/database';
 import logger from '../config/logger';
@@ -141,7 +141,7 @@ router.get('/global',
 
       // Get all active streams
       const streams = await prisma.stream.findMany({
-        where: { organizationId, isActive: true },
+        where: { organizationId, status: 'ACTIVE' },
         select: { id: true, name: true }
       });
 

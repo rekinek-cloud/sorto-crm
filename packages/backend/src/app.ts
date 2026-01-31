@@ -93,7 +93,7 @@ import searchRoutes from './routes/search';
 // import bugReportsRoutes from './routes/bugReports';
 // import aiRulesRoutes from './routes/aiRules';
 // import filesRoutes from './routes/files';
-// import weeklyReviewRoutes from './routes/weeklyReview';
+import weeklyReviewRoutes from './routes/weeklyReview';
 
 const app = express();
 
@@ -250,7 +250,8 @@ apiRouter.use('/search', searchRoutes);  // Search - wyszukiwanie
 // apiRouter.use('/admin/bug-reports', bugReportsRoutes);  // Bug Reports
 // apiRouter.use('/ai-rules', aiRulesRoutes);  // AI Rules
 // apiRouter.use('/files', filesRoutes);  // Files - zarządzanie plikami
-// apiRouter.use('/weekly-review', weeklyReviewRoutes);  // Weekly Review
+apiRouter.use('/weekly-review', weeklyReviewRoutes);  // Weekly Review
+apiRouter.use('/weekly-reviews', weeklyReviewRoutes);  // Weekly Review (plural alias)
 
 // STREAMS Migration - nowe endpointy
 apiRouter.use('/source', sourceRoutes);           // Źródło (ex gtdInbox)
