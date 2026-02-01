@@ -40,7 +40,7 @@ const executeAIRulesForFlashNews = async (organizationId: string): Promise<Flash
   
   try {
     // Get active AI Rules that can generate flash news
-    const aiRules = await prisma.aIRule.findMany({
+    const aiRules = await prisma.ai_rules.findMany({
       where: {
         organizationId,
         status: 'ACTIVE',

@@ -91,7 +91,7 @@ import searchRoutes from './routes/search';
 // import modernEmailRoutes from './routes/modernEmail';
 // import voiceSimpleRoutes from './routes/voice-simple';
 // import bugReportsRoutes from './routes/bugReports';
-// import aiRulesRoutes from './routes/aiRules';
+import aiRulesRoutes from './routes/aiRules';
 // import filesRoutes from './routes/files';
 import weeklyReviewRoutes from './routes/weeklyReview';
 
@@ -248,7 +248,7 @@ apiRouter.use('/search', searchRoutes);  // Search - wyszukiwanie
 // apiRouter.use('/modern-email', modernEmailRoutes);  // Modern Email - wysyłanie
 // apiRouter.use('/voice', voiceSimpleRoutes);  // Voice TTS - synteza mowy
 // apiRouter.use('/admin/bug-reports', bugReportsRoutes);  // Bug Reports
-// apiRouter.use('/ai-rules', aiRulesRoutes);  // AI Rules
+apiRouter.use('/ai-rules', aiRulesRoutes);  // AI Rules
 // apiRouter.use('/files', filesRoutes);  // Files - zarządzanie plikami
 apiRouter.use('/weekly-review', weeklyReviewRoutes);  // Weekly Review
 apiRouter.use('/weekly-reviews', weeklyReviewRoutes);  // Weekly Review (plural alias)
