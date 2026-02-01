@@ -2,9 +2,19 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import Cookies from 'js-cookie';
-import { useRouter } from '@/i18n/routing';
+import { useRouter, usePathname } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import apiClient, { ApiResponse } from '@/lib/api/client';
+
+// Helper to get locale from pathname
+function getLocaleFromPath(pathname: string): string {
+  const parts = pathname.split('/');
+  // Path format: /crm/[locale]/... so locale is at index 2
+  if (parts.length > 2 && ['pl', 'en'].includes(parts[2])) {
+    return parts[2];
+  }
+  return 'pl'; // default
+}
 
 // User and Organization types
 export interface User {
@@ -74,8 +84,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   const isAuthenticated = !!user;
+
+  // Get current locale from pathname for redirects
+  const currentLocale = getLocaleFromPath(pathname);
 
   // Load user from token on mount
   useEffect(() => {
@@ -116,7 +130,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setOrganization(orgData);
 
       toast.success('Welcome back!');
-      router.push('/dashboard');
+      // Redirect to dashboard with correct locale
+      window.location.href = `/crm/${currentLocale}/dashboard`;
     } catch (error: any) {
       const message = error.response?.data?.error || 'Login failed';
       toast.error(message);
@@ -143,7 +158,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setOrganization(orgData);
 
       toast.success('Account created successfully!');
-      router.push('/dashboard');
+      // Redirect to dashboard with correct locale
+      window.location.href = `/crm/${currentLocale}/dashboard`;
     } catch (error: any) {
       const message = error.response?.data?.error || 'Registration failed';
       toast.error(message);
