@@ -10,7 +10,7 @@ export default defineConfig({
   timeout: 30000,
 
   use: {
-    baseURL: 'http://localhost:9025',
+    baseURL: process.env.TEST_BASE_URL || 'https://crm.dev.sorto.ai',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },

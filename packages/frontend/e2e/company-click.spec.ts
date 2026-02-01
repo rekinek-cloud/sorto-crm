@@ -1,13 +1,13 @@
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:9025';
-const API_URL = 'http://localhost:3003';
+const BASE_URL = process.env.TEST_BASE_URL || 'https://crm.dev.sorto.ai';
+const API_URL = process.env.TEST_API_URL || 'https://crm.dev.sorto.ai/api/v1';
 
 test.describe('CRM - Klikniecie na firme', () => {
 
   test('Klikniecie na firme otwiera szczegoly (przez API login)', async ({ page, request }) => {
     // 1. Zaloguj przez API i pobierz token
-    const loginResponse = await request.post(`${API_URL}/api/v1/auth/login`, {
+    const loginResponse = await request.post(`${API_URL}/auth/login`, {
       data: { email: 'owner@demo.com', password: 'demo123' }
     });
     expect(loginResponse.status()).toBe(200);
@@ -60,27 +60,28 @@ test.describe('CRM - Klikniecie na firme', () => {
 
   test('API szczegolowej firmy zwraca dane', async ({ request }) => {
     // 1. Zaloguj sie przez API
-    const loginResponse = await request.post('http://localhost:3003/api/v1/auth/login', {
+    const loginResponse = await request.post(`${API_URL}/auth/login`, {
       data: {
         email: 'owner@demo.com',
         password: 'demo123'
-      }
+      },
+      headers: { 'Accept': 'application/json' }
     });
 
     const loginData = await loginResponse.json();
     const token = loginData.data.tokens.accessToken;
 
     // 2. Pobierz liste firm
-    const companiesResponse = await request.get('http://localhost:3003/api/v1/companies?limit=1', {
-      headers: { Authorization: `Bearer ${token}` }
+    const companiesResponse = await request.get(`${API_URL}/companies?limit=1`, {
+      headers: { Authorization: `Bearer ${token}`, 'Accept': 'application/json' }
     });
 
     const companiesData = await companiesResponse.json();
     const companyId = companiesData.companies[0].id;
 
     // 3. Pobierz szczegoly firmy
-    const detailsResponse = await request.get(`http://localhost:3003/api/v1/companies/${companyId}`, {
-      headers: { Authorization: `Bearer ${token}` }
+    const detailsResponse = await request.get(`${API_URL}/companies/${companyId}`, {
+      headers: { Authorization: `Bearer ${token}`, 'Accept': 'application/json' }
     });
 
     expect(detailsResponse.status()).toBe(200);

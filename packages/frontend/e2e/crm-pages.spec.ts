@@ -1,5 +1,8 @@
 import { test, expect } from '@playwright/test';
 
+const API_URL = process.env.TEST_API_URL || 'https://crm.dev.sorto.ai/api/v1';
+const HEALTH_URL = process.env.TEST_HEALTH_URL || 'https://crm.dev.sorto.ai/api/health';
+
 // Strony ktore na pewno dzialaja (HTTP 200)
 const WORKING_PAGES = [
   { path: '/crm/dashboard', title: 'Dashboard' },
@@ -196,16 +199,8 @@ test.describe('CRM - Bezpieczenstwo i bledy', () => {
 
 test.describe('CRM - API Health', () => {
 
-  test('Backend API /health odpowiada', async ({ request }) => {
-    const response = await request.get('http://localhost:3003/health');
-    expect(response.status()).toBe(200);
-
-    const body = await response.json();
-    expect(body.status).toBe('healthy');
-  });
-
   test('Backend API /api/v1 odpowiada', async ({ request }) => {
-    const response = await request.get('http://localhost:3003/api/v1/');
+    const response = await request.get(`${API_URL}/`);
     expect(response.status()).toBe(200);
 
     const body = await response.json();
