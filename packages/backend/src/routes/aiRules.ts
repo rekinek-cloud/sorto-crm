@@ -132,7 +132,7 @@ router.get('/',
       const { module, enabled, trigger } = req.query;
 
       // Pobierz reguły z bazy danych
-      const dbRules = await prisma.aIRule.findMany({
+      const dbRules = await prisma.ai_rules.findMany({
         where: {
           organizationId: req.user!.organizationId
         },
@@ -238,7 +238,7 @@ router.post('/',
       }
       
       // Map frontend format to database format
-      const dbRule = await prisma.aIRule.create({
+      const dbRule = await prisma.ai_rules.create({
         data: {
           id: `rule-${Date.now()}`,
           name: ruleData.name,
@@ -356,7 +356,7 @@ router.put('/:id',
       if (updateData.aiModel !== undefined) {
         if (updateData.aiModel && updateData.aiModel !== '') {
           // Check if model exists
-          const modelExists = await prisma.aIModel.findFirst({
+          const modelExists = await prisma.ai_models.findFirst({
             where: {
               id: updateData.aiModel,
               organizationId: req.user!.organizationId
@@ -377,7 +377,7 @@ router.put('/:id',
       }
 
       // Update in database
-      const dbRule = await prisma.aIRule.update({
+      const dbRule = await prisma.ai_rules.update({
         where: { 
           id,
           organizationId: req.user!.organizationId 
@@ -432,7 +432,7 @@ router.delete('/:id',
       const { id } = req.params;
 
       // Delete from database
-      await prisma.aIRule.delete({
+      await prisma.ai_rules.delete({
         where: { 
           id,
           organizationId: req.user!.organizationId 
@@ -470,7 +470,7 @@ router.post('/:id/toggle',
       }
 
       // Update status in database
-      const dbRule = await prisma.aIRule.update({
+      const dbRule = await prisma.ai_rules.update({
         where: { 
           id,
           organizationId: req.user!.organizationId 
