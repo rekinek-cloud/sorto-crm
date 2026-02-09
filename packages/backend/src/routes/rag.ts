@@ -10,18 +10,22 @@ import fs from 'fs';
 import path from 'path';
 import { authenticateToken, AuthenticatedRequest } from '../shared/middleware/auth';
 import { RAGService } from '../services/ai/RAGService';
+import { prisma } from '../config/database';
 import logger from '../config/logger';
 
 const router = Router();
 const upload = multer({ dest: '/tmp/uploads/' });
 
-let ragService: RAGService | null = null;
+// Cache RAGService instances per organization
+const serviceCache = new Map<string, RAGService>();
 
-function getService(): RAGService {
-  if (!ragService) {
-    ragService = new RAGService();
+function getService(organizationId: string): RAGService {
+  let service = serviceCache.get(organizationId);
+  if (!service) {
+    service = new RAGService(prisma, organizationId);
+    serviceCache.set(organizationId, service);
   }
-  return ragService;
+  return service;
 }
 
 // ==================
@@ -33,8 +37,8 @@ router.get('/sources', authenticateToken, async (req: Request, res: Response) =>
     const organizationId = (req as AuthenticatedRequest).user?.organizationId;
     if (!organizationId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const service = getService();
-    const sources = await service.listSources(organizationId);
+    const service = getService(organizationId);
+    const sources = await service.listSources();
 
     res.json({ success: true, data: sources });
   } catch (error: any) {
@@ -53,14 +57,13 @@ router.post('/sources', authenticateToken, async (req: Request, res: Response) =
       return res.status(400).json({ error: 'name and content are required' });
     }
 
-    const service = getService();
-    const result = await service.indexDocument({
+    const service = getService(organizationId);
+    const result = await service.addSource({
       name,
       type: type || 'document',
       content,
       contentType: contentType || 'text',
       description,
-      organizationId,
       streamId,
     });
 
@@ -94,14 +97,13 @@ router.post('/sources/upload', authenticateToken, upload.single('file'), async (
       contentType = 'code';
     }
 
-    const service = getService();
-    const result = await service.indexDocument({
+    const service = getService(organizationId);
+    const result = await service.addSource({
       name: fileName,
       type: type || 'document',
       content,
       contentType,
       description,
-      organizationId,
       streamId,
     });
 
@@ -119,8 +121,8 @@ router.get('/sources/:id', authenticateToken, async (req: Request, res: Response
     const organizationId = (req as AuthenticatedRequest).user?.organizationId;
     if (!organizationId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const service = getService();
-    const source = await service.getSource(req.params.id, organizationId);
+    const service = getService(organizationId);
+    const source = await service.getSource(req.params.id);
 
     if (!source) {
       return res.status(404).json({ error: 'Source not found' });
@@ -138,8 +140,8 @@ router.delete('/sources/:id', authenticateToken, async (req: Request, res: Respo
     const organizationId = (req as AuthenticatedRequest).user?.organizationId;
     if (!organizationId) return res.status(401).json({ error: 'Unauthorized' });
 
-    const service = getService();
-    await service.deleteSource(req.params.id, organizationId);
+    const service = getService(organizationId);
+    await service.deleteSource(req.params.id);
 
     res.json({ success: true, message: 'Source deleted' });
   } catch (error: any) {
@@ -154,8 +156,8 @@ router.patch('/sources/:id', authenticateToken, async (req: Request, res: Respon
     if (!organizationId) return res.status(401).json({ error: 'Unauthorized' });
 
     const { isActive } = req.body;
-    const service = getService();
-    await service.updateSourceStatus(req.params.id, organizationId, isActive);
+    const service = getService(organizationId);
+    await service.updateSourceStatus(req.params.id, isActive);
 
     res.json({ success: true, message: 'Source updated' });
   } catch (error: any) {
@@ -178,9 +180,8 @@ router.post('/query', authenticateToken, async (req: Request, res: Response) => 
       return res.status(400).json({ error: 'question is required' });
     }
 
-    const service = getService();
+    const service = getService(organizationId);
     const result = await service.query(question, {
-      organizationId,
       sourceType,
       limit: limit || 5,
       threshold: threshold || 0.5,
@@ -203,15 +204,23 @@ router.post('/search', authenticateToken, async (req: Request, res: Response) =>
       return res.status(400).json({ error: 'query is required' });
     }
 
-    const service = getService();
+    const service = getService(organizationId);
     const results = await service.search(query, {
-      organizationId,
       sourceType,
       limit: limit || 10,
       threshold: threshold || 0.5,
     });
 
-    res.json({ success: true, data: results });
+    // Map results to match frontend SearchResult interface
+    const mappedResults = results.map(r => ({
+      content: r.content,
+      similarity: typeof r.similarity === 'number' ? r.similarity : 0.5,
+      sourceName: r.sourceType === 'rag_source' ? 'Knowledge Base' : r.sourceType,
+      sourceType: r.sourceType,
+      metadata: r.metadata || {},
+    }));
+
+    res.json({ success: true, data: mappedResults });
   } catch (error: any) {
     logger.error('RAG search error:', error);
     res.status(500).json({ error: error.message });

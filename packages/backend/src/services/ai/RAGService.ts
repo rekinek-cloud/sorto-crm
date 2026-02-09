@@ -5,6 +5,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
+import crypto from 'crypto';
 
 // Configuration for text-embedding-3-small (faster, cheaper, 1536 dimensions)
 const EMBEDDING_MODEL = 'text-embedding-3-small';
@@ -26,6 +27,36 @@ interface IndexableDocument {
   metadata?: Record<string, any>;
 }
 
+export interface RAGSourceInput {
+  name: string;
+  type?: string;
+  content: string;
+  contentType?: 'text' | 'markdown' | 'code';
+  description?: string;
+  streamId?: string;
+}
+
+export interface RAGSourceRecord {
+  id: string;
+  name: string;
+  type: string;
+  description: string | null;
+  chunks_count: number;
+  total_tokens: number;
+  is_active: boolean;
+  stream_id: string | null;
+  organization_id: string;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export interface SearchOptions {
+  organizationId?: string;
+  sourceType?: string;
+  limit?: number;
+  threshold?: number;
+}
+
 interface RAGConfig {
   embeddingModel: string;
   embeddingDimension: number;
@@ -37,6 +68,7 @@ export class RAGService {
   private prisma: PrismaClient;
   private organizationId: string;
   private apiKey: string | null = null;
+  private static tableInitialized = false;
   private config: RAGConfig = {
     embeddingModel: EMBEDDING_MODEL,
     embeddingDimension: EMBEDDING_DIMENSION,
@@ -47,6 +79,212 @@ export class RAGService {
   constructor(prisma: PrismaClient, organizationId: string) {
     this.prisma = prisma;
     this.organizationId = organizationId;
+  }
+
+  /**
+   * Ensure rag_sources table exists (created via raw SQL, no Prisma migration needed)
+   */
+  private async ensureRagSourcesTable(): Promise<void> {
+    if (RAGService.tableInitialized) return;
+    try {
+      await this.prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS rag_sources (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          type TEXT NOT NULL DEFAULT 'document',
+          description TEXT,
+          chunks_count INT DEFAULT 0,
+          total_tokens INT DEFAULT 0,
+          is_active BOOLEAN DEFAULT true,
+          stream_id TEXT,
+          organization_id TEXT NOT NULL,
+          created_at TIMESTAMPTZ DEFAULT NOW(),
+          updated_at TIMESTAMPTZ DEFAULT NOW()
+        )
+      `);
+      await this.prisma.$executeRawUnsafe(`
+        CREATE INDEX IF NOT EXISTS idx_rag_sources_org ON rag_sources(organization_id)
+      `);
+      RAGService.tableInitialized = true;
+    } catch (error) {
+      console.warn('rag_sources table setup warning:', error);
+      RAGService.tableInitialized = true;
+    }
+  }
+
+  // ==================
+  // SOURCE MANAGEMENT
+  // ==================
+
+  /**
+   * List all sources for the organization
+   */
+  async listSources(): Promise<any[]> {
+    await this.ensureRagSourcesTable();
+    const sources = await this.prisma.$queryRawUnsafe<RAGSourceRecord[]>(`
+      SELECT id, name, type, description, chunks_count as "chunksCount",
+             total_tokens as "totalTokens", is_active as "isActive",
+             stream_id as "streamId", organization_id as "organizationId",
+             created_at as "createdAt", updated_at as "updatedAt"
+      FROM rag_sources
+      WHERE organization_id = $1
+      ORDER BY created_at DESC
+    `, this.organizationId);
+    return sources;
+  }
+
+  /**
+   * Get a single source by ID
+   */
+  async getSource(id: string): Promise<any | null> {
+    await this.ensureRagSourcesTable();
+    const results = await this.prisma.$queryRawUnsafe<any[]>(`
+      SELECT id, name, type, description, chunks_count as "chunksCount",
+             total_tokens as "totalTokens", is_active as "isActive",
+             stream_id as "streamId", organization_id as "organizationId",
+             created_at as "createdAt", updated_at as "updatedAt"
+      FROM rag_sources
+      WHERE id = $1 AND organization_id = $2
+    `, id, this.organizationId);
+    return results.length > 0 ? results[0] : null;
+  }
+
+  /**
+   * Add a new source (from route - index text content)
+   */
+  async addSource(input: RAGSourceInput): Promise<{ sourceId: string; chunksCount: number }> {
+    await this.ensureRagSourcesTable();
+
+    const chunks = this.chunkContent(input.content, 1000);
+    const totalTokens = Math.ceil(input.content.length / 4);
+    const sourceId = crypto.randomUUID();
+
+    // Create source record
+    await this.prisma.$executeRawUnsafe(`
+      INSERT INTO rag_sources (id, name, type, description, chunks_count, total_tokens, is_active, stream_id, organization_id)
+      VALUES ($1, $2, $3, $4, $5, $6, true, $7, $8)
+    `, sourceId, input.name, input.type || 'document', input.description || null,
+       chunks.length, totalTokens, input.streamId || null, this.organizationId);
+
+    // Index each chunk into vector_documents
+    for (let i = 0; i < chunks.length; i++) {
+      const chunkId = crypto.randomUUID();
+      const contentHash = this.hashContent(chunks[i] + sourceId + i);
+
+      try {
+        await this.prisma.$executeRawUnsafe(`
+          INSERT INTO vector_documents (id, title, content, "contentHash", embedding, "entityType", "entityId", source, language, "chunkIndex", "totalChunks", "chunkSize", "lastUpdated", "organizationId")
+          VALUES ($1, $2, $3, $4, '{}', 'rag_source', $5, $6, 'pl', $7, $8, $9, NOW(), $10)
+          ON CONFLICT ("contentHash") DO UPDATE SET
+            content = EXCLUDED.content,
+            "lastUpdated" = NOW()
+        `, chunkId, input.name, chunks[i], contentHash, sourceId, input.name, i, chunks.length, chunks[i].length, this.organizationId);
+      } catch (error) {
+        console.error(`Failed to index chunk ${i} of source ${sourceId}:`, error);
+      }
+    }
+
+    console.log(`Indexed source "${input.name}" with ${chunks.length} chunks`);
+    return { sourceId, chunksCount: chunks.length };
+  }
+
+  /**
+   * Delete a source and its vector_documents chunks
+   */
+  async deleteSource(id: string): Promise<void> {
+    await this.ensureRagSourcesTable();
+    await this.prisma.$executeRawUnsafe(`
+      DELETE FROM vector_documents WHERE "entityType" = 'rag_source' AND "entityId" = $1 AND "organizationId" = $2
+    `, id, this.organizationId);
+    await this.prisma.$executeRawUnsafe(`
+      DELETE FROM rag_sources WHERE id = $1 AND organization_id = $2
+    `, id, this.organizationId);
+  }
+
+  /**
+   * Update source active status
+   */
+  async updateSourceStatus(id: string, isActive: boolean): Promise<void> {
+    await this.ensureRagSourcesTable();
+    await this.prisma.$executeRawUnsafe(`
+      UPDATE rag_sources SET is_active = $1, updated_at = NOW() WHERE id = $2 AND organization_id = $3
+    `, isActive, id, this.organizationId);
+  }
+
+  /**
+   * Query with AI-generated answer
+   */
+  async query(question: string, options: SearchOptions = {}): Promise<{ answer: string; sources: any[] }> {
+    const searchResults = await this.search(question, options.limit || 5);
+
+    const sources = searchResults.map(r => ({
+      name: r.sourceType === 'rag_source' ? (r.metadata?.name || r.sourceType) : r.sourceType,
+      type: r.sourceType,
+      similarity: typeof r.similarity === 'number' ? r.similarity : 0.5,
+      preview: r.content.substring(0, 200),
+    }));
+
+    if (searchResults.length === 0) {
+      return {
+        answer: 'Nie znaleziono pasujących dokumentów w bazie wiedzy. Dodaj dokumenty w zakładce "Źródła".',
+        sources: [],
+      };
+    }
+
+    let answer = `Na podstawie ${searchResults.length} dokumentów z bazy wiedzy:\n\n`;
+    for (const result of searchResults.slice(0, 3)) {
+      const preview = result.content.substring(0, 500);
+      answer += `${preview}\n\n---\n\n`;
+    }
+
+    return { answer: answer.trim(), sources };
+  }
+
+  // ==================
+  // HELPERS
+  // ==================
+
+  private chunkContent(content: string, maxChunkSize: number): string[] {
+    if (content.length <= maxChunkSize) return [content];
+
+    const chunks: string[] = [];
+    const paragraphs = content.split(/\n\n+/);
+    let currentChunk = '';
+
+    for (const paragraph of paragraphs) {
+      if (currentChunk.length + paragraph.length > maxChunkSize && currentChunk.length > 0) {
+        chunks.push(currentChunk.trim());
+        currentChunk = paragraph;
+      } else {
+        currentChunk += (currentChunk ? '\n\n' : '') + paragraph;
+      }
+    }
+
+    if (currentChunk.trim()) {
+      chunks.push(currentChunk.trim());
+    }
+
+    // Split oversized chunks by sentences
+    return chunks.flatMap(chunk => {
+      if (chunk.length <= maxChunkSize) return [chunk];
+      const sentences = chunk.match(/[^.!?\n]+[.!?\n]+/g) || [chunk];
+      const subChunks: string[] = [];
+      let current = '';
+      for (const sentence of sentences) {
+        if (current.length + sentence.length > maxChunkSize && current.length > 0) {
+          subChunks.push(current.trim());
+          current = sentence;
+        } else {
+          current += sentence;
+        }
+      }
+      if (current.trim()) subChunks.push(current.trim());
+      return subChunks.length > 0 ? subChunks : [chunk];
+    });
+  }
+
+  private hashContent(content: string): string {
+    return crypto.createHash('sha256').update(content).digest('hex');
   }
 
   /**
@@ -165,7 +403,8 @@ export class RAGService {
   /**
    * Semantic search - find similar documents using pgvector or text search
    */
-  async search(query: string, limit: number = 10): Promise<EmbeddingResult[]> {
+  async search(query: string, limitOrOptions: number | SearchOptions = 10): Promise<EmbeddingResult[]> {
+    const limit = typeof limitOrOptions === 'number' ? limitOrOptions : (limitOrOptions.limit || 10);
     try {
       // First try text-based search in vector_documents (our main indexed data)
       let results: EmbeddingResult[] = [];
