@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { toast } from 'react-hot-toast';
 import { LinkIcon, CalendarIcon, EnvelopeIcon, CircleStackIcon, CheckIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
 interface Integration {
@@ -108,6 +109,7 @@ export default function IntegrationsSettingsPage() {
             </div>
             <div className="mt-4">
               <button
+                onClick={() => toast(`Integracja z ${integration.name} - wkrótce dostępna`, { icon: '🔗' })}
                 className={`w-full px-4 py-2 rounded-lg transition-colors ${
                   integration.connected
                     ? 'bg-red-50 text-red-600 hover:bg-red-100'
