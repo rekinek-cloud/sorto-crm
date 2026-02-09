@@ -275,6 +275,37 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// POST /api/products/:id/duplicate - Duplicate a product
+router.post('/:id/duplicate', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const organizationId = (req as any).user.organizationId;
+
+    const original = await prisma.product.findFirst({
+      where: { id, organizationId }
+    });
+
+    if (!original) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+
+    const { id: _id, createdAt: _c, updatedAt: _u, ...productData } = original;
+
+    const duplicate = await prisma.product.create({
+      data: {
+        ...productData,
+        name: `${original.name} (kopia)`,
+        sku: original.sku ? `${original.sku}-COPY` : null,
+      }
+    });
+
+    res.status(201).json(duplicate);
+  } catch (error) {
+    console.error('Error duplicating product:', error);
+    res.status(500).json({ error: 'Failed to duplicate product' });
+  }
+});
+
 // GET /api/products/meta/categories - Get all categories used by products
 router.get('/meta/categories', authenticateToken, async (req, res) => {
   try {

@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Contact, Company, Deal } from '@/types/crm';
 import { Task } from '@/types/gtd';
 import { contactsApi } from '@/lib/api/contacts';
+import { dealsApi } from '@/lib/api/deals';
 import { toast } from 'react-hot-toast';
 import { GraphModal } from '@/components/graph/GraphModal';
 import ContactForm from '@/components/crm/ContactForm';
@@ -160,7 +161,7 @@ export default function ContactDetailsPage() {
                 <p className="text-gray-600 mb-2 flex items-center">
                   <BuildingOfficeIcon className="w-4 h-4 mr-1" />
                   <a 
-                    href={`/crm/dashboard/companies/${contact.assignedCompany.id}`} 
+                    href={`/dashboard/companies/${contact.assignedCompany.id}`} 
                     className="text-primary-600 hover:text-primary-700"
                   >
                     {contact.assignedCompany.name}
@@ -334,7 +335,7 @@ export default function ContactDetailsPage() {
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-gray-900">
                           <a 
-                            href={`/crm/dashboard/deals/${deal.id}`}
+                            href={`/dashboard/deals/${deal.id}`}
                             className="text-gray-900 hover:text-primary-600"
                           >
                             {deal.title}
@@ -464,9 +465,15 @@ export default function ContactDetailsPage() {
                 companies={[]}
                 contacts={[contact]}
                 onSubmit={async (data) => {
-                  console.log('Deal data:', data);
-                  setShowDealForm(false);
-                  await loadContact();
+                  try {
+                    await dealsApi.createDeal({ ...data, contactId: contact.id });
+                    toast.success('Deal utworzony');
+                    setShowDealForm(false);
+                    await loadContact();
+                  } catch (error: any) {
+                    toast.error('Nie udało się utworzyć deala');
+                    console.error('Error creating deal:', error);
+                  }
                 }}
                 onCancel={() => {
                   setShowDealForm(false);

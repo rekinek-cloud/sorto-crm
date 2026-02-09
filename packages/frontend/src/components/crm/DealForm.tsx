@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Deal, Company, Contact } from '@/types/crm';
+import { usePipelineStages } from '@/lib/contexts/PipelineStageContext';
 
 interface DealFormProps {
   deal?: Deal;
@@ -13,14 +14,19 @@ interface DealFormProps {
 }
 
 export default function DealForm({ deal, companies, contacts, onSubmit, onCancel, preSelectedCompanyId }: DealFormProps) {
+  const { stages, openStages } = usePipelineStages();
+
+  // Default to first open stage
+  const defaultStageId = openStages[0]?.id || stages[0]?.id || '';
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     value: '',
     currency: 'USD',
     probability: '',
-    stage: 'PROSPECT' as 'PROSPECT' | 'QUALIFIED' | 'PROPOSAL' | 'NEGOTIATION' | 'CLOSED_WON' | 'CLOSED_LOST',
-    companyId: '',
+    stageId: defaultStageId,
+    companyId: preSelectedCompanyId || '',
     ownerId: '',
     expectedCloseDate: '',
     actualCloseDate: '',
@@ -40,7 +46,7 @@ export default function DealForm({ deal, companies, contacts, onSubmit, onCancel
         value: deal.value?.toString() || '',
         currency: deal.currency || 'USD',
         probability: deal.probability?.toString() || '',
-        stage: deal.stage || 'PROSPECT',
+        stageId: deal.stageId || defaultStageId,
         companyId: deal.companyId || '',
         ownerId: deal.ownerId || '',
         expectedCloseDate: deal.expectedCloseDate ? new Date(deal.expectedCloseDate).toISOString().slice(0, 16) : '',
@@ -49,15 +55,27 @@ export default function DealForm({ deal, companies, contacts, onSubmit, onCancel
         notes: deal.notes || ''
       });
     }
-  }, [deal]);
+  }, [deal, defaultStageId]);
+
+  // Auto-set probability when stage changes
+  useEffect(() => {
+    if (formData.stageId) {
+      const stage = stages.find(s => s.id === formData.stageId);
+      if (stage && !formData.probability) {
+        setFormData(prev => ({
+          ...prev,
+          probability: stage.probability.toString(),
+        }));
+      }
+    }
+  }, [formData.stageId, stages]);
 
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
-    
-    // Clear error when user starts typing
+
     if (errors[field]) {
       setErrors(prev => ({
         ...prev,
@@ -77,6 +95,10 @@ export default function DealForm({ deal, companies, contacts, onSubmit, onCancel
       newErrors.companyId = 'Company is required';
     }
 
+    if (!formData.stageId) {
+      newErrors.stageId = 'Stage is required';
+    }
+
     if (formData.value && isNaN(Number(formData.value))) {
       newErrors.value = 'Please enter a valid number';
     }
@@ -85,27 +107,24 @@ export default function DealForm({ deal, companies, contacts, onSubmit, onCancel
       newErrors.probability = 'Probability must be between 0 and 100';
     }
 
-    // No additional validation needed for other fields
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setIsLoading(true);
     try {
-      // Prepare data for submission
       const submitData: any = {
         title: formData.title.trim(),
         description: formData.description.trim() || undefined,
         value: formData.value ? Number(formData.value) : undefined,
         currency: formData.currency,
         probability: formData.probability ? Number(formData.probability) : undefined,
-        stage: formData.stage,
+        stageId: formData.stageId,
         companyId: formData.companyId,
         ownerId: formData.ownerId || undefined,
         expectedCloseDate: formData.expectedCloseDate || undefined,
@@ -122,8 +141,6 @@ export default function DealForm({ deal, companies, contacts, onSubmit, onCancel
       setIsLoading(false);
     }
   };
-
-  // Removed tag functions and contact filtering since they're not in the actual schema
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -230,9 +247,9 @@ export default function DealForm({ deal, companies, contacts, onSubmit, onCancel
                 className="input"
               >
                 <option value="USD">USD ($)</option>
-                <option value="EUR">EUR (€)</option>
-                <option value="GBP">GBP (£)</option>
-                <option value="PLN">PLN (zł)</option>
+                <option value="EUR">EUR</option>
+                <option value="GBP">GBP</option>
+                <option value="PLN">PLN</option>
               </select>
             </div>
           </div>
@@ -240,20 +257,23 @@ export default function DealForm({ deal, companies, contacts, onSubmit, onCancel
           {/* Stage */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Stage
+              Stage *
             </label>
             <select
-              value={formData.stage}
-              onChange={(e) => handleChange('stage', e.target.value)}
-              className="input"
+              value={formData.stageId}
+              onChange={(e) => handleChange('stageId', e.target.value)}
+              className={`input ${errors.stageId ? 'input-error' : ''}`}
             >
-              <option value="PROSPECT">Prospect</option>
-              <option value="QUALIFIED">Qualified</option>
-              <option value="PROPOSAL">Proposal</option>
-              <option value="NEGOTIATION">Negotiation</option>
-              <option value="CLOSED_WON">Closed Won</option>
-              <option value="CLOSED_LOST">Closed Lost</option>
+              <option value="">Select stage...</option>
+              {stages.map(stage => (
+                <option key={stage.id} value={stage.id}>
+                  {stage.name} ({stage.probability}%)
+                </option>
+              ))}
             </select>
+            {errors.stageId && (
+              <p className="mt-1 text-sm text-red-600">{errors.stageId}</p>
+            )}
           </div>
 
           {/* Probability */}
@@ -288,8 +308,6 @@ export default function DealForm({ deal, companies, contacts, onSubmit, onCancel
             />
           </div>
 
-          {/* Removed Lost Reason - not in schema */}
-
           {/* Notes */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -303,8 +321,6 @@ export default function DealForm({ deal, companies, contacts, onSubmit, onCancel
               placeholder="Additional notes about this deal..."
             />
           </div>
-
-          {/* Removed Tags - not in schema */}
 
           {/* Submit Error */}
           {errors.submit && (

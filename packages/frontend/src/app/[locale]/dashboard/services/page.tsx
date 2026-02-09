@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Service, ServiceQuery, ServiceCreateData, ServiceUpdateData } from '@/types/products';
 import { servicesApi } from '@/lib/api/services';
 import ServiceCard from '@/components/services/ServiceCard';
+import ServiceForm from '@/components/services/ServiceForm';
 import { toast } from 'react-hot-toast';
 import { 
   Plus, 
@@ -427,18 +428,17 @@ const ServicesPage: React.FC = () => {
         </>
       )}
 
-      {/* TODO: Add Service Form Modal */}
-      {/* 
-      <ServiceForm
-        service={editingService}
-        onSubmit={editingService ? handleUpdateService : handleCreateService}
-        onCancel={() => {
-          setShowForm(false);
-          setEditingService(undefined);
-        }}
-        isOpen={showForm}
-      />
-      */}
+      {showForm && (
+        <ServiceForm
+          service={editingService}
+          onSubmit={editingService ? handleUpdateService : handleCreateService}
+          onCancel={() => {
+            setShowForm(false);
+            setEditingService(undefined);
+          }}
+          isOpen={showForm}
+        />
+      )}
     </div>
   );
 };
