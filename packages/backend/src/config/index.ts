@@ -49,6 +49,11 @@ const envSchema = z.object({
   
   // Frontend
   NEXT_PUBLIC_APP_URL: z.string().default('http://localhost:9025'),
+
+  // SSO
+  SSO_PLATFORM_URL: z.string().optional(),
+  SSO_CLIENT_ID: z.string().optional(),
+  SSO_CLIENT_SECRET: z.string().optional(),
 });
 
 // Validate and parse environment variables
@@ -146,6 +151,13 @@ export const config = {
   
   // Frontend
   FRONTEND_URL: env.NEXT_PUBLIC_APP_URL,
+
+  // SSO
+  SSO: {
+    PLATFORM_URL: env.SSO_PLATFORM_URL || 'http://localhost:3001',
+    CLIENT_ID: env.SSO_CLIENT_ID || '',
+    CLIENT_SECRET: env.SSO_CLIENT_SECRET || '',
+  },
   
   // Pagination
   DEFAULT_PAGE_SIZE: 20,

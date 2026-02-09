@@ -3,6 +3,8 @@ import { AuthController } from './controller';
 import { validateRequest } from '../../shared/middleware/validation';
 import { authenticateToken, requireRole, checkOrganizationLimits } from '../../shared/middleware/auth';
 import { strictRateLimit, userRateLimit } from '../../shared/middleware/rateLimit';
+import ssoRoutes from './sso/sso.routes';
+import { ssoCallbackHandler } from './sso-callback';
 import {
   registerSchema,
   loginSchema,
@@ -130,5 +132,11 @@ router.post(
   validateRequest({ body: inviteUserSchema }),
   authController.inviteUser
 );
+
+// SSO routes
+router.use('/sso', ssoRoutes);
+
+// SSO callback (CRM as consumer - receives token from platform)
+router.post('/sso/callback', strictRateLimit, ssoCallbackHandler);
 
 export default router;

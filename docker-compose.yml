@@ -51,6 +51,9 @@ services:
       BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       NEXT_PUBLIC_APP_URL: https://crm.dev.sorto.ai
+      SSO_PLATFORM_URL: http://platform-backend:3001
+      SSO_CLIENT_ID: a613e6fc-c0d5-4207-b380-9d37a15022d2
+      SSO_CLIENT_SECRET: 3d138c77-af16-4c22-b5dc-58ca7cf02833
     volumes:
       - /home/dev/apps:/home/dev/apps:rw
       - /var/run/docker.sock:/var/run/docker.sock:ro

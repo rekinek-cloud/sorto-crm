@@ -120,7 +120,8 @@ model Organization {
   // AI Conversations Sync relations
   aiConversations AiConversation[]
   aiSyncStatuses  AiSyncStatus[]
-  aiAppMappings   AiAppMapping[]
+  aiAppMappings       AiAppMapping[]
+  organizationModules organizationModule[]
 
   @@map("organizations")
 }
@@ -4429,4 +4430,92 @@ model AiAppMapping {
 
   @@unique([organizationId, appName])
   @@map("ai_app_mappings")
+}
+
+// ========================================
+// SSO & Platform Module Models
+// ========================================
+
+model platformModule {
+  id              String    @id
+  slug            String    @unique
+  name            String
+  description     String?
+  icon            String?
+  type            String    @default("external")
+  url             String?
+  healthUrl       String?   @map("health_url")
+  monthlyPrice    Decimal   @default(0) @map("monthly_price")
+  yearlyPrice     Decimal   @default(0) @map("yearly_price")
+  isActive        Boolean   @default(true) @map("is_active")
+  isPublic        Boolean   @default(true) @map("is_public")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @map("updated_at")
+  clientId        String    @unique @map("client_id")
+  clientSecret    String    @map("client_secret")
+  healthStatus    String    @default("unknown") @map("health_status")
+  lastHealthCheck DateTime? @map("last_health_check")
+
+  organizationModules organizationModule[]
+  ssoTokens           ssoToken[]
+  platformEvents      platformEvent[]
+
+  @@map("platform_modules")
+}
+
+model organizationModule {
+  id                      String    @id
+  organizationId          String    @map("organization_id")
+  moduleId                String    @map("module_id")
+  isActive                Boolean   @default(true) @map("is_active")
+  activatedAt             DateTime  @default(now()) @map("activated_at")
+  expiresAt               DateTime? @map("expires_at")
+  stripeSubscriptionItemId String?  @map("stripe_subscription_item_id")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  module       platformModule @relation(fields: [moduleId], references: [id])
+
+  @@unique([organizationId, moduleId])
+  @@index([organizationId])
+  @@index([moduleId])
+  @@map("organization_modules")
+}
+
+model ssoToken {
+  id             String    @id
+  token          String    @unique
+  userId         String    @map("user_id")
+  organizationId String    @map("organization_id")
+  moduleId       String    @map("module_id")
+  redirectUrl    String?   @map("redirect_url")
+  isUsed         Boolean   @default(false) @map("is_used")
+  usedAt         DateTime? @map("used_at")
+  ipAddress      String?   @map("ip_address")
+  userAgent      String?   @map("user_agent")
+  expiresAt      DateTime  @map("expires_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  module platformModule @relation(fields: [moduleId], references: [id])
+
+  @@map("sso_tokens")
+}
+
+model platformEvent {
+  id             String    @id
+  eventType      String    @map("event_type")
+  source         String
+  payload        Json      @default("{}")
+  metadata       Json      @default("{}")
+  userId         String?   @map("user_id")
+  organizationId String?   @map("organization_id")
+  moduleId       String?   @map("module_id")
+  status         String    @default("published")
+  processedAt    DateTime? @map("processed_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  module platformModule? @relation(fields: [moduleId], references: [id])
+
+  @@map("platform_events")
 }
