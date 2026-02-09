@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BuildingOfficeIcon, UsersIcon, PlusIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
+import apiClient from '@/lib/api/client';
 
 export default function OrganizationSettingsPage() {
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [organization, setOrganization] = useState({
     name: '',
     domain: '',
@@ -15,17 +17,62 @@ export default function OrganizationSettingsPage() {
     website: '',
   });
 
+  useEffect(() => {
+    loadOrganization();
+  }, []);
+
+  const loadOrganization = async () => {
+    try {
+      const response = await apiClient.get('/auth/me');
+      const user = response.data?.data || response.data;
+      if (user?.organization) {
+        const org = user.organization;
+        setOrganization({
+          name: org.name || '',
+          domain: org.domain || '',
+          industry: org.settings?.industry || '',
+          size: org.settings?.size || '',
+          address: org.settings?.address || '',
+          website: org.settings?.website || '',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load organization:', error);
+    } finally {
+      setInitialLoading(false);
+    }
+  };
+
   const handleSave = async () => {
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await apiClient.put('/organizations', {
+        name: organization.name || undefined,
+        domain: organization.domain || undefined,
+        settings: {
+          industry: organization.industry || undefined,
+          size: organization.size || undefined,
+          address: organization.address || undefined,
+          website: organization.website || undefined,
+        }
+      });
       toast.success('Ustawienia organizacji zostały zapisane');
     } catch (error: any) {
-      toast.error('Nie udało się zapisać ustawień');
+      console.error('Failed to save organization:', error);
+      const msg = error?.response?.data?.error || 'Nie udało się zapisać ustawień';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
+
+  if (initialLoading) {
+    return (
+      <div className="flex justify-center items-center h-48">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-4xl">

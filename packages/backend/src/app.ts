@@ -80,7 +80,7 @@ import unifiedRulesRoutes from './routes/unifiedRules';
 import searchRoutes from './routes/search';
 import leadsRoutes from './routes/leads';
 // TODO: Fix import issues in these routes
-// import customFieldsRoutes from './routes/customFields';
+import customFieldsRoutes from './routes/customFields';
 // import brandingRoutes from './routes/branding';
 // import emailAccountsRoutes from './routes/emailAccounts';
 // import autoRepliesRoutes from './routes/autoReplies';
@@ -238,7 +238,7 @@ apiRouter.use('/unified-rules', unifiedRulesRoutes);  // Unified Rules - zunifik
 apiRouter.use('/search', searchRoutes);  // Search - wyszukiwanie
 apiRouter.use('/leads', leadsRoutes);  // Leads - zarządzanie leadami
 // TODO: Fix import issues in these routes
-// apiRouter.use('/custom-fields', customFieldsRoutes);  // Custom Fields - pola niestandardowe
+apiRouter.use('/custom-fields', customFieldsRoutes);  // Custom Fields - pola niestandardowe
 // apiRouter.use('/branding', brandingRoutes);  // Branding - logo i kolory
 // apiRouter.use('/email-accounts', emailAccountsRoutes);  // Email Accounts - IMAP/SMTP
 // apiRouter.use('/auto-replies', autoRepliesRoutes);  // Auto Replies - automatyczne odpowiedzi

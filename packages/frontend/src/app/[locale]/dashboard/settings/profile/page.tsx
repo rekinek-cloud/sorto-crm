@@ -1,11 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { UserIcon, CameraIcon, KeyIcon, BellIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
+import apiClient from '@/lib/api/client';
 
 export default function ProfileSettingsPage() {
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
   const [profile, setProfile] = useState({
     firstName: '',
     lastName: '',
@@ -16,17 +19,67 @@ export default function ProfileSettingsPage() {
     language: 'pl',
   });
 
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    try {
+      const response = await apiClient.get('/auth/me');
+      const user = response.data?.data || response.data;
+      if (user) {
+        setUserId(user.id);
+        setProfile({
+          firstName: user.firstName || '',
+          lastName: user.lastName || '',
+          email: user.email || '',
+          phone: user.phone || '',
+          avatar: user.avatar || '',
+          timezone: user.settings?.timezone || 'Europe/Warsaw',
+          language: user.settings?.language || 'pl',
+        });
+      }
+    } catch (error) {
+      console.error('Failed to load profile:', error);
+    } finally {
+      setInitialLoading(false);
+    }
+  };
+
   const handleSave = async () => {
+    if (!userId) {
+      toast.error('Nie można zapisać - brak ID użytkownika');
+      return;
+    }
+
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await apiClient.put(`/organizations/users/${userId}`, {
+        firstName: profile.firstName || undefined,
+        lastName: profile.lastName || undefined,
+        settings: {
+          timezone: profile.timezone,
+          language: profile.language,
+          phone: profile.phone || undefined,
+        }
+      });
       toast.success('Profil został zapisany');
     } catch (error: any) {
-      toast.error('Nie udało się zapisać profilu');
+      console.error('Failed to save profile:', error);
+      const msg = error?.response?.data?.error || 'Nie udało się zapisać profilu';
+      toast.error(msg);
     } finally {
       setLoading(false);
     }
   };
+
+  if (initialLoading) {
+    return (
+      <div className="flex justify-center items-center h-48">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 max-w-4xl">
@@ -82,8 +135,8 @@ export default function ProfileSettingsPage() {
             <input
               type="email"
               value={profile.email}
-              onChange={(e) => setProfile({ ...profile, email: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              disabled
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
               placeholder="jan@example.com"
             />
           </div>
