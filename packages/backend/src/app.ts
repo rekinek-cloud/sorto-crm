@@ -84,7 +84,7 @@ import leadsRoutes from './routes/leads';
 import customFieldsRoutes from './routes/customFields';
 import brandingRoutes from './routes/branding';
 import billingRoutes from './routes/billing';
-// import emailAccountsRoutes from './routes/emailAccounts';
+import emailAccountsRoutes from './routes/emailAccounts';
 // import autoRepliesRoutes from './routes/autoReplies';
 // import aiV2Routes from './routes/aiV2';
 // import pipelineAnalyticsRoutes from './routes/pipelineAnalytics';
@@ -246,7 +246,7 @@ apiRouter.use('/leads', leadsRoutes);  // Leads - zarządzanie leadami
 apiRouter.use('/custom-fields', customFieldsRoutes);  // Custom Fields - pola niestandardowe
 apiRouter.use('/branding', brandingRoutes);  // Branding - logo i kolory
 apiRouter.use('/billing', billingRoutes);  // Billing - subskrypcje i płatności
-// apiRouter.use('/email-accounts', emailAccountsRoutes);  // Email Accounts - IMAP/SMTP
+apiRouter.use('/email-accounts', emailAccountsRoutes);  // Email Accounts - IMAP/SMTP
 // apiRouter.use('/auto-replies', autoRepliesRoutes);  // Auto Replies - automatyczne odpowiedzi
 // apiRouter.use('/ai-v2', aiV2Routes);  // AI V2 - providers & models
 // apiRouter.use('/pipeline-analytics', pipelineAnalyticsRoutes);  // Pipeline Analytics

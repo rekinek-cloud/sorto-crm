@@ -223,11 +223,14 @@ router.get('/stats', async (req, res) => {
       ORDER BY count DESC
     `;
 
+    // Convert BigInt to Number for JSON serialization
+    const serializeBigInt = (obj: any) => JSON.parse(JSON.stringify(obj, (_, v) => typeof v === 'bigint' ? Number(v) : v));
+
     res.json({
       success: true,
       data: {
-        overview: stats[0],
-        typeBreakdown,
+        overview: serializeBigInt(stats[0]),
+        typeBreakdown: serializeBigInt(typeBreakdown),
         organizationId
       }
     });

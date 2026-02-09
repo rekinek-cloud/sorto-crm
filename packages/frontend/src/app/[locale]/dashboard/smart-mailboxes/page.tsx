@@ -142,10 +142,10 @@ export default function SmartMailboxesPage() {
   }, [])
 
   useEffect(() => {
-    if (selectedMailboxId) {
+    if (selectedMailboxId && mailboxes.length > 0) {
       loadMessages()
     }
-  }, [selectedMailboxId])
+  }, [selectedMailboxId, mailboxes])
 
   const loadMailboxes = async () => {
     try {

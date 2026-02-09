@@ -232,7 +232,7 @@ export class StreamAccessControlService {
     }
 
     // Pobierz wszystkie relacje z tego strumienia
-    const relations = await prisma.streamRelation.findMany({
+    const relations = await prisma.stream_relations.findMany({
       where: {
         OR: [
           { parentId: streamId },
@@ -335,7 +335,7 @@ export class StreamAccessControlService {
     const userAgent = 'Unknown'; // TODO: Pobierz z req
     const endpoint = '/api/stream-access'; // TODO: Pobierz z req
 
-    await prisma.streamAccessLog.create({
+    await prisma.stream_access_logs.create({
       data: {
         userId,
         streamId,
@@ -360,7 +360,7 @@ export class StreamAccessControlService {
     limit: number = 100,
     offset: number = 0
   ) {
-    return await prisma.streamAccessLog.findMany({
+    return await prisma.stream_access_logs.findMany({
       where: { streamId },
       include: {
         user: {
@@ -477,7 +477,7 @@ export class StreamAccessControlService {
     visited.add(fromStreamId);
 
     // Sprawdź bezpośrednią relację
-    const directRelation = await prisma.streamRelation.findFirst({
+    const directRelation = await prisma.stream_relations.findFirst({
       where: {
         OR: [
           { parentId: fromStreamId, childId: toStreamId },
@@ -503,7 +503,7 @@ export class StreamAccessControlService {
     }
 
     // Sprawdź pośrednie relacje
-    const intermediateRelations = await prisma.streamRelation.findMany({
+    const intermediateRelations = await prisma.stream_relations.findMany({
       where: {
         OR: [
           { parentId: fromStreamId },

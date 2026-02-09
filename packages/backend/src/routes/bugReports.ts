@@ -28,7 +28,7 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
     const userId = req.user!.id;
     const organizationId = req.user!.organizationId;
 
-    const bugReport = await prisma.bugReport.create({
+    const bugReport = await prisma.bug_reports.create({
       data: {
         title: bugData.title,
         description: bugData.description,
@@ -47,7 +47,7 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
         organizationId: organizationId,
       },
       include: {
-        reporter: {
+        users: {
           select: { email: true, firstName: true, lastName: true }
         }
       }
@@ -63,7 +63,7 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
 // Get all bug reports (admin endpoint)
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const { organizationId } = req.auth!;
+    const { organizationId } = req.user!;
     const { 
       status, 
       priority,
@@ -80,19 +80,19 @@ router.get('/', requireAuth, async (req, res) => {
     if (category) where.category = category;
     if (reporterId) where.reporterId = reporterId;
 
-    const bugReports = await prisma.bugReport.findMany({
+    const bugReports = await prisma.bug_reports.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       take: parseInt(limit as string),
       skip: parseInt(offset as string),
       include: {
-        reporter: {
+        users: {
           select: { email: true, firstName: true, lastName: true }
         }
       }
     });
 
-    const total = await prisma.bugReport.count({ where });
+    const total = await prisma.bug_reports.count({ where });
 
     res.json({
       bugReports,
@@ -108,7 +108,7 @@ router.get('/', requireAuth, async (req, res) => {
 // Get my bug reports (user endpoint)
 router.get('/my', requireAuth, async (req, res) => {
   try {
-    const { userId, organizationId } = req.auth!;
+    const { id: userId, organizationId } = req.user!;
     const { 
       status, 
       priority,
@@ -124,7 +124,7 @@ router.get('/my', requireAuth, async (req, res) => {
     if (status) where.status = status;
     if (priority) where.priority = priority;
 
-    const bugReports = await prisma.bugReport.findMany({
+    const bugReports = await prisma.bug_reports.findMany({
       where,
       orderBy: { createdAt: 'desc' },
       take: parseInt(limit as string),
@@ -144,7 +144,7 @@ router.get('/my', requireAuth, async (req, res) => {
       }
     });
 
-    const total = await prisma.bugReport.count({ where });
+    const total = await prisma.bug_reports.count({ where });
 
     res.json({
       bugReports,
@@ -157,77 +157,10 @@ router.get('/my', requireAuth, async (req, res) => {
   }
 });
 
-// Get a specific bug report
-router.get('/:id', requireAuth, async (req, res) => {
-  try {
-    const { organizationId } = req.auth!;
-    const { id } = req.params;
-
-    const bugReport = await prisma.bugReport.findFirst({
-      where: {
-        id,
-        organizationId
-      },
-      include: {
-        reporter: {
-          select: { email: true, firstName: true, lastName: true }
-        }
-      }
-    });
-
-    if (!bugReport) {
-      return res.status(404).json({ error: 'Bug report not found' });
-    }
-
-    res.json(bugReport);
-  } catch (error) {
-    console.error('Failed to fetch bug report:', error);
-    res.status(500).json({ error: 'Failed to fetch bug report' });
-  }
-});
-
-// Update bug report status (admin endpoint)
-router.patch('/:id/status', requireAuth, async (req, res) => {
-  try {
-    const { organizationId } = req.auth!;
-    const { id } = req.params;
-    const { status, adminNotes, resolution } = req.body;
-
-    const updateData: any = { status };
-    
-    if (adminNotes) updateData.adminNotes = adminNotes;
-    if (resolution) updateData.resolution = resolution;
-    if (status === 'RESOLVED' || status === 'CLOSED') {
-      updateData.resolvedAt = new Date();
-    }
-
-    const bugReport = await prisma.bugReport.update({
-      where: {
-        id,
-        organizationId
-      },
-      data: updateData,
-      include: {
-        reporter: {
-          select: { email: true, firstName: true, lastName: true }
-        }
-      }
-    });
-
-    res.json(bugReport);
-  } catch (error) {
-    console.error('Failed to update bug report:', error);
-    if (error.code === 'P2025') {
-      return res.status(404).json({ error: 'Bug report not found' });
-    }
-    res.status(500).json({ error: 'Failed to update bug report' });
-  }
-});
-
 // Get bug report statistics
 router.get('/stats/overview', requireAuth, async (req, res) => {
   try {
-    const { organizationId } = req.auth!;
+    const { organizationId } = req.user!;
     const { days = '30' } = req.query;
     
     const since = new Date();
@@ -247,21 +180,21 @@ router.get('/stats/overview', requireAuth, async (req, res) => {
       bugsByPriority,
       bugsByCategory
     ] = await Promise.all([
-      prisma.bugReport.count({ where }),
-      prisma.bugReport.count({ where: { ...where, status: 'OPEN' } }),
-      prisma.bugReport.count({ where: { ...where, status: 'RESOLVED' } }),
-      prisma.bugReport.count({ where: { ...where, priority: 'CRITICAL' } }),
-      prisma.bugReport.groupBy({
+      prisma.bug_reports.count({ where }),
+      prisma.bug_reports.count({ where: { ...where, status: 'OPEN' } }),
+      prisma.bug_reports.count({ where: { ...where, status: 'RESOLVED' } }),
+      prisma.bug_reports.count({ where: { ...where, priority: 'CRITICAL' } }),
+      prisma.bug_reports.groupBy({
         by: ['status'],
         where,
         _count: true
       }),
-      prisma.bugReport.groupBy({
+      prisma.bug_reports.groupBy({
         by: ['priority'],
         where,
         _count: true
       }),
-      prisma.bugReport.groupBy({
+      prisma.bug_reports.groupBy({
         by: ['category'],
         where: { ...where, category: { not: null } },
         _count: true
@@ -283,13 +216,80 @@ router.get('/stats/overview', requireAuth, async (req, res) => {
   }
 });
 
+// Get a specific bug report
+router.get('/:id', requireAuth, async (req, res) => {
+  try {
+    const { organizationId } = req.user!;
+    const { id } = req.params;
+
+    const bugReport = await prisma.bug_reports.findFirst({
+      where: {
+        id,
+        organizationId
+      },
+      include: {
+        users: {
+          select: { email: true, firstName: true, lastName: true }
+        }
+      }
+    });
+
+    if (!bugReport) {
+      return res.status(404).json({ error: 'Bug report not found' });
+    }
+
+    res.json(bugReport);
+  } catch (error) {
+    console.error('Failed to fetch bug report:', error);
+    res.status(500).json({ error: 'Failed to fetch bug report' });
+  }
+});
+
+// Update bug report status (admin endpoint)
+router.patch('/:id/status', requireAuth, async (req, res) => {
+  try {
+    const { organizationId } = req.user!;
+    const { id } = req.params;
+    const { status, adminNotes, resolution } = req.body;
+
+    const updateData: any = { status };
+
+    if (adminNotes) updateData.adminNotes = adminNotes;
+    if (resolution) updateData.resolution = resolution;
+    if (status === 'RESOLVED' || status === 'CLOSED') {
+      updateData.resolvedAt = new Date();
+    }
+
+    const bugReport = await prisma.bug_reports.update({
+      where: {
+        id,
+        organizationId
+      },
+      data: updateData,
+      include: {
+        users: {
+          select: { email: true, firstName: true, lastName: true }
+        }
+      }
+    });
+
+    res.json(bugReport);
+  } catch (error) {
+    console.error('Failed to update bug report:', error);
+    if ((error as any).code === 'P2025') {
+      return res.status(404).json({ error: 'Bug report not found' });
+    }
+    res.status(500).json({ error: 'Failed to update bug report' });
+  }
+});
+
 // Delete bug report (admin only)
 router.delete('/:id', requireAuth, async (req, res) => {
   try {
-    const { organizationId } = req.auth!;
+    const { organizationId } = req.user!;
     const { id } = req.params;
 
-    await prisma.bugReport.delete({
+    await prisma.bug_reports.delete({
       where: {
         id,
         organizationId

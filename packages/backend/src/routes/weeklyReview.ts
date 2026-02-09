@@ -110,14 +110,14 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
       prisma.task.count({
         where: {
           organizationId,
-          status: 'BACKLOG',
+          status: 'NEW',
         },
       }),
       // Waiting for items
       prisma.task.count({
         where: {
           organizationId,
-          status: 'TODO',
+          status: 'WAITING',
           assignedToId: { not: null },
         },
       }),
@@ -147,8 +147,8 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
       prisma.task.count({
         where: {
           organizationId,
-          status: 'TODO',
-          context: {
+          status: 'IN_PROGRESS',
+          contextId: {
             not: null,
           },
         },
@@ -164,7 +164,7 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
       prisma.task.count({
         where: {
           organizationId,
-          status: 'BACKLOG',
+          status: 'NEW',
           priority: 'LOW',
           dueDate: null,
         },

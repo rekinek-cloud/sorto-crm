@@ -88,7 +88,7 @@ export default function EmailAccountsPage() {
   const handleSyncAll = async () => {
     setSyncing(true);
     try {
-      const result = await emailAccountsApi.syncAll();
+      const result = await emailAccountsApi.syncAllAccounts();
 
       if (result.success) {
         toast.success(result.message || 'Synchronizacja ukończona');

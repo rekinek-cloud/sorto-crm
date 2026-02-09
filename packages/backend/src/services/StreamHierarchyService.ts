@@ -101,7 +101,7 @@ export class StreamHierarchyService {
     }
 
     // Sprawdzenie czy taka relacja już istnieje
-    const existingRelation = await prisma.streamRelation.findFirst({
+    const existingRelation = await prisma.stream_relations.findFirst({
       where: {
         parentId: validatedData.parentId,
         childId: validatedData.childId,
@@ -193,7 +193,7 @@ export class StreamHierarchyService {
   async updateRelation(relationId: string, data: UpdateStreamRelationInput): Promise<StreamRelation> {
     const validatedData = UpdateStreamRelationDto.parse(data);
     
-    const existingRelation = await prisma.streamRelation.findUnique({
+    const existingRelation = await prisma.stream_relations.findUnique({
       where: { id: relationId }
     });
 
@@ -201,7 +201,7 @@ export class StreamHierarchyService {
       throw new Error(`Stream relation ${relationId} not found`);
     }
 
-    return await prisma.streamRelation.update({
+    return await prisma.stream_relations.update({
       where: { id: relationId },
       data: {
         relationType: validatedData.relationType as StreamRelationType,
@@ -216,7 +216,7 @@ export class StreamHierarchyService {
    * Usuwa relację między strumieniami
    */
   async deleteRelation(relationId: string): Promise<void> {
-    const existingRelation = await prisma.streamRelation.findUnique({
+    const existingRelation = await prisma.stream_relations.findUnique({
       where: { id: relationId }
     });
 
@@ -261,7 +261,7 @@ export class StreamHierarchyService {
       where.organizationId = organizationId;
     }
 
-    const relations = await prisma.streamRelation.findMany({
+    const relations = await prisma.stream_relations.findMany({
       where,
       include: {
         parent: true,
@@ -292,7 +292,7 @@ export class StreamHierarchyService {
     }
 
     // Sprawdzenie czy child jest już rodzicem dla parent (bezpośrednie odwrócenie)
-    const reverseRelation = await prisma.streamRelation.findFirst({
+    const reverseRelation = await prisma.stream_relations.findFirst({
       where: {
         parentId: childId,
         childId: parentId,
@@ -319,7 +319,7 @@ export class StreamHierarchyService {
     visited.add(fromId);
 
     // Pobierz wszystkich rodziców fromId
-    const parentRelations = await prisma.streamRelation.findMany({
+    const parentRelations = await prisma.stream_relations.findMany({
       where: {
         childId: fromId,
         isActive: true
@@ -361,7 +361,7 @@ export class StreamHierarchyService {
     recursionStack.add(streamId);
 
     // Pobierz wszystkich rodziców
-    const parentRelations = await prisma.streamRelation.findMany({
+    const parentRelations = await prisma.stream_relations.findMany({
       where: {
         childId: streamId,
         isActive: true
@@ -398,7 +398,7 @@ export class StreamHierarchyService {
       return [];
     }
 
-    const parentRelations = await prisma.streamRelation.findMany({
+    const parentRelations = await prisma.stream_relations.findMany({
       where: {
         childId: streamId,
         isActive: true
@@ -455,7 +455,7 @@ export class StreamHierarchyService {
       return [];
     }
 
-    const childRelations = await prisma.streamRelation.findMany({
+    const childRelations = await prisma.stream_relations.findMany({
       where: {
         parentId: streamId,
         isActive: true
@@ -509,13 +509,13 @@ export class StreamHierarchyService {
       relationsByType,
       streamsWithHierarchy
     ] = await Promise.all([
-      prisma.streamRelation.count({
+      prisma.stream_relations.count({
         where: { organizationId }
       }),
-      prisma.streamRelation.count({
+      prisma.stream_relations.count({
         where: { organizationId, isActive: true }
       }),
-      prisma.streamRelation.groupBy({
+      prisma.stream_relations.groupBy({
         by: ['relationType'],
         where: { organizationId, isActive: true },
         _count: true
@@ -524,8 +524,8 @@ export class StreamHierarchyService {
         where: {
           organizationId,
           OR: [
-            { parentRelations: { some: { isActive: true } } },
-            { childRelations: { some: { isActive: true } } }
+            { stream_relations_stream_relations_parentIdTostreams: { some: { isActive: true } } },
+            { stream_relations_stream_relations_childIdTostreams: { some: { isActive: true } } }
           ]
         }
       })
