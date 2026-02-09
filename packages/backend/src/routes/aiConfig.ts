@@ -671,17 +671,98 @@ router.post('/providers/:providerId/test',
   async (req, res) => {
     try {
       const { providerId } = req.params;
-      
-      const testResult = {
-        success: true,
-        message: 'Provider is functioning correctly',
-        responseTime: Math.random() * 1000,
-        providerOutput: 'Test connection successful',
-      };
+      const { organizationId } = req.user!;
 
-      logger.info(`AI provider ${providerId} tested by ${req.user!.email}`);
+      // Fetch provider from database
+      const provider = await prisma.ai_providers.findFirst({
+        where: { id: providerId, organizationId }
+      });
 
-      res.json(testResult);
+      if (!provider) {
+        return res.status(404).json({ success: false, message: 'Provider not found' });
+      }
+
+      const providerConfig = (provider.config as any) || {};
+      const apiKey = providerConfig.apiKey;
+
+      if (!apiKey) {
+        return res.json({
+          success: false,
+          message: 'Brak klucza API w konfiguracji providera',
+          responseTime: 0,
+        });
+      }
+
+      // Test the provider by making a real API call
+      const startTime = Date.now();
+      let testSuccess = false;
+      let testMessage = '';
+
+      try {
+        const providerName = (provider.name || '').toLowerCase();
+
+        if (providerName.includes('openai') || apiKey.startsWith('sk-')) {
+          // Test OpenAI key by listing models
+          const response = await fetch('https://api.openai.com/v1/models', {
+            method: 'GET',
+            headers: { 'Authorization': `Bearer ${apiKey}` },
+            signal: AbortSignal.timeout(10000),
+          });
+          if (response.ok) {
+            testSuccess = true;
+            testMessage = 'OpenAI API key is valid';
+          } else {
+            const body = await response.json().catch(() => ({}));
+            testMessage = (body as any)?.error?.message || `HTTP ${response.status}`;
+          }
+        } else if (providerName.includes('anthropic') || apiKey.startsWith('sk-ant-')) {
+          // Test Anthropic key
+          const response = await fetch('https://api.anthropic.com/v1/messages', {
+            method: 'POST',
+            headers: {
+              'x-api-key': apiKey,
+              'anthropic-version': '2023-06-01',
+              'content-type': 'application/json',
+            },
+            body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1, messages: [{ role: 'user', content: 'test' }] }),
+            signal: AbortSignal.timeout(10000),
+          });
+          if (response.ok) {
+            testSuccess = true;
+            testMessage = 'Anthropic API key is valid';
+          } else {
+            const body = await response.json().catch(() => ({}));
+            testMessage = (body as any)?.error?.message || `HTTP ${response.status}`;
+          }
+        } else {
+          // Generic: try provider's baseUrl if set
+          const baseUrl = provider.baseUrl || providerConfig.baseUrl;
+          if (baseUrl) {
+            const response = await fetch(`${baseUrl}/models`, {
+              method: 'GET',
+              headers: { 'Authorization': `Bearer ${apiKey}` },
+              signal: AbortSignal.timeout(10000),
+            });
+            testSuccess = response.ok;
+            testMessage = response.ok ? 'API key is valid' : `HTTP ${response.status}`;
+          } else {
+            testMessage = 'Nieznany typ providera - nie można zweryfikować klucza';
+          }
+        }
+      } catch (fetchError: any) {
+        testMessage = fetchError.message || 'Connection failed';
+      }
+
+      const responseTime = Date.now() - startTime;
+
+      logger.info(`AI provider ${providerId} tested by ${req.user!.email}: ${testSuccess ? 'OK' : 'FAIL'}`);
+
+      res.json({
+        success: testSuccess,
+        message: testSuccess ? 'Provider działa prawidłowo' : `Weryfikacja nie powiodła się: ${testMessage}`,
+        responseTime,
+        providerOutput: testMessage,
+      });
     } catch (error) {
       logger.error('Failed to test AI provider:', error);
       throw new AppError('Failed to test AI provider', 500);

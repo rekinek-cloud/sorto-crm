@@ -88,6 +88,258 @@ router.get('/', authenticateToken, validateRequest(querySchema, 'query'), async 
   }
 });
 
+// Get weekly review statistics and insights
+router.get('/stats/overview', authenticateToken, async (req, res) => {
+  try {
+    const { organizationId } = req.user as any;
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setDate(weekStart.getDate() - 7);
+
+    // Get current week data
+    const [
+      inboxItems,
+      waitingForItems,
+      completedThisWeek,
+      overdueItems,
+      nextActions,
+      projects,
+      somedayMaybeItems,
+    ] = await Promise.all([
+      // Inbox items (unprocessed tasks)
+      prisma.task.count({
+        where: {
+          organizationId,
+          status: 'BACKLOG',
+        },
+      }),
+      // Waiting for items
+      prisma.task.count({
+        where: {
+          organizationId,
+          status: 'TODO',
+          assignedToId: { not: null },
+        },
+      }),
+      // Completed this week
+      prisma.task.count({
+        where: {
+          organizationId,
+          status: 'COMPLETED',
+          completedAt: {
+            gte: weekStart,
+          },
+        },
+      }),
+      // Overdue items
+      prisma.task.count({
+        where: {
+          organizationId,
+          status: {
+            not: 'COMPLETED',
+          },
+          dueDate: {
+            lt: now,
+          },
+        },
+      }),
+      // Next actions
+      prisma.task.count({
+        where: {
+          organizationId,
+          status: 'TODO',
+          context: {
+            not: null,
+          },
+        },
+      }),
+      // Active projects
+      prisma.project.count({
+        where: {
+          organizationId,
+          status: 'IN_PROGRESS',
+        },
+      }),
+      // Someday/maybe items (tasks with no due date and low priority)
+      prisma.task.count({
+        where: {
+          organizationId,
+          status: 'BACKLOG',
+          priority: 'LOW',
+          dueDate: null,
+        },
+      }),
+    ]);
+
+    // Get progress on current week's review if it exists
+    const currentWeekReview = await prisma.weeklyReview.findFirst({
+      where: {
+        organizationId,
+        reviewDate: {
+          gte: weekStart,
+        },
+      },
+      orderBy: {
+        reviewDate: 'desc',
+      },
+    });
+
+    let reviewProgress = 0;
+    if (currentWeekReview) {
+      const checklistItems = [
+        currentWeekReview.collectLoosePapers,
+        currentWeekReview.processNotes,
+        currentWeekReview.emptyInbox,
+        currentWeekReview.processVoicemails,
+        currentWeekReview.reviewActionLists,
+        currentWeekReview.reviewCalendar,
+        currentWeekReview.reviewProjects,
+        currentWeekReview.reviewWaitingFor,
+        currentWeekReview.reviewSomedayMaybe,
+      ];
+      const completedItems = checklistItems.filter(Boolean).length;
+      reviewProgress = Math.round((completedItems / checklistItems.length) * 100);
+    }
+
+    res.json({
+      currentWeek: {
+        inboxItems,
+        waitingForItems,
+        completedThisWeek,
+        overdueItems,
+        nextActions,
+        projects,
+        somedayMaybeItems,
+        reviewProgress,
+        hasCurrentReview: !!currentWeekReview,
+      },
+      insights: {
+        productivity: completedThisWeek > 10 ? 'high' : completedThisWeek > 5 ? 'medium' : 'low',
+        urgency: overdueItems > 5 ? 'high' : overdueItems > 2 ? 'medium' : 'low',
+        organization: inboxItems < 5 ? 'good' : inboxItems < 10 ? 'fair' : 'needs-attention',
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching weekly review stats:', error);
+    res.status(500).json({ error: 'Failed to fetch weekly review statistics' });
+  }
+});
+
+// Get historical weekly review data for burndown chart
+router.get('/stats/burndown', authenticateToken, async (req, res) => {
+  try {
+    const { organizationId } = req.user as any;
+    const { weeks = 12 } = req.query;
+
+    const weeksBack = parseInt(weeks as string);
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - (weeksBack * 7));
+
+    // Get weekly reviews in the specified period
+    const reviews = await prisma.weeklyReview.findMany({
+      where: {
+        organizationId,
+        reviewDate: {
+          gte: startDate,
+          lte: endDate,
+        },
+      },
+      orderBy: {
+        reviewDate: 'asc',
+      },
+    });
+
+    // Generate burndown data
+    const burndownData = [];
+    const startOfFirstWeek = new Date(startDate);
+
+    for (let week = 0; week < weeksBack; week++) {
+      const weekStart = new Date(startOfFirstWeek);
+      weekStart.setDate(weekStart.getDate() + (week * 7));
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+
+      // Find review for this week
+      const weekReview = reviews.find(review => {
+        const reviewDate = new Date(review.reviewDate);
+        return reviewDate >= weekStart && reviewDate <= weekEnd;
+      });
+
+      // Calculate metrics for this week
+      const [completedTasks, totalTasks] = await Promise.all([
+        prisma.task.count({
+          where: {
+            organizationId,
+            status: 'COMPLETED',
+            completedAt: {
+              gte: weekStart,
+              lte: weekEnd,
+            },
+          },
+        }),
+        prisma.task.count({
+          where: {
+            organizationId,
+            createdAt: {
+              lte: weekEnd,
+            },
+          },
+        }),
+      ]);
+
+      const reviewCompletion = weekReview ? (() => {
+        const checklistItems = [
+          weekReview.collectLoosePapers,
+          weekReview.processNotes,
+          weekReview.emptyInbox,
+          weekReview.processVoicemails,
+          weekReview.reviewActionLists,
+          weekReview.reviewCalendar,
+          weekReview.reviewProjects,
+          weekReview.reviewWaitingFor,
+          weekReview.reviewSomedayMaybe,
+        ];
+        const completedItems = checklistItems.filter(Boolean).length;
+        return Math.round((completedItems / checklistItems.length) * 100);
+      })() : 0;
+
+      // Format week as short day name for frontend compatibility
+      const dayNames = ['Pon', 'Wt', 'Sr', 'Czw', 'Pt', 'Sob', 'Nd'];
+      const weekLabel = `W${week + 1}`;
+
+      burndownData.push({
+        week: weekLabel,  // Frontend expects string
+        weekStart: weekStart.toISOString().split('T')[0],
+        weekEnd: weekEnd.toISOString().split('T')[0],
+        completed: completedTasks,  // Frontend expects 'completed'
+        created: totalTasks - completedTasks,  // Frontend expects 'created'
+        completedTasks,  // Keep for backward compat
+        totalTasks,
+        reviewCompletion,
+        hasReview: !!weekReview,
+        stalledTasks: weekReview?.stalledTasks || 0,
+        newTasks: weekReview?.newTasksCount || 0,
+      });
+    }
+
+    res.json({
+      burndownData,
+      summary: {
+        totalWeeks: weeksBack,
+        weeksWithReview: reviews.length,
+        reviewCompletionRate: Math.round((reviews.length / weeksBack) * 100),
+        averageTasksCompleted: Math.round(
+          burndownData.reduce((sum, week) => sum + week.completedTasks, 0) / burndownData.length
+        ),
+      },
+    });
+  } catch (error) {
+    console.error('Error fetching weekly review burndown data:', error);
+    res.status(500).json({ error: 'Failed to fetch burndown data' });
+  }
+});
+
 // Get specific weekly review by date
 router.get('/:date', authenticateToken, async (req, res) => {
   try {
@@ -235,258 +487,6 @@ router.delete('/:date', authenticateToken, async (req, res) => {
     }
     console.error('Error deleting weekly review:', error);
     res.status(500).json({ error: 'Failed to delete weekly review' });
-  }
-});
-
-// Get weekly review statistics and insights
-router.get('/stats/overview', authenticateToken, async (req, res) => {
-  try {
-    const { organizationId } = req.user as any;
-    const now = new Date();
-    const weekStart = new Date(now);
-    weekStart.setDate(weekStart.getDate() - 7);
-
-    // Get current week data
-    const [
-      inboxItems,
-      waitingForItems,
-      completedThisWeek,
-      overdueItems,
-      nextActions,
-      projects,
-      somedayMaybeItems,
-    ] = await Promise.all([
-      // Inbox items (unprocessed tasks)
-      prisma.task.count({
-        where: {
-          organizationId,
-          status: 'BACKLOG',
-        },
-      }),
-      // Waiting for items
-      prisma.task.count({
-        where: {
-          organizationId,
-          status: 'TODO',
-          assignedToId: { not: null },
-        },
-      }),
-      // Completed this week
-      prisma.task.count({
-        where: {
-          organizationId,
-          status: 'COMPLETED',
-          completedAt: {
-            gte: weekStart,
-          },
-        },
-      }),
-      // Overdue items
-      prisma.task.count({
-        where: {
-          organizationId,
-          status: {
-            not: 'COMPLETED',
-          },
-          dueDate: {
-            lt: now,
-          },
-        },
-      }),
-      // Next actions
-      prisma.task.count({
-        where: {
-          organizationId,
-          status: 'TODO',
-          context: {
-            not: null,
-          },
-        },
-      }),
-      // Active projects
-      prisma.project.count({
-        where: {
-          organizationId,
-          status: 'IN_PROGRESS',
-        },
-      }),
-      // Someday/maybe items (tasks with no due date and low priority)
-      prisma.task.count({
-        where: {
-          organizationId,
-          status: 'BACKLOG',
-          priority: 'LOW',
-          dueDate: null,
-        },
-      }),
-    ]);
-
-    // Get progress on current week's review if it exists
-    const currentWeekReview = await prisma.weeklyReview.findFirst({
-      where: {
-        organizationId,
-        reviewDate: {
-          gte: weekStart,
-        },
-      },
-      orderBy: {
-        reviewDate: 'desc',
-      },
-    });
-
-    let reviewProgress = 0;
-    if (currentWeekReview) {
-      const checklistItems = [
-        currentWeekReview.collectLoosePapers,
-        currentWeekReview.processNotes,
-        currentWeekReview.emptyInbox,
-        currentWeekReview.processVoicemails,
-        currentWeekReview.reviewActionLists,
-        currentWeekReview.reviewCalendar,
-        currentWeekReview.reviewProjects,
-        currentWeekReview.reviewWaitingFor,
-        currentWeekReview.reviewSomedayMaybe,
-      ];
-      const completedItems = checklistItems.filter(Boolean).length;
-      reviewProgress = Math.round((completedItems / checklistItems.length) * 100);
-    }
-
-    res.json({
-      currentWeek: {
-        inboxItems,
-        waitingForItems,
-        completedThisWeek,
-        overdueItems,
-        nextActions,
-        projects,
-        somedayMaybeItems,
-        reviewProgress,
-        hasCurrentReview: !!currentWeekReview,
-      },
-      insights: {
-        productivity: completedThisWeek > 10 ? 'high' : completedThisWeek > 5 ? 'medium' : 'low',
-        urgency: overdueItems > 5 ? 'high' : overdueItems > 2 ? 'medium' : 'low',
-        organization: inboxItems < 5 ? 'good' : inboxItems < 10 ? 'fair' : 'needs-attention',
-      },
-    });
-  } catch (error) {
-    console.error('Error fetching weekly review stats:', error);
-    res.status(500).json({ error: 'Failed to fetch weekly review statistics' });
-  }
-});
-
-// Get historical weekly review data for burndown chart
-router.get('/stats/burndown', authenticateToken, async (req, res) => {
-  try {
-    const { organizationId } = req.user as any;
-    const { weeks = 12 } = req.query;
-    
-    const weeksBack = parseInt(weeks as string);
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - (weeksBack * 7));
-
-    // Get weekly reviews in the specified period
-    const reviews = await prisma.weeklyReview.findMany({
-      where: {
-        organizationId,
-        reviewDate: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      orderBy: {
-        reviewDate: 'asc',
-      },
-    });
-
-    // Generate burndown data
-    const burndownData = [];
-    const startOfFirstWeek = new Date(startDate);
-    
-    for (let week = 0; week < weeksBack; week++) {
-      const weekStart = new Date(startOfFirstWeek);
-      weekStart.setDate(weekStart.getDate() + (week * 7));
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekEnd.getDate() + 6);
-
-      // Find review for this week
-      const weekReview = reviews.find(review => {
-        const reviewDate = new Date(review.reviewDate);
-        return reviewDate >= weekStart && reviewDate <= weekEnd;
-      });
-
-      // Calculate metrics for this week
-      const [completedTasks, totalTasks] = await Promise.all([
-        prisma.task.count({
-          where: {
-            organizationId,
-            status: 'COMPLETED',
-            completedAt: {
-              gte: weekStart,
-              lte: weekEnd,
-            },
-          },
-        }),
-        prisma.task.count({
-          where: {
-            organizationId,
-            createdAt: {
-              lte: weekEnd,
-            },
-          },
-        }),
-      ]);
-
-      const reviewCompletion = weekReview ? (() => {
-        const checklistItems = [
-          weekReview.collectLoosePapers,
-          weekReview.processNotes,
-          weekReview.emptyInbox,
-          weekReview.processVoicemails,
-          weekReview.reviewActionLists,
-          weekReview.reviewCalendar,
-          weekReview.reviewProjects,
-          weekReview.reviewWaitingFor,
-          weekReview.reviewSomedayMaybe,
-        ];
-        const completedItems = checklistItems.filter(Boolean).length;
-        return Math.round((completedItems / checklistItems.length) * 100);
-      })() : 0;
-
-      // Format week as short day name for frontend compatibility
-      const dayNames = ['Pon', 'Wt', 'Sr', 'Czw', 'Pt', 'Sob', 'Nd'];
-      const weekLabel = `W${week + 1}`;
-
-      burndownData.push({
-        week: weekLabel,  // Frontend expects string
-        weekStart: weekStart.toISOString().split('T')[0],
-        weekEnd: weekEnd.toISOString().split('T')[0],
-        completed: completedTasks,  // Frontend expects 'completed'
-        created: totalTasks - completedTasks,  // Frontend expects 'created'
-        completedTasks,  // Keep for backward compat
-        totalTasks,
-        reviewCompletion,
-        hasReview: !!weekReview,
-        stalledTasks: weekReview?.stalledTasks || 0,
-        newTasks: weekReview?.newTasksCount || 0,
-      });
-    }
-
-    res.json({
-      burndownData,
-      summary: {
-        totalWeeks: weeksBack,
-        weeksWithReview: reviews.length,
-        reviewCompletionRate: Math.round((reviews.length / weeksBack) * 100),
-        averageTasksCompleted: Math.round(
-          burndownData.reduce((sum, week) => sum + week.completedTasks, 0) / burndownData.length
-        ),
-      },
-    });
-  } catch (error) {
-    console.error('Error fetching weekly review burndown data:', error);
-    res.status(500).json({ error: 'Failed to fetch burndown data' });
   }
 });
 

@@ -9,9 +9,7 @@ import MobileBottomNavigation from '@/components/ui/MobileBottomNavigation';
 import MobileMenu from '@/components/ui/MobileMenu';
 import CommandPalette from '@/components/ui/CommandPalette';
 import SwipeGestures from '@/components/ui/SwipeGestures';
-import HeaderDateTime from '@/components/ui/HeaderDateTime';
-import QuickActions from '@/components/ui/QuickActions';
-import TodayStats from '@/components/ui/TodayStats';
+// Removed: HeaderDateTime, QuickActions, TodayStats - top bar simplified
 import RAGChatModal from '@/components/rag/RAGChatModal';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { streamsNavigation } from '@/config/streamsNavigation';
@@ -436,7 +434,7 @@ export default function DashboardLayout({
         {/* Compact single-line header */}
         <div className="bg-white shadow-sm border-b border-gray-200">
           <div className="px-4 py-2 flex items-center justify-between">
-            {/* Left: Menu controls + Quick Actions */}
+            {/* Left: Menu controls */}
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => setSidebarOpen(true)}
@@ -455,45 +453,29 @@ export default function DashboardLayout({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                 </svg>
               </button>
-              {/* Quick Actions */}
-              <div className="hidden sm:block border-l border-gray-200 pl-3">
-                <QuickActions />
-              </div>
             </div>
 
-            {/* Center: Enhanced header with date/time */}
-            <div className="hidden lg:flex flex-1 justify-center">
-              <HeaderDateTime />
-            </div>
-
-            {/* Right: Today Stats + controls */}
-            <div className="flex items-center space-x-3">
-              {/* Today Stats */}
-              <div className="hidden md:block">
-                <TodayStats />
-              </div>
-              <div className="flex items-center space-x-2 border-l border-gray-200 pl-3">
-                {/* Language Switcher */}
-                <LanguageSwitcher />
-                <button
-                  onClick={() => setCommandPaletteOpen(true)}
-                  className="clickable p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md"
-                  title="Search (⌘K)"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                  </svg>
-                </button>
-                <button
-                  onClick={logout}
-                  className="clickable p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md"
-                  title="Wyloguj się"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                </button>
-              </div>
+            {/* Right: Language + Search + Logout */}
+            <div className="flex items-center space-x-2">
+              <LanguageSwitcher />
+              <button
+                onClick={() => setCommandPaletteOpen(true)}
+                className="clickable p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md"
+                title="Search (⌘K)"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+              <button
+                onClick={logout}
+                className="clickable p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md"
+                title="Wyloguj się"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+              </button>
             </div>
           </div>
         </div>

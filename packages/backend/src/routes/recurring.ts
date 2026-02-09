@@ -108,6 +108,93 @@ router.put('/:id', authenticateToken, async (req, res) => {
   }
 });
 
+// POST /generate - Generate tasks from recurring tasks that are due
+router.post('/generate', authenticateToken, async (req, res) => {
+  try {
+    const { organizationId } = req.user!;
+    const now = new Date();
+
+    // Find active recurring tasks that are due (nextOccurrence <= now, or no nextOccurrence set)
+    const dueTasks = await prisma.recurringTask.findMany({
+      where: {
+        organizationId,
+        isActive: true,
+        OR: [
+          { nextOccurrence: { lte: now } },
+          { nextOccurrence: null },
+        ],
+      },
+    });
+
+    let generated = 0;
+    const errors: string[] = [];
+
+    for (const recurring of dueTasks) {
+      try {
+        // Create a task from the recurring template
+        await prisma.task.create({
+          data: {
+            title: recurring.title,
+            description: recurring.description || undefined,
+            priority: recurring.priority,
+            status: 'NEW',
+            organizationId,
+            assignedToId: recurring.assignedToId || undefined,
+            streamId: recurring.streamId || undefined,
+            projectId: recurring.projectId || undefined,
+          },
+        });
+
+        // Calculate next occurrence based on frequency
+        let nextDate = new Date(recurring.nextOccurrence || now);
+        switch (recurring.frequency) {
+          case 'DAILY':
+            nextDate.setDate(nextDate.getDate() + (recurring.interval || 1));
+            break;
+          case 'WEEKLY':
+            nextDate.setDate(nextDate.getDate() + 7 * (recurring.interval || 1));
+            break;
+          case 'BIWEEKLY':
+            nextDate.setDate(nextDate.getDate() + 14);
+            break;
+          case 'MONTHLY':
+            nextDate.setMonth(nextDate.getMonth() + (recurring.interval || 1));
+            break;
+          case 'QUARTERLY':
+            nextDate.setMonth(nextDate.getMonth() + 3);
+            break;
+          case 'YEARLY':
+            nextDate.setFullYear(nextDate.getFullYear() + 1);
+            break;
+          default:
+            nextDate.setDate(nextDate.getDate() + 7);
+        }
+
+        // Update recurring task with next occurrence
+        await prisma.recurringTask.update({
+          where: { id: recurring.id },
+          data: {
+            nextOccurrence: nextDate,
+            lastExecuted: now,
+            executionCount: { increment: 1 },
+          },
+        });
+
+        generated++;
+      } catch (err: any) {
+        errors.push(`${recurring.title}: ${err.message}`);
+        logger.error(`Error generating task from recurring ${recurring.id}:`, err);
+      }
+    }
+
+    logger.info(`Generated ${generated} tasks from ${dueTasks.length} recurring tasks for org ${organizationId}`);
+    res.json({ generated, errors });
+  } catch (error) {
+    logger.error('Error generating recurring tasks:', error);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+});
+
 // Delete recurring task
 router.delete('/:id', authenticateToken, async (req, res) => {
   try {

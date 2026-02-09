@@ -462,8 +462,86 @@ const ProductsPage: React.FC = () => {
             </div>
           ) : (
             <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              {/* TODO: Implement list view */}
-              <div className="p-4">List view coming soon...</div>
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 w-10">
+                      <input
+                        type="checkbox"
+                        checked={selectedProducts.size === products.length && products.length > 0}
+                        onChange={toggleSelectAll}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                    </th>
+                    <th
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700"
+                      onClick={() => handleSortChange('name')}
+                    >
+                      Nazwa {filters.sortBy === 'name' && (filters.sortOrder === 'asc' ? '↑' : '↓')}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">SKU</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Kategoria</th>
+                    <th
+                      className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700"
+                      onClick={() => handleSortChange('price')}
+                    >
+                      Cena {filters.sortBy === 'price' && (filters.sortOrder === 'asc' ? '↑' : '↓')}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stan</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Akcje</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {products.map((product) => (
+                    <tr key={product.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedProducts.has(product.id)}
+                          onChange={() => toggleProductSelection(product.id)}
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                        {product.description && (
+                          <div className="text-sm text-gray-500 truncate max-w-xs">{product.description}</div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-500">{product.sku || '-'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-500">{product.category || '-'}</td>
+                      <td className="px-4 py-3 text-sm font-medium text-gray-900">
+                        {product.price?.toFixed(2)} {product.currency || 'PLN'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-500">
+                        {product.trackInventory ? (
+                          <span className={product.stockQuantity !== undefined && product.minStockLevel !== undefined && product.stockQuantity <= product.minStockLevel ? 'text-orange-600 font-medium' : ''}>
+                            {product.stockQuantity ?? '-'} {product.unit || 'szt.'}
+                          </span>
+                        ) : '-'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                          product.status === 'ACTIVE' ? 'bg-green-100 text-green-800' :
+                          product.status === 'INACTIVE' ? 'bg-gray-100 text-gray-800' :
+                          product.status === 'DISCONTINUED' ? 'bg-red-100 text-red-800' :
+                          'bg-orange-100 text-orange-800'
+                        }`}>
+                          {product.status === 'ACTIVE' ? 'Aktywny' :
+                           product.status === 'INACTIVE' ? 'Nieaktywny' :
+                           product.status === 'DISCONTINUED' ? 'Wycofany' : 'Brak'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-right text-sm space-x-2">
+                        <button onClick={() => handleEditProduct(product)} className="text-blue-600 hover:text-blue-800">Edytuj</button>
+                        <button onClick={() => handleDuplicateProduct(product)} className="text-gray-600 hover:text-gray-800">Duplikuj</button>
+                        <button onClick={() => handleDeleteProduct(product)} className="text-red-600 hover:text-red-800">Usuń</button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
 

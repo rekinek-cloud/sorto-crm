@@ -21,6 +21,7 @@ import {
   MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
 import { invoicesApi, type Invoice as ApiInvoice, type InvoiceStatus } from '@/lib/api/invoices';
+import { apiClient } from '@/lib/api/client';
 
 // Map API status to display status
 type DisplayStatus = 'DRAFT' | 'SENT' | 'PAID' | 'OVERDUE' | 'CANCELLED';
@@ -79,8 +80,63 @@ export default function InvoicesPage() {
     notes: ''
   });
 
+  // Company search for client picker
+  const [companySuggestions, setCompanySuggestions] = useState<any[]>([]);
+  const [showCompanySuggestions, setShowCompanySuggestions] = useState(false);
+  const [productList, setProductList] = useState<any[]>([]);
+
+  const searchCompanies = async (query: string) => {
+    if (query.length < 2) { setShowCompanySuggestions(false); return; }
+    try {
+      const res = await apiClient.get('/companies', { params: { search: query, limit: 5 } });
+      const companies = res.data?.companies || res.data || [];
+      setCompanySuggestions(Array.isArray(companies) ? companies : []);
+      setShowCompanySuggestions(true);
+    } catch { setCompanySuggestions([]); }
+  };
+
+  const selectCompany = (company: any) => {
+    setFormData(prev => ({
+      ...prev,
+      clientName: company.name || '',
+      clientEmail: company.email || '',
+      clientAddress: company.address || '',
+    }));
+    setShowCompanySuggestions(false);
+  };
+
+  const loadProducts = async () => {
+    try {
+      const res = await apiClient.get('/products', { params: { limit: 100 } });
+      setProductList(res.data?.products || res.data || []);
+    } catch { /* ignore */ }
+  };
+
+  const addProductItem = (product: any) => {
+    setFormData(prev => ({
+      ...prev,
+      items: [...prev.items, {
+        name: product.name,
+        description: product.description || '',
+        quantity: 1,
+        unitPrice: product.price || 0,
+        productId: product.id,
+      }],
+      amount: prev.amount + (product.price || 0),
+    }));
+  };
+
+  const removeItem = (index: number) => {
+    setFormData(prev => {
+      const items = [...prev.items];
+      const removed = items.splice(index, 1)[0];
+      return { ...prev, items, amount: prev.amount - ((removed as any).unitPrice * (removed as any).quantity || 0) };
+    });
+  };
+
   useEffect(() => {
     loadInvoices();
+    loadProducts();
   }, []);
 
   useEffect(() => {
@@ -652,17 +708,36 @@ export default function InvoicesPage() {
 
               <div className="p-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
+                  <div className="relative">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Nazwa klienta *
                     </label>
                     <input
                       type="text"
                       value={formData.clientName}
-                      onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
+                      onChange={(e) => {
+                        setFormData({ ...formData, clientName: e.target.value });
+                        searchCompanies(e.target.value);
+                      }}
+                      onBlur={() => setTimeout(() => setShowCompanySuggestions(false), 200)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder="np. Firma ABC"
+                      placeholder="Wpisz nazwę firmy..."
                     />
+                    {showCompanySuggestions && companySuggestions.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-48 overflow-y-auto">
+                        {companySuggestions.map((company: any) => (
+                          <button
+                            key={company.id}
+                            type="button"
+                            onClick={() => selectCompany(company)}
+                            className="w-full text-left px-3 py-2 hover:bg-blue-50 text-sm"
+                          >
+                            <div className="font-medium">{company.name}</div>
+                            {company.email && <div className="text-gray-500 text-xs">{company.email}</div>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -703,6 +778,48 @@ export default function InvoicesPage() {
                     rows={3}
                     placeholder="Opis świadczonych usług..."
                   />
+                </div>
+
+                {/* Product/Service picker */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Pozycje faktury
+                  </label>
+                  {formData.items.length > 0 && (
+                    <div className="mb-2 space-y-1">
+                      {formData.items.map((item: any, idx: number) => (
+                        <div key={idx} className="flex items-center justify-between bg-gray-50 px-3 py-2 rounded text-sm">
+                          <span className="font-medium">{item.name}</span>
+                          <div className="flex items-center gap-3">
+                            <span>{item.quantity} x {item.unitPrice?.toFixed(2)} PLN</span>
+                            <button type="button" onClick={() => removeItem(idx)} className="text-red-500 hover:text-red-700">
+                              <XMarkIcon className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {productList.length > 0 ? (
+                    <select
+                      onChange={(e) => {
+                        const product = productList.find((p: any) => p.id === e.target.value);
+                        if (product) addProductItem(product);
+                        e.target.value = '';
+                      }}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                      defaultValue=""
+                    >
+                      <option value="" disabled>Wybierz produkt/usługę z listy...</option>
+                      {productList.map((p: any) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name} - {p.price?.toFixed(2)} PLN
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <p className="text-sm text-gray-500">Brak produktów w katalogu. Dodaj produkty w sekcji Produkty.</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

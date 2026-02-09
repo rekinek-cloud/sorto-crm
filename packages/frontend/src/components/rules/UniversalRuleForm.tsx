@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Badge } from '@/components/ui/Badge';
 import apiClient from '@/lib/api/client';
+import toast from 'react-hot-toast';
 import {
   XMarkIcon,
   EyeIcon,
@@ -315,6 +316,12 @@ const UniversalRuleForm: React.FC<UniversalRuleFormProps> = ({
       await onSubmit(ruleJson);
     } catch (error: any) {
       console.error('Error submitting rule:', error);
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error ||
+        error?.message ||
+        'Nie udało się zapisać reguły. Spróbuj ponownie.';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

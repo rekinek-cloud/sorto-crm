@@ -135,7 +135,7 @@ export interface CreateDealRequest {
   currency?: string;
   probability?: number;
   status?: 'OPEN' | 'WON' | 'LOST';
-  stage?: 'PROSPECT' | 'QUALIFIED' | 'PROPOSAL' | 'NEGOTIATION' | 'CLOSED';
+  stage?: 'PROSPECT' | 'QUALIFIED' | 'PROPOSAL' | 'NEGOTIATION' | 'CLOSED_WON' | 'CLOSED_LOST';
   companyId: string;
   contactId?: string;
   assignedToId?: string;
@@ -182,7 +182,7 @@ export interface DealsResponse {
 }
 
 export interface PipelineStage {
-  stage: 'PROSPECT' | 'QUALIFIED' | 'PROPOSAL' | 'NEGOTIATION' | 'CLOSED';
+  stage: 'PROSPECT' | 'QUALIFIED' | 'PROPOSAL' | 'NEGOTIATION' | 'CLOSED_WON' | 'CLOSED_LOST';
   count: number;
   value: number;
 }

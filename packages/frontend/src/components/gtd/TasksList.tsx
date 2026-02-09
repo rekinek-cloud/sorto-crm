@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Task, TaskFilters, Context, Project, Stream } from '@/types/gtd';
 import { tasksApi, contextsApi, projectsApi, gtdHelpers } from '@/lib/api/gtd';
 import { streamsApi } from '@/lib/api/streams';
+import { apiClient } from '@/lib/api/client';
 import TaskItem from './TaskItem';
 import TaskForm from './TaskForm';
 import { toast } from 'react-hot-toast';
@@ -13,6 +14,7 @@ export default function TasksList() {
   const [contexts, setContexts] = useState<Context[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [streams, setStreams] = useState<Stream[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>();
@@ -33,17 +35,19 @@ export default function TasksList() {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [tasksData, contextsData, projectsData, streamsData] = await Promise.all([
+      const [tasksData, contextsData, projectsData, streamsData, usersData] = await Promise.all([
         tasksApi.getTasks(filters),
-        contextsApi.getContexts(true), // Only active contexts
-        projectsApi.getProjects({ limit: 100 }), // Get all projects for dropdown
-        streamsApi.getStreams({ status: 'ACTIVE', limit: 100 }), // Get all active streams for dropdown
+        contextsApi.getContexts(true),
+        projectsApi.getProjects({ limit: 100 }),
+        streamsApi.getStreams({ status: 'ACTIVE', limit: 100 }),
+        apiClient.get('/users').then(r => r.data).catch(() => ({ users: [] })),
       ]);
 
       setTasks(tasksData.tasks);
       setContexts(contextsData);
       setProjects(projectsData.projects);
       setStreams(streamsData.streams || []);
+      setUsers(usersData.users || usersData || []);
     } catch (error: any) {
       toast.error('Failed to load data');
       console.error('Error loading data:', error);
@@ -383,6 +387,7 @@ export default function TasksList() {
           contexts={contexts}
           projects={projects}
           streams={streams}
+          users={users}
           onSubmit={handleTaskSubmit}
           onCancel={() => {
             setIsTaskFormOpen(false);

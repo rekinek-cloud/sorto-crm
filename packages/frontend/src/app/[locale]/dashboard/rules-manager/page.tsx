@@ -575,7 +575,7 @@ const RulesManager: React.FC = () => {
               loadStats();
             } catch (error: any) {
               console.error('Failed to create rule:', error);
-              throw error;
+              throw error; // UniversalRuleForm shows toast
             }
           }}
           onCancel={() => setShowCreateModal(false)}
@@ -602,8 +602,7 @@ const RulesManager: React.FC = () => {
               loadStats();
             } catch (error: any) {
               console.error('Failed to save rule:', error);
-              toast.error('Nie udało się zapisać reguły');
-              throw error;
+              throw error; // UniversalRuleForm shows toast
             }
           }}
           onCancel={() => {

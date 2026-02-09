@@ -3,24 +3,33 @@
 import React, { useState, useEffect } from 'react';
 import { Task, Context, Project, Stream, CreateTaskRequest, UpdateTaskRequest } from '@/types/gtd';
 
+interface TaskFormUser {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  email: string;
+}
+
 interface TaskFormProps {
   task?: Task;
   contexts: Context[];
   projects: Project[];
   streams: Stream[];
+  users?: TaskFormUser[];
   onSubmit: (data: CreateTaskRequest | UpdateTaskRequest) => void;
   onCancel: () => void;
   isLoading?: boolean;
 }
 
-export default function TaskForm({ 
-  task, 
-  contexts, 
-  projects, 
-  streams, 
-  onSubmit, 
-  onCancel, 
-  isLoading 
+export default function TaskForm({
+  task,
+  contexts,
+  projects,
+  streams,
+  users = [],
+  onSubmit,
+  onCancel,
+  isLoading
 }: TaskFormProps) {
   const [formData, setFormData] = useState({
     title: '',
@@ -296,6 +305,29 @@ export default function TaskForm({
               </select>
             </div>
           </div>
+
+          {/* Assignee */}
+          {users.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Przypisz do
+              </label>
+              <select
+                value={formData.assignedToId}
+                onChange={(e) => handleChange('assignedToId', e.target.value)}
+                className="input"
+              >
+                <option value="">Nieprzypisane</option>
+                {users.map(user => (
+                  <option key={user.id} value={user.id}>
+                    {user.firstName && user.lastName
+                      ? `${user.firstName} ${user.lastName}`
+                      : user.email}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Due Date */}
           <div>

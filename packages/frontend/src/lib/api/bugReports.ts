@@ -2,7 +2,7 @@ import { apiClient } from './client';
 
 export type BugPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
 export type BugCategory = 'UI_UX' | 'FUNCTIONALITY' | 'PERFORMANCE' | 'SECURITY' | 'DATA' | 'INTEGRATION' | 'OTHER';
-export type BugStatus = 'NEW' | 'CONFIRMED' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | 'WONT_FIX';
+export type BugStatus = 'OPEN' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED' | 'WONT_FIX';
 
 export interface BugReport {
   id: string;
@@ -70,7 +70,7 @@ export const bugReportsApi = {
       browserInfo: data.browserInfo || getBrowserInfo(),
       deviceInfo: data.deviceInfo || getDeviceInfo()
     };
-    const response = await apiClient.post('/bug-reports', enrichedData);
+    const response = await apiClient.post('/admin/bug-reports', enrichedData);
     return response.data;
   },
 
@@ -87,25 +87,25 @@ export const bugReportsApi = {
     total: number;
     hasMore: boolean;
   }> {
-    const response = await apiClient.get('/bug-reports', { params });
+    const response = await apiClient.get('/admin/bug-reports', { params });
     return response.data;
   },
 
   // Get single bug report
   async getBugReport(id: string): Promise<BugReport> {
-    const response = await apiClient.get(`/bug-reports/${id}`);
+    const response = await apiClient.get(`/admin/bug-reports/${id}`);
     return response.data;
   },
 
   // Update bug report
   async updateBugReport(id: string, data: UpdateBugReportData): Promise<BugReport> {
-    const response = await apiClient.put(`/bug-reports/${id}`, data);
+    const response = await apiClient.put(`/admin/bug-reports/${id}`, data);
     return response.data;
   },
 
   // Delete bug report
   async deleteBugReport(id: string): Promise<void> {
-    await apiClient.delete(`/bug-reports/${id}`);
+    await apiClient.delete(`/admin/bug-reports/${id}`);
   },
 
   // Get bug reports statistics (admin)
@@ -115,7 +115,7 @@ export const bugReportsApi = {
     resolvedBugs: number;
     criticalBugs: number;
   }> {
-    const response = await apiClient.get('/bug-reports/stats/overview');
+    const response = await apiClient.get('/admin/bug-reports/stats/overview');
     return response.data;
   },
 
@@ -128,7 +128,7 @@ export const bugReportsApi = {
       resolution?: string;
     }
   ): Promise<BugReport> {
-    const response = await apiClient.patch(`/bug-reports/${id}/status`, data);
+    const response = await apiClient.patch(`/admin/bug-reports/${id}/status`, data);
     return response.data;
   },
 };

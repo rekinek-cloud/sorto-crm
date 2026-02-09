@@ -18,10 +18,12 @@ interface DealForm {
 }
 
 const stages = [
-  'Kwalifikacja',
-  'Propozycja',
-  'Negocjacje',
-  'Zamknięcie'
+  { value: 'PROSPECT', label: 'Prospekt' },
+  { value: 'QUALIFIED', label: 'Kwalifikacja' },
+  { value: 'PROPOSAL', label: 'Propozycja' },
+  { value: 'NEGOTIATION', label: 'Negocjacje' },
+  { value: 'CLOSED_WON', label: 'Wygrana' },
+  { value: 'CLOSED_LOST', label: 'Przegrana' },
 ];
 
 const sources = [
@@ -39,7 +41,7 @@ export default function NewDealPage() {
     title: '',
     value: '',
     currency: 'PLN',
-    stage: 'Kwalifikacja',
+    stage: 'PROSPECT',
     contact: '',
     company: '',
     expectedCloseDate: '',
@@ -143,7 +145,7 @@ export default function NewDealPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 >
                   {stages.map(stage => (
-                    <option key={stage} value={stage}>{stage}</option>
+                    <option key={stage.value} value={stage.value}>{stage.label}</option>
                   ))}
                 </select>
               </div>

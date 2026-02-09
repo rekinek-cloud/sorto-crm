@@ -76,7 +76,7 @@ export default function BugReportModal({ isOpen, onClose, onSuccess }: BugReport
         actualBehavior: form.actualBehavior || undefined
       };
 
-      await apiClient.post('/bug-reports', bugReportData);
+      await apiClient.post('/admin/bug-reports', bugReportData);
       
       // Reset form
       setForm({

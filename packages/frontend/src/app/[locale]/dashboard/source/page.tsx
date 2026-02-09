@@ -116,6 +116,12 @@ export default function SourcePage() {
 
     // Handle voice recording complete
     const handleVoiceRecordingComplete = (blob: Blob, duration: number) => {
+        const maxSize = 5 * 1024 * 1024; // 5MB limit
+        if (blob.size > maxSize) {
+            toast.error(`Nagranie jest za duże (${(blob.size / 1024 / 1024).toFixed(1)}MB). Maksimum to 5MB.`);
+            setAudioBlob(null);
+            return;
+        }
         setAudioBlob(blob);
         setAudioDuration(duration);
     };
@@ -137,6 +143,10 @@ export default function SourcePage() {
             }
             // Convert blob to base64 for storage
             const reader = new FileReader();
+            reader.onerror = () => {
+                console.error('FileReader error:', reader.error);
+                toast.error('Błąd odczytu nagrania. Spróbuj ponownie.');
+            };
             reader.onloadend = async () => {
                 const base64Audio = reader.result as string;
                 try {
@@ -156,7 +166,10 @@ export default function SourcePage() {
                     loadData();
                 } catch (error: any) {
                     console.error('Error capturing voice:', error);
-                    toast.error('Błąd podczas dodawania nagrania');
+                    const msg = error?.response?.status === 413
+                        ? 'Nagranie jest za duże dla serwera. Nagraj krótszą wiadomość.'
+                        : 'Błąd podczas dodawania nagrania';
+                    toast.error(msg);
                 }
             };
             reader.readAsDataURL(audioBlob);

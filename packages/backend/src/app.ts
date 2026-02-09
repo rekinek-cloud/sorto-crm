@@ -58,6 +58,7 @@ import productsRoutes from './routes/products';
 import servicesRoutes from './routes/services';
 import offersRoutes from './routes/offers';
 import invoicesRoutes from './routes/invoices';
+import ordersRoutes from './routes/orders';
 import aiConfigRoutes from './routes/aiConfig';
 import aiPromptsRoutes from './routes/aiPrompts';
 import aiKnowledgeRoutes from './routes/aiKnowledge';
@@ -89,13 +90,15 @@ import billingRoutes from './routes/billing';
 // import pipelineAnalyticsRoutes from './routes/pipelineAnalytics';
 // import universalRulesRoutes from './routes/universalRules';
 // import graphRoutes from './routes/graph';
-// import realVectorSearchRoutes from './routes/realVectorSearch';
+import realVectorSearchRoutes from './routes/realVectorSearch';
 // import modernEmailRoutes from './routes/modernEmail';
 // import voiceSimpleRoutes from './routes/voice-simple';
-// import bugReportsRoutes from './routes/bugReports';
+import bugReportsRoutes from './routes/bugReports';
 import aiRulesRoutes from './routes/aiRules';
 // import filesRoutes from './routes/files';
 import weeklyReviewRoutes from './routes/weeklyReview';
+import streamHierarchyRoutes from './routes/streamHierarchy';
+import streamAccessRoutes from './routes/streamAccess';
 
 const app = express();
 
@@ -216,6 +219,7 @@ apiRouter.use('/products', productsRoutes);
 apiRouter.use('/services', servicesRoutes);
 apiRouter.use('/offers', offersRoutes);
 apiRouter.use('/invoices', invoicesRoutes);
+apiRouter.use('/orders', ordersRoutes);  // Orders - zarządzanie zamówieniami
 apiRouter.use('/calendar', calendarRoutes);
 apiRouter.use('/admin/ai-config', aiConfigRoutes);
 apiRouter.use('/ai/prompts', aiPromptsRoutes);
@@ -248,14 +252,16 @@ apiRouter.use('/billing', billingRoutes);  // Billing - subskrypcje i płatnośc
 // apiRouter.use('/pipeline-analytics', pipelineAnalyticsRoutes);  // Pipeline Analytics
 // apiRouter.use('/universal-rules', universalRulesRoutes);  // Universal Rules
 // apiRouter.use('/graph', graphRoutes);  // Graph - relacje między encjami
-// apiRouter.use('/real-vector-search', realVectorSearchRoutes);  // Real Vector Search - semantyczne
+apiRouter.use('/real-vector-search', realVectorSearchRoutes);  // Real Vector Search - semantyczne
 // apiRouter.use('/modern-email', modernEmailRoutes);  // Modern Email - wysyłanie
 // apiRouter.use('/voice', voiceSimpleRoutes);  // Voice TTS - synteza mowy
-// apiRouter.use('/admin/bug-reports', bugReportsRoutes);  // Bug Reports
+apiRouter.use('/admin/bug-reports', bugReportsRoutes);  // Bug Reports
 apiRouter.use('/ai-rules', aiRulesRoutes);  // AI Rules
 // apiRouter.use('/files', filesRoutes);  // Files - zarządzanie plikami
 apiRouter.use('/weekly-review', weeklyReviewRoutes);  // Weekly Review
 apiRouter.use('/weekly-reviews', weeklyReviewRoutes);  // Weekly Review (plural alias)
+apiRouter.use('/stream-hierarchy', streamHierarchyRoutes);  // Stream Hierarchy - hierarchia strumieni
+apiRouter.use('/stream-access', streamAccessRoutes);  // Stream Access - uprawnienia strumieni
 
 // STREAMS Migration - nowe endpointy
 apiRouter.use('/source', sourceRoutes);           // Źródło (ex gtdInbox)
