@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { ExclamationTriangleIcon, PlusIcon, FunnelIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 interface Complaint {
@@ -85,7 +86,10 @@ export default function ComplaintsPage() {
             <p className="text-sm text-gray-600">Zarządzaj reklamacjami i problemami klientów</p>
           </div>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+        <button
+          onClick={() => toast('Moduł reklamacji - wkrótce dostępny', { icon: '🔧' })}
+          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+        >
           <PlusIcon className="h-4 w-4" />
           Nowa reklamacja
         </button>

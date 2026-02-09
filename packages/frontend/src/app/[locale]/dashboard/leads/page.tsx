@@ -1,59 +1,41 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import {
   PlusIcon,
   XMarkIcon,
   MagnifyingGlassIcon,
-  FunnelIcon,
-  EllipsisVerticalIcon,
-  PhoneIcon,
-  EnvelopeIcon,
-  BuildingOfficeIcon,
   UserIcon,
-  CalendarIcon,
   CurrencyDollarIcon,
   ChartBarIcon,
   FireIcon,
-  ClockIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
+  BuildingOfficeIcon,
 } from '@heroicons/react/24/outline';
-
-interface Lead {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  company?: string;
-  position?: string;
-  status: 'NEW' | 'CONTACTED' | 'QUALIFIED' | 'PROPOSAL' | 'NEGOTIATION' | 'CLOSED_WON' | 'CLOSED_LOST';
-  source: 'WEBSITE' | 'REFERRAL' | 'SOCIAL_MEDIA' | 'EMAIL' | 'PHONE' | 'EVENT' | 'OTHER';
-  value?: number;
-  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
-  assignedTo?: string;
-  lastContact?: string;
-  nextAction?: string;
-  nextActionDate?: string;
-  notes?: string;
-  createdAt: string;
-  updatedAt: string;
-  tags: string[];
-}
+import { leadsApi, Lead } from '@/lib/api/leads';
 
 interface NewLead {
-  name: string;
-  email: string;
-  phone: string;
+  title: string;
+  contactPerson: string;
   company: string;
-  position: string;
   source: string;
   value: string;
   priority: string;
-  notes: string;
+  description: string;
 }
+
+const STATUS_COLUMNS = [
+  { id: 'NEW', title: 'Nowe', color: 'border-blue-200' },
+  { id: 'CONTACTED', title: 'Kontakt', color: 'border-purple-200' },
+  { id: 'QUALIFIED', title: 'Kwalifikacja', color: 'border-orange-200' },
+  { id: 'PROPOSAL', title: 'Propozycja', color: 'border-yellow-200' },
+  { id: 'NEGOTIATION', title: 'Negocjacje', color: 'border-indigo-200' },
+  { id: 'WON', title: 'Wygrane', color: 'border-green-200' },
+  { id: 'LOST', title: 'Przegrane', color: 'border-red-200' }
+];
 
 export default function LeadsPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -67,156 +49,41 @@ export default function LeadsPage() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [viewMode, setViewMode] = useState<'kanban' | 'table'>('kanban');
   const [newLead, setNewLead] = useState<NewLead>({
-    name: '',
-    email: '',
-    phone: '',
+    title: '',
+    contactPerson: '',
     company: '',
-    position: '',
     source: 'WEBSITE',
     value: '',
     priority: 'MEDIUM',
-    notes: ''
+    description: ''
   });
 
-  useEffect(() => {
-    loadLeads();
+  const loadLeads = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      const response = await leadsApi.getLeads({ limit: 100 });
+      setLeads(response.leads);
+    } catch (error) {
+      console.error('Error loading leads:', error);
+      toast.error('Nie udało się załadować leadów');
+    } finally {
+      setIsLoading(false);
+    }
   }, []);
 
   useEffect(() => {
-    filterLeads();
-  }, [leads, searchTerm, statusFilter, priorityFilter]);
+    loadLeads();
+  }, [loadLeads]);
 
-  const loadLeads = async () => {
-    setTimeout(() => {
-      const mockLeads: Lead[] = [
-        {
-          id: '1',
-          name: 'Anna Kowalska',
-          email: 'anna.kowalska@example.com',
-          phone: '+48 123 456 789',
-          company: 'Tech Solutions Sp. z o.o.',
-          position: 'CEO',
-          status: 'NEW',
-          source: 'WEBSITE',
-          value: 15000,
-          priority: 'HIGH',
-          assignedTo: 'Jan Nowak',
-          nextAction: 'Initial call',
-          nextActionDate: new Date(Date.now() + 86400000).toISOString(),
-          notes: 'Interested in our enterprise solution',
-          createdAt: new Date(Date.now() - 172800000).toISOString(),
-          updatedAt: new Date(Date.now() - 86400000).toISOString(),
-          tags: ['enterprise', 'software']
-        },
-        {
-          id: '2',
-          name: 'Piotr Wiśniewski',
-          email: 'piotr.wisniewski@company.pl',
-          phone: '+48 987 654 321',
-          company: 'Marketing Pro',
-          position: 'Marketing Director',
-          status: 'CONTACTED',
-          source: 'REFERRAL',
-          value: 8500,
-          priority: 'MEDIUM',
-          assignedTo: 'Maria Kowalczyk',
-          lastContact: new Date(Date.now() - 86400000).toISOString(),
-          nextAction: 'Send proposal',
-          nextActionDate: new Date(Date.now() + 172800000).toISOString(),
-          notes: 'Had positive initial conversation',
-          createdAt: new Date(Date.now() - 432000000).toISOString(),
-          updatedAt: new Date(Date.now() - 86400000).toISOString(),
-          tags: ['marketing', 'mid-size']
-        },
-        {
-          id: '3',
-          name: 'Katarzyna Nowak',
-          email: 'k.nowak@startup.com',
-          company: 'Innovative Startup',
-          position: 'Founder',
-          status: 'QUALIFIED',
-          source: 'SOCIAL_MEDIA',
-          value: 25000,
-          priority: 'URGENT',
-          assignedTo: 'Tomasz Kowal',
-          lastContact: new Date(Date.now() - 172800000).toISOString(),
-          nextAction: 'Product demo',
-          nextActionDate: new Date(Date.now() + 86400000).toISOString(),
-          notes: 'Very interested, budget confirmed',
-          createdAt: new Date(Date.now() - 604800000).toISOString(),
-          updatedAt: new Date(Date.now() - 172800000).toISOString(),
-          tags: ['startup', 'demo']
-        },
-        {
-          id: '4',
-          name: 'Michał Zieliński',
-          email: 'michal@corporation.com',
-          phone: '+48 555 123 456',
-          company: 'Big Corporation',
-          position: 'IT Manager',
-          status: 'PROPOSAL',
-          source: 'EMAIL',
-          value: 45000,
-          priority: 'HIGH',
-          assignedTo: 'Anna Król',
-          lastContact: new Date(Date.now() - 259200000).toISOString(),
-          nextAction: 'Follow up on proposal',
-          nextActionDate: new Date(Date.now() + 259200000).toISOString(),
-          notes: 'Proposal sent, waiting for feedback',
-          createdAt: new Date(Date.now() - 1209600000).toISOString(),
-          updatedAt: new Date(Date.now() - 259200000).toISOString(),
-          tags: ['corporate', 'proposal']
-        },
-        {
-          id: '5',
-          name: 'Agnieszka Krawczyk',
-          email: 'agnieszka@agency.pl',
-          company: 'Creative Agency',
-          status: 'NEGOTIATION',
-          source: 'EVENT',
-          value: 12000,
-          priority: 'MEDIUM',
-          assignedTo: 'Paweł Nowak',
-          lastContact: new Date(Date.now() - 432000000).toISOString(),
-          nextAction: 'Contract negotiations',
-          nextActionDate: new Date(Date.now() + 432000000).toISOString(),
-          notes: 'Price negotiations in progress',
-          createdAt: new Date(Date.now() - 1814400000).toISOString(),
-          updatedAt: new Date(Date.now() - 432000000).toISOString(),
-          tags: ['agency', 'negotiation']
-        },
-        {
-          id: '6',
-          name: 'Robert Król',
-          email: 'robert@consulting.com',
-          company: 'Business Consulting',
-          status: 'CLOSED_WON',
-          source: 'REFERRAL',
-          value: 18500,
-          priority: 'HIGH',
-          assignedTo: 'Ewa Mazur',
-          lastContact: new Date(Date.now() - 86400000).toISOString(),
-          notes: 'Successfully closed deal',
-          createdAt: new Date(Date.now() - 2419200000).toISOString(),
-          updatedAt: new Date(Date.now() - 86400000).toISOString(),
-          tags: ['consulting', 'won']
-        }
-      ];
-
-      setLeads(mockLeads);
-      setIsLoading(false);
-    }, 500);
-  };
-
-  const filterLeads = () => {
+  useEffect(() => {
     let filtered = leads;
 
     if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       filtered = filtered.filter(lead =>
-        lead.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.company?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        lead.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+        lead.title.toLowerCase().includes(term) ||
+        lead.contactPerson?.toLowerCase().includes(term) ||
+        lead.company?.toLowerCase().includes(term)
       );
     }
 
@@ -229,7 +96,7 @@ export default function LeadsPage() {
     }
 
     setFilteredLeads(filtered);
-  };
+  }, [leads, searchTerm, statusFilter, priorityFilter]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -238,8 +105,8 @@ export default function LeadsPage() {
       case 'QUALIFIED': return 'text-orange-600 bg-orange-100';
       case 'PROPOSAL': return 'text-yellow-600 bg-yellow-100';
       case 'NEGOTIATION': return 'text-indigo-600 bg-indigo-100';
-      case 'CLOSED_WON': return 'text-green-600 bg-green-100';
-      case 'CLOSED_LOST': return 'text-red-600 bg-red-100';
+      case 'WON': return 'text-green-600 bg-green-100';
+      case 'LOST': return 'text-red-600 bg-red-100';
       default: return 'text-gray-600 bg-gray-100';
     }
   };
@@ -254,64 +121,62 @@ export default function LeadsPage() {
     }
   };
 
-  const getStatusColumns = () => {
-    return [
-      { id: 'NEW', title: 'Nowe', color: 'border-blue-200' },
-      { id: 'CONTACTED', title: 'Kontakt', color: 'border-purple-200' },
-      { id: 'QUALIFIED', title: 'Kwalifikacja', color: 'border-orange-200' },
-      { id: 'PROPOSAL', title: 'Propozycja', color: 'border-yellow-200' },
-      { id: 'NEGOTIATION', title: 'Negocjacje', color: 'border-indigo-200' },
-      { id: 'CLOSED_WON', title: 'Wygrane', color: 'border-green-200' },
-      { id: 'CLOSED_LOST', title: 'Przegrane', color: 'border-red-200' }
-    ];
-  };
-
-  const handleAddLead = () => {
-    if (!newLead.name.trim() || !newLead.email.trim()) {
-      toast.error('Name and email are required');
+  const handleAddLead = async () => {
+    if (!newLead.title.trim()) {
+      toast.error('Nazwa leada jest wymagana');
       return;
     }
 
-    const lead: Lead = {
-      id: Date.now().toString(),
-      name: newLead.name.trim(),
-      email: newLead.email.trim(),
-      phone: newLead.phone.trim() || undefined,
-      company: newLead.company.trim() || undefined,
-      position: newLead.position.trim() || undefined,
-      status: 'NEW',
-      source: newLead.source as any,
-      value: newLead.value ? parseInt(newLead.value) : undefined,
-      priority: newLead.priority as any,
-      notes: newLead.notes.trim() || undefined,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      tags: []
-    };
+    try {
+      const created = await leadsApi.createLead({
+        title: newLead.title.trim(),
+        contactPerson: newLead.contactPerson.trim() || undefined,
+        company: newLead.company.trim() || undefined,
+        source: newLead.source || undefined,
+        value: newLead.value ? parseFloat(newLead.value) : undefined,
+        priority: newLead.priority,
+        description: newLead.description.trim() || undefined,
+      });
 
-    setLeads(prev => [lead, ...prev]);
-    setNewLead({
-      name: '',
-      email: '',
-      phone: '',
-      company: '',
-      position: '',
-      source: 'WEBSITE',
-      value: '',
-      priority: 'MEDIUM',
-      notes: ''
-    });
-    setShowAddModal(false);
-    toast.success('Lead added successfully!');
+      setLeads(prev => [created, ...prev]);
+      setNewLead({
+        title: '',
+        contactPerson: '',
+        company: '',
+        source: 'WEBSITE',
+        value: '',
+        priority: 'MEDIUM',
+        description: ''
+      });
+      setShowAddModal(false);
+      toast.success('Lead dodany pomyślnie!');
+    } catch (error: any) {
+      console.error('Error creating lead:', error);
+      toast.error('Nie udało się dodać leada');
+    }
   };
 
-  const updateLeadStatus = (leadId: string, newStatus: Lead['status']) => {
-    setLeads(prev => prev.map(lead => 
-      lead.id === leadId 
-        ? { ...lead, status: newStatus, updatedAt: new Date().toISOString() }
-        : lead
-    ));
-    toast.success('Lead status updated');
+  const updateLeadStatus = async (leadId: string, newStatus: string) => {
+    try {
+      const updated = await leadsApi.updateLead(leadId, { status: newStatus });
+      setLeads(prev => prev.map(lead => lead.id === leadId ? updated : lead));
+      toast.success('Status leada zaktualizowany');
+    } catch (error) {
+      console.error('Error updating lead:', error);
+      toast.error('Nie udało się zaktualizować statusu');
+    }
+  };
+
+  const handleDeleteLead = async (leadId: string) => {
+    try {
+      await leadsApi.deleteLead(leadId);
+      setLeads(prev => prev.filter(lead => lead.id !== leadId));
+      setShowDetailsModal(false);
+      toast.success('Lead usunięty');
+    } catch (error) {
+      console.error('Error deleting lead:', error);
+      toast.error('Nie udało się usunąć leada');
+    }
   };
 
   const formatCurrency = (amount?: number) => {
@@ -329,11 +194,11 @@ export default function LeadsPage() {
 
   const getLeadStats = () => {
     const total = leads.length;
-    const won = leads.filter(l => l.status === 'CLOSED_WON').length;
-    const lost = leads.filter(l => l.status === 'CLOSED_LOST').length;
+    const won = leads.filter(l => l.status === 'WON').length;
+    const lost = leads.filter(l => l.status === 'LOST').length;
     const active = total - won - lost;
     const totalValue = leads
-      .filter(l => l.value && l.status === 'CLOSED_WON')
+      .filter(l => l.value && l.status === 'WON')
       .reduce((sum, l) => sum + (l.value || 0), 0);
 
     return { total, won, lost, active, totalValue };
@@ -463,13 +328,9 @@ export default function LeadsPage() {
             className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
           >
             <option value="ALL">Wszystkie statusy</option>
-            <option value="NEW">Nowe</option>
-            <option value="CONTACTED">Kontakt</option>
-            <option value="QUALIFIED">Kwalifikacja</option>
-            <option value="PROPOSAL">Propozycja</option>
-            <option value="NEGOTIATION">Negocjacje</option>
-            <option value="CLOSED_WON">Wygrane</option>
-            <option value="CLOSED_LOST">Przegrane</option>
+            {STATUS_COLUMNS.map(s => (
+              <option key={s.id} value={s.id}>{s.title}</option>
+            ))}
           </select>
 
           <select
@@ -490,7 +351,7 @@ export default function LeadsPage() {
       {viewMode === 'kanban' ? (
         <div className="overflow-x-auto">
           <div className="flex space-x-6 pb-4" style={{ minWidth: '1400px' }}>
-            {getStatusColumns().map(column => (
+            {STATUS_COLUMNS.map(column => (
               <div key={column.id} className="flex-1 min-w-64">
                 <div className={`bg-white rounded-lg border-t-4 ${column.color} shadow-sm`}>
                   <div className="p-4 border-b border-gray-200">
@@ -515,22 +376,26 @@ export default function LeadsPage() {
                           transition={{ duration: 0.2, delay: index * 0.05 }}
                         >
                           <div className="flex items-start justify-between mb-2">
-                            <h4 className="font-medium text-gray-900 text-sm">{lead.name}</h4>
+                            <h4 className="font-medium text-gray-900 text-sm">{lead.title}</h4>
                             <span className={`w-2 h-2 rounded-full ${getPriorityColor(lead.priority)}`}></span>
                           </div>
-                          
-                          <p className="text-xs text-gray-600 mb-1">{lead.company}</p>
-                          <p className="text-xs text-gray-500 mb-2">{lead.email}</p>
-                          
-                          {lead.value && (
+
+                          {lead.company && (
+                            <p className="text-xs text-gray-600 mb-1">{lead.company}</p>
+                          )}
+                          {lead.contactPerson && (
+                            <p className="text-xs text-gray-500 mb-2">{lead.contactPerson}</p>
+                          )}
+
+                          {lead.value != null && lead.value > 0 && (
                             <p className="text-sm font-semibold text-green-600 mb-2">
                               {formatCurrency(lead.value)}
                             </p>
                           )}
-                          
+
                           <div className="flex items-center justify-between text-xs text-gray-500">
                             <span>{formatDate(lead.updatedAt)}</span>
-                            <span>{lead.assignedTo?.split(' ')[0]}</span>
+                            {lead.source && <span>{lead.source}</span>}
                           </div>
                         </motion.div>
                       ))}
@@ -546,27 +411,13 @@ export default function LeadsPage() {
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Lead
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Firma
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Wartość
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Priorytet
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Aktualizacja
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Akcje
-                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Lead</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Firma</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Wartość</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Priorytet</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aktualizacja</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Akcje</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -580,8 +431,10 @@ export default function LeadsPage() {
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
-                        <div className="text-sm font-medium text-gray-900">{lead.name}</div>
-                        <div className="text-sm text-gray-500">{lead.email}</div>
+                        <div className="text-sm font-medium text-gray-900">{lead.title}</div>
+                        {lead.contactPerson && (
+                          <div className="text-sm text-gray-500">{lead.contactPerson}</div>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -589,7 +442,7 @@ export default function LeadsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lead.status)}`}>
-                        {lead.status}
+                        {STATUS_COLUMNS.find(s => s.id === lead.status)?.title || lead.status}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -604,17 +457,15 @@ export default function LeadsPage() {
                       {formatDate(lead.updatedAt)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => {
-                            setSelectedLead(lead);
-                            setShowDetailsModal(true);
-                          }}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          Zobacz
-                        </button>
-                      </div>
+                      <button
+                        onClick={() => {
+                          setSelectedLead(lead);
+                          setShowDetailsModal(true);
+                        }}
+                        className="text-blue-600 hover:text-blue-900"
+                      >
+                        Zobacz
+                      </button>
                     </td>
                   </motion.tr>
                 ))}
@@ -650,45 +501,32 @@ export default function LeadsPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Imię i nazwisko *
+                      Nazwa leada *
                     </label>
                     <input
                       type="text"
-                      value={newLead.name}
-                      onChange={(e) => setNewLead({ ...newLead, name: e.target.value })}
+                      value={newLead.title}
+                      onChange={(e) => setNewLead({ ...newLead, title: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder="Jan Kowalski"
+                      placeholder="Np. Wdrożenie CRM dla klienta X"
                     />
                   </div>
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Email *
+                      Osoba kontaktowa
                     </label>
                     <input
-                      type="email"
-                      value={newLead.email}
-                      onChange={(e) => setNewLead({ ...newLead, email: e.target.value })}
+                      type="text"
+                      value={newLead.contactPerson}
+                      onChange={(e) => setNewLead({ ...newLead, contactPerson: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder="jan@example.com"
+                      placeholder="Jan Kowalski"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Telefon
-                    </label>
-                    <input
-                      type="tel"
-                      value={newLead.phone}
-                      onChange={(e) => setNewLead({ ...newLead, phone: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder="+48 123 456 789"
-                    />
-                  </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Firma
@@ -699,21 +537,6 @@ export default function LeadsPage() {
                       onChange={(e) => setNewLead({ ...newLead, company: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-md"
                       placeholder="Nazwa firmy"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Stanowisko
-                    </label>
-                    <input
-                      type="text"
-                      value={newLead.position}
-                      onChange={(e) => setNewLead({ ...newLead, position: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder="CEO, Manager, itp."
                     />
                   </div>
 
@@ -770,11 +593,11 @@ export default function LeadsPage() {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Notatki
+                    Opis / Notatki
                   </label>
                   <textarea
-                    value={newLead.notes}
-                    onChange={(e) => setNewLead({ ...newLead, notes: e.target.value })}
+                    value={newLead.description}
+                    onChange={(e) => setNewLead({ ...newLead, description: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                     rows={3}
                     placeholder="Dodatkowe informacje o leadzie..."
@@ -792,7 +615,7 @@ export default function LeadsPage() {
                 <button
                   onClick={handleAddLead}
                   className="btn btn-primary flex-1"
-                  disabled={!newLead.name.trim() || !newLead.email.trim()}
+                  disabled={!newLead.title.trim()}
                 >
                   Dodaj Lead
                 </button>
@@ -814,7 +637,7 @@ export default function LeadsPage() {
             >
               <div className="px-6 py-4 border-b border-gray-200">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">{selectedLead.name}</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">{selectedLead.title}</h3>
                   <button
                     onClick={() => setShowDetailsModal(false)}
                     className="text-gray-400 hover:text-gray-600"
@@ -827,16 +650,12 @@ export default function LeadsPage() {
               <div className="p-6 space-y-6">
                 <div className="grid grid-cols-2 gap-6">
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-3">Informacje kontaktowe</h4>
+                    <h4 className="font-medium text-gray-900 mb-3">Informacje</h4>
                     <div className="space-y-2 text-sm">
-                      <div className="flex items-center">
-                        <EnvelopeIcon className="w-4 h-4 text-gray-400 mr-2" />
-                        {selectedLead.email}
-                      </div>
-                      {selectedLead.phone && (
+                      {selectedLead.contactPerson && (
                         <div className="flex items-center">
-                          <PhoneIcon className="w-4 h-4 text-gray-400 mr-2" />
-                          {selectedLead.phone}
+                          <UserIcon className="w-4 h-4 text-gray-400 mr-2" />
+                          {selectedLead.contactPerson}
                         </div>
                       )}
                       {selectedLead.company && (
@@ -844,6 +663,9 @@ export default function LeadsPage() {
                           <BuildingOfficeIcon className="w-4 h-4 text-gray-400 mr-2" />
                           {selectedLead.company}
                         </div>
+                      )}
+                      {selectedLead.source && (
+                        <div className="text-gray-600">Źródło: {selectedLead.source}</div>
                       )}
                     </div>
                   </div>
@@ -853,7 +675,7 @@ export default function LeadsPage() {
                     <div className="space-y-2">
                       <div>
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(selectedLead.status)}`}>
-                          {selectedLead.status}
+                          {STATUS_COLUMNS.find(s => s.id === selectedLead.status)?.title || selectedLead.status}
                         </span>
                       </div>
                       <div>
@@ -865,11 +687,11 @@ export default function LeadsPage() {
                   </div>
                 </div>
 
-                {selectedLead.notes && (
+                {selectedLead.description && (
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Notatki</h4>
+                    <h4 className="font-medium text-gray-900 mb-2">Opis</h4>
                     <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded-lg">
-                      {selectedLead.notes}
+                      {selectedLead.description}
                     </p>
                   </div>
                 )}
@@ -881,22 +703,21 @@ export default function LeadsPage() {
                       {formatCurrency(selectedLead.value)}
                     </p>
                   </div>
-
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Źródło</h4>
-                    <p className="text-sm text-gray-700">{selectedLead.source}</p>
+                    <h4 className="font-medium text-gray-900 mb-2">Utworzono</h4>
+                    <p className="text-sm text-gray-700">{formatDate(selectedLead.createdAt)}</p>
                   </div>
                 </div>
 
                 <div className="border-t border-gray-200 pt-4">
-                  <h4 className="font-medium text-gray-900 mb-3">Akcje</h4>
-                  <div className="flex space-x-2">
-                    {getStatusColumns().map(status => (
+                  <h4 className="font-medium text-gray-900 mb-3">Zmień status</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {STATUS_COLUMNS.map(status => (
                       <button
                         key={status.id}
                         onClick={() => {
-                          updateLeadStatus(selectedLead.id, status.id as any);
-                          setShowDetailsModal(false);
+                          updateLeadStatus(selectedLead.id, status.id);
+                          setSelectedLead({ ...selectedLead, status: status.id as any });
                         }}
                         className={`btn text-xs ${selectedLead.status === status.id ? 'btn-primary' : 'btn-outline'}`}
                         disabled={selectedLead.status === status.id}
@@ -905,6 +726,15 @@ export default function LeadsPage() {
                       </button>
                     ))}
                   </div>
+                </div>
+
+                <div className="border-t border-gray-200 pt-4 flex justify-end">
+                  <button
+                    onClick={() => handleDeleteLead(selectedLead.id)}
+                    className="btn btn-outline text-red-600 border-red-300 hover:bg-red-50 text-sm"
+                  >
+                    Usuń lead
+                  </button>
                 </div>
               </div>
             </motion.div>

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { DocumentDuplicateIcon, PlusIcon, MagnifyingGlassIcon, FolderIcon, StarIcon, ClockIcon } from '@heroicons/react/24/outline';
 import { StarIcon as StarIconSolid } from '@heroicons/react/24/solid';
 
@@ -103,7 +104,10 @@ export default function TemplatesPage() {
             <p className="text-sm text-gray-600">Gotowe wzorce zadań i projektów</p>
           </div>
         </div>
-        <button className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors">
+        <button
+          onClick={() => toast('Tworzenie szablonów - wkrótce dostępne', { icon: '🔧' })}
+          className="flex items-center gap-2 px-4 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 transition-colors"
+        >
           <PlusIcon className="h-4 w-4" />
           Nowy szablon
         </button>
@@ -209,10 +213,16 @@ export default function TemplatesPage() {
                 </div>
               </div>
               <div className="mt-4 pt-4 border-t border-gray-100 flex gap-2">
-                <button className="flex-1 px-3 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm">
+                <button
+                  onClick={(e) => { e.stopPropagation(); toast.success(`Szablon "${template.name}" zastosowany`); }}
+                  className="flex-1 px-3 py-2 bg-violet-600 text-white rounded-lg hover:bg-violet-700 text-sm"
+                >
                   Użyj szablon
                 </button>
-                <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+                <button
+                  onClick={(e) => { e.stopPropagation(); toast('Edycja szablonów - wkrótce dostępne', { icon: '🔧' }); }}
+                  className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
+                >
                   Edytuj
                 </button>
               </div>

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Deal, Company, Contact } from '@/types/crm';
-import { usePipelineStages } from '@/lib/contexts/PipelineStageContext';
 
 interface DealFormProps {
   deal?: Deal;
@@ -13,19 +12,24 @@ interface DealFormProps {
   preSelectedCompanyId?: string;
 }
 
+// Deal stages matching the backend DealStage enum
+const DEAL_STAGES = [
+  { value: 'PROSPECT', label: 'Prospect', probability: 10 },
+  { value: 'QUALIFIED', label: 'Qualified', probability: 25 },
+  { value: 'PROPOSAL', label: 'Proposal', probability: 50 },
+  { value: 'NEGOTIATION', label: 'Negotiation', probability: 75 },
+  { value: 'CLOSED_WON', label: 'Closed Won', probability: 100 },
+  { value: 'CLOSED_LOST', label: 'Closed Lost', probability: 0 },
+];
+
 export default function DealForm({ deal, companies, contacts, onSubmit, onCancel, preSelectedCompanyId }: DealFormProps) {
-  const { stages, openStages } = usePipelineStages();
-
-  // Default to first open stage
-  const defaultStageId = openStages[0]?.id || stages[0]?.id || '';
-
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     value: '',
     currency: 'USD',
-    probability: '',
-    stageId: defaultStageId,
+    probability: '10',
+    stage: 'PROSPECT',
     companyId: preSelectedCompanyId || '',
     ownerId: '',
     expectedCloseDate: '',
@@ -46,7 +50,7 @@ export default function DealForm({ deal, companies, contacts, onSubmit, onCancel
         value: deal.value?.toString() || '',
         currency: deal.currency || 'USD',
         probability: deal.probability?.toString() || '',
-        stageId: deal.stageId || defaultStageId,
+        stage: (deal as any).stage || 'PROSPECT',
         companyId: deal.companyId || '',
         ownerId: deal.ownerId || '',
         expectedCloseDate: deal.expectedCloseDate ? new Date(deal.expectedCloseDate).toISOString().slice(0, 16) : '',
@@ -55,20 +59,20 @@ export default function DealForm({ deal, companies, contacts, onSubmit, onCancel
         notes: deal.notes || ''
       });
     }
-  }, [deal, defaultStageId]);
+  }, [deal]);
 
   // Auto-set probability when stage changes
   useEffect(() => {
-    if (formData.stageId) {
-      const stage = stages.find(s => s.id === formData.stageId);
-      if (stage && !formData.probability) {
+    if (formData.stage) {
+      const stageConfig = DEAL_STAGES.find(s => s.value === formData.stage);
+      if (stageConfig && !deal) {
         setFormData(prev => ({
           ...prev,
-          probability: stage.probability.toString(),
+          probability: stageConfig.probability.toString(),
         }));
       }
     }
-  }, [formData.stageId, stages]);
+  }, [formData.stage, deal]);
 
   const handleChange = (field: string, value: any) => {
     setFormData(prev => ({
@@ -95,8 +99,8 @@ export default function DealForm({ deal, companies, contacts, onSubmit, onCancel
       newErrors.companyId = 'Company is required';
     }
 
-    if (!formData.stageId) {
-      newErrors.stageId = 'Stage is required';
+    if (!formData.stage) {
+      newErrors.stage = 'Stage is required';
     }
 
     if (formData.value && isNaN(Number(formData.value))) {
@@ -124,7 +128,7 @@ export default function DealForm({ deal, companies, contacts, onSubmit, onCancel
         value: formData.value ? Number(formData.value) : undefined,
         currency: formData.currency,
         probability: formData.probability ? Number(formData.probability) : undefined,
-        stageId: formData.stageId,
+        stage: formData.stage,
         companyId: formData.companyId,
         ownerId: formData.ownerId || undefined,
         expectedCloseDate: formData.expectedCloseDate || undefined,
@@ -260,19 +264,19 @@ export default function DealForm({ deal, companies, contacts, onSubmit, onCancel
               Stage *
             </label>
             <select
-              value={formData.stageId}
-              onChange={(e) => handleChange('stageId', e.target.value)}
-              className={`input ${errors.stageId ? 'input-error' : ''}`}
+              value={formData.stage}
+              onChange={(e) => handleChange('stage', e.target.value)}
+              className={`input ${errors.stage ? 'input-error' : ''}`}
             >
               <option value="">Select stage...</option>
-              {stages.map(stage => (
-                <option key={stage.id} value={stage.id}>
-                  {stage.name} ({stage.probability}%)
+              {DEAL_STAGES.map(stage => (
+                <option key={stage.value} value={stage.value}>
+                  {stage.label} ({stage.probability}%)
                 </option>
               ))}
             </select>
-            {errors.stageId && (
-              <p className="mt-1 text-sm text-red-600">{errors.stageId}</p>
+            {errors.stage && (
+              <p className="mt-1 text-sm text-red-600">{errors.stage}</p>
             )}
           </div>
 
