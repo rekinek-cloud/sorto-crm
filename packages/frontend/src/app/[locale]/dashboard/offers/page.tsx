@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Plus, Search, Filter, Download, Eye, Edit, Trash2 } from 'lucide-react';
-import { offersApi, Offer, OfferFilters } from '@/lib/api/offers';
+import { offersApi, Offer, OfferFilters, CreateOfferData, UpdateOfferData } from '@/lib/api/offers';
+import OfferForm from '@/components/offers/OfferForm';
 import { toast } from 'react-hot-toast';
 
 export default function OffersPage() {
@@ -24,6 +25,7 @@ export default function OffersPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [showNewOfferForm, setShowNewOfferForm] = useState(false);
+  const [editingOffer, setEditingOffer] = useState<Offer | undefined>();
 
   useEffect(() => {
     loadOffers();
@@ -82,8 +84,32 @@ export default function OffersPage() {
   };
 
   const handleNewOffer = () => {
+    setEditingOffer(undefined);
     setShowNewOfferForm(true);
-    toast('Formularz tworzenia oferty - funkcjonalność w rozwoju', { icon: '🚧' });
+  };
+
+  const handleEditOffer = (offer: Offer) => {
+    setEditingOffer(offer);
+    setShowNewOfferForm(true);
+  };
+
+  const handleCreateOffer = async (data: CreateOfferData | UpdateOfferData) => {
+    try {
+      if (editingOffer) {
+        await offersApi.updateOffer(editingOffer.id, data as UpdateOfferData);
+        toast.success('Oferta zaktualizowana pomyślnie');
+      } else {
+        await offersApi.createOffer(data as CreateOfferData);
+        toast.success('Oferta utworzona pomyślnie');
+      }
+      setShowNewOfferForm(false);
+      setEditingOffer(undefined);
+      loadOffers();
+    } catch (err: any) {
+      console.error('Error saving offer:', err);
+      toast.error(editingOffer ? 'Błąd aktualizacji oferty' : 'Błąd tworzenia oferty');
+      throw err;
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -266,7 +292,7 @@ export default function OffersPage() {
                       <button className="text-indigo-600 hover:text-indigo-900">
                         <Eye className="w-4 h-4" />
                       </button>
-                      <button className="text-gray-600 hover:text-gray-900">
+                      <button onClick={() => handleEditOffer(offer)} className="text-gray-600 hover:text-gray-900">
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
@@ -330,6 +356,18 @@ export default function OffersPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {showNewOfferForm && (
+        <OfferForm
+          offer={editingOffer}
+          onSubmit={handleCreateOffer}
+          onCancel={() => {
+            setShowNewOfferForm(false);
+            setEditingOffer(undefined);
+          }}
+          isOpen={showNewOfferForm}
+        />
       )}
     </div>
   );

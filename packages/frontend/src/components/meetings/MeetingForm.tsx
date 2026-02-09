@@ -100,10 +100,11 @@ export default function MeetingForm({ meeting, onSubmit, onCancel }: MeetingForm
       return;
     }
 
-    // Prepare data for submission
-    const submitData = {
-      ...formData,
+    // Prepare data for submission - convert datetime-local to ISO strings
+    const submitData: any = {
       title: formData.title.trim(),
+      startTime: new Date(formData.startTime).toISOString(),
+      endTime: new Date(formData.endTime).toISOString(),
       description: formData.description?.trim() || undefined,
       location: meetingType === 'in-person' ? formData.location?.trim() : undefined,
       meetingUrl: meetingType === 'online' ? formData.meetingUrl?.trim() : undefined,
@@ -111,6 +112,11 @@ export default function MeetingForm({ meeting, onSubmit, onCancel }: MeetingForm
       notes: formData.notes?.trim() || undefined,
       contactId: formData.contactId || undefined
     };
+
+    // Only include status when editing
+    if (meeting) {
+      submitData.status = formData.status;
+    }
 
     onSubmit(submitData);
   };

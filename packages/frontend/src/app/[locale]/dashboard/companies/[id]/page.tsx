@@ -6,6 +6,8 @@ import { Company, Contact, Deal } from '@/types/crm';
 import { companiesApi } from '@/lib/api/companies';
 import { contactsApi } from '@/lib/api/contacts';
 import { dealsApi } from '@/lib/api/deals';
+import { projectsApi } from '@/lib/api/projects';
+import { tasksApi } from '@/lib/api/tasks';
 import { toast } from 'react-hot-toast';
 import { GraphModal } from '@/components/graph/GraphModal';
 import ContactForm from '@/components/crm/ContactForm';
@@ -478,7 +480,7 @@ export default function CompanyDetailsPage() {
                         <div>
                           <h4 className="font-medium text-gray-900">
                             <a 
-                              href={`/crm/dashboard/contacts/${contact.id}`}
+                              href={`/dashboard/contacts/${contact.id}`}
                               className="text-gray-900 hover:text-primary-600 transition-colors"
                             >
                               {contact.firstName} {contact.lastName}
@@ -546,7 +548,7 @@ export default function CompanyDetailsPage() {
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-gray-900">
                           <a 
-                            href={`/crm/dashboard/deals/${deal.id}`}
+                            href={`/dashboard/deals/${deal.id}`}
                             className="text-gray-900 hover:text-primary-600 transition-colors"
                           >
                             {deal.title}
@@ -615,7 +617,7 @@ export default function CompanyDetailsPage() {
                         <div className="flex-1">
                           <h4 className="font-medium text-gray-900">
                             <a 
-                              href={`/crm/dashboard/projects/${project.id}`}
+                              href={`/dashboard/projects/${project.id}`}
                               className="text-gray-900 hover:text-primary-600 transition-colors"
                             >
                               {project.name}
@@ -639,7 +641,22 @@ export default function CompanyDetailsPage() {
                   <FolderIcon className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                   <h4 className="text-lg font-medium mb-2">Brak projektów</h4>
                   <p className="mb-4">Nie ma projektów powiązanych z tą firmą</p>
-                  <button className="btn btn-primary">
+                  <button
+                    className="btn btn-primary"
+                    onClick={async () => {
+                      const name = prompt('Nazwa projektu:');
+                      if (!name?.trim()) return;
+                      try {
+                        await projectsApi.createProject({ name: name.trim() });
+                        toast.success('Projekt utworzony');
+                        await loadCompany();
+                      } catch (err: any) {
+                        toast.error('Nie udało się utworzyć projektu');
+                        console.error('Error creating project:', err);
+                      }
+                    }}
+                  >
+                    <PlusIcon className="w-4 h-4 mr-1 inline" />
                     Utwórz pierwszy projekt
                   </button>
                 </div>
@@ -660,7 +677,7 @@ export default function CompanyDetailsPage() {
                         <div className="flex-1">
                           <h4 className="font-medium text-gray-900">
                             <a 
-                              href={`/crm/dashboard/tasks/${task.id}`}
+                              href={`/dashboard/tasks/${task.id}`}
                               className="text-gray-900 hover:text-primary-600 transition-colors"
                             >
                               {task.title}
@@ -687,7 +704,22 @@ export default function CompanyDetailsPage() {
                   <ClockIcon className="w-16 h-16 mx-auto mb-4 text-gray-300" />
                   <h4 className="text-lg font-medium mb-2">Brak zadań</h4>
                   <p className="mb-4">Nie ma zadań powiązanych z tą firmą</p>
-                  <button className="btn btn-primary">
+                  <button
+                    className="btn btn-primary"
+                    onClick={async () => {
+                      const title = prompt('Tytuł zadania:');
+                      if (!title?.trim()) return;
+                      try {
+                        await tasksApi.createTask({ title: title.trim() });
+                        toast.success('Zadanie utworzone');
+                        await loadCompany();
+                      } catch (err: any) {
+                        toast.error('Nie udało się utworzyć zadania');
+                        console.error('Error creating task:', err);
+                      }
+                    }}
+                  >
+                    <PlusIcon className="w-4 h-4 mr-1 inline" />
                     Utwórz pierwsze zadanie
                   </button>
                 </div>

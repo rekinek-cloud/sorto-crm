@@ -6,6 +6,7 @@ import { Contact, Company, Deal } from '@/types/crm';
 import { Task } from '@/types/gtd';
 import { contactsApi } from '@/lib/api/contacts';
 import { dealsApi } from '@/lib/api/deals';
+import { tasksApi } from '@/lib/api/tasks';
 import { toast } from 'react-hot-toast';
 import { GraphModal } from '@/components/graph/GraphModal';
 import ContactForm from '@/components/crm/ContactForm';
@@ -380,7 +381,7 @@ export default function ContactDetailsPage() {
           </div>
         </div>
 
-        {/* Tasks Section - Placeholder */}
+        {/* Tasks Section */}
         <div className="bg-white rounded-lg shadow-sm border">
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
@@ -390,20 +391,47 @@ export default function ContactDetailsPage() {
               </h2>
               <button
                 className="btn btn-sm btn-primary"
-                disabled
+                onClick={async () => {
+                  const title = prompt('Task title:');
+                  if (!title?.trim()) return;
+                  try {
+                    await tasksApi.createTask({ title: title.trim() });
+                    toast.success('Task created');
+                    await loadContact();
+                  } catch (err: any) {
+                    toast.error('Failed to create task');
+                    console.error('Error creating task:', err);
+                  }
+                }}
               >
                 <PlusIcon className="w-4 h-4 mr-1" />
                 Add Task
               </button>
             </div>
           </div>
-          
+
           <div className="p-6">
-            <div className="text-center py-8 text-gray-500">
-              <ClockIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
-              <p>Task management coming soon</p>
-              <p className="text-sm">Track follow-ups and activities</p>
-            </div>
+            {contact.tasks && contact.tasks.length > 0 ? (
+              <div className="space-y-3">
+                {contact.tasks.map((task) => (
+                  <div key={task.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-900">{task.title}</h4>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <span className="text-xs text-gray-500">{task.status}</span>
+                        {task.priority && <span className="text-xs text-gray-500">{task.priority}</span>}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <ClockIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <p>No tasks yet</p>
+                <p className="text-sm">Track follow-ups and activities</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
