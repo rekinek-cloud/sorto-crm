@@ -234,7 +234,7 @@ async function analyzeWithAI(
 const flowEngineCache: Map<string, FlowEngineService> = new Map();
 
 // Helper to get or create FlowEngine instance
-async function getFlowEngine(organizationId: string): Promise<FlowEngineService> {
+export async function getFlowEngine(organizationId: string): Promise<FlowEngineService> {
   let engine = flowEngineCache.get(organizationId);
 
   if (!engine) {
@@ -1598,6 +1598,98 @@ router.post('/feedback', authMiddleware, async (req: Request, res: Response) => 
       success: false,
       error: error.message || 'Failed to record feedback'
     });
+  }
+});
+
+// =============================================================================
+// SETTINGS ENDPOINTS
+// =============================================================================
+
+const DEFAULT_FLOW_SETTINGS = {
+  enabled: false,
+  sourceTypes: {
+    QUICK_CAPTURE: true,
+    MEETING_NOTES: true,
+    PHONE_CALL: true,
+    EMAIL: true,
+    IDEA: true,
+    DOCUMENT: true,
+    BILL_INVOICE: true,
+    ARTICLE: true,
+    VOICE_MEMO: true,
+    PHOTO: true,
+    OTHER: true,
+  },
+  minContentLength: 10,
+  autoExecuteHighConfidence: false,
+};
+
+/**
+ * GET /api/v1/flow/settings
+ * Get auto-analysis settings
+ */
+router.get('/settings', async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user?.organizationId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const org = await prisma.organization.findUnique({
+      where: { id: user.organizationId },
+      select: { settings: true }
+    });
+
+    const flowSettings = (org?.settings as any)?.flowAutoAnalysis || DEFAULT_FLOW_SETTINGS;
+
+    return res.json({ success: true, data: flowSettings });
+  } catch (error: any) {
+    console.error('Get flow settings error:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * PUT /api/v1/flow/settings
+ * Update auto-analysis settings
+ */
+router.put('/settings', async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user?.organizationId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { enabled, sourceTypes, minContentLength, autoExecuteHighConfidence } = req.body;
+
+    const org = await prisma.organization.findUnique({
+      where: { id: user.organizationId },
+      select: { settings: true }
+    });
+
+    const currentSettings = (org?.settings || {}) as any;
+
+    await prisma.organization.update({
+      where: { id: user.organizationId },
+      data: {
+        settings: {
+          ...currentSettings,
+          flowAutoAnalysis: {
+            enabled: enabled ?? false,
+            sourceTypes: sourceTypes ?? DEFAULT_FLOW_SETTINGS.sourceTypes,
+            minContentLength: minContentLength ?? 10,
+            autoExecuteHighConfidence: autoExecuteHighConfidence ?? false,
+          }
+        }
+      }
+    });
+
+    console.log(`📋 Flow auto-analysis settings updated for org ${user.organizationId}: enabled=${enabled}`);
+
+    return res.json({ success: true, message: 'Settings saved' });
+  } catch (error: any) {
+    console.error('Update flow settings error:', error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 
