@@ -711,7 +711,22 @@ export default function SourcePage() {
 
                                         {/* Action buttons - Human-in-the-Loop */}
                                         <div className="flex flex-col gap-2 shrink-0">
-                                            {item.aiAnalysis && item.flowStatus !== 'PROCESSED' ? (() => {
+                                            {['PROCESSED', 'SPLIT', 'FROZEN', 'REFERENCE', 'DELETED'].includes(item.flowStatus || '') ? (
+                                                <span className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center gap-2 ${
+                                                    item.flowStatus === 'PROCESSED' ? 'bg-green-100 text-green-700' :
+                                                    item.flowStatus === 'SPLIT' ? 'bg-purple-100 text-purple-700' :
+                                                    item.flowStatus === 'FROZEN' ? 'bg-cyan-100 text-cyan-700' :
+                                                    item.flowStatus === 'REFERENCE' ? 'bg-gray-100 text-gray-600' :
+                                                    'bg-red-100 text-red-700'
+                                                }`}>
+                                                    <CheckCircleIcon className="w-4 h-4" />
+                                                    {item.flowStatus === 'PROCESSED' ? 'Przetworzony' :
+                                                     item.flowStatus === 'SPLIT' ? 'Podzielony' :
+                                                     item.flowStatus === 'FROZEN' ? 'Zamrożony' :
+                                                     item.flowStatus === 'REFERENCE' ? 'Referencja' :
+                                                     'Usunięty'}
+                                                </span>
+                                            ) : item.aiAnalysis ? (() => {
                                                 const effectiveAction = getEffectiveSuggestedAction(item);
                                                 return (
                                                 <>
@@ -767,12 +782,7 @@ export default function SourcePage() {
                                                     )}
                                                 </>
                                                 );
-                                            })() : item.flowStatus === 'PROCESSED' ? (
-                                                <span className="px-4 py-2 bg-green-100 text-green-700 text-sm font-medium rounded-lg flex items-center gap-2">
-                                                    <CheckCircleIcon className="w-4 h-4" />
-                                                    Przetworzony
-                                                </span>
-                                            ) : (
+                                            })() : (
                                                 <button
                                                     onClick={() => handleProcess(item)}
                                                     className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
@@ -923,16 +933,16 @@ export default function SourcePage() {
                     item={processingItem}
                     streams={streams}
                     correctionMode={correctionMode}
-                    initialAction={correctionMode ? processingItem.suggestedAction as FlowAction : undefined}
-                    initialStreamId={correctionMode ? processingItem.suggestedStreams?.[0]?.streamId : undefined}
+                    initialAction={correctionMode ? (processingItem.suggestedAction || (processingItem.aiAnalysis as any)?.suggestedAction || (processingItem.aiAnalysis as any)?.action) as FlowAction : undefined}
+                    initialStreamId={correctionMode ? (processingItem.suggestedStreams?.[0]?.streamId || (processingItem.aiAnalysis as any)?.suggestedStreams?.[0]?.streamId) : undefined}
                     initialAnalysisData={correctionMode ? {
-                        summary: processingItem.aiAnalysis?.summary,
-                        entities: processingItem.aiAnalysis?.entities,
-                        urgency: processingItem.aiAnalysis?.urgency,
-                        estimatedTime: processingItem.aiAnalysis?.estimatedTime,
-                        confidence: processingItem.aiConfidence,
-                        suggestedAction: processingItem.suggestedAction,
-                        suggestedStreams: processingItem.suggestedStreams,
+                        summary: (processingItem.aiAnalysis as any)?.summary,
+                        entities: (processingItem.aiAnalysis as any)?.entities,
+                        urgency: (processingItem.aiAnalysis as any)?.urgency,
+                        estimatedTime: (processingItem.aiAnalysis as any)?.estimatedTime,
+                        confidence: processingItem.aiConfidence || (processingItem.aiAnalysis as any)?.confidence,
+                        suggestedAction: processingItem.suggestedAction || (processingItem.aiAnalysis as any)?.suggestedAction,
+                        suggestedStreams: processingItem.suggestedStreams || (processingItem.aiAnalysis as any)?.suggestedStreams,
                     } : undefined}
                     onClose={() => {
                         setShowConversationModal(false);
