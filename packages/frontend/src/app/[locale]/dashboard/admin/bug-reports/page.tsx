@@ -286,7 +286,7 @@ export default function AdminBugReportsPage() {
                         {statusLabels[bug.status]}
                       </span>
                       <span className="text-xs text-gray-500">
-                        Zgłoszone przez: {bug.reporter.firstName} {bug.reporter.lastName}
+                        Zgłoszone przez: {bug.reporter?.firstName} {bug.reporter?.lastName}
                       </span>
                       <span className="text-xs text-gray-500">
                         {new Date(bug.createdAt).toLocaleDateString()}
@@ -361,8 +361,8 @@ export default function AdminBugReportsPage() {
                       <div className="grid grid-cols-2 gap-4 text-sm">
                         <div>
                           <span className="font-medium">Zgłoszone przez:</span>
-                          <p>{selectedBug.reporter.firstName} {selectedBug.reporter.lastName}</p>
-                          <p className="text-gray-600">{selectedBug.reporter.email}</p>
+                          <p>{selectedBug.reporter?.firstName} {selectedBug.reporter?.lastName}</p>
+                          <p className="text-gray-600">{selectedBug.reporter?.email}</p>
                         </div>
                         <div>
                           <span className="font-medium">Data zgłoszenia:</span>

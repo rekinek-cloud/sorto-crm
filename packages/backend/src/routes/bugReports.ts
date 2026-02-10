@@ -1,9 +1,15 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken as requireAuth, AuthenticatedRequest } from '../shared/middleware/auth';
 
 const router = express.Router();
-const prisma = new PrismaClient();
+
+// Transform Prisma's 'users' relation to 'reporter' for frontend compatibility
+function formatBugReport(bug: any) {
+  if (!bug) return bug;
+  const { users, ...rest } = bug;
+  return { ...rest, reporter: users };
+}
 
 interface BugReportData {
   title: string;
@@ -53,7 +59,7 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
       }
     });
 
-    res.status(201).json(bugReport);
+    res.status(201).json(formatBugReport(bugReport));
   } catch (error) {
     console.error('Failed to create bug report:', error);
     res.status(500).json({ error: 'Failed to create bug report' });
@@ -95,7 +101,7 @@ router.get('/', requireAuth, async (req, res) => {
     const total = await prisma.bug_reports.count({ where });
 
     res.json({
-      bugReports,
+      bugReports: bugReports.map(formatBugReport),
       total,
       hasMore: total > parseInt(offset as string) + bugReports.length
     });
@@ -238,7 +244,7 @@ router.get('/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Bug report not found' });
     }
 
-    res.json(bugReport);
+    res.json(formatBugReport(bugReport));
   } catch (error) {
     console.error('Failed to fetch bug report:', error);
     res.status(500).json({ error: 'Failed to fetch bug report' });
@@ -273,7 +279,7 @@ router.patch('/:id/status', requireAuth, async (req, res) => {
       }
     });
 
-    res.json(bugReport);
+    res.json(formatBugReport(bugReport));
   } catch (error) {
     console.error('Failed to update bug report:', error);
     if ((error as any).code === 'P2025') {
