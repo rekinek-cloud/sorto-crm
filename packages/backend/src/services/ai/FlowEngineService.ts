@@ -28,6 +28,7 @@ import { PrismaClient, FlowAction, FlowElementType, FlowProcessingStatus, Proces
 import { AIRouter } from './AIRouter';
 import { AIRequest, AIResponse } from './providers/BaseProvider';
 import { VectorService } from '../VectorService';
+import { FlowRAGService, FlowRAGContext } from './FlowRAGService';
 
 // =============================================================================
 // INTERFACES
@@ -115,12 +116,14 @@ export class FlowEngineService {
   private prisma: PrismaClient;
   private aiRouter: AIRouter | null = null;
   private vectorService: VectorService | null = null;
+  private ragService: FlowRAGService;
   private organizationId: string;
   private streamsIndexed: boolean = false;
 
   constructor(prisma: PrismaClient, organizationId: string) {
     this.prisma = prisma;
     this.organizationId = organizationId;
+    this.ragService = new FlowRAGService(prisma);
   }
 
   /**
@@ -215,8 +218,21 @@ export class FlowEngineService {
         data: { flowStatus: 'ANALYZING' }
       });
 
+      // 2.5 Build RAG context for organizational awareness
+      let ragContext: FlowRAGContext | null = null;
+      try {
+        ragContext = await this.ragService.buildContext(context.organizationId, inboxItem);
+        console.log(`📚 RAG context built in ${ragContext.buildTimeMs}ms: ` +
+          `${ragContext.matchedContacts.length} contacts, ` +
+          `${ragContext.matchedCompanies.length} companies, ` +
+          `${ragContext.activeStreams.length} streams, ` +
+          `${ragContext.historyMatches.length} history`);
+      } catch (error) {
+        console.warn('⚠️ RAG context failed, continuing without:', error);
+      }
+
       // 3. WARSTWA 1: Analiza tresci przez AI
-      const contentAnalysis = await this.analyzeContent(inboxItem);
+      const contentAnalysis = await this.analyzeContent(inboxItem, ragContext);
 
       // 4. Sprawdz czy wymaga podzialu (VOICE, IMAGE_WHITEBOARD)
       if (contentAnalysis.splitRequired && contentAnalysis.splitSuggestions) {
@@ -261,7 +277,8 @@ export class FlowEngineService {
         contentAnalysis,
         streamMatches,
         ruleMatch,
-        learnedPattern
+        learnedPattern,
+        ragContext
       );
 
       // 9. Zapisz wyniki analizy
@@ -345,7 +362,7 @@ export class FlowEngineService {
   // WARSTWA 1: ANALIZA TRESCI (Content Analysis)
   // ===========================================================================
 
-  private async analyzeContent(inboxItem: any): Promise<ContentAnalysis> {
+  private async analyzeContent(inboxItem: any, ragContext?: FlowRAGContext | null): Promise<ContentAnalysis> {
     const content = inboxItem.rawContent || inboxItem.content;
 
     // Okresl typ elementu na podstawie sourceType lub analizy
@@ -354,7 +371,7 @@ export class FlowEngineService {
     // Jesli mamy AI Router - uzyj AI do analizy
     if (this.aiRouter) {
       try {
-        const aiAnalysis = await this.performAIAnalysis(content, elementType);
+        const aiAnalysis = await this.performAIAnalysis(content, elementType, ragContext);
         return aiAnalysis;
       } catch (error) {
         console.warn('AI analysis failed, using fallback:', error);
@@ -380,7 +397,7 @@ export class FlowEngineService {
     return sourceTypeMap[inboxItem.sourceType] || 'OTHER';
   }
 
-  private async performAIAnalysis(content: string, elementType: FlowElementType): Promise<ContentAnalysis> {
+  private async performAIAnalysis(content: string, elementType: FlowElementType, ragContext?: FlowRAGContext | null): Promise<ContentAnalysis> {
     const prompt = this.buildAnalysisPrompt(content, elementType);
 
     // Pobierz prompt V3 z bazy danych
@@ -411,7 +428,20 @@ Twoje zadanie:
 3. Ocenić pilność i wykonalność
 4. Zaproponować akcję
 
+Jeśli podano KONTEKST ORGANIZACYJNY (RAG), wykorzystaj go:
+- Użyj ID rozpoznanych kontaktów i firm w entities
+- Kieruj element do strumienia zgodnego z historią podobnych elementów
+- Zwiększ confidence gdy kontekst potwierdza sugestię
+
 Odpowiedz w formacie JSON.`;
+    }
+
+    // Inject RAG context into system prompt
+    if (ragContext) {
+      const ragText = this.ragService.formatContextForPrompt(ragContext);
+      if (ragText) {
+        systemPromptContent += ragText;
+      }
     }
 
     const request: AIRequest = {
@@ -887,9 +917,10 @@ Odpowiedz w formacie JSON:
     analysis: ContentAnalysis,
     streamMatches: StreamMatch[],
     ruleMatch: any | null,
-    learnedPattern: any | null
+    learnedPattern: any | null,
+    ragContext?: FlowRAGContext | null
   ): Promise<ActionSuggestion> {
-    // 1. Jesli jest regula uzytkownika - uzyj jej
+    // 1. Jesli jest regula uzytkownika - uzyj jej (bez RAG boost - pewnosc reguly)
     if (ruleMatch) {
       return {
         action: ruleMatch.action as FlowAction,
@@ -904,7 +935,7 @@ Odpowiedz w formacie JSON:
     if (learnedPattern && learnedPattern.confidence >= 0.8) {
       return {
         action: learnedPattern.learnedAction as FlowAction,
-        confidence: learnedPattern.confidence,
+        confidence: Math.min(learnedPattern.confidence + this.calcRAGBoost(ragContext), 0.98),
         reasoning: `Nauczony wzorzec (${learnedPattern.occurrences} wystapien)`,
         targetStreamId: learnedPattern.learnedStreamId
       };
@@ -912,82 +943,110 @@ Odpowiedz w formacie JSON:
 
     // 3. Okresl na podstawie analizy
     const topStream = streamMatches[0];
+    let result: ActionSuggestion;
 
     // Logika STREAMS (metafora wodna: element płynie do właściwego strumienia)
     if (analysis.actionability === 'trash') {
-      return {
+      result = {
         action: 'USUN',
         confidence: 0.85,
         reasoning: 'Element nieistotny lub spam'
       };
-    }
-
-    if (analysis.actionability === 'reference') {
-      return {
+    } else if (analysis.actionability === 'reference') {
+      result = {
         action: 'REFERENCJA',
         confidence: 0.8,
         reasoning: 'Material referencyjny do przechowania',
         targetStreamId: topStream?.streamId
       };
-    }
-
-    // Actionable items
-    if (analysis.urgency === 'high' && analysis.estimatedTime) {
-      const minutes = this.parseTimeToMinutes(analysis.estimatedTime);
-
-      // < 2 minuty = ZROB TERAZ
-      if (minutes <= 2) {
-        return {
-          action: 'ZROB_TERAZ',
-          confidence: 0.9,
-          reasoning: `Szybkie zadanie (${analysis.estimatedTime}), pilne - zrob od razu`,
+    } else if (analysis.urgency === 'high' && analysis.estimatedTime && this.parseTimeToMinutes(analysis.estimatedTime) <= 2) {
+      result = {
+        action: 'ZROB_TERAZ',
+        confidence: 0.9,
+        reasoning: `Szybkie zadanie (${analysis.estimatedTime}), pilne - zrob od razu`,
+        targetStreamId: topStream?.streamId,
+        suggestedTitle: analysis.summary
+      };
+    } else {
+      // Jesli ma deadline - ZAPLANUJ
+      const deadlineEntity = analysis.entities.find(e => e.type === 'deadline' || e.type === 'date');
+      if (deadlineEntity) {
+        result = {
+          action: 'ZAPLANUJ',
+          confidence: 0.8,
+          reasoning: `Znaleziono termin: ${deadlineEntity.value}`,
+          targetStreamId: topStream?.streamId,
+          suggestedTitle: analysis.summary,
+          suggestedDueDate: this.parseDate(deadlineEntity.value)
+        };
+      } else if (analysis.entities.some(e => e.type === 'project')) {
+        result = {
+          action: 'PROJEKT',
+          confidence: 0.75,
+          reasoning: 'Wymaga wiecej niz jednej akcji',
+          targetStreamId: topStream?.streamId,
+          suggestedTitle: analysis.summary
+        };
+      } else if (analysis.urgency === 'low') {
+        result = {
+          action: 'KIEDYS_MOZE',
+          confidence: 0.6,
+          reasoning: 'Niska pilnosc, do rozwa zenia pozniej',
+          targetStreamId: topStream?.streamId
+        };
+      } else {
+        result = {
+          action: 'ZAPLANUJ',
+          confidence: 0.7,
+          reasoning: 'Zadanie do zaplanowania',
           targetStreamId: topStream?.streamId,
           suggestedTitle: analysis.summary
         };
       }
     }
 
-    // Jesli ma deadline - ZAPLANUJ
-    const deadlineEntity = analysis.entities.find(e => e.type === 'deadline' || e.type === 'date');
-    if (deadlineEntity) {
-      return {
-        action: 'ZAPLANUJ',
-        confidence: 0.8,
-        reasoning: `Znaleziono termin: ${deadlineEntity.value}`,
-        targetStreamId: topStream?.streamId,
-        suggestedTitle: analysis.summary,
-        suggestedDueDate: this.parseDate(deadlineEntity.value)
-      };
+    // 4. RAG confidence boost
+    const ragBoost = this.calcRAGBoost(ragContext);
+    if (ragBoost > 0) {
+      result.confidence = Math.min(result.confidence + ragBoost, 0.98);
+      result.reasoning += ` [RAG +${Math.round(ragBoost * 100)}%]`;
     }
 
-    // Jesli to czesc wiekszego zadania - PROJEKT
-    if (analysis.entities.some(e => e.type === 'project')) {
-      return {
-        action: 'PROJEKT',
-        confidence: 0.75,
-        reasoning: 'Wymaga wiecej niz jednej akcji',
-        targetStreamId: topStream?.streamId,
-        suggestedTitle: analysis.summary
-      };
+    return result;
+  }
+
+  /**
+   * Calculate confidence boost from RAG context.
+   * +0.05 if contacts/companies recognized
+   * +0.05 per history match (max +0.15)
+   * +0.05 if history unanimously points to same stream
+   */
+  private calcRAGBoost(ragContext?: FlowRAGContext | null): number {
+    if (!ragContext) return 0;
+
+    let boost = 0;
+
+    // Boost for recognized entities
+    if (ragContext.matchedContacts.length > 0 || ragContext.matchedCompanies.length > 0) {
+      boost += 0.05;
     }
 
-    // Domyslnie - KIEDYS/MOZE lub ZAPLANUJ
-    if (analysis.urgency === 'low') {
-      return {
-        action: 'KIEDYS_MOZE',
-        confidence: 0.6,
-        reasoning: 'Niska pilnosc, do rozwa zenia pozniej',
-        targetStreamId: topStream?.streamId
-      };
+    // Boost per history match (max +0.15)
+    const historyBoost = Math.min(ragContext.historyMatches.length * 0.05, 0.15);
+    boost += historyBoost;
+
+    // Boost if history unanimously points to same stream
+    if (ragContext.historyMatches.length >= 2) {
+      const streamIds = ragContext.historyMatches
+        .map(h => h.streamId)
+        .filter(Boolean);
+      const uniqueStreams = new Set(streamIds);
+      if (uniqueStreams.size === 1 && streamIds.length >= 2) {
+        boost += 0.05;
+      }
     }
 
-    return {
-      action: 'ZAPLANUJ',
-      confidence: 0.7,
-      reasoning: 'Zadanie do zaplanowania',
-      targetStreamId: topStream?.streamId,
-      suggestedTitle: analysis.summary
-    };
+    return boost;
   }
 
   private parseTimeToMinutes(timeStr: string): number {

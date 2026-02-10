@@ -20,6 +20,7 @@ import { Router, Request, Response } from 'express';
 import { FlowAction } from '@prisma/client';
 import { prisma } from '../config/database';
 import { FlowEngineService, createFlowEngine } from '../services/ai/FlowEngineService';
+import { FlowRAGService } from '../services/ai/FlowRAGService';
 import { authenticateToken as authMiddleware, AuthenticatedRequest } from '../shared/middleware/auth';
 import { AIRouter } from '../services/ai/AIRouter';
 
@@ -109,7 +110,8 @@ async function analyzeWithAI(
   streams: Array<{ id: string; name: string; description: string | null }>,
   contacts?: Array<{ id: string; firstName: string; lastName: string; email?: string }>,
   companies?: Array<{ id: string; name: string }>,
-  projects?: Array<{ id: string; name: string; streamId: string }>
+  projects?: Array<{ id: string; name: string; streamId: string }>,
+  ragContextText?: string
 ): Promise<AIAnalysisResult> {
   const aiRouter = await getAIRouter(organizationId);
 
@@ -145,6 +147,11 @@ async function analyzeWithAI(
 
     userPromptTemplate = promptTemplate.userPromptTemplate || 'Przeanalizuj ten element:\n\n{{content}}';
     console.log('✅ Używam promptu SOURCE_ANALYZE z bazy danych');
+
+    // Inject RAG context into system prompt if available
+    if (ragContextText) {
+      systemPrompt += ragContextText;
+    }
   } catch (error: any) {
     // Przekaż błąd dalej - nie generuj fałszywych danych
     console.error('❌ Flow analyzeWithAI error:', error.message);
@@ -469,41 +476,43 @@ router.get('/suggest/:id', async (req: Request, res: Response) => {
       });
     }
 
-    // Get available streams for matching
-    const streams = await prisma.stream.findMany({
-      where: {
-        organizationId: user.organizationId,
-        status: 'ACTIVE'
-      },
-      select: { id: true, name: true, description: true }
-    });
+    // Build RAG context (targeted entity matching by email/domain)
+    const ragService = new FlowRAGService(prisma);
+    const [ragContext, streams, projects] = await Promise.all([
+      ragService.buildContext(user.organizationId, {
+        id: item.id,
+        content: item.content || '',
+        rawContent: (item as any).rawContent || null,
+        source: (item as any).source || undefined,
+        sourceType: (item as any).sourceType || undefined
+      }),
+      prisma.stream.findMany({
+        where: { organizationId: user.organizationId, status: 'ACTIVE' },
+        select: { id: true, name: true, description: true }
+      }),
+      prisma.project.findMany({
+        where: {
+          organizationId: user.organizationId,
+          status: { in: ['PLANNING', 'IN_PROGRESS'] }
+        },
+        select: { id: true, name: true, streamId: true },
+        orderBy: { updatedAt: 'desc' },
+        take: 15
+      })
+    ]);
 
-    // Get contacts for entity matching (limit to 20 most recent)
-    const contacts = await prisma.contact.findMany({
-      where: { organizationId: user.organizationId },
-      select: { id: true, firstName: true, lastName: true, email: true },
-      orderBy: { updatedAt: 'desc' },
-      take: 20
-    });
+    const ragContextText = ragService.formatContextForPrompt(ragContext);
+    console.log(`📚 suggest/:id RAG context built in ${ragContext.buildTimeMs}ms: ` +
+      `${ragContext.matchedContacts.length} contacts, ` +
+      `${ragContext.matchedCompanies.length} companies`);
 
-    // Get companies for entity matching (limit to 20 most recent)
-    const companies = await prisma.company.findMany({
-      where: { organizationId: user.organizationId },
-      select: { id: true, name: true },
-      orderBy: { updatedAt: 'desc' },
-      take: 20
-    });
-
-    // Get projects for matching (limit to 15 active)
-    const projects = await prisma.project.findMany({
-      where: {
-        organizationId: user.organizationId,
-        status: { in: ['PLANNING', 'IN_PROGRESS'] }
-      },
-      select: { id: true, name: true, streamId: true },
-      orderBy: { updatedAt: 'desc' },
-      take: 15
-    });
+    // Convert RAG contacts/companies to format expected by analyzeWithAI template placeholders
+    const contacts = ragContext.matchedContacts.length > 0
+      ? ragContext.matchedContacts.map(c => ({ id: c.id, firstName: c.firstName, lastName: c.lastName, email: c.email || undefined }))
+      : undefined;
+    const companies = ragContext.matchedCompanies.length > 0
+      ? ragContext.matchedCompanies.map(c => ({ id: c.id, name: c.name }))
+      : undefined;
 
     const content = `${item.content || ''}\n${item.note || ''}`.trim();
     let aiResult: AIAnalysisResult | null = null;
@@ -516,7 +525,8 @@ router.get('/suggest/:id', async (req: Request, res: Response) => {
         streams,
         contacts,
         companies,
-        projects
+        projects,
+        ragContextText
       );
       console.log('✅ AI FULL analysis successful:', JSON.stringify(aiResult, null, 2));
       // NOTE: Nie zapisujemy cache - zapis następuje dopiero przy akceptacji przez użytkownika (confirm)
