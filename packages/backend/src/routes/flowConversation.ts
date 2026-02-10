@@ -250,9 +250,74 @@ router.post('/start/:itemId', async (req: Request, res: Response) => {
       console.error('Failed to parse AI response:', e);
     }
 
-    // Parsuj nowy format z actionOptions (sample_ai.md)
-    const actionOptions = aiResult.actionOptions || [];
-    const streamMatching = aiResult.streamMatching || {};
+    // Parsuj format z actionOptions (sample_ai.md) - lub transformuj stary format
+    let actionOptions = aiResult.actionOptions || [];
+    let streamMatching = aiResult.streamMatching || {};
+
+    // =========================================================================
+    // TRANSFORM: Jeśli AI zwróciło stary format (suggestedAction zamiast actionOptions),
+    // przekształć na nowy format z actionOptions
+    // =========================================================================
+    if (actionOptions.length === 0 && aiResult.suggestedAction) {
+      console.log('🔄 AI zwróciło stary format - transformuję na actionOptions');
+      const actionLabels: Record<string, string> = {
+        'ZROB_TERAZ': '⚡ Zrób Teraz',
+        'ZAPLANUJ': '📅 Zaplanuj',
+        'PROJEKT': '📋 Projekt',
+        'KIEDYS_MOZE': '❄️ Kiedyś/Może',
+        'REFERENCJA': '📁 Referencja',
+        'USUN': '🗑️ Usuń',
+      };
+      const allActions = ['ZROB_TERAZ', 'ZAPLANUJ', 'PROJEKT', 'KIEDYS_MOZE', 'REFERENCJA', 'USUN'];
+      actionOptions = allActions.map(action => ({
+        action,
+        label: actionLabels[action] || action,
+        isDefault: action === aiResult.suggestedAction,
+        suggestedTasks: action === aiResult.suggestedAction ? (aiResult.firstSteps || aiResult.tasks || []) : [],
+        suggestedTags: action === aiResult.suggestedAction ? (aiResult.tags || []) : [],
+      }));
+    }
+
+    // TRANSFORM: Jeśli AI zwróciło suggestedStreamId/suggestedStreamName zamiast streamMatching
+    if ((!streamMatching.matches || streamMatching.matches.length === 0) &&
+        (aiResult.suggestedStreamId || aiResult.suggestedStreamName)) {
+      console.log('🔄 AI zwróciło stary format stream - transformuję na streamMatching');
+      // Dopasuj stream po ID lub nazwie
+      const matchedStream = streams.find(s =>
+        s.id === aiResult.suggestedStreamId ||
+        s.name.toLowerCase() === (aiResult.suggestedStreamName || '').toLowerCase()
+      );
+
+      streamMatching = {
+        matches: streams.map(s => ({
+          streamId: s.id,
+          streamName: s.name,
+          confidence: matchedStream && s.id === matchedStream.id ? Math.min(aiResult.confidence || 70, 95) : 30,
+        })),
+        bestMatch: matchedStream ? {
+          streamId: matchedStream.id,
+          streamName: matchedStream.name,
+          confidence: Math.min(aiResult.confidence || 70, 95),
+        } : undefined,
+      };
+    }
+
+    // TRANSFORM: Buduj obiekt analysis ze starych pól jeśli brak
+    if (!aiResult.analysis && (aiResult.urgency || aiResult.complexity || aiResult.ideaType)) {
+      aiResult.analysis = {
+        urgency: aiResult.urgency,
+        ideaType: aiResult.ideaType || aiResult.elementType,
+        complexity: aiResult.complexity,
+        timeHorizon: aiResult.timeHorizon,
+      };
+    }
+
+    // TRANSFORM: Buduj summary ze starych pól jeśli brak
+    if (!aiResult.summary && aiResult.reasoning) {
+      aiResult.summary = typeof aiResult.reasoning === 'string'
+        ? aiResult.reasoning
+        : Array.isArray(aiResult.reasoning) ? aiResult.reasoning.join('. ') : undefined;
+    }
 
     // Znajdz domyslna akcje (isDefault: true) lub pierwsza
     const defaultOption = actionOptions.find((opt: any) => opt.isDefault) || actionOptions[0] || {};
