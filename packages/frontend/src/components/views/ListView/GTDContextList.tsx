@@ -217,10 +217,10 @@ export const GTDContextList: React.FC<GTDContextListProps> = ({
       {/* Header */}
       <div className="mb-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">
-          Konteksty GTD
+          Konteksty
         </h2>
         <p className="text-gray-600 mb-4">
-          Zadania pogrupowane według kontekstów metodologii Getting Things Done
+          Zadania pogrupowane wedlug kontekstow
         </p>
         
         {/* Summary */}
@@ -290,7 +290,7 @@ export const GTDContextList: React.FC<GTDContextListProps> = ({
       {/* GTD Tips */}
       <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h4 className="font-semibold text-blue-900 mb-2">
-          💡 Wskazówki GTD
+          💡 Wskazówki
         </h4>
         <ul className="text-sm text-blue-800 space-y-1">
           <li>• Grupuj podobne zadania (np. wszystkie @calls razem)</li>

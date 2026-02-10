@@ -65,7 +65,7 @@ const WELCOME_MESSAGE: ChatMessage = {
 Jestem Twoim asystentem STREAMS. Mogę pomóc z:
 • 📊 Analiza danych CRM (deale, kontakty, firmy)
 • ✅ Zarządzanie zadaniami i projektami
-• 🌊 Przegląd strumieni GTD
+• 🌊 Przegląd strumieni
 • 📈 Raporty i statystyki
 • 🔍 Wyszukiwanie informacji
 

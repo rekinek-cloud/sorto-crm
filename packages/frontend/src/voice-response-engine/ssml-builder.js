@@ -129,7 +129,7 @@ class SSMLBuilder {
 
         this.pronunciationRules.set('acronyms', {
             'CRM': '<say-as interpret-as="characters">C R M</say-as>',
-            'GTD': '<say-as interpret-as="characters">G T D</say-as>',
+            'STREAMS': 'STREAMS',
             'API': '<say-as interpret-as="characters">A P I</say-as>',
             'CEO': '<say-as interpret-as="characters">C E O</say-as>',
             'IT': '<say-as interpret-as="characters">I T</say-as>',

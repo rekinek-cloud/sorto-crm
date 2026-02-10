@@ -1,5 +1,5 @@
 /**
- * API Client for CRM-GTD Smart Nest Hub Integration
+ * API Client for Sorto CRM Nest Hub Integration
  * Handles data fetching with caching and offline support
  */
 

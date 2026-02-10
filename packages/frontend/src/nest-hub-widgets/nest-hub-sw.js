@@ -179,7 +179,7 @@ async function handleAppShellRequest(request) {
                 <!DOCTYPE html>
                 <html>
                 <head>
-                    <title>CRM-GTD Nest Hub - Offline</title>
+                    <title>Sorto CRM Nest Hub - Offline</title>
                     <meta charset="UTF-8">
                     <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <style>
@@ -197,7 +197,7 @@ async function handleAppShellRequest(request) {
                     </style>
                 </head>
                 <body>
-                    <h1>CRM-GTD Smart</h1>
+                    <h1>Sorto CRM</h1>
                     <div class="offline-message">
                         <p>Brak połączenia z internetem</p>
                         <p>Sprawdź połączenie i spróbuj ponownie</p>

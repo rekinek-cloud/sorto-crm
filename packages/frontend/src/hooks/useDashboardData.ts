@@ -81,7 +81,7 @@ const WELCOME_MESSAGE: ChatMessage = {
 Zapytaj mnie o:
 • Twoje zadania i projekty
 • Deale i kontakty w CRM
-• Strumienie GTD
+• Strumienie
 • Statystyki i raporty
 
 **Jak mogę Ci pomóc?**`,

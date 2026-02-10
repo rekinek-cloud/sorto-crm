@@ -281,7 +281,7 @@ export default function IndustriesPage() {
               {/* Streams */}
               {selectedTemplate.streams && selectedTemplate.streams.length > 0 && (
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-3">Streamy GTD</h3>
+                  <h3 className="font-semibold text-gray-900 mb-3">Streamy</h3>
                   <div className="grid grid-cols-2 gap-2">
                     {selectedTemplate.streams.map((stream, i) => (
                       <div

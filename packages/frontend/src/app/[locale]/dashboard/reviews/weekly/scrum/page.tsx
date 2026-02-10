@@ -89,7 +89,7 @@ const REVIEW_COLUMNS: ReviewColumn[] = [
     bgColor: '#FFFBEB',
     icon: '⚡',
     gtdPhase: 'ENGAGE',
-    maxItems: 3, // GTD principle: focus on few items
+    maxItems: 3, // STREAMS principle: focus on few items
   },
   {
     id: 'REVIEW',
@@ -615,11 +615,11 @@ export default function WeeklyReviewScrumPage() {
     const newStatus = over.id as WeeklyReviewSprintItem['status'];
     const targetColumn = REVIEW_COLUMNS.find(col => col.id === newStatus);
     
-    // Check constraints for focused work (GTD principle)
+    // Check constraints for focused work (STREAMS principle)
     if (targetColumn?.maxItems) {
       const itemsInColumn = reviewItems.filter(item => item.status === newStatus);
       if (itemsInColumn.length >= targetColumn.maxItems && activeItem.status !== newStatus) {
-        toast.error(`Focus limit reached for ${targetColumn.title} (max ${targetColumn.maxItems} - GTD principle)`);
+        toast.error(`Focus limit reached for ${targetColumn.title} (max ${targetColumn.maxItems} - STREAMS principle)`);
         return;
       }
     }
@@ -981,7 +981,7 @@ export default function WeeklyReviewScrumPage() {
         </div>
       </div>
 
-      {/* GTD Phases Overview */}
+      {/* Workflow Phases Overview */}
       <div className="bg-white rounded-lg shadow p-4">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Fazy Workflow</h3>
         <div className="grid grid-cols-5 gap-4">
@@ -1039,7 +1039,7 @@ export default function WeeklyReviewScrumPage() {
                   <p className="text-xs text-gray-600">{column.description}</p>
                   {column.gtdPhase && (
                     <p className="text-xs text-gray-500 mt-1">
-                      GTD: {column.gtdPhase}
+                      Faza: {column.gtdPhase}
                     </p>
                   )}
                   {column.maxItems && (
@@ -1134,7 +1134,7 @@ export default function WeeklyReviewScrumPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    GTD Category
+                    Kategoria
                   </label>
                   <select
                     value={newItem.gtdCategory}

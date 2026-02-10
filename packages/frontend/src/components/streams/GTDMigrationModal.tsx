@@ -272,10 +272,10 @@ const GTDMigrationModal: React.FC<GTDMigrationModalProps> = ({
         <div className="border-b p-6 flex justify-between items-center">
           <div>
             <h2 className="text-xl font-semibold text-gray-900">
-              Migracja do GTD - {stream.name}
+              Migracja streamu - {stream.name}
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              Przekształć stream w element systemu Getting Things Done
+              Przekształć stream w element systemu STREAMS
             </p>
           </div>
           <button
@@ -363,7 +363,7 @@ const GTDMigrationModal: React.FC<GTDMigrationModalProps> = ({
           <div className="space-y-6">
             <div>
               <h3 className="text-lg font-medium text-gray-900 mb-4">
-                Wybierz rolę GTD *
+                Wybierz rolę streamu *
               </h3>
               <div className="grid grid-cols-2 gap-3">
                 {GTD_ROLES.map(role => (
@@ -455,9 +455,9 @@ const GTDMigrationModal: React.FC<GTDMigrationModalProps> = ({
                 <div className="text-sm">
                   <div className="font-medium text-blue-900 mb-1">Co się stanie podczas migracji?</div>
                   <ul className="space-y-1 text-blue-700">
-                    <li>• Stream otrzyma rolę GTD i domyślną konfigurację</li>
+                    <li>• Stream otrzyma rolę i domyślną konfigurację</li>
                     <li>• Istniejące zadania i projekty zostaną zachowane</li>
-                    <li>• Włączą się funkcje automatyzacji GTD</li>
+                    <li>• Włączą się funkcje automatyzacji STREAMS</li>
                     <li>• Będziesz mógł dostosować konfigurację po migracji</li>
                   </ul>
                 </div>
@@ -489,7 +489,7 @@ const GTDMigrationModal: React.FC<GTDMigrationModalProps> = ({
               disabled={!selectedRole}
             >
               <ArrowPathIcon className="w-4 h-4 mr-2" />
-              Migruj do GTD
+              Migruj stream
             </Button>
           </div>
         </div>

@@ -250,7 +250,7 @@ export const streamsNavigation: NavItem[] = [
     iconWeight: 'duotone',
     children: [
       { name: 'Tagi', href: '/dashboard/tags', icon: Tag, iconWeight: 'duotone' },
-      { name: 'Konteksty GTD', href: '/dashboard/contexts', icon: At, iconWeight: 'duotone' },
+      { name: 'Konteksty', href: '/dashboard/contexts', icon: At, iconWeight: 'duotone' },
       { name: 'Nawyki', href: '/dashboard/habits', icon: Lightning, iconWeight: 'duotone' },
       { name: 'Zadania cykliczne', href: '/dashboard/recurring-tasks', icon: ArrowsClockwise, iconWeight: 'duotone' },
       { name: 'Delegowane', href: '/dashboard/delegated', icon: UserSwitch, iconWeight: 'duotone' },

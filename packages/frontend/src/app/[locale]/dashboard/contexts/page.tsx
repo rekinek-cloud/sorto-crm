@@ -139,7 +139,7 @@ export default function ContextsPage() {
             <MapPinIcon className="h-6 w-6 text-teal-600" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Konteksty GTD</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Konteksty</h1>
             <p className="text-sm text-gray-600">
               Zarzadzaj kontekstami dla zadan (np. @telefon, @komputer)
             </p>

@@ -1,5 +1,5 @@
 /**
- * Intelligent Voice Response Engine for CRM-GTD Smart
+ * Intelligent Voice Response Engine for Sorto CRM
  * Provides natural, conversational responses with A/B testing and analytics
  */
 
