@@ -16,6 +16,7 @@ interface TaskFormProps {
   projects: Project[];
   streams: Stream[];
   users?: TaskFormUser[];
+  parentTaskId?: string;
   onSubmit: (data: CreateTaskRequest | UpdateTaskRequest) => void;
   onCancel: () => void;
   isLoading?: boolean;
@@ -27,6 +28,7 @@ export default function TaskForm({
   projects,
   streams,
   users = [],
+  parentTaskId,
   onSubmit,
   onCancel,
   isLoading
@@ -128,7 +130,8 @@ export default function TaskForm({
       assignedToId: formData.assignedToId || undefined,
       energy: formData.energy,
       isWaitingFor: formData.isWaitingFor,
-      waitingForNote: formData.isWaitingFor ? formData.waitingForNote.trim() : undefined
+      waitingForNote: formData.isWaitingFor ? formData.waitingForNote.trim() : undefined,
+      parentTaskId: parentTaskId || undefined
     };
 
     // Add update-specific fields

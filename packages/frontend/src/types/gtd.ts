@@ -106,9 +106,11 @@ export interface Task {
   contextId?: string;
   streamId?: string;
   projectId?: string;
+  parentTaskId?: string;
+  subtasks?: Pick<Task, 'id' | 'title' | 'status' | 'priority'>[];
   createdAt: string;
   updatedAt: string;
-  
+
   // Relations
   context?: Context;
   project?: Pick<Project, 'id' | 'name'>;
@@ -140,6 +142,7 @@ export interface CreateTaskRequest {
   energy?: 'LOW' | 'MEDIUM' | 'HIGH';
   isWaitingFor?: boolean;
   waitingForNote?: string;
+  parentTaskId?: string;
 }
 
 export interface UpdateTaskRequest extends Partial<CreateTaskRequest> {

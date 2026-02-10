@@ -21,7 +21,8 @@ const createTaskSchema = z.object({
   assignedToId: z.string().uuid().optional(),
   energy: z.enum(['LOW', 'MEDIUM', 'HIGH']).default('MEDIUM'),
   isWaitingFor: z.boolean().default(false),
-  waitingForNote: z.string().optional()
+  waitingForNote: z.string().optional(),
+  parentTaskId: z.string().uuid().optional()
 });
 
 const updateTaskSchema = createTaskSchema.partial().extend({
@@ -33,14 +34,15 @@ const updateTaskSchema = createTaskSchema.partial().extend({
 // GET /api/v1/tasks - List tasks with filters
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const { 
-      status, 
-      priority, 
-      contextId, 
-      projectId, 
-      streamId, 
+    const {
+      status,
+      priority,
+      contextId,
+      projectId,
+      streamId,
       assignedToId,
       dueDate,
+      parentTaskId,
       page = '1',
       limit = '20',
       search
@@ -60,6 +62,8 @@ router.get('/', authenticateToken, async (req, res) => {
     if (projectId) where.projectId = projectId;
     if (streamId) where.streamId = streamId;
     if (assignedToId) where.assignedToId = assignedToId;
+    if (parentTaskId) where.parentTaskId = parentTaskId;
+    if (!parentTaskId && req.query.includeSubtasks !== 'true') where.parentTaskId = null;
     if (dueDate) {
       const date = new Date(dueDate as string);
       where.dueDate = {
@@ -82,7 +86,11 @@ router.get('/', authenticateToken, async (req, res) => {
           project: { select: { id: true, name: true } },
           stream: { select: { id: true, name: true, color: true } },
           createdBy: { select: { id: true, firstName: true, lastName: true } },
-          assignedTo: { select: { id: true, firstName: true, lastName: true } }
+          assignedTo: { select: { id: true, firstName: true, lastName: true } },
+          subtasks: {
+            select: { id: true, title: true, status: true, priority: true },
+            orderBy: { createdAt: 'asc' as const }
+          },
         },
         orderBy: [
           { priority: 'desc' },
@@ -123,7 +131,11 @@ router.get('/:id', authenticateToken, async (req, res) => {
         project: true,
         stream: true,
         createdBy: { select: { id: true, firstName: true, lastName: true } },
-        assignedTo: { select: { id: true, firstName: true, lastName: true } }
+        assignedTo: { select: { id: true, firstName: true, lastName: true } },
+        subtasks: {
+          select: { id: true, title: true, status: true, priority: true },
+          orderBy: { createdAt: 'asc' as const }
+        },
       }
     });
 
@@ -173,6 +185,16 @@ router.post('/', authenticateToken, validateRequest({ body: createTaskSchema }),
       }
     }
 
+    // Verify parent task belongs to organization if provided
+    if (taskData.parentTaskId) {
+      const parentTask = await prisma.task.findFirst({
+        where: { id: taskData.parentTaskId, organizationId: req.user.organizationId }
+      });
+      if (!parentTask) {
+        return res.status(400).json({ error: 'Invalid parent task' });
+      }
+    }
+
     const task = await prisma.task.create({
       data: {
         ...taskData,
@@ -185,7 +207,11 @@ router.post('/', authenticateToken, validateRequest({ body: createTaskSchema }),
         project: { select: { id: true, name: true } },
         stream: { select: { id: true, name: true, color: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
-        assignedTo: { select: { id: true, firstName: true, lastName: true } }
+        assignedTo: { select: { id: true, firstName: true, lastName: true } },
+        subtasks: {
+          select: { id: true, title: true, status: true, priority: true },
+          orderBy: { createdAt: 'asc' as const }
+        },
       }
     });
 
@@ -233,7 +259,11 @@ router.put('/:id', authenticateToken, validateRequest({ body: updateTaskSchema }
         project: { select: { id: true, name: true } },
         stream: { select: { id: true, name: true, color: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
-        assignedTo: { select: { id: true, firstName: true, lastName: true } }
+        assignedTo: { select: { id: true, firstName: true, lastName: true } },
+        subtasks: {
+          select: { id: true, title: true, status: true, priority: true },
+          orderBy: { createdAt: 'asc' as const }
+        },
       }
     });
 

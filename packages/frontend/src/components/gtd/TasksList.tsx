@@ -18,6 +18,7 @@ export default function TasksList() {
   const [isLoading, setIsLoading] = useState(true);
   const [isTaskFormOpen, setIsTaskFormOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | undefined>();
+  const [subtaskParentId, setSubtaskParentId] = useState<string | undefined>();
   const [filters, setFilters] = useState<TaskFilters>({});
 
   // Load initial data
@@ -68,6 +69,7 @@ export default function TasksList() {
 
   const handleCreateTask = () => {
     setEditingTask(undefined);
+    setSubtaskParentId(undefined);
     setIsTaskFormOpen(true);
   };
 
@@ -322,14 +324,53 @@ export default function TasksList() {
               Aktywne zadania ({activeTasks.length})
             </h2>
             <div className="space-y-3">
-              {activeTasks.map(task => (
-                <TaskItem
-                  key={task.id}
-                  task={task}
-                  onEdit={handleEditTask}
-                  onDelete={handleDeleteTask}
-                  onStatusChange={handleStatusChange}
-                />
+              {activeTasks.filter(t => !t.parentTaskId).map(task => (
+                <div key={task.id}>
+                  <TaskItem
+                    task={task}
+                    onEdit={handleEditTask}
+                    onDelete={handleDeleteTask}
+                    onStatusChange={handleStatusChange}
+                  />
+                  {/* Subtasks */}
+                  {task.subtasks && task.subtasks.length > 0 && (
+                    <div className="ml-8 mt-1 space-y-1">
+                      {task.subtasks.map(sub => (
+                        <div key={sub.id} className="flex items-center gap-2 py-1 px-3 bg-gray-50 rounded text-sm">
+                          <input
+                            type="checkbox"
+                            checked={sub.status === 'COMPLETED'}
+                            onChange={() => handleStatusChange(sub.id, sub.status === 'COMPLETED' ? 'NEW' : 'COMPLETED')}
+                            className="rounded text-blue-600"
+                          />
+                          <span className={sub.status === 'COMPLETED' ? 'line-through text-gray-400' : 'text-gray-700'}>
+                            {sub.title}
+                          </span>
+                          <span className={`text-xs px-1.5 py-0.5 rounded ${
+                            sub.priority === 'URGENT' ? 'bg-red-100 text-red-700' :
+                            sub.priority === 'HIGH' ? 'bg-orange-100 text-orange-700' :
+                            sub.priority === 'MEDIUM' ? 'bg-blue-100 text-blue-700' :
+                            'bg-gray-100 text-gray-600'
+                          }`}>
+                            {sub.priority}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Add subtask button */}
+                  <div className="ml-8 mt-1">
+                    <button
+                      onClick={() => { setSubtaskParentId(task.id); setIsTaskFormOpen(true); setEditingTask(undefined); }}
+                      className="text-xs text-gray-400 hover:text-blue-600 flex items-center gap-1"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                      </svg>
+                      Dodaj podzadanie
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -388,10 +429,12 @@ export default function TasksList() {
           projects={projects}
           streams={streams}
           users={users}
+          parentTaskId={subtaskParentId}
           onSubmit={handleTaskSubmit}
           onCancel={() => {
             setIsTaskFormOpen(false);
             setEditingTask(undefined);
+            setSubtaskParentId(undefined);
           }}
         />
       )}

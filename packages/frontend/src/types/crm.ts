@@ -11,6 +11,10 @@ export interface Company {
   address?: string;
   phone?: string;
   email?: string;
+  nip?: string;
+  regon?: string;
+  krs?: string;
+  vatActive?: boolean;
   tags?: string[];
   status: 'PROSPECT' | 'CUSTOMER' | 'PARTNER' | 'INACTIVE' | 'ARCHIVED';
   organizationId: string;
@@ -104,6 +108,10 @@ export interface CreateCompanyRequest {
   address?: string;
   phone?: string;
   email?: string;
+  nip?: string;
+  regon?: string;
+  krs?: string;
+  vatActive?: boolean;
   tags?: string[];
 }
 

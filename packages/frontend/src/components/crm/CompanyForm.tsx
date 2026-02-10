@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Company, CreateCompanyRequest, UpdateCompanyRequest } from '@/types/crm';
+import { apiClient } from '@/lib/api/client';
 
 interface CompanyFormProps {
   company?: Company;
@@ -20,12 +21,17 @@ export default function CompanyForm({ company, onSubmit, onCancel }: CompanyForm
     address: '',
     phone: '',
     email: '',
-    tags: [] as string[]
+    tags: [] as string[],
+    nip: '',
+    regon: '',
+    krs: '',
+    vatActive: false
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [tagInput, setTagInput] = useState('');
+  const [isLookingUp, setIsLookingUp] = useState(false);
 
   // Populate form if editing
   useEffect(() => {
@@ -40,7 +46,11 @@ export default function CompanyForm({ company, onSubmit, onCancel }: CompanyForm
         address: company.address || '',
         phone: company.phone || '',
         email: company.email || '',
-        tags: company.tags || []
+        tags: company.tags || [],
+        nip: company.nip || '',
+        regon: company.regon || '',
+        krs: company.krs || '',
+        vatActive: company.vatActive || false
       });
     }
   }, [company]);
@@ -57,6 +67,31 @@ export default function CompanyForm({ company, onSubmit, onCancel }: CompanyForm
         ...prev,
         [field]: ''
       }));
+    }
+  };
+
+  const handleNipLookup = async () => {
+    const nip = formData.nip.replace(/[^0-9]/g, '');
+    if (nip.length !== 10) {
+      setErrors(prev => ({ ...prev, nip: 'NIP musi mieć 10 cyfr' }));
+      return;
+    }
+    setIsLookingUp(true);
+    try {
+      const { data } = await apiClient.get(`/companies/lookup-nip/${nip}`);
+      setFormData(prev => ({
+        ...prev,
+        name: data.name || prev.name,
+        nip: data.nip || prev.nip,
+        regon: data.regon || prev.regon,
+        krs: data.krs || prev.krs,
+        vatActive: data.vatActive ?? prev.vatActive,
+        address: data.address || prev.address,
+      }));
+    } catch (error: any) {
+      setErrors(prev => ({ ...prev, nip: error?.response?.data?.error || 'Nie znaleziono firmy' }));
+    } finally {
+      setIsLookingUp(false);
     }
   };
 
@@ -97,6 +132,10 @@ export default function CompanyForm({ company, onSubmit, onCancel }: CompanyForm
         address: formData.address.trim() || undefined,
         phone: formData.phone.trim() || undefined,
         email: formData.email.trim() || undefined,
+        nip: formData.nip.trim() || undefined,
+        regon: formData.regon.trim() || undefined,
+        krs: formData.krs.trim() || undefined,
+        vatActive: formData.nip ? formData.vatActive : undefined,
         tags: formData.tags.length > 0 ? formData.tags : undefined
       };
 
@@ -171,6 +210,68 @@ export default function CompanyForm({ company, onSubmit, onCancel }: CompanyForm
             {errors.name && (
               <p className="mt-1 text-sm text-red-600">{errors.name}</p>
             )}
+          </div>
+
+          {/* NIP Lookup */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              NIP
+            </label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={formData.nip}
+                onChange={(e) => handleChange('nip', e.target.value.replace(/[^0-9]/g, '').slice(0, 10))}
+                className={`input flex-1 ${errors.nip ? 'input-error' : ''}`}
+                placeholder="Wpisz NIP (10 cyfr)..."
+                maxLength={10}
+              />
+              <button
+                type="button"
+                onClick={handleNipLookup}
+                disabled={isLookingUp || formData.nip.length !== 10}
+                className="btn btn-outline btn-sm whitespace-nowrap"
+              >
+                {isLookingUp ? 'Szukam...' : 'Pobierz dane'}
+              </button>
+            </div>
+            {errors.nip && (
+              <p className="mt-1 text-sm text-red-600">{errors.nip}</p>
+            )}
+            {formData.vatActive && formData.nip && (
+              <p className="mt-1 text-xs text-green-600">Czynny podatnik VAT</p>
+            )}
+            {formData.nip && formData.vatActive === false && (
+              <p className="mt-1 text-xs text-red-600">Nieczynny podatnik VAT</p>
+            )}
+          </div>
+
+          {/* REGON and KRS */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                REGON
+              </label>
+              <input
+                type="text"
+                value={formData.regon}
+                onChange={(e) => handleChange('regon', e.target.value)}
+                className="input"
+                placeholder="REGON..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                KRS
+              </label>
+              <input
+                type="text"
+                value={formData.krs}
+                onChange={(e) => handleChange('krs', e.target.value)}
+                className="input"
+                placeholder="KRS..."
+              />
+            </div>
           </div>
 
           {/* Description */}

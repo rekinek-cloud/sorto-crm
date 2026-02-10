@@ -17,7 +17,11 @@ const createCompanySchema = z.object({
   address: z.string().optional(),
   phone: z.string().optional(),
   email: z.string().email().optional().or(z.literal('')),
-  tags: z.array(z.string()).optional()
+  tags: z.array(z.string()).optional(),
+  nip: z.string().regex(/^\d{10}$/, 'NIP must be 10 digits').optional().or(z.literal('')),
+  regon: z.string().optional().or(z.literal('')),
+  krs: z.string().optional().or(z.literal('')),
+  vatActive: z.boolean().optional()
 });
 
 const updateCompanySchema = createCompanySchema.partial();
@@ -52,7 +56,8 @@ router.get('/', async (req, res) => {
       where.OR = [
         { name: { contains: search as string, mode: 'insensitive' } },
         { description: { contains: search as string, mode: 'insensitive' } },
-        { email: { contains: search as string, mode: 'insensitive' } }
+        { email: { contains: search as string, mode: 'insensitive' } },
+        { nip: { contains: search as string, mode: 'insensitive' } }
       ];
     }
 
@@ -107,6 +112,50 @@ router.get('/', async (req, res) => {
   } catch (error) {
     console.error('Error fetching companies:', error);
     res.status(500).json({ error: 'Failed to fetch companies' });
+  }
+});
+
+// GET /api/companies/lookup-nip/:nip - Lookup company by NIP using MF API
+router.get('/lookup-nip/:nip', async (req, res) => {
+  try {
+    const { nip } = req.params;
+
+    // Validate NIP format (10 digits)
+    if (!/^\d{10}$/.test(nip)) {
+      return res.status(400).json({ error: 'NIP musi mieć 10 cyfr' });
+    }
+
+    // Query Ministry of Finance "Biała Lista" API
+    const today = new Date().toISOString().split('T')[0];
+    const response = await fetch(
+      `https://wl-api.mf.gov.pl/api/search/nip/${nip}?date=${today}`
+    );
+
+    if (!response.ok) {
+      return res.status(404).json({ error: 'Nie znaleziono firmy o podanym NIP' });
+    }
+
+    const data = await response.json();
+    const subject = data?.result?.subject;
+
+    if (!subject) {
+      return res.status(404).json({ error: 'Nie znaleziono firmy o podanym NIP' });
+    }
+
+    // Map API response to our format
+    const companyData = {
+      name: subject.name || '',
+      nip: subject.nip || nip,
+      regon: subject.regon || '',
+      krs: subject.krs || '',
+      vatActive: subject.statusVat === 'Czynny',
+      address: subject.workingAddress || subject.residenceAddress || '',
+    };
+
+    res.json(companyData);
+  } catch (error) {
+    console.error('Error looking up NIP:', error);
+    res.status(500).json({ error: 'Błąd podczas wyszukiwania NIP' });
   }
 });
 
