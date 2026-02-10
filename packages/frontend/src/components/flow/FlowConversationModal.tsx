@@ -10,6 +10,7 @@ import {
   TrashIcon,
   PencilIcon,
   ExclamationTriangleIcon,
+  AcademicCapIcon,
 } from '@heroicons/react/24/outline';
 import { flowApi, FlowAction, FlowConversation, FlowPendingItem, FlowAIMetadata, FLOW_ACTION_LABELS } from '@/lib/api/flow';
 import { toast } from 'react-hot-toast';
@@ -40,6 +41,16 @@ interface EditableTask {
   isNew?: boolean;
 }
 
+interface AIAnalysisData {
+  summary?: string;
+  entities?: Array<{ type: string; value: string; confidence: number }>;
+  urgency?: string;
+  estimatedTime?: string;
+  confidence?: number;
+  suggestedAction?: string;
+  suggestedStreams?: Array<{ streamId: string; streamName: string; confidence: number }>;
+}
+
 interface FlowConversationModalProps {
   item: FlowPendingItem | { id: string; content: string; note?: string; sourceType?: string; title?: string };
   streams: Stream[];
@@ -50,9 +61,10 @@ interface FlowConversationModalProps {
   correctionMode?: boolean;
   initialAction?: FlowAction;
   initialStreamId?: string;
+  initialAnalysisData?: AIAnalysisData;
 }
 
-export default function FlowConversationModal({ item, streams, projects = [], goals = [], onClose, onProcessed, correctionMode, initialAction, initialStreamId }: FlowConversationModalProps) {
+export default function FlowConversationModal({ item, streams, projects = [], goals = [], onClose, onProcessed, correctionMode, initialAction, initialStreamId, initialAnalysisData }: FlowConversationModalProps) {
   const [conversation, setConversation] = useState<FlowConversation | null>(null);
   const [loading, setLoading] = useState(true);
   const [executing, setExecuting] = useState(false);
@@ -128,25 +140,19 @@ export default function FlowConversationModal({ item, streams, projects = [], go
     }
   }, [item.id]);
 
-  // Background conversation start - doesn't block UI
+  // AI enriched data from background conversation (for left panel in correction mode)
+  const [aiEnrichedData, setAiEnrichedData] = useState<FlowAIMetadata | null>(null);
+
+  // Background conversation start - doesn't block UI, doesn't change form state
   const startConversationBackground = async () => {
     try {
       const conv = await flowApi.conversation.start(item.id);
       setConversation(conv);
 
-      // Optionally enrich metadata from AI response (but don't overwrite user selections)
+      // Store enriched AI metadata separately (for left panel display only)
       const aiMessage = (conv.messages || []).find(m => m.role === 'assistant');
-      const metadata = aiMessage?.metadata;
-      if (metadata) {
-        // Merge AI metadata (richer data) but keep user's current selections
-        setAiMetadata(prev => ({
-          ...prev,
-          analysis: metadata.analysis,
-          confidence: metadata.confidence,
-          // Keep actionOptions from AI if available (richer with suggestedTasks/Tags)
-          actionOptions: metadata.actionOptions || prev?.actionOptions,
-          streamMatching: metadata.streamMatching || prev?.streamMatching,
-        }));
+      if (aiMessage?.metadata) {
+        setAiEnrichedData(aiMessage.metadata);
       }
     } catch (error: any) {
       console.error('Failed to start background conversation:', error);
@@ -435,6 +441,393 @@ export default function FlowConversationModal({ item, streams, projects = [], go
     }
   };
 
+  // =====================================================================
+  // CORRECTION MODE: Split-panel layout (AI proposal left, user right)
+  // =====================================================================
+  if (correctionMode && !loading) {
+    const ai = initialAnalysisData;
+    const enriched = aiEnrichedData;
+    const actionLabels: Record<string, string> = {
+      'ZROB_TERAZ': 'Zrób teraz', 'ZAPLANUJ': 'Zaplanuj', 'PROJEKT': 'Projekt',
+      'KIEDYS_MOZE': 'Kiedyś/Może', 'REFERENCJA': 'Referencja', 'USUN': 'Usuń',
+    };
+    const entityIcons: Record<string, string> = {
+      person: '👤', company: '🏢', amount: '💰', date: '📅', deadline: '⏰', task: '✅', product: '📦',
+    };
+    const urgencyMap: Record<string, { label: string; color: string }> = {
+      high: { label: 'Pilne', color: 'text-red-600' },
+      medium: { label: 'Średnie', color: 'text-yellow-600' },
+      low: { label: 'Niskie', color: 'text-green-600' },
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-xl shadow-xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-4 flex items-center justify-between rounded-t-xl">
+            <div className="flex items-center gap-3">
+              <PencilIcon className="w-6 h-6" />
+              <div>
+                <h2 className="text-lg font-bold">Korygowanie sugestii AI</h2>
+                <p className="text-sm text-amber-100">Twoje decyzje zawsze wygrywają</p>
+              </div>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
+              <XMarkIcon className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Source item content */}
+          <div className="bg-gray-50 border-b px-6 py-3">
+            <p className="text-sm text-gray-500">Element:</p>
+            <p className="font-medium text-gray-900 text-sm">"{itemContent}"</p>
+          </div>
+
+          {/* Split panel */}
+          <div className="flex-1 overflow-auto">
+            <div className="grid grid-cols-5 min-h-[400px]">
+
+              {/* LEFT: AI Proposal (read-only) */}
+              <div className="col-span-2 border-r bg-indigo-50/50 p-5 space-y-4 overflow-auto">
+                <div className="flex items-center gap-2 mb-3">
+                  <SparklesIcon className="w-5 h-5 text-indigo-600" />
+                  <h3 className="font-bold text-indigo-900 text-sm uppercase tracking-wide">Propozycja AI</h3>
+                </div>
+
+                {/* Suggested action */}
+                {ai?.suggestedAction && (
+                  <div className="p-3 bg-white rounded-lg border border-indigo-200">
+                    <p className="text-xs text-gray-500 mb-1">Sugerowana akcja</p>
+                    <div className="flex items-center gap-2">
+                      <span className={`px-2.5 py-1 rounded-md text-sm font-medium ${FLOW_ACTION_LABELS[ai.suggestedAction as FlowAction]?.color || 'bg-gray-100 text-gray-700'}`}>
+                        {FLOW_ACTION_LABELS[ai.suggestedAction as FlowAction]?.emoji} {actionLabels[ai.suggestedAction] || ai.suggestedAction}
+                      </span>
+                      {ai.confidence != null && (
+                        <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                          ai.confidence >= 0.8 ? 'bg-green-100 text-green-700' :
+                          ai.confidence >= 0.6 ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>{Math.round(ai.confidence * 100)}%</span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Suggested stream */}
+                {ai?.suggestedStreams && ai.suggestedStreams.length > 0 && (
+                  <div className="p-3 bg-white rounded-lg border border-indigo-200">
+                    <p className="text-xs text-gray-500 mb-1">Sugerowany strumień</p>
+                    <p className="text-sm font-medium text-indigo-700">→ {ai.suggestedStreams[0].streamName}</p>
+                    {ai.suggestedStreams[0].confidence && (
+                      <p className="text-xs text-gray-400 mt-0.5">{ai.suggestedStreams[0].confidence}% dopasowania</p>
+                    )}
+                  </div>
+                )}
+
+                {/* Summary */}
+                {ai?.summary && (
+                  <div>
+                    <p className="text-xs text-gray-500 mb-1">Podsumowanie</p>
+                    <p className="text-sm text-gray-700">{ai.summary}</p>
+                  </div>
+                )}
+
+                {/* Entities */}
+                {ai?.entities && ai.entities.length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-500 mb-2">Wykryte elementy</p>
+                    <div className="space-y-1">
+                      {ai.entities.slice(0, 8).map((e, i) => (
+                        <div key={i} className="flex items-center gap-1.5 text-sm">
+                          <span>{entityIcons[e.type] || '📌'}</span>
+                          <span className="text-gray-700">{e.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Urgency + time */}
+                <div className="flex flex-wrap gap-2">
+                  {ai?.urgency && urgencyMap[ai.urgency] && (
+                    <span className={`text-xs font-medium ${urgencyMap[ai.urgency].color}`}>
+                      {ai.urgency === 'high' ? '🔴' : ai.urgency === 'medium' ? '🟡' : '🟢'} {urgencyMap[ai.urgency].label}
+                    </span>
+                  )}
+                  {ai?.estimatedTime && (
+                    <span className="text-xs text-gray-500">⏱ {ai.estimatedTime}</span>
+                  )}
+                </div>
+
+                {/* Enriched data from background AI (appears after conversation loads) */}
+                {enriched?.analysis && (
+                  <div className="pt-3 border-t border-indigo-100 space-y-2">
+                    <p className="text-xs text-indigo-500 font-medium">Szczegóły analizy</p>
+                    {enriched.analysis.ideaType && (
+                      <p className="text-xs"><span className="text-gray-500">Typ:</span> <span className="text-gray-700">{enriched.analysis.ideaType}</span></p>
+                    )}
+                    {enriched.analysis.complexity && (
+                      <p className="text-xs"><span className="text-gray-500">Złożoność:</span> <span className="text-gray-700">
+                        {enriched.analysis.complexity === 'LOW' ? 'Niska' : enriched.analysis.complexity === 'MEDIUM' ? 'Średnia' : 'Wysoka'}
+                      </span></p>
+                    )}
+                    {enriched.analysis.timeHorizon && (
+                      <p className="text-xs"><span className="text-gray-500">Horyzont:</span> <span className="text-gray-700">
+                        {enriched.analysis.timeHorizon === 'IMMEDIATE' ? 'Natychmiast' :
+                         enriched.analysis.timeHorizon === 'SHORT_TERM' ? 'Krótkoterminowy' :
+                         enriched.analysis.timeHorizon === 'LONG_TERM' ? 'Długoterminowy' : 'Kiedyś'}
+                      </span></p>
+                    )}
+                    {enriched.analysis.missingInfo && enriched.analysis.missingInfo.length > 0 && (
+                      <div className="p-2 bg-amber-50 rounded border border-amber-200 text-xs">
+                        <p className="font-medium text-amber-800 mb-1">Brakujące informacje:</p>
+                        {enriched.analysis.missingInfo.map((info, i) => (
+                          <p key={i} className="text-amber-700">- {info}</p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Loading indicator for background conversation */}
+                {!conversation && (
+                  <div className="flex items-center gap-2 text-xs text-indigo-400 pt-2">
+                    <ArrowPathIcon className="w-3.5 h-3.5 animate-spin" />
+                    Ładowanie szczegółów...
+                  </div>
+                )}
+              </div>
+
+              {/* RIGHT: User's Decision (editable) */}
+              <div className="col-span-3 p-5 space-y-4 overflow-auto">
+                <div className="flex items-center gap-2 mb-3">
+                  <AcademicCapIcon className="w-5 h-5 text-amber-600" />
+                  <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wide">Twoja decyzja</h3>
+                </div>
+
+                {/* Action selection - compact grid */}
+                <div>
+                  <p className="text-xs font-medium text-gray-600 mb-2">Akcja:</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(Object.entries(FLOW_ACTION_LABELS) as [FlowAction, typeof FLOW_ACTION_LABELS[FlowAction]][]).map(([action, config]) => {
+                      const isSelected = selectedAction === action;
+                      const isAiSuggested = action === ai?.suggestedAction;
+                      return (
+                        <button
+                          key={action}
+                          onClick={() => handleActionChange(action)}
+                          className={`p-2.5 rounded-lg border-2 text-left transition-all text-sm ${
+                            isSelected
+                              ? 'border-amber-500 bg-amber-50 shadow-sm'
+                              : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <span>{config.emoji}</span>
+                            <span className="font-medium text-xs">{config.label}</span>
+                          </div>
+                          {isAiSuggested && !isSelected && (
+                            <span className="text-[10px] text-indigo-500">sugestia AI</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Stream selection */}
+                {selectedAction && selectedAction !== 'USUN' && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 mb-2">Strumień docelowy:</p>
+                    {!createNewStream ? (
+                      <>
+                        <select
+                          value={selectedStreamId}
+                          onChange={(e) => {
+                            if (e.target.value === '__NEW__') {
+                              setCreateNewStream(true);
+                              setSelectedStreamId('');
+                            } else {
+                              setSelectedStreamId(e.target.value);
+                            }
+                          }}
+                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
+                        >
+                          <option value="">-- Wybierz strumień --</option>
+                          {streams.map(s => (
+                            <option key={s.id} value={s.id}>
+                              {s.name}{s.id === ai?.suggestedStreams?.[0]?.streamId ? ' (sugestia AI)' : ''}
+                            </option>
+                          ))}
+                          <option value="__NEW__">+ Utwórz nowy strumień...</option>
+                        </select>
+                      </>
+                    ) : (
+                      <div className="space-y-2 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-amber-800">Nowy strumień</span>
+                          <button onClick={() => { setCreateNewStream(false); setNewStreamName(''); }} className="text-xs text-amber-600 hover:text-amber-800">Anuluj</button>
+                        </div>
+                        <input type="text" value={newStreamName} onChange={(e) => setNewStreamName(e.target.value)}
+                          placeholder="Nazwa..." className="w-full border border-amber-300 rounded-lg px-3 py-2 text-sm" />
+                        <div className="flex items-center gap-2">
+                          <label className="text-xs text-gray-600">Kolor:</label>
+                          <input type="color" value={newStreamColor} onChange={(e) => setNewStreamColor(e.target.value)} className="w-6 h-6 rounded cursor-pointer" />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Task/Project name */}
+                {(selectedAction === 'PROJEKT' || selectedAction === 'ZAPLANUJ') && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 mb-1">
+                      {selectedAction === 'PROJEKT' ? 'Nazwa projektu:' : 'Nazwa zadania:'}
+                    </p>
+                    <input type="text" value={projectName} onChange={(e) => setProjectName(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500" />
+                  </div>
+                )}
+
+                {/* Due date / deadline */}
+                {selectedAction === 'ZAPLANUJ' && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 mb-1">Termin:</p>
+                    <input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500" />
+                  </div>
+                )}
+
+                {selectedAction === 'PROJEKT' && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 mb-1">Deadline projektu:</p>
+                    <input type="date" value={projectDeadline} onChange={(e) => setProjectDeadline(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-amber-500" />
+                  </div>
+                )}
+
+                {/* Tasks for PROJEKT */}
+                {selectedAction === 'PROJEKT' && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 mb-2">Zadania (pierwsze kroki):</p>
+                    <div className="space-y-2">
+                      {tasks.map((task) => (
+                        <div key={task.id} className="flex items-center gap-2">
+                          <input type="text" value={task.title} onChange={(e) => updateTask(task.id, e.target.value)}
+                            className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm" />
+                          <input type="date" value={task.dueDate || ''} onChange={(e) => updateTaskDate(task.id, e.target.value)}
+                            className="w-36 border border-gray-300 rounded px-2 py-1.5 text-xs" />
+                          <button onClick={() => removeTask(task.id)} className="p-1 text-red-400 hover:text-red-600">
+                            <TrashIcon className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                      <div className="flex items-center gap-2">
+                        <input type="text" value={newTaskTitle} onChange={(e) => setNewTaskTitle(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && addTask()}
+                          className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm" placeholder="Nowe zadanie..." />
+                        <button onClick={addTask} disabled={!newTaskTitle.trim()}
+                          className="p-1.5 bg-amber-500 text-white rounded hover:bg-amber-600 disabled:bg-gray-300">
+                          <PlusIcon className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Reminder for KIEDYS_MOZE */}
+                {selectedAction === 'KIEDYS_MOZE' && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 mb-1">Przypomnienie:</p>
+                    <select value={reminder} onChange={(e) => setReminder(e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
+                      <option value="1m">Za miesiąc</option>
+                      <option value="3m">Za 3 miesiące</option>
+                      <option value="6m">Za 6 miesięcy</option>
+                      <option value="1y">Za rok</option>
+                      <option value="none">Bez przypomnienia</option>
+                    </select>
+                  </div>
+                )}
+
+                {/* Tags */}
+                {selectedAction && selectedAction !== 'USUN' && selectedAction !== 'ZROB_TERAZ' && (
+                  <div>
+                    <p className="text-xs font-medium text-gray-600 mb-2">Tagi:</p>
+                    <div className="flex flex-wrap gap-1.5 mb-2">
+                      {tags.map((tag) => (
+                        <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded-full">
+                          #{tag}
+                          <button onClick={() => removeTag(tag)} className="hover:text-red-500"><XMarkIcon className="w-3 h-3" /></button>
+                        </span>
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input type="text" value={newTag} onChange={(e) => setNewTag(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && addTag()}
+                        className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm" placeholder="Dodaj tag..." />
+                      <button onClick={addTag} disabled={!newTag.trim()}
+                        className="p-1.5 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
+                        <PlusIcon className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Creation summary */}
+                {selectedAction && (() => {
+                  const summary = getCreationSummary();
+                  if (!summary) return null;
+                  return (
+                    <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 mt-2">
+                      <p className="text-xs font-medium text-amber-800 mb-1">Co zostanie utworzone:</p>
+                      <p className="text-sm font-medium text-amber-900">{summary.main}</p>
+                      {summary.details.map((d, i) => (
+                        <p key={i} className="text-xs text-amber-700">- {d}</p>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="border-t px-6 py-4 bg-gray-50 rounded-b-xl">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <AcademicCapIcon className="w-4 h-4" />
+                AI się uczy z Twoich korekt
+              </div>
+              <div className="flex items-center gap-3">
+                <button onClick={onClose} className="px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                  Anuluj
+                </button>
+                <button
+                  onClick={handleExecute}
+                  disabled={!selectedAction || executing || !conversation}
+                  className="px-6 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-lg hover:from-amber-600 hover:to-orange-600 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+                >
+                  {executing ? (
+                    <><ArrowPathIcon className="w-5 h-5 animate-spin" /> Wykonywanie...</>
+                  ) : !conversation ? (
+                    <><ArrowPathIcon className="w-5 h-5 animate-spin" /> Przygotowywanie...</>
+                  ) : (
+                    <><CheckIcon className="w-5 h-5" /> Zatwierdź korektę</>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // =====================================================================
+  // NORMAL MODE: Single-column layout (existing behavior)
+  // =====================================================================
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
@@ -443,8 +836,8 @@ export default function FlowConversationModal({ item, streams, projects = [], go
           <div className="flex items-center gap-3">
             <SparklesIcon className="w-6 h-6" />
             <div>
-              <h2 className="text-lg font-bold">{correctionMode ? 'Korygowanie sugestii AI' : 'Przetwarzanie elementu'}</h2>
-              <p className="text-sm text-indigo-200">{correctionMode ? 'Zmień akcję, strumień lub szczegóły' : 'Zmodyfikuj i zatwierdz'}</p>
+              <h2 className="text-lg font-bold">Przetwarzanie elementu</h2>
+              <p className="text-sm text-indigo-200">Zmodyfikuj i zatwierdz</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg transition-colors">

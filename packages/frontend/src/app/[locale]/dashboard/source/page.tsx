@@ -899,6 +899,15 @@ export default function SourcePage() {
                     correctionMode={correctionMode}
                     initialAction={correctionMode ? processingItem.suggestedAction as FlowAction : undefined}
                     initialStreamId={correctionMode ? processingItem.suggestedStreams?.[0]?.streamId : undefined}
+                    initialAnalysisData={correctionMode ? {
+                        summary: processingItem.aiAnalysis?.summary,
+                        entities: processingItem.aiAnalysis?.entities,
+                        urgency: processingItem.aiAnalysis?.urgency,
+                        estimatedTime: processingItem.aiAnalysis?.estimatedTime,
+                        confidence: processingItem.aiConfidence,
+                        suggestedAction: processingItem.suggestedAction,
+                        suggestedStreams: processingItem.suggestedStreams,
+                    } : undefined}
                     onClose={() => {
                         setShowConversationModal(false);
                         setProcessingItem(null);
