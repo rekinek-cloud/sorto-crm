@@ -237,6 +237,25 @@ export default function SourcePage() {
         }
     };
 
+    // Handle analyze item (trigger AI analysis without opening modal)
+    const handleAnalyze = async (item: SourceItem) => {
+        setProcessingIds(prev => new Set(prev).add(item.id));
+        try {
+            await apiClient.post(`/flow/process/${item.id}`, { autoExecute: false });
+            toast.success('Analiza AI zakończona');
+            loadData();
+        } catch (error: any) {
+            console.error('Analyze error:', error);
+            toast.error(error?.response?.data?.error || 'Błąd analizy AI');
+        } finally {
+            setProcessingIds(prev => {
+                const next = new Set(prev);
+                next.delete(item.id);
+                return next;
+            });
+        }
+    };
+
     // Handle batch processing
     const handleBatchProcess = () => {
         if (selectedItems.size === 0) {
@@ -784,11 +803,16 @@ export default function SourcePage() {
                                                 );
                                             })() : (
                                                 <button
-                                                    onClick={() => handleProcess(item)}
-                                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                                                    onClick={() => handleAnalyze(item)}
+                                                    disabled={processingIds.has(item.id)}
+                                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
                                                 >
-                                                    <SparklesIcon className="w-4 h-4" />
-                                                    Flow
+                                                    {processingIds.has(item.id) ? (
+                                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                    ) : (
+                                                        <SparklesIcon className="w-4 h-4" />
+                                                    )}
+                                                    Analizuj
                                                 </button>
                                             )}
                                         </div>
