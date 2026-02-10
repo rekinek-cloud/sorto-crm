@@ -342,6 +342,16 @@ export default function SourcePage() {
         }
     };
 
+    // Helper: get effective suggested action (from top-level field or from aiAnalysis JSON)
+    const getEffectiveSuggestedAction = (item: SourceItem): string | undefined => {
+        if (item.suggestedAction) return item.suggestedAction;
+        // Try to extract from aiAnalysis JSON (some items have analysis but suggestedAction not stored separately)
+        const analysis = item.aiAnalysis as any;
+        if (analysis?.suggestedAction) return analysis.suggestedAction;
+        if (analysis?.action) return analysis.action;
+        return undefined;
+    };
+
     // Load data on mount
     useEffect(() => {
         loadData();
@@ -578,26 +588,29 @@ export default function SourcePage() {
 
                                                     {/* Suggested Action + Stream */}
                                                     <div className="flex flex-wrap gap-2 mb-2">
-                                                        {item.suggestedAction && (
+                                                        {(() => {
+                                                            const action = getEffectiveSuggestedAction(item);
+                                                            return action ? (
                                                             <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md font-medium ${
-                                                                item.suggestedAction === 'ZROB_TERAZ' ? 'bg-red-100 text-red-700' :
-                                                                item.suggestedAction === 'ZAPLANUJ' ? 'bg-blue-100 text-blue-700' :
-                                                                item.suggestedAction === 'PROJEKT' ? 'bg-purple-100 text-purple-700' :
-                                                                item.suggestedAction === 'KIEDYS_MOZE' ? 'bg-cyan-100 text-cyan-700' :
-                                                                item.suggestedAction === 'REFERENCJA' ? 'bg-gray-100 text-gray-700' :
-                                                                item.suggestedAction === 'USUN' ? 'bg-red-50 text-red-500' :
+                                                                action === 'ZROB_TERAZ' ? 'bg-red-100 text-red-700' :
+                                                                action === 'ZAPLANUJ' ? 'bg-blue-100 text-blue-700' :
+                                                                action === 'PROJEKT' ? 'bg-purple-100 text-purple-700' :
+                                                                action === 'KIEDYS_MOZE' ? 'bg-cyan-100 text-cyan-700' :
+                                                                action === 'REFERENCJA' ? 'bg-gray-100 text-gray-700' :
+                                                                action === 'USUN' ? 'bg-red-50 text-red-500' :
                                                                 'bg-gray-100 text-gray-600'
                                                             }`}>
                                                                 <BoltIcon className="w-3 h-3" />
-                                                                {item.suggestedAction === 'ZROB_TERAZ' ? 'Zrób teraz' :
-                                                                 item.suggestedAction === 'ZAPLANUJ' ? 'Zaplanuj' :
-                                                                 item.suggestedAction === 'PROJEKT' ? 'Projekt' :
-                                                                 item.suggestedAction === 'KIEDYS_MOZE' ? 'Kiedyś/może' :
-                                                                 item.suggestedAction === 'REFERENCJA' ? 'Referencja' :
-                                                                 item.suggestedAction === 'USUN' ? 'Usuń' :
-                                                                 item.suggestedAction}
+                                                                {action === 'ZROB_TERAZ' ? 'Zrób teraz' :
+                                                                 action === 'ZAPLANUJ' ? 'Zaplanuj' :
+                                                                 action === 'PROJEKT' ? 'Projekt' :
+                                                                 action === 'KIEDYS_MOZE' ? 'Kiedyś/może' :
+                                                                 action === 'REFERENCJA' ? 'Referencja' :
+                                                                 action === 'USUN' ? 'Usuń' :
+                                                                 action}
                                                             </span>
-                                                        )}
+                                                            ) : null;
+                                                        })()}
                                                         {item.suggestedStreams?.[0] && (
                                                             <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md font-medium bg-indigo-100 text-indigo-700">
                                                                 <TagIcon className="w-3 h-3" />
@@ -698,25 +711,35 @@ export default function SourcePage() {
 
                                         {/* Action buttons - Human-in-the-Loop */}
                                         <div className="flex flex-col gap-2 shrink-0">
-                                            {item.aiAnalysis && item.suggestedAction && item.flowStatus !== 'PROCESSED' ? (
+                                            {item.aiAnalysis && item.flowStatus !== 'PROCESSED' ? (() => {
+                                                const effectiveAction = getEffectiveSuggestedAction(item);
+                                                return (
                                                 <>
-                                                    {/* Zatwierdź - Quick approve */}
-                                                    <button
-                                                        onClick={() => handleQuickApprove(item)}
-                                                        disabled={processingIds.has(item.id)}
-                                                        className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
-                                                    >
-                                                        {processingIds.has(item.id) ? (
-                                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                        ) : (
-                                                            <CheckCircleIcon className="w-4 h-4" />
-                                                        )}
-                                                        Zatwierdź
-                                                    </button>
+                                                    {/* Zatwierdź - Quick approve (only if we have a suggested action) */}
+                                                    {effectiveAction && (
+                                                        <button
+                                                            onClick={() => handleQuickApprove({
+                                                                ...item,
+                                                                suggestedAction: effectiveAction
+                                                            })}
+                                                            disabled={processingIds.has(item.id)}
+                                                            className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                                                        >
+                                                            {processingIds.has(item.id) ? (
+                                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                            ) : (
+                                                                <CheckCircleIcon className="w-4 h-4" />
+                                                            )}
+                                                            Zatwierdź
+                                                        </button>
+                                                    )}
 
                                                     {/* Koryguj - Open modal with existing analysis for editing */}
                                                     <button
-                                                        onClick={() => handleProcess(item, true)}
+                                                        onClick={() => handleProcess({
+                                                            ...item,
+                                                            suggestedAction: effectiveAction || item.suggestedAction
+                                                        }, true)}
                                                         className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
                                                     >
                                                         <PencilSquareIcon className="w-4 h-4" />
@@ -724,14 +747,16 @@ export default function SourcePage() {
                                                     </button>
 
                                                     {/* Odrzuć - Reject suggestion */}
-                                                    <button
-                                                        onClick={() => setRejectingId(rejectingId === item.id ? null : item.id)}
-                                                        disabled={processingIds.has(item.id)}
-                                                        className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
-                                                    >
-                                                        <XCircleIcon className="w-4 h-4" />
-                                                        Odrzuć
-                                                    </button>
+                                                    {effectiveAction && (
+                                                        <button
+                                                            onClick={() => setRejectingId(rejectingId === item.id ? null : item.id)}
+                                                            disabled={processingIds.has(item.id)}
+                                                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                                                        >
+                                                            <XCircleIcon className="w-4 h-4" />
+                                                            Odrzuć
+                                                        </button>
+                                                    )}
 
                                                     {/* Learning indicator */}
                                                     {learnedIds.has(item.id) && (
@@ -741,7 +766,8 @@ export default function SourcePage() {
                                                         </div>
                                                     )}
                                                 </>
-                                            ) : item.flowStatus === 'PROCESSED' ? (
+                                                );
+                                            })() : item.flowStatus === 'PROCESSED' ? (
                                                 <span className="px-4 py-2 bg-green-100 text-green-700 text-sm font-medium rounded-lg flex items-center gap-2">
                                                     <CheckCircleIcon className="w-4 h-4" />
                                                     Przetworzony
