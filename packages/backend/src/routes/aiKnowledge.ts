@@ -257,19 +257,25 @@ router.get('/stats', async (req, res) => {
   try {
     // Basic stats about data available for analysis
     const organizationId = req.user.organizationId;
-    
-    // You could use prisma here to get actual counts
+
+    const [projectCount, taskCount, dealCount, communicationCount] = await Promise.all([
+      prisma.project.count({ where: { organizationId } }),
+      prisma.task.count({ where: { organizationId } }),
+      prisma.deal.count({ where: { organizationId } }),
+      prisma.message.count({ where: { organizationId } }).catch(() => 0)
+    ]);
+
     const stats = {
       dataPoints: {
-        projects: 0, // Will be filled by actual counts
-        tasks: 0,
-        deals: 0,
-        communications: 0
+        projects: projectCount,
+        tasks: taskCount,
+        deals: dealCount,
+        communications: communicationCount
       },
       lastUpdate: new Date().toISOString(),
       capabilities: [
         'Project risk analysis',
-        'Deal probability prediction', 
+        'Deal probability prediction',
         'Task prioritization',
         'Productivity insights',
         'Communication sentiment analysis'

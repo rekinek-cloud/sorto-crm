@@ -68,6 +68,7 @@ export default function RecurringTasksPage() {
     priority: 'LOW' | 'MEDIUM' | 'HIGH';
     estimatedMinutes: number;
     assignedTo: string;
+    stream: string;
     company: string;
     project: string;
     workdaysOnly: boolean;
@@ -88,6 +89,7 @@ export default function RecurringTasksPage() {
     priority: 'MEDIUM',
     estimatedMinutes: 30,
     assignedTo: '',
+    stream: '',
     company: '',
     project: '',
     workdaysOnly: false,
@@ -95,6 +97,29 @@ export default function RecurringTasksPage() {
     maxExecutions: 0, // 0 = nieskończone
     limitExecutions: false
   });
+
+  // Stream data
+  const [streams, setStreams] = useState<Array<{id: string; name: string}>>([]);
+
+  useEffect(() => {
+    // Fetch real streams from API
+    const fetchStreams = async () => {
+      try {
+        const res = await fetch('/api/v1/streams', {
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include'
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const list = data.data || data.streams || [];
+          setStreams(list.map((s: any) => ({ id: s.id, name: s.name })));
+        }
+      } catch (e) {
+        console.error('Error loading streams:', e);
+      }
+    };
+    fetchStreams();
+  }, []);
 
   // Sample data for dropdowns
   const [users] = useState([
@@ -289,6 +314,7 @@ export default function RecurringTasksPage() {
       priority: 'MEDIUM',
       estimatedMinutes: 30,
       assignedTo: '',
+      stream: '',
       company: '',
       project: '',
       workdaysOnly: false,
@@ -505,6 +531,7 @@ export default function RecurringTasksPage() {
       priority: task.priority || 'MEDIUM',
       estimatedMinutes: task.estimatedMinutes || 30,
       assignedTo: task.assignedTo ? users.find(u => u.name === `${task.assignedTo!.firstName} ${task.assignedTo!.lastName}`)?.id || '' : '',
+      stream: '',
       company: task.company ? companies.find(c => c.name === task.company!.name)?.id || '' : '',
       project: task.project ? projects.find(p => p.name === task.project!.name)?.id || '' : '',
       workdaysOnly: false,
@@ -1020,7 +1047,7 @@ export default function RecurringTasksPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Kontekst (GTD)
+                      Kontekst
                     </label>
                     <select
                       value={formData.context}
@@ -1056,7 +1083,7 @@ export default function RecurringTasksPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Przypisane Do
@@ -1069,6 +1096,22 @@ export default function RecurringTasksPage() {
                       <option value="">Wybierz użytkownika</option>
                       {users.map(user => (
                         <option key={user.id} value={user.id}>{user.name}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Strumień docelowy
+                    </label>
+                    <select
+                      value={formData.stream}
+                      onChange={(e) => setFormData({ ...formData, stream: e.target.value })}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    >
+                      <option value="">Wybierz strumień</option>
+                      {streams.map(stream => (
+                        <option key={stream.id} value={stream.id}>{stream.name}</option>
                       ))}
                     </select>
                   </div>

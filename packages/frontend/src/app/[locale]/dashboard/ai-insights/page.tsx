@@ -121,7 +121,7 @@ export default function AIInsightsPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">AI Insights</h1>
             <p className="text-sm text-gray-600">
-              Inteligentne sugestie i alerty oparte na analizie AI
+              AI analizuje zadania, deale, komunikacje i projekty, wykrywa ryzyka, okazje i sugeruje dzialania
             </p>
           </div>
         </div>

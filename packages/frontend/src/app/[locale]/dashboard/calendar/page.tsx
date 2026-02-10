@@ -260,22 +260,51 @@ const CalendarPage: React.FC = () => {
             <CardTitle>Filtry kalendarza</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Typ wydarzeń</label>
-                <select
-                  value={filters.types || ''}
-                  onChange={(e) => setFilters(prev => ({ ...prev, types: e.target.value || undefined }))}
-                  className="w-full p-2 border rounded-md"
-                >
-                  <option value="">Wszystkie typy</option>
-                  <option value="TASK">Zadania</option>
-                  <option value="PROJECT">Projekty</option>
-                  <option value="MEETING">Spotkania</option>
-                  <option value="RECURRING_TASK">Zadania cykliczne</option>
-                  <option value="DEAL">Deale</option>
-                  <option value="NEXT_ACTION">Nastepne akcje</option>
-                </select>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium mb-2">Typ wydarzeń (wybierz wiele)</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {Object.entries(typeInfo).map(([type, info]) => {
+                    const selectedTypes = filters.types ? filters.types.split(',') : [];
+                    const isSelected = selectedTypes.includes(type);
+                    return (
+                      <label
+                        key={type}
+                        className={`flex items-center gap-2 p-2 rounded-md border cursor-pointer transition-colors ${
+                          isSelected ? 'bg-blue-50 border-blue-300' : 'border-gray-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {
+                            let newTypes: string[];
+                            if (isSelected) {
+                              newTypes = selectedTypes.filter(t => t !== type);
+                            } else {
+                              newTypes = [...selectedTypes, type];
+                            }
+                            setFilters(prev => ({ ...prev, types: newTypes.join(',') || undefined }));
+                          }}
+                          className="rounded text-blue-600"
+                        />
+                        <span
+                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          style={{ backgroundColor: info.color }}
+                        />
+                        <span className="text-sm">{info.label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {filters.types && (
+                  <button
+                    onClick={() => setFilters(prev => ({ ...prev, types: undefined }))}
+                    className="text-xs text-blue-600 hover:underline mt-1"
+                  >
+                    Odznacz wszystkie
+                  </button>
+                )}
               </div>
 
               <div>

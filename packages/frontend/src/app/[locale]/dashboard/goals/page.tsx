@@ -173,6 +173,39 @@ export default function GoalsPage() {
             <p className="text-sm text-gray-600 mt-1">Dlaczego to wazne?</p>
           </div>
         </div>
+
+        <details className="mt-4">
+          <summary className="text-sm font-medium text-purple-700 cursor-pointer hover:text-purple-900">
+            Przykladowe cele CRM
+          </summary>
+          <div className="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div className="bg-white rounded-lg p-3 border border-gray-200 text-sm">
+              <p className="font-medium text-gray-900">Wzrost sprzedazy premium</p>
+              <p className="text-gray-500 mt-1"><span className="text-purple-600">R:</span> Podpisac 10 kontraktow B2B</p>
+              <p className="text-gray-500"><span className="text-blue-600">Z:</span> Liczba podpisanych umow</p>
+              <p className="text-gray-500"><span className="text-green-600">U:</span> 31 marca 2026</p>
+              <p className="text-gray-500"><span className="text-amber-600">T:</span> Zwiekszenie ARR o 40k PLN</p>
+            </div>
+            <div className="bg-white rounded-lg p-3 border border-gray-200 text-sm">
+              <p className="font-medium text-gray-900">Automatyzacja procesow</p>
+              <p className="text-gray-500 mt-1"><span className="text-purple-600">R:</span> Wdrozyc 5 automatyzacji email</p>
+              <p className="text-gray-500"><span className="text-blue-600">Z:</span> Liczba aktywnych kampanii</p>
+              <p className="text-gray-500"><span className="text-green-600">U:</span> 28 lutego 2026</p>
+              <p className="text-gray-500"><span className="text-amber-600">T:</span> Oszczedzic 10h tygodniowo</p>
+            </div>
+            <div className="bg-white rounded-lg p-3 border border-gray-200 text-sm">
+              <p className="font-medium text-gray-900">Rozwoj zespolu</p>
+              <p className="text-gray-500 mt-1"><span className="text-purple-600">R:</span> Przeszkolenie zespolu z STREAMS</p>
+              <p className="text-gray-500"><span className="text-blue-600">Z:</span> % przeszkolonych czlonkow</p>
+              <p className="text-gray-500"><span className="text-green-600">U:</span> 30 kwietnia 2026</p>
+              <p className="text-gray-500"><span className="text-amber-600">T:</span> Zwiekszenie efektywnosci o 25%</p>
+            </div>
+          </div>
+        </details>
+
+        <p className="text-xs text-gray-500 mt-3">
+          Cele pomagaja sledzic kwartalne i roczne cele biznesowe, laczyc codzienne zadania z wiekszymi celami firmy i mierzyc wyniki zespolu.
+        </p>
       </div>
 
       {/* Goals List */}
