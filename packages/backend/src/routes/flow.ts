@@ -1564,13 +1564,27 @@ router.post('/feedback', authMiddleware, async (req: Request, res: Response) => 
       }
     }
 
-    // If user overrode AI suggestion, this is valuable training data
-    // Could be used to create a new learned pattern
-    if (suggestedAction !== actualAction) {
-      console.log(`[FlowFeedback] User override: ${suggestedAction} -> ${actualAction} for element ${elementId}`);
-
-      // TODO: In future, this could trigger pattern learning
-      // await flowEngine.learnFromUserDecision(elementId, actualAction);
+    // Trigger pattern learning from user feedback
+    try {
+      const engine = await getFlowEngine(user.organizationId);
+      if (suggestedAction !== actualAction) {
+        // User overrode - learn from correction (few-shot learning)
+        console.log(`[FlowFeedback] User override: ${suggestedAction} -> ${actualAction} for element ${elementId}`);
+        const inboxItem = await prisma.inboxItem.findUnique({ where: { id: elementId } });
+        if (inboxItem) {
+          await engine.confirmAction(elementId, user.id, actualAction as FlowAction, undefined, 'User override via feedback');
+        }
+      } else if (wasHelpful) {
+        // User confirmed - reinforce existing pattern
+        console.log(`[FlowFeedback] User confirmed: ${suggestedAction} for element ${elementId}`);
+        // Wzmocnij wzorzec przez confirmAction (bez override, nie wywoła learnFromUserOverride)
+        const inboxItem = await prisma.inboxItem.findUnique({ where: { id: elementId } });
+        if (inboxItem && inboxItem.flowStatus !== 'PROCESSED') {
+          await engine.confirmAction(elementId, user.id, actualAction as FlowAction, undefined);
+        }
+      }
+    } catch (learnError: any) {
+      console.error('[FlowFeedback] Learning error (non-fatal):', learnError.message);
     }
 
     return res.json({

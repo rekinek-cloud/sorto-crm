@@ -28,6 +28,9 @@ import {
     ClockIcon,
     UserGroupIcon,
     ScissorsIcon,
+    PencilSquareIcon,
+    XCircleIcon,
+    AcademicCapIcon,
 } from '@heroicons/react/24/outline';
 import VoiceRecorder from '@/components/source/VoiceRecorder';
 
@@ -98,6 +101,12 @@ export default function SourcePage() {
     const [processingItem, setProcessingItem] = useState<SourceItem | null>(null);
     const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
     const [useDialogMode, setUseDialogMode] = useState(true); // Domyslnie tryb dialogowy
+
+    // Human-in-the-Loop states
+    const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
+    const [rejectingId, setRejectingId] = useState<string | null>(null);
+    const [rejectReason, setRejectReason] = useState('');
+    const [learnedIds, setLearnedIds] = useState<Set<string>>(new Set());
 
     // Load source data and streams
     const loadData = async () => {
@@ -233,6 +242,82 @@ export default function SourcePage() {
             return;
         }
         setShowBatchModal(true);
+    };
+
+    // Quick approve AI suggestion (Human-in-the-Loop: Zatwierdź)
+    const handleQuickApprove = async (item: SourceItem) => {
+        if (!item.suggestedAction) return;
+
+        setProcessingIds(prev => new Set(prev).add(item.id));
+        try {
+            const streamId = item.suggestedStreams?.[0]?.streamId;
+
+            // Use confirm endpoint - triggers learning automatically
+            await apiClient.post(`/flow/confirm/${item.id}`, {
+                action: item.suggestedAction,
+                streamId,
+                reason: 'Zatwierdzono sugestię AI'
+            });
+
+            // Record positive feedback
+            await flowApi.recordFeedback(item.id, {
+                suggestedAction: item.suggestedAction as any,
+                actualAction: item.suggestedAction as any,
+                wasHelpful: true
+            });
+
+            // Show learning indicator
+            setLearnedIds(prev => new Set(prev).add(item.id));
+            toast.success('Zatwierdzone! AI się uczy z Twojej decyzji');
+
+            // Refresh after short delay to show the learning indicator
+            setTimeout(() => {
+                loadData();
+                setLearnedIds(prev => {
+                    const next = new Set(prev);
+                    next.delete(item.id);
+                    return next;
+                });
+            }, 1500);
+        } catch (error: any) {
+            console.error('Quick approve error:', error);
+            toast.error('Błąd podczas zatwierdzania: ' + (error?.response?.data?.error || error.message));
+        } finally {
+            setProcessingIds(prev => {
+                const next = new Set(prev);
+                next.delete(item.id);
+                return next;
+            });
+        }
+    };
+
+    // Reject AI suggestion (Human-in-the-Loop: Odrzuć)
+    const handleReject = async (item: SourceItem) => {
+        if (!item.suggestedAction) return;
+
+        setProcessingIds(prev => new Set(prev).add(item.id));
+        try {
+            // Record negative feedback - weakens pattern
+            await flowApi.recordFeedback(item.id, {
+                suggestedAction: item.suggestedAction as any,
+                actualAction: 'USUN' as any, // Rejection
+                wasHelpful: false
+            });
+
+            toast.success('Sugestia odrzucona. AI się uczy.');
+            setRejectingId(null);
+            setRejectReason('');
+            loadData();
+        } catch (error: any) {
+            console.error('Reject error:', error);
+            toast.error('Błąd podczas odrzucania');
+        } finally {
+            setProcessingIds(prev => {
+                const next = new Set(prev);
+                next.delete(item.id);
+                return next;
+            });
+        }
     };
 
     // Toggle item selection
@@ -559,6 +644,36 @@ export default function SourcePage() {
                                                 </div>
                                             )}
 
+                                            {/* Reject reason input */}
+                                            {rejectingId === item.id && (
+                                                <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                                                    <p className="text-sm font-medium text-red-700 mb-2">Dlaczego odrzucasz sugestię?</p>
+                                                    <div className="flex gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={rejectReason}
+                                                            onChange={(e) => setRejectReason(e.target.value)}
+                                                            placeholder="Opcjonalny powód..."
+                                                            className="flex-1 px-3 py-1.5 text-sm border border-red-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                                            onKeyDown={(e) => { if (e.key === 'Enter') handleReject(item); }}
+                                                        />
+                                                        <button
+                                                            onClick={() => handleReject(item)}
+                                                            disabled={processingIds.has(item.id)}
+                                                            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white text-sm rounded-md"
+                                                        >
+                                                            Odrzuć
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { setRejectingId(null); setRejectReason(''); }}
+                                                            className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm rounded-md"
+                                                        >
+                                                            Anuluj
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            )}
+
                                             {/* Split indicator */}
                                             {item.flowStatus === 'SPLIT' && (
                                                 <div className="mb-3 flex items-center gap-2 text-xs text-blue-600 bg-blue-50 px-3 py-1.5 rounded">
@@ -579,13 +694,66 @@ export default function SourcePage() {
                                             </div>
                                         </div>
 
-                                        <button
-                                            onClick={() => handleProcess(item)}
-                                            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
-                                        >
-                                            <SparklesIcon className="w-4 h-4" />
-                                            Flow
-                                        </button>
+                                        {/* Action buttons - Human-in-the-Loop */}
+                                        <div className="flex flex-col gap-2 shrink-0">
+                                            {item.aiAnalysis && item.suggestedAction && item.flowStatus !== 'PROCESSED' ? (
+                                                <>
+                                                    {/* Zatwierdź - Quick approve */}
+                                                    <button
+                                                        onClick={() => handleQuickApprove(item)}
+                                                        disabled={processingIds.has(item.id)}
+                                                        className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                                                    >
+                                                        {processingIds.has(item.id) ? (
+                                                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                                                        ) : (
+                                                            <CheckCircleIcon className="w-4 h-4" />
+                                                        )}
+                                                        Zatwierdź
+                                                    </button>
+
+                                                    {/* Koryguj - Open modal for editing */}
+                                                    <button
+                                                        onClick={() => handleProcess(item)}
+                                                        className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                                                    >
+                                                        <PencilSquareIcon className="w-4 h-4" />
+                                                        Koryguj
+                                                    </button>
+
+                                                    {/* Odrzuć - Reject suggestion */}
+                                                    <button
+                                                        onClick={() => setRejectingId(rejectingId === item.id ? null : item.id)}
+                                                        disabled={processingIds.has(item.id)}
+                                                        className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                                                    >
+                                                        <XCircleIcon className="w-4 h-4" />
+                                                        Odrzuć
+                                                    </button>
+
+                                                    {/* Learning indicator */}
+                                                    {learnedIds.has(item.id) && (
+                                                        <div className="flex items-center gap-1 text-xs text-indigo-600 animate-pulse">
+                                                            <AcademicCapIcon className="w-3.5 h-3.5" />
+                                                            AI się uczy...
+                                                        </div>
+                                                    )}
+                                                </>
+                                            ) : item.flowStatus === 'PROCESSED' ? (
+                                                <span className="px-4 py-2 bg-green-100 text-green-700 text-sm font-medium rounded-lg flex items-center gap-2">
+                                                    <CheckCircleIcon className="w-4 h-4" />
+                                                    Przetworzony
+                                                </span>
+                                            ) : (
+                                                <button
+                                                    onClick={() => handleProcess(item)}
+                                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                                                >
+                                                    <SparklesIcon className="w-4 h-4" />
+                                                    Flow
+                                                </button>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
                             );
