@@ -271,7 +271,7 @@ router.post('/process/:id', async (req: Request, res: Response) => {
 
     const result = await engine.processSourceItem({
       organizationId: user.organizationId,
-      userId: user.userId,
+      userId: user.id,
       inboxItemId: id,
       autoExecute
     });
@@ -329,7 +329,7 @@ router.post('/process-batch', async (req: Request, res: Response) => {
 
     const engine = await getFlowEngine(user.organizationId);
 
-    const results = await engine.processBatch(itemIds, user.userId, autoExecute);
+    const results = await engine.processBatch(itemIds, user.id, autoExecute);
 
     const successCount = results.filter(r => r.success).length;
     const failedCount = results.filter(r => !r.success).length;
@@ -393,7 +393,7 @@ router.post('/confirm/:id', async (req: Request, res: Response) => {
 
     await engine.confirmAction(
       id,
-      user.userId,
+      user.id,
       action as FlowAction,
       streamId,
       reason
@@ -1032,7 +1032,7 @@ router.post('/rules', async (req: Request, res: Response) => {
     const rule = await prisma.flow_automation_rules.create({
       data: {
         organizationId: user.organizationId,
-        userId: user.userId,
+        userId: user.id,
         name,
         description,
         conditions,
@@ -1543,7 +1543,7 @@ router.post('/feedback', authMiddleware, async (req: Request, res: Response) => 
       });
     } else {
       // Only create new feedback record if we have userId
-      const userId = user.userId || user.id;
+      const userId = user.id;
       if (userId) {
         await prisma.flow_processing_history.create({
           data: {
