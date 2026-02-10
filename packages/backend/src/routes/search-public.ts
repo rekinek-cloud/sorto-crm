@@ -5,9 +5,8 @@
 
 import { Router } from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 
-const prisma = new PrismaClient();
 const router = Router();
 
 /**

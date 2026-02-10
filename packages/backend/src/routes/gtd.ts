@@ -1,10 +1,10 @@
 import express from 'express';
-import { PrismaClient, TaskStatus, Priority } from '@prisma/client';
+import { TaskStatus, Priority } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken as requireAuth, AuthenticatedRequest } from '../shared/middleware/auth';
 import { gtdService, GTDProcessingDecision } from '../services/gtdService';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Get inbox items
 router.get('/inbox', requireAuth, async (req: AuthenticatedRequest, res) => {
@@ -69,8 +69,8 @@ router.post('/inbox', requireAuth, async (req: AuthenticatedRequest, res) => {
         description,
         priority: priority as Priority,
         status: TaskStatus.NEW,
-        context,
-        estimatedTime,
+        contextId: context,
+        estimatedHours: estimatedTime,
         dueDate: dueDate ? new Date(dueDate) : null,
         organizationId: req.user!.organizationId,
         createdById: req.user!.id
@@ -95,8 +95,8 @@ router.post('/inbox', requireAuth, async (req: AuthenticatedRequest, res) => {
         urgencyScore: 50,
         actionable: true,
         processed: false,
-        estimatedTime: task.estimatedTime,
-        contextSuggested: task.context,
+        estimatedTime: task.estimatedHours,
+        contextSuggested: task.contextId,
         organizationId: task.organizationId,
         createdAt: task.createdAt,
         receivedAt: task.createdAt
@@ -175,7 +175,7 @@ router.get('/next-actions', requireAuth, async (req: AuthenticatedRequest, res) 
     };
 
     if (context) {
-      where.context = context;
+      where.contextId = context;
     }
 
     if (priority) {
@@ -253,11 +253,11 @@ router.get('/next-actions/stats', requireAuth, async (req: AuthenticatedRequest,
         }
       }),
       prisma.task.groupBy({
-        by: ['context'],
+        by: ['contextId'],
         where: {
           organizationId: req.user!.organizationId,
           status: { in: [TaskStatus.IN_PROGRESS, TaskStatus.NEW] },
-          context: { not: null }
+          contextId: { not: null }
         },
         _count: true
       })
@@ -269,8 +269,8 @@ router.get('/next-actions/stats', requireAuth, async (req: AuthenticatedRequest,
       dueToday,
       highPriority,
       byContext: byContext.reduce((acc, item) => {
-        if (item.context) {
-          acc[item.context] = item._count;
+        if (item.contextId) {
+          acc[item.contextId] = item._count;
         }
         return acc;
       }, {} as Record<string, number>)
@@ -300,7 +300,7 @@ router.put('/tasks/:id/context', requireAuth, async (req: AuthenticatedRequest, 
 
     const updatedTask = await prisma.task.update({
       where: { id },
-      data: { context }
+      data: { contextId: context }
     });
 
     res.json(updatedTask);
@@ -514,7 +514,7 @@ router.post('/someday-maybe', requireAuth, async (req: AuthenticatedRequest, res
 router.post('/someday-maybe/:id/activate', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
-    const { dueDate, streamId, context } = req.body;
+    const { dueDate, streamId, contextId } = req.body;
 
     const somedayItem = await prisma.somedayMaybe.findFirst({
       where: {
@@ -535,7 +535,7 @@ router.post('/someday-maybe/:id/activate', requireAuth, async (req: Authenticate
         priority: somedayItem.priority as Priority,
         status: TaskStatus.NEW,
         dueDate: dueDate ? new Date(dueDate) : null,
-        context,
+        contextId,
         streamId,
         organizationId: req.user!.organizationId,
         createdById: req.user!.id
@@ -565,25 +565,16 @@ router.post('/someday-maybe/:id/activate', requireAuth, async (req: Authenticate
 // Get available contexts
 router.get('/contexts', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const contexts = await prisma.task.findMany({
+    const contexts = await prisma.context.findMany({
       where: {
         organizationId: req.user!.organizationId,
-        context: { not: null }
+        isActive: true
       },
-      select: { context: true },
-      distinct: ['context']
+      select: { id: true, name: true, color: true, icon: true },
+      orderBy: { name: 'asc' }
     });
 
-    const contextList = contexts
-      .map(t => t.context)
-      .filter(Boolean)
-      .sort();
-
-    // Add default contexts if not present
-    const defaultContexts = ['@calls', '@computer', '@errands', '@home', '@office', '@waiting'];
-    const allContexts = [...new Set([...defaultContexts, ...contextList])];
-
-    res.json(allContexts);
+    res.json(contexts);
   } catch (error) {
     console.error('Error fetching contexts:', error);
     res.status(500).json({ error: 'Failed to fetch contexts' });

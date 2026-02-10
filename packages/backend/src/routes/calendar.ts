@@ -1,10 +1,9 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken } from '../shared/middleware/auth';
 import logger from '../config/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Calendar event interface
 interface CalendarEvent {
@@ -377,7 +376,7 @@ router.get('/summary', authenticateToken, async (req, res) => {
       prisma.meeting.count({
         where: {
           organizationId,
-          scheduledAt: { gte: today, lte: nextWeek }
+          startTime: { gte: today, lte: nextWeek }
         }
       }),
       prisma.recurringTask.count({

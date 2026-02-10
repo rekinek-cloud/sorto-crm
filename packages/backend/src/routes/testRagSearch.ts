@@ -1,9 +1,8 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import logger from '../config/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 /**
  * POST /api/v1/test-rag-search/search

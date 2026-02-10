@@ -1,9 +1,8 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken as requireAuth, AuthenticatedRequest } from '../shared/middleware/auth';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Get dashboard statistics
 router.get('/stats', requireAuth, async (req: AuthenticatedRequest, res) => {
@@ -47,7 +46,7 @@ router.get('/stats', requireAuth, async (req: AuthenticatedRequest, res) => {
       activeTasks: tasks.filter(t => t.status === 'NEW' || t.status === 'IN_PROGRESS').length,
       completedTasks: tasks.filter(t => t.status === 'COMPLETED').length,
       totalProjects: projects.length,
-      activeProjects: projects.filter(p => p.status === 'ACTIVE').length,
+      activeProjects: projects.filter(p => p.status === 'IN_PROGRESS').length,
       totalStreams: streams.length,
       inboxCount: inboxCount,
       urgentTasks: tasks.filter(t => t.priority === 'HIGH').length,

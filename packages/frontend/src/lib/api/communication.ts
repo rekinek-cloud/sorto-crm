@@ -10,6 +10,7 @@ export interface CommunicationChannel {
   unreadCount: number;
   lastMessage?: string;
   lastMessageAt?: string;
+  lastSyncAt?: string;
 }
 
 export interface Message {
@@ -187,6 +188,22 @@ export const communicationApi = {
       dealCreated?: boolean;
       dealTitle?: string;
     }>(`/communication/messages/${messageId}/analyze`);
+    return response.data;
+  },
+
+  // Communication logging (via /communications route)
+  async logCommunicationActivity(data: {
+    type: 'email' | 'phone' | 'meeting' | 'sms' | 'chat';
+    direction: 'inbound' | 'outbound';
+    subject?: string;
+    body?: string;
+    duration?: number;
+    status?: string;
+    companyId?: string;
+    contactId?: string;
+    dealId?: string;
+  }): Promise<any> {
+    const response = await apiClient.post('/communications/log', data);
     return response.data;
   },
 

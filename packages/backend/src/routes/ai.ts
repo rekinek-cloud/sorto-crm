@@ -1,11 +1,10 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken } from '../shared/middleware/auth';
 import { GoalRecommendationEngine } from '../services/ai/GoalRecommendationEngine';
 import logger from '../config/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 const goalEngine = new GoalRecommendationEngine(prisma);
 
 // Apply authentication to all AI routes

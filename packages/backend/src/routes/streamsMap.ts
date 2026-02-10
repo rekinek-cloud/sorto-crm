@@ -1,10 +1,9 @@
 import { Router } from 'express';
 import { authenticateToken } from '../shared/middleware/auth';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import logger from '../config/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Types for bucket views
 interface BucketGroup {
@@ -171,15 +170,15 @@ const createBusinessView = (tasks: any[]): BucketGroup[] => {
   // Group by company
   tasks.forEach(task => {
     const companyId = task.companyId || 'internal';
-    const companyName = task.company?.name || 'Projekty wewnętrzne';
+    const companyName = task.companies?.name || 'Projekty wewnętrzne';
     
     if (!grouped.has(companyId)) {
       grouped.set(companyId, []);
       companyMap.set(companyId, {
         id: companyId,
         name: companyName,
-        industry: task.company?.industry || 'Internal',
-        status: task.company?.status || 'ACTIVE'
+        industry: task.companies?.industry || 'Internal',
+        status: task.companies?.status || 'ACTIVE'
       });
     }
     
@@ -442,7 +441,7 @@ router.get('/views/:viewType', authenticateToken, async (req, res) => {
             email: true
           }
         },
-        company: {
+        companies: {
           select: {
             id: true,
             name: true,

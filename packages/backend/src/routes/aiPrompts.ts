@@ -4,7 +4,7 @@
  */
 
 import { Router, Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken, requireRole } from '../shared/middleware/auth';
 import { validateRequest } from '../shared/middleware/validation';
 import { z } from 'zod';
@@ -14,7 +14,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { PromptManager } from '../services/ai/PromptManager';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Helper: Map Prisma model names
 const db = {

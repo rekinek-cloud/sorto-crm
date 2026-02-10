@@ -1,10 +1,9 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken } from '../shared/middleware/auth';
 import logger from '../config/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Get all meetings with optional filtering
 router.get('/', authenticateToken, async (req, res) => {
@@ -229,7 +228,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
             firstName: true,
             lastName: true,
             email: true,
-            company: {
+            assignedCompany: {
               select: {
                 id: true,
                 name: true
@@ -482,7 +481,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
             firstName: true,
             lastName: true,
             email: true,
-            company: {
+            assignedCompany: {
               select: {
                 id: true,
                 name: true
@@ -550,7 +549,7 @@ router.get('/calendar/:year/:month', authenticateToken, async (req, res) => {
             id: true,
             firstName: true,
             lastName: true,
-            company: {
+            assignedCompany: {
               select: {
                 name: true
               }

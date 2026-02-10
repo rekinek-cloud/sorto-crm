@@ -1,10 +1,9 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken } from '../shared/middleware/auth';
 import UserHierarchyService, { CreateUserRelationInput, UserAccessCheckInput, HierarchyQuery } from '../services/UserHierarchyService';
 import { z } from 'zod';
 
-const prisma = new PrismaClient();
 
 const router = express.Router();
 
@@ -401,7 +400,7 @@ router.get('/users/:userId', async (req, res) => {
                 role: true
               }
             },
-            user_relation_permissions: true
+            user_permissions: true
           }
         },
         user_relations_user_relations_employeeIdTousers: {
@@ -417,7 +416,7 @@ router.get('/users/:userId', async (req, res) => {
                 role: true
               }
             },
-            user_relation_permissions: true
+            user_permissions: true
           }
         }
       }

@@ -1,10 +1,9 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken as authMiddleware } from '../shared/middleware/auth';
 import { enhancedAIService } from '../services/EnhancedAIService';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Safe JSON parsing utility
 function safeJsonParse(jsonString: any, defaultValue: any) {
@@ -47,15 +46,15 @@ router.get('/time-blocks', authMiddleware, async (req, res) => {
     const userId = req.user.id;
     const { dayOfWeek } = req.query;
 
-    const blocks = await prisma.energyTimeBlock.findMany({
+    const blocks = await prisma.energy_time_blocks.findMany({
       where: {
         userId,
         isActive: true,
         ...(dayOfWeek && { dayOfWeek: dayOfWeek as any })
       },
       include: {
-        focusMode: true,
-        scheduledTasks: {
+        focus_modes: true,
+        scheduled_tasks: {
           where: {
             scheduledDate: {
               gte: new Date(new Date().setHours(0, 0, 0, 0)),
@@ -64,7 +63,7 @@ router.get('/time-blocks', authMiddleware, async (req, res) => {
           },
           orderBy: { priority: 'desc' }
         },
-        energyAnalytics: {
+        energy_analytics: {
           take: 7,
           orderBy: { date: 'desc' }
         }
@@ -123,7 +122,7 @@ router.post('/time-blocks', authMiddleware, async (req, res) => {
     }
 
     // Sprawdź konflikty czasowe
-    const conflictingBlock = await prisma.energyTimeBlock.findFirst({
+    const conflictingBlock = await prisma.energy_time_blocks.findFirst({
       where: {
         userId,
         dayOfWeek: dayOfWeek || null,
@@ -153,7 +152,7 @@ router.post('/time-blocks', authMiddleware, async (req, res) => {
       });
     }
 
-    const block = await prisma.energyTimeBlock.create({
+    const block = await prisma.energy_time_blocks.create({
       data: {
         name,
         startTime,
@@ -194,7 +193,7 @@ router.put('/time-blocks/:id', authMiddleware, async (req, res) => {
     const { id } = req.params;
     const updateData = req.body;
 
-    const block = await prisma.energyTimeBlock.findFirst({
+    const block = await prisma.energy_time_blocks.findFirst({
       where: { id, userId }
     });
 
@@ -205,7 +204,7 @@ router.put('/time-blocks/:id', authMiddleware, async (req, res) => {
       });
     }
 
-    const updatedBlock = await prisma.energyTimeBlock.update({
+    const updatedBlock = await prisma.energy_time_blocks.update({
       where: { id },
       data: {
         ...updateData,
@@ -245,7 +244,7 @@ router.post('/schedule-tasks', authMiddleware, async (req, res) => {
     const dayOfWeek = getDayOfWeek(schedulingDate);
 
     // 1. Pobierz bloki czasowe na dany dzień
-    const timeBlocks = await prisma.energyTimeBlock.findMany({
+    const timeBlocks = await prisma.energy_time_blocks.findMany({
       where: {
         userId,
         isActive: true,
@@ -280,7 +279,7 @@ router.post('/schedule-tasks', authMiddleware, async (req, res) => {
 
     // 3. Usuń stare harmonogramy jeśli force reschedule
     if (forceReschedule) {
-      await prisma.scheduledTask.deleteMany({
+      await prisma.scheduled_tasks.deleteMany({
         where: {
           userId,
           scheduledDate: {
@@ -334,7 +333,7 @@ router.post('/schedule-tasks', authMiddleware, async (req, res) => {
         const taskMinutes = (task.estimatedHours || 0.5) * 60;
         
         if (taskMinutes <= remainingMinutes) {
-          const scheduledTask = await prisma.scheduledTask.create({
+          const scheduledTask = await prisma.scheduled_tasks.create({
             data: {
               title: task.title,
               description: task.description,
@@ -437,7 +436,7 @@ router.post('/scheduled-tasks', authMiddleware, async (req, res) => {
       const { date, startTime, endTime } = specificTimeSlot;
       
       // Look for existing block at this time
-      const existingBlock = await prisma.energyTimeBlock.findFirst({
+      const existingBlock = await prisma.energy_time_blocks.findFirst({
         where: {
           userId,
           isActive: true,
@@ -455,7 +454,7 @@ router.post('/scheduled-tasks', authMiddleware, async (req, res) => {
         energyTimeBlockId = existingBlock.id;
       } else {
         // Create a new time block for this specific event
-        const newBlock = await prisma.energyTimeBlock.create({
+        const newBlock = await prisma.energy_time_blocks.create({
           data: {
             name: `Event: ${title}`,
             startTime,
@@ -482,7 +481,7 @@ router.post('/scheduled-tasks', authMiddleware, async (req, res) => {
       const targetHour = targetDate.getHours();
       const timeString = `${targetHour.toString().padStart(2, '0')}:${targetDate.getMinutes().toString().padStart(2, '0')}`;
       
-      const suitableBlock = await prisma.energyTimeBlock.findFirst({
+      const suitableBlock = await prisma.energy_time_blocks.findFirst({
         where: {
           userId,
           isActive: true,
@@ -501,7 +500,7 @@ router.post('/scheduled-tasks', authMiddleware, async (req, res) => {
     }
 
     // Create the scheduled task
-    const scheduledTask = await prisma.scheduledTask.create({
+    const scheduledTask = await prisma.scheduled_tasks.create({
       data: {
         title,
         description,
@@ -551,7 +550,7 @@ router.get('/daily-schedule/:date', authMiddleware, async (req, res) => {
     dayEnd.setHours(23, 59, 59, 999);
     
     // Get time blocks with proper deduplication (same logic as dashboard)
-    const allTimeBlocks = await prisma.energyTimeBlock.findMany({
+    const allTimeBlocks = await prisma.energy_time_blocks.findMany({
       where: {
         userId,
         isActive: true,
@@ -582,8 +581,8 @@ router.get('/daily-schedule/:date', authMiddleware, async (req, res) => {
         ]
       },
       include: {
-        focusMode: true,
-        scheduledTasks: {
+        focus_modes: true,
+        scheduled_tasks: {
           where: {
             scheduledDate: {
               gte: dayStart,
@@ -591,7 +590,7 @@ router.get('/daily-schedule/:date', authMiddleware, async (req, res) => {
             }
           },
           include: {
-            task: true
+            tasks: true
           },
           orderBy: { priority: 'desc' }
         }
@@ -613,10 +612,10 @@ router.get('/daily-schedule/:date', authMiddleware, async (req, res) => {
     );
 
     // Oblicz statystyki
-    const allScheduledTasks = timeBlocks.flatMap(block => block.scheduledTasks);
+    const allScheduledTasks = timeBlocks.flatMap(block => block.scheduled_tasks);
     const totalPlannedMinutes = allScheduledTasks.reduce((sum, task) => sum + task.estimatedMinutes, 0);
     const workBlocks = timeBlocks.filter(b => !b.isBreak);
-    const totalWorkMinutes = workBlocks.reduce((sum, block) => 
+    const totalWorkMinutes = workBlocks.reduce((sum, block) =>
       sum + calculateDuration(block.startTime, block.endTime), 0
     );
 
@@ -634,7 +633,7 @@ router.get('/daily-schedule/:date', authMiddleware, async (req, res) => {
           totalPlannedMinutes,
           totalWorkMinutes,
           utilizationRate: totalWorkMinutes > 0 ? totalPlannedMinutes / totalWorkMinutes : 0,
-          blocksWithTasks: workBlocks.filter(b => b.scheduledTasks.length > 0).length
+          blocksWithTasks: workBlocks.filter(b => b.scheduled_tasks.length > 0).length
         }
       }
     });
@@ -676,7 +675,7 @@ router.get('/weekly-schedule/:date', authMiddleware, async (req, res) => {
       const dayEnd = new Date(currentDay);
       dayEnd.setHours(23, 59, 59, 999);
       
-      const timeBlocks = await prisma.energyTimeBlock.findMany({
+      const timeBlocks = await prisma.energy_time_blocks.findMany({
         where: {
           userId,
           isActive: true,
@@ -687,7 +686,7 @@ router.get('/weekly-schedule/:date', authMiddleware, async (req, res) => {
           ]
         },
         include: {
-          scheduledTasks: {
+          scheduled_tasks: {
             where: {
               scheduledDate: {
                 gte: dayStart,
@@ -699,10 +698,10 @@ router.get('/weekly-schedule/:date', authMiddleware, async (req, res) => {
         },
         orderBy: { startTime: 'asc' }
       });
-      
-      const allScheduledTasks = timeBlocks.flatMap(block => block.scheduledTasks);
+
+      const allScheduledTasks = timeBlocks.flatMap(block => block.scheduled_tasks);
       const totalPlannedMinutes = allScheduledTasks.reduce((sum, task) => sum + task.estimatedMinutes, 0);
-      
+
       weekData.push({
         date: currentDay,
         dayOfWeek,
@@ -711,7 +710,7 @@ router.get('/weekly-schedule/:date', authMiddleware, async (req, res) => {
           totalBlocks: timeBlocks.length,
           totalTasks: allScheduledTasks.length,
           totalPlannedMinutes,
-          blocksWithTasks: timeBlocks.filter(b => b.scheduledTasks.length > 0).length
+          blocksWithTasks: timeBlocks.filter(b => b.scheduled_tasks.length > 0).length
         }
       });
     }
@@ -768,7 +767,7 @@ router.get('/monthly-schedule/:year/:month', authMiddleware, async (req, res) =>
       const dayOfWeek = getDayOfWeek(current);
       
       // Get scheduled tasks for this day
-      const scheduledTasks = await prisma.scheduledTask.findMany({
+      const scheduledTasks = await prisma.scheduled_tasks.findMany({
         where: {
           userId,
           scheduledDate: {
@@ -851,7 +850,7 @@ router.get('/focus-modes', authMiddleware, async (req, res) => {
     const focusModes = await prisma.focusMode.findMany({
       where: { organizationId },
       include: {
-        timeBlocks: {
+        energy_time_blocks: {
           select: {
             id: true,
             name: true,
@@ -872,7 +871,7 @@ router.get('/focus-modes', authMiddleware, async (req, res) => {
       data: focusModes,
       meta: {
         total: focusModes.length,
-        activeBlocks: focusModes.reduce((sum, mode) => sum + mode.timeBlocks.length, 0)
+        activeBlocks: focusModes.reduce((sum, mode) => sum + mode.energy_time_blocks.length, 0)
       }
     });
   } catch (error) {
@@ -958,7 +957,7 @@ router.put('/focus-modes/:id', authMiddleware, async (req, res) => {
         updatedAt: new Date()
       },
       include: {
-        timeBlocks: true
+        energy_time_blocks: true
       }
     });
 
@@ -997,7 +996,7 @@ router.delete('/focus-modes/:id', authMiddleware, async (req, res) => {
     }
 
     // Usuń powiązania z time blocks
-    await prisma.energyTimeBlock.updateMany({
+    await prisma.energy_time_blocks.updateMany({
       where: { focusModeId: id },
       data: { focusModeId: null }
     });
@@ -1029,7 +1028,7 @@ router.post('/time-blocks/:id/focus-mode', authMiddleware, async (req, res) => {
     const { id: blockId } = req.params;
     const { focusModeId } = req.body;
 
-    const timeBlock = await prisma.energyTimeBlock.findFirst({
+    const timeBlock = await prisma.energy_time_blocks.findFirst({
       where: { id: blockId, userId }
     });
 
@@ -1040,11 +1039,11 @@ router.post('/time-blocks/:id/focus-mode', authMiddleware, async (req, res) => {
       });
     }
 
-    const updatedBlock = await prisma.energyTimeBlock.update({
+    const updatedBlock = await prisma.energy_time_blocks.update({
       where: { id: blockId },
       data: { focusModeId },
       include: {
-        focusMode: true
+        focus_modes: true
       }
     });
 
@@ -1086,10 +1085,10 @@ router.get('/performance-analytics', authMiddleware, async (req, res) => {
       whereClause.periodType = periodType;
     }
 
-    const metrics = await prisma.performanceMetrics.findMany({
+    const metrics = await prisma.performance_metrics.findMany({
       where: whereClause,
       include: {
-        focusMode: {
+        focus_modes: {
           select: {
             id: true,
             name: true,
@@ -1153,22 +1152,22 @@ router.post('/performance-analytics/generate', authMiddleware, async (req, res) 
     const end = new Date(endDate);
 
     // Pobierz dane z EnergyAnalytics w danym okresie
-    const energyAnalytics = await prisma.energyAnalytics.findMany({
+    const energyAnalytics = await prisma.energy_analytics.findMany({
       where: {
         userId,
         date: { gte: start, lte: end }
       },
       include: {
-        energyTimeBlock: {
+        energy_time_blocks: {
           include: {
-            focusMode: true
+            focus_modes: true
           }
         }
       }
     });
 
     // Pobierz zaplanowane zadania w okresie
-    const scheduledTasks = await prisma.scheduledTask.findMany({
+    const scheduledTasks = await prisma.scheduled_tasks.findMany({
       where: {
         userId,
         scheduledDate: { gte: start, lte: end }
@@ -1182,7 +1181,7 @@ router.post('/performance-analytics/generate', authMiddleware, async (req, res) 
     const completionRate = totalTasks > 0 ? completedTasks / totalTasks : 0;
 
     // Analiza focus modes
-    const focusModeBlocks = energyAnalytics.filter(ea => ea.energyTimeBlock.focusMode);
+    const focusModeBlocks = energyAnalytics.filter(ea => ea.energy_time_blocks.focus_modes);
     const focusModeTasksCompleted = focusModeBlocks.reduce((sum, ea) => sum + ea.tasksCompleted, 0);
     const focusModeTasksPlanned = focusModeBlocks.reduce((sum, ea) => sum + ea.tasksPlanned, 0);
     const focusModeEfficiency = focusModeTasksPlanned > 0 ? focusModeTasksCompleted / focusModeTasksPlanned : 0;
@@ -1229,12 +1228,12 @@ router.post('/performance-analytics/generate', authMiddleware, async (req, res) 
     });
 
     // Utwórz metryki wydajności
-    const performanceMetrics = await prisma.performanceMetrics.create({
+    const performanceMetrics = await prisma.performance_metrics.create({
       data: {
         startDate: start,
         endDate: end,
         periodType,
-        focusModeId: focusModeBlocks[0]?.energyTimeBlock.focusMode?.id || null,
+        focusModeId: focusModeBlocks[0]?.energy_time_blocks.focus_modes?.id || null,
         focusModeEfficiency,
         focusModeProductivity: avgProductivity,
         primaryContext: getMostUsedContext(energyAnalytics),
@@ -1260,7 +1259,7 @@ router.post('/performance-analytics/generate', authMiddleware, async (req, res) 
         userId
       },
       include: {
-        focusMode: true
+        focus_modes: true
       }
     });
 
@@ -1292,13 +1291,13 @@ router.get('/performance-insights', authMiddleware, async (req, res) => {
     startDate.setDate(startDate.getDate() - periodDays);
 
     // Pobierz ostatnie metryki
-    const recentMetrics = await prisma.performanceMetrics.findMany({
+    const recentMetrics = await prisma.performance_metrics.findMany({
       where: {
         userId,
         startDate: { gte: startDate }
       },
       include: {
-        focusMode: true
+        focus_modes: true
       },
       orderBy: { startDate: 'desc' },
       take: periodDays
@@ -1375,10 +1374,10 @@ router.post('/energy-feedback', authMiddleware, async (req, res) => {
     } = req.body;
 
     // Pobierz blok czasowy i zaplanowane zadania
-    const timeBlock = await prisma.energyTimeBlock.findFirst({
+    const timeBlock = await prisma.energy_time_blocks.findFirst({
       where: { id: energyTimeBlockId, userId },
       include: {
-        scheduledTasks: {
+        scheduled_tasks: {
           where: {
             scheduledDate: {
               gte: new Date(new Date().setHours(0, 0, 0, 0)),
@@ -1396,12 +1395,12 @@ router.post('/energy-feedback', authMiddleware, async (req, res) => {
       });
     }
 
-    const plannedTasks = timeBlock.scheduledTasks.length;
-    const plannedMinutes = timeBlock.scheduledTasks.reduce((sum, task) => sum + task.estimatedMinutes, 0);
+    const plannedTasks = timeBlock.scheduled_tasks.length;
+    const plannedMinutes = timeBlock.scheduled_tasks.reduce((sum, task) => sum + task.estimatedMinutes, 0);
     const productivityScore = tasksCompleted / Math.max(plannedTasks, 1);
 
     // Zapisz analitykę
-    const analytics = await prisma.energyAnalytics.create({
+    const analytics = await prisma.energy_analytics.create({
       data: {
         energyTimeBlockId,
         plannedEnergy: timeBlock.energyLevel,
@@ -1447,7 +1446,7 @@ router.get('/energy-patterns', authMiddleware, async (req, res) => {
     const userId = req.user.id;
     const { dayOfWeek } = req.query;
 
-    const patterns = await prisma.energyPattern.findMany({
+    const patterns = await prisma.energy_patterns.findMany({
       where: {
         userId,
         ...(dayOfWeek && { dayOfWeek: dayOfWeek as any })
@@ -1476,7 +1475,7 @@ router.get('/energy-patterns', authMiddleware, async (req, res) => {
 // -----------------------------------------------------------------------------
 
 async function getNextOrder(userId: string, dayOfWeek: any): Promise<number> {
-  const lastBlock = await prisma.energyTimeBlock.findFirst({
+  const lastBlock = await prisma.energy_time_blocks.findFirst({
     where: { userId, dayOfWeek },
     orderBy: { order: 'desc' }
   });
@@ -1503,7 +1502,7 @@ async function updateEnergyPatterns(userId: string, timeBlock: any, analytics: a
   const dayOfWeek = getDayOfWeek(new Date());
 
   // Znajdź lub utwórz wzorzec energii
-  const existingPattern = await prisma.energyPattern.findFirst({
+  const existingPattern = await prisma.energy_patterns.findFirst({
     where: { userId, timeSlot, dayOfWeek: dayOfWeek as any }
   });
 
@@ -1512,7 +1511,7 @@ async function updateEnergyPatterns(userId: string, timeBlock: any, analytics: a
     const newSampleSize = existingPattern.sampleSize + 1;
     const weight = 1 / newSampleSize;
     
-    await prisma.energyPattern.update({
+    await prisma.energy_patterns.update({
       where: { id: existingPattern.id },
       data: {
         averageEnergy: existingPattern.averageEnergy * (1 - weight) + analytics.energyScore * weight,
@@ -1527,7 +1526,7 @@ async function updateEnergyPatterns(userId: string, timeBlock: any, analytics: a
     });
   } else {
     // Utwórz nowy wzorzec
-    await prisma.energyPattern.create({
+    await prisma.energy_patterns.create({
       data: {
         timeSlot,
         dayOfWeek: dayOfWeek as any,
@@ -1706,8 +1705,8 @@ function getOptimalEnergyTimes(analytics: any[]): string[] {
   const timeSlotPerformance: { [key: string]: number[] } = {};
   
   analytics.forEach(item => {
-    if (item.energyTimeBlock) {
-      const timeSlot = `${item.energyTimeBlock.startTime}-${item.energyTimeBlock.endTime}`;
+    if (item.energy_time_blocks) {
+      const timeSlot = `${item.energy_time_blocks.startTime}-${item.energy_time_blocks.endTime}`;
       const productivity = item.productivityScore || 0;
       
       if (!timeSlotPerformance[timeSlot]) {
@@ -1769,7 +1768,7 @@ function generateInsights(metrics: any[], trends: any): string[] {
   }
   
   // Analiza focus modes
-  const focusModeMetrics = metrics.filter(m => m.focusMode);
+  const focusModeMetrics = metrics.filter(m => m.focus_modes);
   if (focusModeMetrics.length > 0) {
     const avgEfficiency = focusModeMetrics.reduce((sum, m) => sum + (m.focusModeEfficiency || 0), 0) / focusModeMetrics.length;
     insights.push(`Średnia efektywność w trybach koncentracji: ${(avgEfficiency * 100).toFixed(1)}%`);
@@ -1796,8 +1795,8 @@ function generateRecommendations(metrics: any[], trends: any): string[] {
   if (bestMetrics) {
     recommendations.push(`Twój najlepszy dzień miał completion rate ${(bestMetrics.completionRate * 100).toFixed(1)}% - spróbuj powtórzyć ten wzorzec`);
     
-    if (bestMetrics.focusMode) {
-      recommendations.push(`Focus mode "${bestMetrics.focusMode.name}" działał najlepiej - używaj go częściej`);
+    if (bestMetrics.focus_modes) {
+      recommendations.push(`Focus mode "${bestMetrics.focus_modes.name}" działał najlepiej - używaj go częściej`);
     }
   }
   
@@ -1808,10 +1807,10 @@ function findBestFocusMode(metrics: any[]): any | null {
   const focusModePerformance: { [key: string]: { total: number; count: number; mode: any } } = {};
   
   metrics.forEach(metric => {
-    if (metric.focusMode && metric.focusModeEfficiency) {
-      const id = metric.focusMode.id;
+    if (metric.focus_modes && metric.focusModeEfficiency) {
+      const id = metric.focus_modes.id;
       if (!focusModePerformance[id]) {
-        focusModePerformance[id] = { total: 0, count: 0, mode: metric.focusMode };
+        focusModePerformance[id] = { total: 0, count: 0, mode: metric.focus_modes };
       }
       focusModePerformance[id].total += metric.focusModeEfficiency;
       focusModePerformance[id].count += 1;
@@ -2093,7 +2092,7 @@ router.get('/user-profile', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    let userProfile = await prisma.userProfile.findUnique({
+    let userProfile = await prisma.user_profiles.findUnique({
       where: { userId },
       include: {
         dayTemplates: {
@@ -2104,7 +2103,7 @@ router.get('/user-profile', authMiddleware, async (req, res) => {
 
     // Jeśli nie ma profilu, utwórz domyślny
     if (!userProfile) {
-      userProfile = await prisma.userProfile.create({
+      userProfile = await prisma.user_profiles.create({
         data: {
           userId,
           organizationId: req.user.organizationId,
@@ -2138,7 +2137,7 @@ router.put('/user-profile', authMiddleware, async (req, res) => {
     const userId = req.user.id;
     const updateData = req.body;
 
-    const userProfile = await prisma.userProfile.upsert({
+    const userProfile = await prisma.user_profiles.upsert({
       where: { userId },
       update: updateData,
       create: {
@@ -2190,7 +2189,7 @@ router.post('/generate-template', authMiddleware, async (req, res) => {
 
     // Pobierz profil użytkownika
     console.log('🔍 Looking for user profile...');
-    let userProfile = await prisma.userProfile.findUnique({
+    let userProfile = await prisma.user_profiles.findUnique({
       where: { userId }
     });
     
@@ -2199,7 +2198,7 @@ router.post('/generate-template', authMiddleware, async (req, res) => {
     if (!userProfile) {
       console.log('🆕 Creating default user profile...');
       try {
-        userProfile = await prisma.userProfile.create({
+        userProfile = await prisma.user_profiles.create({
           data: {
             userId,
             organizationId,
@@ -2230,7 +2229,7 @@ router.post('/generate-template', authMiddleware, async (req, res) => {
 
     // Zapisz szablon
     console.log('💾 Saving template to database...');
-    const dayTemplate = await prisma.dayTemplate.create({
+    const dayTemplate = await prisma.day_templates.create({
       data: {
         ...generatedTemplate,
         userId,
@@ -2280,7 +2279,7 @@ router.get('/templates', authMiddleware, async (req, res) => {
       whereClause.isPublic = isPublic === 'true';
     }
 
-    const templates = await prisma.dayTemplate.findMany({
+    const templates = await prisma.day_templates.findMany({
       where: whereClause,
       include: {
         user: {
@@ -2336,7 +2335,7 @@ router.post('/templates/:id/apply', authMiddleware, async (req, res) => {
     const { date, modifications = [] } = req.body;
 
     // Pobierz szablon
-    const template = await prisma.dayTemplate.findFirst({
+    const template = await prisma.day_templates.findFirst({
       where: {
         id: templateId,
         OR: [
@@ -2358,7 +2357,7 @@ router.post('/templates/:id/apply', authMiddleware, async (req, res) => {
     const appliedBlocks = [];
 
     for (const block of timeBlocks) {
-      const appliedBlock = await prisma.energyTimeBlock.create({
+      const appliedBlock = await prisma.energy_time_blocks.create({
         data: {
           ...block,
           userId,
@@ -2372,7 +2371,7 @@ router.post('/templates/:id/apply', authMiddleware, async (req, res) => {
     }
 
     // Zapisz aplikację szablonu
-    const templateApplication = await prisma.templateApplication.create({
+    const templateApplication = await prisma.template_applications.create({
       data: {
         templateId,
         userId,
@@ -2385,7 +2384,7 @@ router.post('/templates/:id/apply', authMiddleware, async (req, res) => {
     });
 
     // Zaktualizuj statystyki szablonu
-    await prisma.dayTemplate.update({
+    await prisma.day_templates.update({
       where: { id: templateId },
       data: {
         usageCount: { increment: 1 },
@@ -2420,7 +2419,7 @@ router.put('/templates/:id', authMiddleware, async (req, res) => {
     const templateId = req.params.id;
     const updateData = req.body;
 
-    const template = await prisma.dayTemplate.findFirst({
+    const template = await prisma.day_templates.findFirst({
       where: {
         id: templateId,
         userId // Tylko własne szablony można edytować
@@ -2434,7 +2433,7 @@ router.put('/templates/:id', authMiddleware, async (req, res) => {
       });
     }
 
-    const updatedTemplate = await prisma.dayTemplate.update({
+    const updatedTemplate = await prisma.day_templates.update({
       where: { id: templateId },
       data: updateData
     });
@@ -2461,7 +2460,7 @@ router.delete('/templates/:id', authMiddleware, async (req, res) => {
     const userId = req.user.id;
     const templateId = req.params.id;
 
-    const template = await prisma.dayTemplate.findFirst({
+    const template = await prisma.day_templates.findFirst({
       where: {
         id: templateId,
         userId
@@ -2475,7 +2474,7 @@ router.delete('/templates/:id', authMiddleware, async (req, res) => {
       });
     }
 
-    await prisma.dayTemplate.delete({
+    await prisma.day_templates.delete({
       where: { id: templateId }
     });
 
@@ -2720,7 +2719,7 @@ router.post('/weekly-templates/create', authMiddleware, async (req, res) => {
     } = req.body;
 
     // Pobierz base template
-    const baseTemplate = await prisma.dayTemplate.findFirst({
+    const baseTemplate = await prisma.day_templates.findFirst({
       where: {
         id: baseDayTemplateId,
         OR: [
@@ -2738,7 +2737,7 @@ router.post('/weekly-templates/create', authMiddleware, async (req, res) => {
     }
 
     // Utwórz weekly template
-    const weeklyTemplate = await prisma.dayTemplate.create({
+    const weeklyTemplate = await prisma.day_templates.create({
       data: {
         name: weekName || `${baseTemplate.name} - Weekly`,
         description: weekDescription || `Weekly template based on ${baseTemplate.name}`,
@@ -2798,7 +2797,7 @@ router.post('/weekly-templates/:id/apply', authMiddleware, async (req, res) => {
     } = req.body;
 
     // Pobierz weekly template
-    const template = await prisma.dayTemplate.findFirst({
+    const template = await prisma.day_templates.findFirst({
       where: {
         id: templateId,
         OR: [
@@ -2840,7 +2839,7 @@ router.post('/weekly-templates/:id/apply', authMiddleware, async (req, res) => {
       }
 
       // Check if blocks already exist for this day
-      const existingBlocks = await prisma.energyTimeBlock.findMany({
+      const existingBlocks = await prisma.energy_time_blocks.findMany({
         where: {
           userId,
           createdAt: {
@@ -2852,7 +2851,7 @@ router.post('/weekly-templates/:id/apply', authMiddleware, async (req, res) => {
 
       // Remove existing blocks to avoid duplicates
       if (existingBlocks.length > 0) {
-        await prisma.energyTimeBlock.deleteMany({
+        await prisma.energy_time_blocks.deleteMany({
           where: {
             id: { in: existingBlocks.map(b => b.id) }
           }
@@ -2867,7 +2866,7 @@ router.post('/weekly-templates/:id/apply', authMiddleware, async (req, res) => {
         const block = timeBlocks[i];
         const dayMod = dayModifications.find((mod: any) => mod.blockIndex === i);
         
-        const appliedBlock = await prisma.energyTimeBlock.create({
+        const appliedBlock = await prisma.energy_time_blocks.create({
           data: {
             ...block,
             userId,
@@ -2882,7 +2881,7 @@ router.post('/weekly-templates/:id/apply', authMiddleware, async (req, res) => {
       }
 
       // Record template application for this day
-      const templateApp = await prisma.templateApplication.create({
+      const templateApp = await prisma.template_applications.create({
         data: {
           templateId,
           userId,
@@ -2897,7 +2896,7 @@ router.post('/weekly-templates/:id/apply', authMiddleware, async (req, res) => {
     }
 
     // Update template usage stats
-    await prisma.dayTemplate.update({
+    await prisma.day_templates.update({
       where: { id: templateId },
       data: {
         usageCount: { increment: 1 },
@@ -2945,7 +2944,7 @@ router.get('/weekly-templates/current', authMiddleware, async (req, res) => {
     const weekEnd = new Date(monday);
     weekEnd.setDate(monday.getDate() + 6);
 
-    const templateApplications = await prisma.templateApplication.findMany({
+    const templateApplications = await prisma.template_applications.findMany({
       where: {
         userId,
         appliedDate: {
@@ -2981,7 +2980,7 @@ router.get('/weekly-templates/current', authMiddleware, async (req, res) => {
     const currentTemplate = templateApplications.find(app => app.templateId === mostUsedTemplateId)?.template;
 
     // Get all blocks for this week
-    const weekBlocks = await prisma.energyTimeBlock.findMany({
+    const weekBlocks = await prisma.energy_time_blocks.findMany({
       where: {
         userId,
         createdAt: {
@@ -2990,8 +2989,8 @@ router.get('/weekly-templates/current', authMiddleware, async (req, res) => {
         }
       },
       include: {
-        focusMode: true,
-        scheduledTasks: {
+        focus_modes: true,
+        scheduled_tasks: {
           where: {
             scheduledDate: {
               gte: monday,
@@ -3068,7 +3067,7 @@ router.post('/weekly-templates/quick-setup', authMiddleware, async (req, res) =>
     });
 
     // Create the template
-    const weeklyTemplate = await prisma.dayTemplate.create({
+    const weeklyTemplate = await prisma.day_templates.create({
       data: {
         name: templateName,
         description: `Auto-generated weekly template with ${workHours.start}-${workHours.end} work hours`,
@@ -3108,7 +3107,7 @@ router.post('/weekly-templates/quick-setup', authMiddleware, async (req, res) =>
 
       // Create blocks for this day
       for (const block of timeBlocks) {
-        await prisma.energyTimeBlock.create({
+        await prisma.energy_time_blocks.create({
           data: {
             ...block,
             userId,
@@ -3121,7 +3120,7 @@ router.post('/weekly-templates/quick-setup', authMiddleware, async (req, res) =>
       }
 
       // Record template application
-      await prisma.templateApplication.create({
+      await prisma.template_applications.create({
         data: {
           templateId: weeklyTemplate.id,
           userId,
@@ -3498,7 +3497,7 @@ router.post('/task-queue/analyze', authMiddleware, async (req, res) => {
     const targetDate = new Date(date);
     const dayOfWeek = targetDate.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
     
-    const timeBlocks = await prisma.energyTimeBlock.findMany({
+    const timeBlocks = await prisma.energy_time_blocks.findMany({
       where: {
         userId,
         isActive: true,
@@ -3891,7 +3890,7 @@ router.post('/smart-assignment', authMiddleware, async (req, res) => {
     const targetDate = new Date(date);
     const dayOfWeek = targetDate.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
     
-    const timeBlocks = await prisma.energyTimeBlock.findMany({
+    const timeBlocks = await prisma.energy_time_blocks.findMany({
       where: {
         userId,
         isActive: true,
@@ -3901,7 +3900,7 @@ router.post('/smart-assignment', authMiddleware, async (req, res) => {
         ]
       },
       include: {
-        scheduledTasks: {
+        scheduled_tasks: {
           where: {
             scheduledDate: {
               gte: new Date(new Date(date).setHours(0, 0, 0, 0)),
@@ -3917,7 +3916,7 @@ router.post('/smart-assignment', authMiddleware, async (req, res) => {
     const availableBlocks = timeBlocks
       .filter(block => !block.isBreak)
       .map(block => {
-        const usedTime = block.scheduledTasks?.reduce((sum, task) => sum + task.estimatedMinutes, 0) || 0;
+        const usedTime = block.scheduled_tasks?.reduce((sum, task) => sum + task.estimatedMinutes, 0) || 0;
         const totalTime = calculateBlockDuration(block.startTime, block.endTime);
         const availableTime = totalTime - usedTime;
         
@@ -3946,7 +3945,7 @@ router.post('/smart-assignment', authMiddleware, async (req, res) => {
     const scheduledTasks = [];
     if (req.body.saveAssignments) {
       for (const assignment of assignmentResult.assignments) {
-        const scheduledTask = await prisma.scheduledTask.create({
+        const scheduledTask = await prisma.scheduled_tasks.create({
           data: {
             title: assignment.task.title,
             description: assignment.task.description,
@@ -4008,7 +4007,7 @@ router.post('/optimize-assignments', authMiddleware, async (req, res) => {
     const { date, optimizationGoal = 'BALANCED' } = req.body;
 
     // Pobierz aktualne assignments
-    const existingTasks = await prisma.scheduledTask.findMany({
+    const existingTasks = await prisma.scheduled_tasks.findMany({
       where: {
         userId,
         scheduledDate: {
@@ -4018,7 +4017,7 @@ router.post('/optimize-assignments', authMiddleware, async (req, res) => {
         status: { in: ['PLANNED', 'IN_PROGRESS'] }
       },
       include: {
-        energyTimeBlock: true
+        energy_time_blocks: true
       }
     });
 
@@ -4032,8 +4031,8 @@ router.post('/optimize-assignments', authMiddleware, async (req, res) => {
         context: task.context,
         energyRequired: task.energyRequired
       },
-      block: task.energyTimeBlock,
-      score: calculateAssignmentScore(task, task.energyTimeBlock)
+      block: task.energy_time_blocks,
+      score: calculateAssignmentScore(task, task.energy_time_blocks)
     }));
 
     // Optymalizacja według celu
@@ -4090,7 +4089,7 @@ router.post('/emergency-reschedule', authMiddleware, async (req, res) => {
     } = req.body;
 
     // Pobierz zadania do przesunięcia
-    const tasksToReschedule = await prisma.scheduledTask.findMany({
+    const tasksToReschedule = await prisma.scheduled_tasks.findMany({
       where: {
         userId,
         scheduledDate: {
@@ -4100,7 +4099,7 @@ router.post('/emergency-reschedule', authMiddleware, async (req, res) => {
         status: { in: ['PLANNED', 'IN_PROGRESS'] }
       },
       include: {
-        energyTimeBlock: true
+        energy_time_blocks: true
       }
     });
 
@@ -4122,7 +4121,7 @@ router.post('/emergency-reschedule', authMiddleware, async (req, res) => {
     const rescheduledTasks = [];
     if (req.body.executeReschedule) {
       for (const item of redistributionPlan.moves) {
-        const updatedTask = await prisma.scheduledTask.update({
+        const updatedTask = await prisma.scheduled_tasks.update({
           where: { id: item.taskId },
           data: {
             scheduledDate: new Date(item.newDate),
@@ -4905,7 +4904,7 @@ async function fetchGTDInboxTasks(userId: string) {
 }
 
 async function fetchGTDNextActions(userId: string) {
-  const nextActions = await prisma.nextAction.findMany({
+  const nextActions = await prisma.next_actions.findMany({
     where: {
       userId,
       status: 'ACTIVE',
@@ -5023,7 +5022,7 @@ async function autoAssignToBlocks(userId: string, date: string, tasks: any[], pr
   const strategy = preferences.strategy || 'BALANCED';
   
   // Mock assignment for now - use existing energyMatchAssignment
-  const timeBlocks = await prisma.energyTimeBlock.findMany({
+  const timeBlocks = await prisma.energy_time_blocks.findMany({
     where: {
       userId,
       isActive: true,
@@ -5033,7 +5032,7 @@ async function autoAssignToBlocks(userId: string, date: string, tasks: any[], pr
       ]
     },
     include: {
-      scheduledTasks: {
+      scheduled_tasks: {
         where: {
           scheduledDate: {
             gte: new Date(new Date(date).setHours(0, 0, 0, 0)),
@@ -5048,7 +5047,7 @@ async function autoAssignToBlocks(userId: string, date: string, tasks: any[], pr
   const availableBlocks = timeBlocks
     .filter(block => !block.isBreak)
     .map(block => {
-      const usedTime = block.scheduledTasks?.reduce((sum, task) => sum + task.estimatedMinutes, 0) || 0;
+      const usedTime = block.scheduled_tasks?.reduce((sum, task) => sum + task.estimatedMinutes, 0) || 0;
       const totalTime = calculateBlockDuration(block.startTime, block.endTime);
       return {
         ...block,
@@ -5207,7 +5206,7 @@ router.get('/dashboard/daily-widget', authMiddleware, async (req, res) => {
     const todayDateString = today.toISOString().split('T')[0];
 
     // 1. Pobierz dzisiejsze bloki czasowe
-    const timeBlocks = await prisma.energyTimeBlock.findMany({
+    const timeBlocks = await prisma.energy_time_blocks.findMany({
       where: {
         userId,
         isActive: true,
@@ -5217,7 +5216,7 @@ router.get('/dashboard/daily-widget', authMiddleware, async (req, res) => {
         ]
       },
       include: {
-        scheduledTasks: {
+        scheduled_tasks: {
           where: {
             scheduledDate: {
               gte: new Date(today.setHours(0, 0, 0, 0)),
@@ -5225,7 +5224,7 @@ router.get('/dashboard/daily-widget', authMiddleware, async (req, res) => {
             }
           }
         },
-        focusMode: true
+        focus_modes: true
       },
       orderBy: { startTime: 'asc' }
     });
@@ -5235,7 +5234,7 @@ router.get('/dashboard/daily-widget', authMiddleware, async (req, res) => {
     const workBlocks = timeBlocks.filter(b => !b.isBreak).length;
     const breakBlocks = timeBlocks.filter(b => b.isBreak).length;
     
-    const allTasks = timeBlocks.flatMap(block => block.scheduledTasks || []);
+    const allTasks = timeBlocks.flatMap(block => block.scheduled_tasks || []);
     const completedTasks = allTasks.filter(task => task.status === 'COMPLETED').length;
     const inProgressTasks = allTasks.filter(task => task.status === 'IN_PROGRESS').length;
     const plannedTasks = allTasks.filter(task => task.status === 'PLANNED').length;
@@ -5267,7 +5266,7 @@ router.get('/dashboard/daily-widget', authMiddleware, async (req, res) => {
     const last7Days = new Date(today);
     last7Days.setDate(last7Days.getDate() - 7);
 
-    const recentAnalytics = await prisma.energyAnalytics.findMany({
+    const recentAnalytics = await prisma.energy_analytics.findMany({
       where: {
         userId,
         date: {
@@ -5287,8 +5286,8 @@ router.get('/dashboard/daily-widget', authMiddleware, async (req, res) => {
         id: 'start-current-task',
         label: 'Rozpocznij bieżące zadanie',
         type: 'START_TASK',
-        enabled: currentBlock && currentBlock.scheduledTasks && currentBlock.scheduledTasks.length > 0,
-        target: currentBlock?.scheduledTasks?.[0]?.id || null
+        enabled: currentBlock && currentBlock.scheduled_tasks && currentBlock.scheduled_tasks.length > 0,
+        target: currentBlock?.scheduled_tasks?.[0]?.id || null
       },
       {
         id: 'complete-current-task', 
@@ -5324,11 +5323,11 @@ router.get('/dashboard/daily-widget', authMiddleware, async (req, res) => {
       breakType: block.breakType,
       isActive: currentBlock?.id === block.id,
       isNext: nextBlock?.id === block.id,
-      tasksCount: block.scheduledTasks?.length || 0,
-      completedTasksCount: block.scheduledTasks?.filter(t => t.status === 'COMPLETED').length || 0,
-      focusMode: block.focusMode ? {
-        name: block.focusMode.name,
-        category: block.focusMode.category
+      tasksCount: block.scheduled_tasks?.length || 0,
+      completedTasksCount: block.scheduled_tasks?.filter(t => t.status === 'COMPLETED').length || 0,
+      focusMode: block.focus_modes ? {
+        name: block.focus_modes.name,
+        category: block.focus_modes.category
       } : null
     }));
 
@@ -5355,14 +5354,14 @@ router.get('/dashboard/daily-widget', authMiddleware, async (req, res) => {
             endTime: currentBlock.endTime,
             energyLevel: currentBlock.energyLevel,
             isBreak: currentBlock.isBreak,
-            activeTasks: currentBlock.scheduledTasks?.filter(t => t.status === 'IN_PROGRESS') || []
+            activeTasks: currentBlock.scheduled_tasks?.filter(t => t.status === 'IN_PROGRESS') || []
           } : null,
           nextBlock: nextBlock ? {
             id: nextBlock.id,
             name: nextBlock.name,
             startTime: nextBlock.startTime,
             energyLevel: nextBlock.energyLevel,
-            upcomingTasks: nextBlock.scheduledTasks?.filter(t => t.status === 'PLANNED') || []
+            upcomingTasks: nextBlock.scheduled_tasks?.filter(t => t.status === 'PLANNED') || []
           } : null
         },
         insights: {
@@ -5401,7 +5400,7 @@ router.get('/dashboard/week-overview', authMiddleware, async (req, res) => {
     const endOfWeek = getEndOfWeek(today);
 
     // 1. Statystyki tygodnia
-    const weeklyAnalytics = await prisma.energyAnalytics.findMany({
+    const weeklyAnalytics = await prisma.energy_analytics.findMany({
       where: {
         userId,
         date: {
@@ -5410,12 +5409,12 @@ router.get('/dashboard/week-overview', authMiddleware, async (req, res) => {
         }
       },
       include: {
-        energyTimeBlock: true
+        energy_time_blocks: true
       }
     });
 
     // 2. Zaplanowane vs ukończone zadania w tym tygodniu
-    const weeklyTasks = await prisma.scheduledTask.findMany({
+    const weeklyTasks = await prisma.scheduled_tasks.findMany({
       where: {
         userId,
         scheduledDate: {
@@ -5459,10 +5458,10 @@ router.get('/dashboard/week-overview', authMiddleware, async (req, res) => {
     const bestTimeSlots = weeklyAnalytics
       .filter(a => a.productivityScore && a.productivityScore > 0.7)
       .map(a => ({
-        time: a.energyTimeBlock?.startTime,
+        time: a.energy_time_blocks?.startTime,
         day: getDayOfWeek(new Date(a.date)),
         productivity: a.productivityScore,
-        energyLevel: a.energyTimeBlock?.energyLevel
+        energyLevel: a.energy_time_blocks?.energyLevel
       }))
       .sort((a, b) => (b.productivity || 0) - (a.productivity || 0))
       .slice(0, 3);
@@ -5510,7 +5509,7 @@ router.post('/dashboard/quick-action', authMiddleware, async (req, res) => {
           });
         }
 
-        result = await prisma.scheduledTask.update({
+        result = await prisma.scheduled_tasks.update({
           where: { id: targetId, userId },
           data: {
             status: 'IN_PROGRESS',
@@ -5527,7 +5526,7 @@ router.post('/dashboard/quick-action', authMiddleware, async (req, res) => {
           });
         }
 
-        result = await prisma.scheduledTask.update({
+        result = await prisma.scheduled_tasks.update({
           where: { id: targetId, userId },
           data: {
             status: 'COMPLETED',
@@ -5550,7 +5549,7 @@ router.post('/dashboard/quick-action', authMiddleware, async (req, res) => {
         // Znajdź następny dostępny blok czasowy
         const nextAvailableBlock = await findNextAvailableTimeBlock(userId);
         
-        result = await prisma.scheduledTask.create({
+        result = await prisma.scheduled_tasks.create({
           data: {
             title,
             estimatedMinutes,
@@ -5571,7 +5570,7 @@ router.post('/dashboard/quick-action', authMiddleware, async (req, res) => {
         const tomorrow = new Date();
         tomorrow.setDate(tomorrow.getDate() + 1);
 
-        result = await prisma.scheduledTask.updateMany({
+        result = await prisma.scheduled_tasks.updateMany({
           where: {
             userId,
             scheduledDate: {
@@ -5624,7 +5623,7 @@ router.post('/next-suggestions', authMiddleware, async (req, res) => {
     const today = new Date();
     const currentTimeString = `${today.getHours().toString().padStart(2, '0')}:${today.getMinutes().toString().padStart(2, '0')}`;
     
-    const laterTasks = await prisma.scheduledTask.findMany({
+    const laterTasks = await prisma.scheduled_tasks.findMany({
       where: {
         userId,
         scheduledDate: {
@@ -5635,7 +5634,7 @@ router.post('/next-suggestions', authMiddleware, async (req, res) => {
         estimatedMinutes: { lte: availableMinutes }
       },
       include: {
-        energyTimeBlock: true
+        energy_time_blocks: true
       }
     });
 
@@ -5681,8 +5680,8 @@ router.post('/next-suggestions', authMiddleware, async (req, res) => {
         energyRequired: task.energyRequired,
         source: 'SCHEDULED_LATER',
         score: energyMatch + contextMatch + priorityScore + timeScore,
-        reason: `Zaplanowane na ${task.energyTimeBlock?.startTime}. Idealny moment na wyprzedzenie.`,
-        originalScheduledTime: task.energyTimeBlock?.startTime,
+        reason: `Zaplanowane na ${task.energy_time_blocks?.startTime}. Idealny moment na wyprzedzenie.`,
+        originalScheduledTime: task.energy_time_blocks?.startTime,
         canFitInTime: task.estimatedMinutes <= availableMinutes
       });
     });
@@ -5751,14 +5750,14 @@ router.post('/partial-day', authMiddleware, async (req, res) => {
     const { endTime, strategy, date = new Date().toISOString().split('T')[0] } = req.body;
 
     // 1. Znajdź bloki czasowe po endTime
-    const affectedBlocks = await prisma.energyTimeBlock.findMany({
+    const affectedBlocks = await prisma.energy_time_blocks.findMany({
       where: {
         userId,
         isActive: true,
         startTime: { gte: endTime }
       },
       include: {
-        scheduledTasks: {
+        scheduled_tasks: {
           where: {
             scheduledDate: {
               gte: new Date(date + 'T00:00:00.000Z'),
@@ -5783,7 +5782,7 @@ router.post('/partial-day', authMiddleware, async (req, res) => {
         const compressedDuration = Math.max(15, Math.floor(originalDuration * 0.7)); // Min 15 min, 70% oryginalnego czasu
         const newEndTime = addMinutesToTime(block.startTime, compressedDuration);
 
-        await prisma.energyTimeBlock.update({
+        await prisma.energy_time_blocks.update({
           where: { id: block.id },
           data: { endTime: newEndTime }
         });
@@ -5808,10 +5807,10 @@ router.post('/partial-day', authMiddleware, async (req, res) => {
       tomorrow.setDate(tomorrow.getDate() + 1);
 
       for (const block of affectedBlocks) {
-        const tasksToReschedule = block.scheduledTasks || [];
+        const tasksToReschedule = block.scheduled_tasks || [];
         
         if (tasksToReschedule.length > 0) {
-          await prisma.scheduledTask.updateMany({
+          await prisma.scheduled_tasks.updateMany({
             where: {
               id: { in: tasksToReschedule.map(t => t.id) }
             },
@@ -5908,7 +5907,7 @@ function getEndOfWeek(date: Date): Date {
 
 async function findNextAvailableTimeBlock(userId: string) {
   const today = new Date();
-  const blocks = await prisma.energyTimeBlock.findMany({
+  const blocks = await prisma.energy_time_blocks.findMany({
     where: {
       userId,
       isActive: true,
@@ -5918,7 +5917,7 @@ async function findNextAvailableTimeBlock(userId: string) {
       ]
     },
     include: {
-      scheduledTasks: {
+      scheduled_tasks: {
         where: {
           scheduledDate: {
             gte: new Date(today.setHours(0, 0, 0, 0)),
@@ -5932,8 +5931,8 @@ async function findNextAvailableTimeBlock(userId: string) {
 
   // Znajdź blok z najmniejszą liczbą zadań
   return blocks.reduce((best, current) => {
-    const currentTasksCount = current.scheduledTasks?.length || 0;
-    const bestTasksCount = best?.scheduledTasks?.length || 0;
+    const currentTasksCount = current.scheduled_tasks?.length || 0;
+    const bestTasksCount = best?.scheduled_tasks?.length || 0;
     return currentTasksCount < bestTasksCount ? current : best;
   }, blocks[0] || null);
 }
@@ -5979,8 +5978,8 @@ function generateWeeklyRecommendations(dailyStats: any[], productivity: any, bes
 router.get('/debug-weekly/:date', async (req, res) => {
   try {
     const { date } = req.params;
-    const count = await prisma.energyTimeBlock.count();
-    const blocks = await prisma.energyTimeBlock.findMany({
+    const count = await prisma.energy_time_blocks.count();
+    const blocks = await prisma.energy_time_blocks.findMany({
       take: 5,
       select: { id: true, name: true, startTime: true, userId: true }
     });

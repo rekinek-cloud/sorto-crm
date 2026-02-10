@@ -12,9 +12,8 @@ import { coquiTTSService } from '../services/voice/CoquiTTSService';
 // import { getEnhancedAIVoiceProcessor } from '../services/voice/EnhancedAIVoiceProcessor';
 // import { getVectorStore } from '../services/voice/VectorStore';
 // import { getDataIngestionPipeline } from '../services/voice/DataIngestionPipeline';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 
-const prisma = new PrismaClient();
 import multer from 'multer';
 
 const router = Router();

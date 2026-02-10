@@ -1,10 +1,9 @@
 import { Router } from 'express';
 import { authenticateToken } from '../shared/middleware/auth';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import logger from '../config/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Helper function to get user's organization
 const getUserOrganizationId = async (userId: string): Promise<string> => {

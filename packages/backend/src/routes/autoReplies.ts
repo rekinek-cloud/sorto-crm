@@ -1,11 +1,10 @@
 import express from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken } from '../shared/middleware/auth';
 import { validateRequest } from '../shared/middleware/validateRequest';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Validation schemas
 const AutoReplyCreateSchema = z.object({
@@ -56,38 +55,33 @@ const AutoReplyUpdateSchema = AutoReplyCreateSchema.partial();
 // GET /api/auto-replies - List auto-reply rules
 router.get('/', authenticateToken, async (req, res) => {
   try {
-    const { enabled, page = '1', limit = '20' } = req.query;
+    const { status, page = '1', limit = '20' } = req.query;
     const organizationId = (req as any).user.organizationId;
-    
+
     const where: any = { organizationId };
-    if (enabled !== undefined) {
-      where.enabled = enabled === 'true';
+    if (status !== undefined) {
+      where.status = status;
     }
-    
+
     const pageNum = parseInt(page as string);
     const limitNum = parseInt(limit as string);
     const skip = (pageNum - 1) * limitNum;
-    
+
     const [autoReplies, total] = await Promise.all([
       prisma.autoReply.findMany({
         where,
         skip,
         take: limitNum,
-        orderBy: [
-          { priority: 'desc' },
-          { createdAt: 'desc' }
-        ],
+        orderBy: { createdAt: 'desc' },
         include: {
-          _count: {
-            select: {
-              executions: true
-            }
+          channel: {
+            select: { id: true, name: true }
           }
         }
       }),
       prisma.autoReply.count({ where })
     ]);
-    
+
     res.json({
       autoReplies,
       pagination: {
@@ -112,24 +106,8 @@ router.get('/:id', authenticateToken, async (req, res) => {
     const autoReply = await prisma.autoReply.findFirst({
       where: { id, organizationId },
       include: {
-        executions: {
-          take: 10,
-          orderBy: { createdAt: 'desc' },
-          include: {
-            message: {
-              select: {
-                id: true,
-                subject: true,
-                fromEmail: true,
-                createdAt: true
-              }
-            }
-          }
-        },
-        _count: {
-          select: {
-            executions: true
-          }
+        channel: {
+          select: { id: true, name: true }
         }
       }
     });
@@ -154,12 +132,11 @@ router.post('/', authenticateToken, validateRequest(AutoReplyCreateSchema), asyn
     
     const autoReply = await prisma.autoReply.create({
       data: {
-        ...data,
+        name: data.name,
+        subject: data.replyConfig?.subject || data.name,
+        content: data.replyConfig?.template || '',
+        triggerConditions: JSON.stringify(data.conditions),
         organizationId,
-        createdById,
-        conditions: JSON.stringify(data.conditions),
-        replyConfig: JSON.stringify(data.replyConfig),
-        actions: data.actions ? JSON.stringify(data.actions) : null,
       }
     });
     
@@ -249,9 +226,10 @@ router.post('/:id/toggle', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Auto-reply not found' });
     }
     
+    const newStatus = autoReply.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     const updatedAutoReply = await prisma.autoReply.update({
       where: { id },
-      data: { enabled: !autoReply.enabled }
+      data: { status: newStatus }
     });
     
     res.json(updatedAutoReply);
@@ -276,26 +254,27 @@ router.post('/:id/test', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Auto-reply not found' });
     }
     
-    // Parse conditions and test against sample message
-    const conditions = JSON.parse(autoReply.conditions);
-    const replyConfig = JSON.parse(autoReply.replyConfig);
-    
-    // Simple condition checking (can be enhanced)
+    // Parse trigger conditions and test against sample message
+    const conditions = typeof autoReply.triggerConditions === 'string'
+      ? JSON.parse(autoReply.triggerConditions)
+      : autoReply.triggerConditions;
+
+    // Simple condition checking
     let matches = true;
     const matchResults: any = {};
-    
+
     if (conditions.fromEmail && sampleMessage.fromEmail !== conditions.fromEmail) {
       matches = false;
       matchResults.fromEmail = false;
     }
-    
+
     if (conditions.subject && !sampleMessage.subject?.includes(conditions.subject)) {
       matches = false;
       matchResults.subject = false;
     }
-    
+
     if (conditions.subjectContains) {
-      const subjectMatches = conditions.subjectContains.some((keyword: string) => 
+      const subjectMatches = conditions.subjectContains.some((keyword: string) =>
         sampleMessage.subject?.toLowerCase().includes(keyword.toLowerCase())
       );
       if (!subjectMatches) {
@@ -303,13 +282,13 @@ router.post('/:id/test', authenticateToken, async (req, res) => {
         matchResults.subjectContains = false;
       }
     }
-    
+
     res.json({
       matches,
       matchResults,
-      wouldReply: matches && autoReply.enabled,
-      replyTemplate: matches ? replyConfig.template : null,
-      replySubject: matches ? replyConfig.subject : null
+      wouldReply: matches && autoReply.status === 'ACTIVE',
+      replyContent: matches ? autoReply.content : null,
+      replySubject: matches ? autoReply.subject : null
     });
   } catch (error) {
     console.error('Error testing auto-reply:', error);
@@ -321,41 +300,17 @@ router.post('/:id/test', authenticateToken, async (req, res) => {
 router.get('/stats/overview', authenticateToken, async (req, res) => {
   try {
     const organizationId = (req as any).user.organizationId;
-    const { timeframe = '30' } = req.query; // days
-    
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - parseInt(timeframe as string));
-    
-    const [totalRules, activeRules, totalExecutions, recentExecutions] = await Promise.all([
+
+    const [totalRules, activeRules] = await Promise.all([
       prisma.autoReply.count({ where: { organizationId } }),
-      prisma.autoReply.count({ where: { organizationId, enabled: true } }),
-      prisma.autoReplyExecution.count({ 
-        where: { 
-          autoReply: { organizationId },
-          createdAt: { gte: startDate }
-        }
-      }),
-      prisma.autoReplyExecution.findMany({
-        where: { 
-          autoReply: { organizationId },
-          createdAt: { gte: startDate }
-        },
-        include: {
-          autoReply: {
-            select: { name: true }
-          }
-        },
-        orderBy: { createdAt: 'desc' },
-        take: 10
-      })
+      prisma.autoReply.count({ where: { organizationId, status: 'ACTIVE' } }),
     ]);
-    
+
     res.json({
       totalRules,
       activeRules,
-      totalExecutions,
-      recentExecutions,
-      timeframe: parseInt(timeframe as string)
+      totalSent: 0,
+      recentExecutions: [],
     });
   } catch (error) {
     console.error('Error fetching auto-reply stats:', error);

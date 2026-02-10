@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken, requireRole } from '../shared/middleware/auth';
 import { validateRequest } from '../shared/middleware/validation';
 import { z } from 'zod';
@@ -9,7 +9,6 @@ import config from '../config';
 import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // AI Model Configuration Schema
 const aiModelSchema = z.object({
@@ -814,7 +813,7 @@ router.put('/providers/:providerId/config',
       const organizationId = req.user!.organizationId;
 
       // Find the provider
-      const provider = await prisma.aIProvider.findFirst({
+      const provider = await prisma.ai_providers.findFirst({
         where: {
           id: providerId,
           organizationId
@@ -830,7 +829,7 @@ router.put('/providers/:providerId/config',
       const mergedConfig = { ...existingConfig, ...newConfig };
 
       // Update provider configuration in database
-      const updatedProvider = await prisma.aIProvider.update({
+      const updatedProvider = await prisma.ai_providers.update({
         where: { id: providerId },
         data: {
           config: mergedConfig,

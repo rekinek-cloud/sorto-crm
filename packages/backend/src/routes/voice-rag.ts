@@ -10,9 +10,8 @@ import { getAIVoiceProcessor } from '../services/voice/AIVoiceProcessor';
 import { getEnhancedAIVoiceProcessor } from '../services/voice/EnhancedAIVoiceProcessor';
 import { getVectorStore } from '../services/voice/VectorStore';
 import { getDataIngestionPipeline } from '../services/voice/DataIngestionPipeline';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 
-const prisma = new PrismaClient();
 
 const router = Router();
 

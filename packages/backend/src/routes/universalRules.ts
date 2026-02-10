@@ -23,7 +23,7 @@ const manualAnalysisSchema = z.object({
  */
 router.post('/analyze',
   authenticateToken,
-  requireRole(['OWNER', 'ADMIN', 'MANAGER', 'USER']),
+  requireRole(['OWNER', 'ADMIN', 'MANAGER', 'MEMBER']),
   validateRequest({ body: manualAnalysisSchema }),
   async (req, res) => {
     try {

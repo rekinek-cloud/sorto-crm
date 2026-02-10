@@ -1,10 +1,9 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken } from '../shared/middleware/auth';
 import logger from '../config/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Get all delegated tasks with optional filtering
 router.get('/', authenticateToken, async (req, res) => {

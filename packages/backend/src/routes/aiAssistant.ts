@@ -4,13 +4,12 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken } from '../shared/middleware/auth';
 import logger from '../config/logger';
 import { v4 as uuidv4 } from 'uuid';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Typy zgodne ze spec.md
 type AIContext = 'SOURCE' | 'STREAM' | 'TASK' | 'DAY_PLAN' | 'REVIEW' | 'DEAL';
@@ -278,7 +277,7 @@ router.post('/analyze-source-item', async (req: Request, res: Response) => {
           code: 'NOT_FOUND'
         });
       }
-      itemContent = item.content || item.title;
+      itemContent = item.content;
     }
 
     const suggestion = await analyzeSourceItem({ content: itemContent, source }, organizationId);

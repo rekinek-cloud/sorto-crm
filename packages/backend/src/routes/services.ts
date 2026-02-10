@@ -1,10 +1,9 @@
 import express from 'express';
 import { z } from 'zod';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken } from '../shared/middleware/auth';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Validation schemas
 const ServiceCreateSchema = z.object({

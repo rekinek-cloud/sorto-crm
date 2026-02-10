@@ -86,7 +86,7 @@ router.get('/streams/:streamId',
 
       // Store insights for tracking
       await Promise.all(insights.map(insight => 
-        prisma.aIExecution.create({
+        prisma.ai_executions.create({
           data: {
             organizationId,
             type: 'INSIGHT_GENERATION',
@@ -304,7 +304,7 @@ router.post('/actions',
       }
 
       // Log action execution
-      await prisma.aIExecution.create({
+      await prisma.ai_executions.create({
         data: {
           organizationId,
           type: 'ACTION_EXECUTION',

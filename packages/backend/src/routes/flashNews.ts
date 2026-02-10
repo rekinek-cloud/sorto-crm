@@ -1,10 +1,9 @@
 import { Router } from 'express';
 import { authenticateToken } from '../shared/middleware/auth';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import logger from '../config/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Types for flash news
 interface FlashNewsItem {
@@ -125,7 +124,7 @@ const executeSpecificRule = async (rule: any, organizationId: string): Promise<F
             where: {
               organizationId,
               status: 'IN_PROGRESS',
-              dueDate: {
+              endDate: {
                 lt: new Date(Date.now() - (conditions.conditions?.milestone_overdue_days || 3) * 24 * 60 * 60 * 1000)
               }
             }

@@ -1,10 +1,9 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken } from '../shared/middleware/auth';
 import logger from '../config/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Get all recurring tasks
 router.get('/', authenticateToken, async (req, res) => {
@@ -111,7 +110,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
 // POST /generate - Generate tasks from recurring tasks that are due
 router.post('/generate', authenticateToken, async (req, res) => {
   try {
-    const { organizationId } = req.user!;
+    const { organizationId, id: userId } = req.user!;
     const now = new Date();
 
     // Find active recurring tasks that are due (nextOccurrence <= now, or no nextOccurrence set)
@@ -139,6 +138,7 @@ router.post('/generate', authenticateToken, async (req, res) => {
             priority: recurring.priority,
             status: 'NEW',
             organizationId,
+            createdById: userId,
             assignedToId: recurring.assignedToId || undefined,
             streamId: recurring.streamId || undefined,
             projectId: recurring.projectId || undefined,

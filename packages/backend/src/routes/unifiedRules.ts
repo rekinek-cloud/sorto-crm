@@ -485,7 +485,7 @@ router.get('/', async (req: any, res) => {
     
     // Get rules from database
     const [rules, total] = await Promise.all([
-      prisma.unifiedRule.findMany({
+      prisma.unified_rules.findMany({
         where,
         skip,
         take: limitNum,
@@ -494,11 +494,11 @@ router.get('/', async (req: any, res) => {
           { name: 'asc' }
         ],
         include: {
-          channel: true,
-          aiModel: true
+          communication_channels: true,
+          ai_models: true
         }
       }),
-      prisma.unifiedRule.count({ where })
+      prisma.unified_rules.count({ where })
     ]);
     
     res.json({

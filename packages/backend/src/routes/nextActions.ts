@@ -34,7 +34,7 @@ router.get('/test-public', async (req, res) => {
 router.get('/list-public', async (req, res) => {
   try {
     // Return some real data from the database for testing
-    const nextActions = await prisma.nextAction.findMany({
+    const nextActions = await prisma.next_actions.findMany({
       where: {
         organizationId: 'fe59f2b0-93d0-4193-9bab-aee778c1a449' // Demo organization
       },
@@ -64,7 +64,7 @@ router.get('/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
 
-    const nextAction = await prisma.nextAction.findFirst({
+    const nextAction = await prisma.next_actions.findFirst({
       where: {
         id,
         organizationId: req.user!.organizationId
@@ -144,7 +144,7 @@ router.get('/', requireAuth, async (req: AuthenticatedRequest, res) => {
     if (taskId) where.taskId = taskId;
     if (streamId) where.streamId = streamId;
 
-    const nextActions = await prisma.nextAction.findMany({
+    const nextActions = await prisma.next_actions.findMany({
       where,
       include: {
         contact: {
@@ -198,10 +198,10 @@ router.get('/stats', requireAuth, async (req: AuthenticatedRequest, res) => {
 
     const [totalActions, overdue, dueToday, highPriority, byContext] = await Promise.all([
       // Total active next actions
-      prisma.nextAction.count({ where: baseWhere }),
+      prisma.next_actions.count({ where: baseWhere }),
 
       // Overdue next actions
-      prisma.nextAction.count({
+      prisma.next_actions.count({
         where: {
           ...baseWhere,
           dueDate: { lt: new Date() }
@@ -209,7 +209,7 @@ router.get('/stats', requireAuth, async (req: AuthenticatedRequest, res) => {
       }),
 
       // Due today
-      prisma.nextAction.count({
+      prisma.next_actions.count({
         where: {
           ...baseWhere,
           dueDate: {
@@ -220,7 +220,7 @@ router.get('/stats', requireAuth, async (req: AuthenticatedRequest, res) => {
       }),
 
       // High priority
-      prisma.nextAction.count({
+      prisma.next_actions.count({
         where: {
           ...baseWhere,
           priority: { in: [Priority.HIGH, Priority.URGENT] }
@@ -228,7 +228,7 @@ router.get('/stats', requireAuth, async (req: AuthenticatedRequest, res) => {
       }),
 
       // By context
-      prisma.nextAction.groupBy({
+      prisma.next_actions.groupBy({
         by: ['context'],
         where: baseWhere,
         _count: { context: true }
@@ -284,7 +284,7 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
       return res.status(400).json({ error: 'Context is required' });
     }
 
-    const nextAction = await prisma.nextAction.create({
+    const nextAction = await prisma.next_actions.create({
       data: {
         title,
         description,
@@ -352,7 +352,7 @@ router.put('/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
       completedAt
     } = req.body;
 
-    const existingAction = await prisma.nextAction.findFirst({
+    const existingAction = await prisma.next_actions.findFirst({
       where: {
         id,
         organizationId: req.user!.organizationId
@@ -374,7 +374,7 @@ router.put('/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
     if (dueDate !== undefined) updateData.dueDate = dueDate ? new Date(dueDate) : null;
     if (completedAt !== undefined) updateData.completedAt = completedAt ? new Date(completedAt) : null;
 
-    const updatedAction = await prisma.nextAction.update({
+    const updatedAction = await prisma.next_actions.update({
       where: { id },
       data: updateData,
       include: {
@@ -404,7 +404,7 @@ router.delete('/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
 
-    const existingAction = await prisma.nextAction.findFirst({
+    const existingAction = await prisma.next_actions.findFirst({
       where: {
         id,
         organizationId: req.user!.organizationId
@@ -415,7 +415,7 @@ router.delete('/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
       return res.status(404).json({ error: 'Next action not found' });
     }
 
-    await prisma.nextAction.delete({
+    await prisma.next_actions.delete({
       where: { id }
     });
 
@@ -435,7 +435,7 @@ router.post('/:id/complete', requireAuth, async (req: AuthenticatedRequest, res)
     const { id } = req.params;
     const { notes } = req.body;
 
-    const existingAction = await prisma.nextAction.findFirst({
+    const existingAction = await prisma.next_actions.findFirst({
       where: {
         id,
         organizationId: req.user!.organizationId
@@ -446,7 +446,7 @@ router.post('/:id/complete', requireAuth, async (req: AuthenticatedRequest, res)
       return res.status(404).json({ error: 'Next action not found' });
     }
 
-    const updatedAction = await prisma.nextAction.update({
+    const updatedAction = await prisma.next_actions.update({
       where: { id },
       data: {
         status: TaskStatus.COMPLETED,
@@ -476,7 +476,7 @@ router.put('/:id/context', requireAuth, async (req: AuthenticatedRequest, res) =
     const { id } = req.params;
     const { context } = req.body;
 
-    const existingAction = await prisma.nextAction.findFirst({
+    const existingAction = await prisma.next_actions.findFirst({
       where: {
         id,
         organizationId: req.user!.organizationId
@@ -487,7 +487,7 @@ router.put('/:id/context', requireAuth, async (req: AuthenticatedRequest, res) =
       return res.status(404).json({ error: 'Next action not found' });
     }
 
-    const updatedAction = await prisma.nextAction.update({
+    const updatedAction = await prisma.next_actions.update({
       where: { id },
       data: { context }
     });

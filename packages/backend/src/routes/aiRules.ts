@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken, requireRole } from '../shared/middleware/auth';
 import { validateRequest } from '../shared/middleware/validateRequest';
 import { z } from 'zod';
@@ -7,7 +7,6 @@ import { AppError } from '../shared/middleware/error';
 import logger from '../config/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Zod schemas for validation
 const ruleConditionSchema = z.object({
@@ -126,7 +125,7 @@ function mapTriggerToType(trigger: string): string {
  */
 router.get('/',
   authenticateToken,
-  requireRole(['OWNER', 'ADMIN', 'MANAGER', 'USER']),
+  requireRole(['OWNER', 'ADMIN', 'MANAGER', 'MEMBER']),
   async (req, res) => {
     try {
       const { module, enabled, trigger } = req.query;
@@ -359,7 +358,9 @@ router.put('/:id',
           const modelExists = await prisma.ai_models.findFirst({
             where: {
               id: updateData.aiModel,
-              organizationId: req.user!.organizationId
+              ai_providers: {
+                organizationId: req.user!.organizationId
+              }
             }
           });
           

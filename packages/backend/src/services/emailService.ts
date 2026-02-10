@@ -230,7 +230,7 @@ export class EmailService {
     };
   }
 
-  async saveMessage(channelId: string, emailMessage: EmailMessage): Promise<void> {
+  async saveMessage(channelId: string, emailMessage: EmailMessage): Promise<boolean> {
     try {
       const channel = await prisma.communicationChannel.findUnique({
         where: { id: channelId }
@@ -249,8 +249,7 @@ export class EmailService {
       });
 
       if (existing) {
-        console.log(`Message ${emailMessage.messageId} already exists`);
-        return;
+        return false;
       }
 
       // Create message record
@@ -267,7 +266,7 @@ export class EmailService {
           toAddress: emailMessage.to[0]?.address || '',
           ccAddress: emailMessage.cc?.map(addr => addr.address) || [],
           sentAt: emailMessage.date,
-          receivedAt: new Date(),
+          receivedAt: emailMessage.date,
           messageType: 'INBOX',
           priority: 'NORMAL'
         }
@@ -290,13 +289,13 @@ export class EmailService {
 
       console.log(`Saved message: ${emailMessage.subject}`);
 
-      // Process message for auto-task creation
-      if (channel.autoProcess) {
-        await processMessageContent(message.id, emailMessage, channel.userId || undefined);
-      }
+      // Auto-processing disabled - CRM linkage (contacts/companies)
+      // must be triggered manually by the user via message analysis
 
+      return true;
     } catch (error) {
       console.error('Error saving message:', error);
+      return false;
     }
   }
 
@@ -438,30 +437,45 @@ export class EmailService {
               return resolve({ syncedCount, errors });
             }
 
-            // Fetch recent messages (last 50)
-            const f = imap.seq.fetch(`${Math.max(1, box.messages.total - 49)}:*`, {
-              bodies: '',
-              struct: true
+            console.log(`[Sync] Inbox has ${box.messages.total} messages total`);
+
+            if (box.messages.total === 0) {
+              imap.end();
+              return resolve({ syncedCount: 0, errors });
+            }
+
+            // Fetch last 100 messages
+            const startSeq = Math.max(1, box.messages.total - 99);
+            console.log(`[Sync] Fetching sequences ${startSeq}:*`);
+
+            const f = imap.seq.fetch(`${startSeq}:*`, {
+              bodies: ''
             });
 
-            f.on('message', (msg, seqno) => {
-              msg.on('body', (stream, info) => {
-                simpleParser(stream, async (err, parsed) => {
-                  if (err) {
-                    errors.push(`Failed to parse message ${seqno}: ${err.message}`);
-                    return;
-                  }
+            const messagePromises: Promise<void>[] = [];
 
+            f.on('message', (msg, seqno) => {
+              const promise = new Promise<void>((resolveMsg) => {
+                let messageData = '';
+
+                msg.on('body', (stream) => {
+                  stream.on('data', (chunk: Buffer) => {
+                    messageData += chunk.toString('utf8');
+                  });
+                });
+
+                msg.once('end', async () => {
                   try {
+                    const parsed = await simpleParser(messageData);
                     const emailMessage: EmailMessage = {
                       messageId: parsed.messageId || `${channelId}-${seqno}-${Date.now()}`,
-                      from: { 
+                      from: {
                         address: parsed.from?.value?.[0]?.address || 'unknown@unknown.com',
-                        name: parsed.from?.value?.[0]?.name 
+                        name: parsed.from?.value?.[0]?.name
                       },
-                      to: parsed.to?.value?.map(addr => ({ 
-                        address: addr.address!, 
-                        name: addr.name 
+                      to: parsed.to?.value?.map(addr => ({
+                        address: addr.address!,
+                        name: addr.name
                       })) || [],
                       subject: parsed.subject || 'No Subject',
                       text: parsed.text,
@@ -475,23 +489,34 @@ export class EmailService {
                       }))
                     };
 
-                    await this.saveMessage(channelId, emailMessage);
-                    syncedCount++;
-                  } catch (saveError) {
-                    // Skip duplicate messages, but log other errors
-                    if (!saveError.message?.includes('Unique constraint')) {
-                      errors.push(`Failed to save message ${seqno}: ${saveError.message}`);
+                    const saved = await this.saveMessage(channelId, emailMessage);
+                    if (saved) syncedCount++;
+                  } catch (saveError: any) {
+                    if (!saveError.message?.includes('already exists')) {
+                      errors.push(`Message ${seqno}: ${saveError.message}`);
                     }
                   }
+                  resolveMsg();
                 });
               });
+              messagePromises.push(promise);
             });
 
             f.once('error', (err) => {
               errors.push(`Fetch error: ${err.message}`);
             });
 
-            f.once('end', () => {
+            f.once('end', async () => {
+              // Wait for all messages to be parsed and saved
+              await Promise.all(messagePromises);
+              console.log(`[Sync] Done: ${syncedCount} new, ${errors.length} errors`);
+
+              // Update lastSyncAt
+              await prisma.communicationChannel.update({
+                where: { id: channelId },
+                data: { lastSyncAt: new Date() }
+              });
+
               imap.end();
               resolve({ syncedCount, errors });
             });

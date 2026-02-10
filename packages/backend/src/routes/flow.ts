@@ -17,13 +17,13 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { PrismaClient, FlowAction } from '@prisma/client';
+import { FlowAction } from '@prisma/client';
+import { prisma } from '../config/database';
 import { FlowEngineService, createFlowEngine } from '../services/ai/FlowEngineService';
 import { authenticateToken as authMiddleware, AuthenticatedRequest } from '../shared/middleware/auth';
 import { AIRouter } from '../services/ai/AIRouter';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Cache for AIRouter instances per organization
 const aiRouterCache: Map<string, AIRouter> = new Map();
@@ -1462,7 +1462,6 @@ router.post('/batch', authMiddleware, async (req: Request, res: Response) => {
             processed: true,
             flowStatus: 'PROCESSED',
             userDecision: action as FlowAction,
-            userDecisionAt: new Date(),
             processedAt: new Date()
           }
         });

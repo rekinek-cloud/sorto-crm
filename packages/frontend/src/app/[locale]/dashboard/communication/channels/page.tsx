@@ -181,6 +181,8 @@ export default function ChannelsPage() {
         name: formData.name.trim(),
         type: formData.type,
         config: formData.config,
+        autoProcess: formData.autoProcess,
+        createTasks: formData.createTasks,
       });
       setChannels(prev => prev.map(channel =>
         channel.id === selectedChannel.id

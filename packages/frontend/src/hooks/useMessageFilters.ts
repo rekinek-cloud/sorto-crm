@@ -42,7 +42,7 @@ const DEFAULT_FILTERS: MessageFilters = {
 }
 
 const DEFAULT_SORT: SortConfig = {
-  field: 'receivedAt',
+  field: 'sentAt',
   direction: 'desc'
 }
 

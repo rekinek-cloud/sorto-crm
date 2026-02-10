@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { z } from 'zod';
 import { authenticateToken, AuthenticatedRequest } from '../shared/middleware/auth';
 import { validateRequest } from '../shared/middleware/validation';
@@ -10,7 +10,6 @@ import { invoiceService } from '../services/invoiceService';
 import { scheduledTasksService } from '../services/scheduledTasks';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Validation schemas
 const createInvoiceSchema = z.object({

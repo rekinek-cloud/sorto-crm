@@ -723,7 +723,7 @@ router.post('/:id/plan-as-time-block', requireAuth, async (req: AuthenticatedReq
     }
 
     // 5. Create time block
-    const timeBlock = await prisma.energyTimeBlock.create({
+    const timeBlock = await prisma.energy_time_blocks.create({
       data: {
         name: inboxItem.content.substring(0, 100), // Truncate to fit
         startTime: finalStartTime,
@@ -740,7 +740,7 @@ router.post('/:id/plan-as-time-block', requireAuth, async (req: AuthenticatedReq
     });
 
     // 6. Create scheduled task linking to time block
-    const scheduledTask = await prisma.scheduledTask.create({
+    const scheduledTask = await prisma.scheduled_tasks.create({
       data: {
         title: inboxItem.content,
         description: inboxItem.note || '',
@@ -882,7 +882,7 @@ async function suggestOptimalTimeSlot(userId: string, date: Date, energyLevel: s
     const endTime = calculateEndTime(startTime, estimatedMinutes);
     
     // Check if slot is available
-    const conflict = await prisma.energyTimeBlock.findFirst({
+    const conflict = await prisma.energy_time_blocks.findFirst({
       where: {
         userId,
         dayOfWeek: dayOfWeek as any,
@@ -949,7 +949,7 @@ function getDayOfWeek(date: Date): string {
  * Get next order for time block
  */
 async function getNextOrder(userId: string, dayOfWeek: string): Promise<number> {
-  const lastBlock = await prisma.energyTimeBlock.findFirst({
+  const lastBlock = await prisma.energy_time_blocks.findFirst({
     where: { userId, dayOfWeek: dayOfWeek as any },
     orderBy: { order: 'desc' }
   });

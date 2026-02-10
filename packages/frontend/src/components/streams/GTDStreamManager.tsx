@@ -458,14 +458,16 @@ const GTDStreamManager: React.FC = () => {
       {/* Modals */}
       {showCreateModal && (
         <GTDStreamForm
+          availableStreams={streams}
           onClose={() => setShowCreateModal(false)}
           onSubmit={handleCreateStream}
         />
       )}
-      
+
       {showEditModal && selectedStream && (
         <GTDStreamForm
           stream={selectedStream}
+          availableStreams={streams}
           onClose={() => {
             setShowEditModal(false);
             setSelectedStream(null);

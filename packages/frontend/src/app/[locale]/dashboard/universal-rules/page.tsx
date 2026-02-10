@@ -10,18 +10,25 @@ import {
   CheckCircleIcon,
   XCircleIcon,
   SparklesIcon,
+  DocumentDuplicateIcon,
+  EnvelopeIcon,
+  FunnelIcon,
+  ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import { universalRulesApi, type AvailableAnalysis, type ExecutionHistoryItem } from '@/lib/api/universalRules';
+import { getUnifiedRuleTemplates, createUnifiedRule } from '@/lib/api/unifiedRules';
 
 // Types imported from @/lib/api/universalRules
 
 export default function UniversalRulesPage() {
   const [availableAnalyses, setAvailableAnalyses] = useState<Record<string, AvailableAnalysis[]>>({});
   const [executionHistory, setExecutionHistory] = useState<ExecutionHistoryItem[]>([]);
+  const [ruleTemplates, setRuleTemplates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedModule, setSelectedModule] = useState<string>('projects');
   const [analyzing, setAnalyzing] = useState(false);
+  const [creatingFromTemplate, setCreatingFromTemplate] = useState<string | null>(null);
   const [testItemId, setTestItemId] = useState('');
   const [selectedAnalysisType, setSelectedAnalysisType] = useState<string>('');
 
@@ -40,12 +47,14 @@ export default function UniversalRulesPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [analysesRes, historyRes] = await Promise.all([
+      const [analysesRes, historyRes, templatesRes] = await Promise.all([
         universalRulesApi.getAvailableAnalyses(),
         universalRulesApi.getExecutionHistory(20),
+        getUnifiedRuleTemplates().catch(() => []),
       ]);
       setAvailableAnalyses(analysesRes.data || {});
       setExecutionHistory(historyRes.data || []);
+      setRuleTemplates(templatesRes || []);
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
@@ -78,6 +87,37 @@ export default function UniversalRulesPage() {
       toast.error('Blad podczas analizy');
     } finally {
       setAnalyzing(false);
+    }
+  };
+
+  const handleCreateFromTemplate = async (template: any) => {
+    try {
+      setCreatingFromTemplate(template.id);
+      await createUnifiedRule({
+        name: template.name,
+        description: template.description,
+        ruleType: template.ruleType,
+        category: template.category,
+        conditions: template.conditions,
+        actions: template.actions,
+        isActive: false,
+        priority: 50,
+      });
+      toast.success(`Regula "${template.name}" utworzona z szablonu`);
+    } catch (error: any) {
+      console.error('Failed to create rule from template:', error);
+      toast.error('Blad tworzenia reguly z szablonu');
+    } finally {
+      setCreatingFromTemplate(null);
+    }
+  };
+
+  const getTemplateIcon = (category: string) => {
+    switch (category) {
+      case 'MESSAGE_PROCESSING': return <EnvelopeIcon className="h-5 w-5 text-blue-600" />;
+      case 'FILTERING': return <FunnelIcon className="h-5 w-5 text-red-600" />;
+      case 'COMMUNICATION': return <ChatBubbleLeftRightIcon className="h-5 w-5 text-green-600" />;
+      default: return <BoltIcon className="h-5 w-5 text-purple-600" />;
     }
   };
 
@@ -258,6 +298,57 @@ export default function UniversalRulesPage() {
           </button>
         </div>
       </div>
+
+      {/* Rule Templates */}
+      {ruleTemplates.length > 0 && (
+        <div className="bg-white rounded-xl border border-gray-200 p-6 mt-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <DocumentDuplicateIcon className="h-5 w-5 text-amber-600" />
+            Szablony regul
+          </h2>
+          <p className="text-sm text-gray-500 mb-4">Gotowe szablony regul do szybkiego wdrozenia. Kliknij aby utworzyc regule z szablonu.</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {ruleTemplates.map((template: any) => (
+              <div
+                key={template.id}
+                className="border border-gray-200 rounded-lg p-4 hover:border-purple-300 hover:bg-purple-50/30 transition-all"
+              >
+                <div className="flex items-start gap-3 mb-3">
+                  <div className="p-2 bg-gray-100 rounded-lg flex-shrink-0">
+                    {getTemplateIcon(template.category)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-medium text-gray-900 text-sm">{template.name}</h3>
+                    <p className="text-xs text-gray-500 mt-1">{template.description}</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex gap-1">
+                    <span className="px-2 py-0.5 text-[10px] font-medium bg-gray-100 text-gray-600 rounded">
+                      {template.ruleType}
+                    </span>
+                    <span className="px-2 py-0.5 text-[10px] font-medium bg-purple-100 text-purple-600 rounded">
+                      {template.category}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => handleCreateFromTemplate(template)}
+                    disabled={creatingFromTemplate === template.id}
+                    className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700 disabled:opacity-50 transition-colors"
+                  >
+                    {creatingFromTemplate === template.id ? (
+                      <ArrowPathIcon className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <PlayIcon className="h-3.5 w-3.5" />
+                    )}
+                    Uzyj
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-6">

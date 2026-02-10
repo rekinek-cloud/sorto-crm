@@ -4,7 +4,8 @@
  */
 
 import { Router } from 'express';
-import { PrismaClient, EmailProvider, EmailAccountStatus } from '@prisma/client';
+import { EmailProvider, EmailAccountStatus } from '@prisma/client';
+import { prisma } from '../config/database';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
 import { authenticateToken as auth } from '../shared/middleware/auth';
@@ -16,7 +17,6 @@ import EmailSyncService from '../services/EmailSyncService';
 // scheduledTasksService not used - sync handled directly via EmailSyncService
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Validation schemas
 const createEmailAccountSchema = z.object({

@@ -2,12 +2,11 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs/promises';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken as requireAuth, AuthenticatedRequest } from '../shared/middleware/auth';
 import { z } from 'zod';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(process.cwd(), 'uploads');
@@ -462,13 +461,10 @@ router.put('/folders/:id', requireAuth, async (req: AuthenticatedRequest, res) =
         updatedAt: new Date()
       },
       include: {
-        createdBy: {
-          select: { id: true, firstName: true, lastName: true, email: true }
-        },
         _count: {
           select: {
-            files: { where: { isDeleted: false } },
-            subfolders: true
+            documents: true,
+            children: true
           }
         }
       }

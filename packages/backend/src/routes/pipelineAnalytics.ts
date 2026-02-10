@@ -1,9 +1,8 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken as requireAuth, AuthenticatedRequest } from '../shared/middleware/auth';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // GET /api/v1/pipeline-analytics/conversion-rates - Get conversion rates between stages
 router.get('/conversion-rates', requireAuth, async (req: AuthenticatedRequest, res) => {

@@ -15,7 +15,8 @@ import { CommunicationHistory as CommunicationHistoryComponent } from './Communi
 import { apiClient } from '@/lib/api/client';
 
 interface CommunicationPanelProps {
-  companyId: string;
+  companyId?: string;
+  contactId?: string;
   contacts: Array<{
     id: string;
     firstName: string;
@@ -47,7 +48,7 @@ interface CommunicationHistoryItem {
   };
 }
 
-export function CommunicationPanel({ companyId, contacts, onCommunicationSent }: CommunicationPanelProps) {
+export function CommunicationPanel({ companyId, contactId, contacts, onCommunicationSent }: CommunicationPanelProps) {
   const [activeTab, setActiveTab] = useState<'send' | 'history'>('history');
   const [communicationType, setCommunicationType] = useState<'email' | 'sms' | 'call'>('email');
   const [selectedContact, setSelectedContact] = useState<string>('');
@@ -61,21 +62,22 @@ export function CommunicationPanel({ companyId, contacts, onCommunicationSent }:
     if (activeTab === 'history') {
       loadCommunicationHistory();
     }
-  }, [activeTab, companyId]);
+  }, [activeTab, companyId, contactId]);
 
   const loadCommunicationHistory = async () => {
     try {
       setLoadingHistory(true);
-      console.log('Loading communication history for company:', companyId);
-      
-      // Use apiClient with proper authentication
-      const response = await apiClient.get(`/communications/company/${companyId}`);
-      console.log('Communication history response:', {
-        status: response.status,
-        dataLength: response.data?.length,
-        data: response.data
-      });
-      
+
+      let response;
+      if (companyId) {
+        response = await apiClient.get(`/communications/company/${companyId}`);
+      } else if (contactId) {
+        response = await apiClient.get(`/communications/contact/${contactId}`);
+      } else {
+        setHistory([]);
+        return;
+      }
+
       setHistory(response.data || []);
       
     } catch (error: any) {
@@ -135,7 +137,7 @@ export function CommunicationPanel({ companyId, contacts, onCommunicationSent }:
             return;
           }
           
-          result = await (communicationApi as any).logCommunicationActivity({
+          result = await communicationApi.logCommunicationActivity({
             type: 'email',
             direction: 'outbound',
             subject: subject,
@@ -154,7 +156,7 @@ export function CommunicationPanel({ companyId, contacts, onCommunicationSent }:
             return;
           }
           
-          result = await (communicationApi as any).logCommunicationActivity({
+          result = await communicationApi.logCommunicationActivity({
             type: 'sms',
             direction: 'outbound',
             body: message,
@@ -167,7 +169,7 @@ export function CommunicationPanel({ companyId, contacts, onCommunicationSent }:
           break;
           
         case 'call':
-          result = await (communicationApi as any).logCommunicationActivity({
+          result = await communicationApi.logCommunicationActivity({
             type: 'phone',
             direction: 'outbound',
             body: message,

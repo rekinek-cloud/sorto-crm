@@ -438,7 +438,8 @@ export default function ContactDetailsPage() {
 
       {/* Communication Panel */}
       <CommunicationPanel
-        companyId={contact.assignedCompany?.id || contact.id}
+        companyId={contact.assignedCompany?.id}
+        contactId={contact.id}
         contacts={[{
           id: contact.id,
           firstName: contact.firstName,

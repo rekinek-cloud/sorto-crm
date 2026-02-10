@@ -1,11 +1,10 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { authenticateUser } from '../shared/middleware/auth';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import logger from '../config/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Validation schema
 const searchSchema = z.object({

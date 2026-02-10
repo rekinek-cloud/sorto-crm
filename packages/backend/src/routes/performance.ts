@@ -2,11 +2,10 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { authenticateUser } from '../shared/middleware/auth';
 import { PerformanceMonitor } from '../services/PerformanceMonitor';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import logger from '../config/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 const performanceMonitor = new PerformanceMonitor(prisma);
 
 // Validation schemas

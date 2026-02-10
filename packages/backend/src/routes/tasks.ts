@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { PrismaClient, Priority, TaskStatus, EnergyLevel } from '@prisma/client';
+import { Priority, TaskStatus, EnergyLevel } from '@prisma/client';
+import { prisma } from '../config/database';
 import { validateRequest } from '../shared/middleware/validation';
 import { authenticateToken } from '../shared/middleware/auth';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Validation schemas
 const createTaskSchema = z.object({

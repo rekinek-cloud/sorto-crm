@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SmartMailboxBuilder } from '@/components/communication/smart-mailboxes/SmartMailboxBuilder'
 import { getSmartMailboxMessages, getSmartMailboxes, archiveMessage, deleteMessage, deleteSmartMailbox } from '@/lib/api/smartMailboxes'
+import { communicationApi, CommunicationChannel } from '@/lib/api/communication'
 import { getUnifiedRules, executeUnifiedRule, UnifiedRule } from '@/lib/api/unifiedRules'
 import { useMessageFilters } from '@/hooks/useMessageFilters'
 import { toast } from 'react-hot-toast'
@@ -111,6 +112,8 @@ export default function SmartMailboxesPage() {
   const [expandedMessageId, setExpandedMessageId] = useState<string | null>(null)
   const [allMessages, setAllMessages] = useState<any[]>([])
   const [selectedMessageIds, setSelectedMessageIds] = useState<string[]>([])
+  const [channels, setChannels] = useState<CommunicationChannel[]>([])
+  const [selectedChannelId, setSelectedChannelId] = useState<string | null>(null)
 
   // GTD & Email states
   const [showGTDModal, setShowGTDModal] = useState(false)
@@ -137,15 +140,27 @@ export default function SmartMailboxesPage() {
   // Use local showFilters state (already defined above) or sync with hook
   // const showFilters and setShowFilters are defined locally above
 
+  const [mailboxesLoaded, setMailboxesLoaded] = useState(false)
+
   useEffect(() => {
     loadMailboxes()
+    loadChannels()
   }, [])
 
   useEffect(() => {
-    if (selectedMailboxId && mailboxes.length > 0) {
+    if (!mailboxesLoaded) return
+    loadMessages()
+  }, [selectedMailboxId, selectedChannelId, mailboxesLoaded, mailboxes])
+
+  // Auto-refresh messages and channels every 30s
+  useEffect(() => {
+    if (!mailboxesLoaded) return
+    const interval = setInterval(() => {
       loadMessages()
-    }
-  }, [selectedMailboxId, mailboxes])
+      loadChannels()
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [mailboxesLoaded, selectedMailboxId, selectedChannelId, mailboxes])
 
   const loadMailboxes = async () => {
     try {
@@ -153,8 +168,55 @@ export default function SmartMailboxesPage() {
       setMailboxes(data)
     } catch (error: any) {
       console.error('Error loading mailboxes:', error)
-      toast.error('Nie udalo sie zaladowac skrzynek')
+    } finally {
+      setMailboxesLoaded(true)
     }
+  }
+
+  const loadChannels = async () => {
+    try {
+      const data = await communicationApi.getChannels()
+      setChannels(data)
+    } catch (error: any) {
+      console.error('Error loading channels:', error)
+    }
+  }
+
+  const [syncingChannelId, setSyncingChannelId] = useState<string | null>(null)
+
+  const handleSyncChannel = async (channelId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (syncingChannelId) return
+    try {
+      setSyncingChannelId(channelId)
+      const result = await communicationApi.syncChannel(channelId)
+      if (result.syncedCount > 0) {
+        toast.success(`Pobrano ${result.syncedCount} nowych wiadomosci`)
+      } else {
+        toast.success('Synchronizacja zakonczona - brak nowych wiadomosci')
+      }
+      await loadChannels()
+      await loadMessages()
+    } catch (error: any) {
+      console.error('Error syncing channel:', error)
+      toast.error('Blad synchronizacji kanalu')
+    } finally {
+      setSyncingChannelId(null)
+    }
+  }
+
+  const formatTimeAgo = (dateStr?: string) => {
+    if (!dateStr) return 'Nigdy'
+    const date = new Date(dateStr)
+    const now = new Date()
+    const diffMs = now.getTime() - date.getTime()
+    const diffMin = Math.floor(diffMs / 60000)
+    if (diffMin < 1) return 'Teraz'
+    if (diffMin < 60) return `${diffMin} min temu`
+    const diffH = Math.floor(diffMin / 60)
+    if (diffH < 24) return `${diffH} godz. temu`
+    const diffD = Math.floor(diffH / 24)
+    return `${diffD} dni temu`
   }
 
   const loadMessages = async () => {
@@ -162,20 +224,29 @@ export default function SmartMailboxesPage() {
       setLoading(true)
       let messagesData: any[] = []
 
-      if (selectedMailboxId === 'all') {
-        const allMailboxData = await Promise.all(
-          mailboxes.map(async (mailbox) => {
-            try {
-              const data = await getSmartMailboxMessages(mailbox.id, 1, { limit: 500 })
-              return data.messages || []
-            } catch { return [] }
-          })
-        )
-        messagesData = allMailboxData.flat()
-        const uniqueMessages = messagesData.filter((msg, idx, self) =>
-          idx === self.findIndex(m => m.id === msg.id)
-        )
-        messagesData = uniqueMessages
+      // If a channel is selected, load messages directly from communication API
+      if (selectedChannelId) {
+        messagesData = await communicationApi.getMessages({ channelId: selectedChannelId, limit: 500 })
+      } else if (selectedMailboxId === 'all') {
+        if (mailboxes.length > 0) {
+          // Load from smart mailboxes
+          const allMailboxData = await Promise.all(
+            mailboxes.map(async (mailbox) => {
+              try {
+                const data = await getSmartMailboxMessages(mailbox.id, 1, { limit: 500 })
+                return data.messages || []
+              } catch { return [] }
+            })
+          )
+          messagesData = allMailboxData.flat()
+          const uniqueMessages = messagesData.filter((msg, idx, self) =>
+            idx === self.findIndex(m => m.id === msg.id)
+          )
+          messagesData = uniqueMessages
+        } else {
+          // No mailboxes defined - load all messages from communication API
+          messagesData = await communicationApi.getMessages({ limit: 500 })
+        }
       } else {
         const data = await getSmartMailboxMessages(selectedMailboxId, 1, { limit: 500 })
         messagesData = data.messages || []
@@ -343,6 +414,11 @@ export default function SmartMailboxesPage() {
             <span className="text-xs text-slate-500">
               {stats.total} wiadomosci
             </span>
+            {selectedChannelId && (
+              <span className="text-xs text-green-600 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
+                {channels.find(c => c.id === selectedChannelId)?.name || 'Kanal'}
+              </span>
+            )}
           </div>
 
           <div className="flex items-center gap-2">
@@ -371,9 +447,9 @@ export default function SmartMailboxesPage() {
           <div className="p-3">
             {/* All mailbox */}
             <button
-              onClick={() => setSelectedMailboxId('all')}
+              onClick={() => { setSelectedMailboxId('all'); setSelectedChannelId(null) }}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
-                selectedMailboxId === 'all'
+                selectedMailboxId === 'all' && !selectedChannelId
                   ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
                   : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
               }`}
@@ -395,7 +471,7 @@ export default function SmartMailboxesPage() {
                   {builtInMailboxes.map(mailbox => (
                     <button
                       key={mailbox.id}
-                      onClick={() => setSelectedMailboxId(mailbox.id)}
+                      onClick={() => { setSelectedMailboxId(mailbox.id); setSelectedChannelId(null) }}
                       className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                         selectedMailboxId === mailbox.id
                           ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
@@ -428,7 +504,7 @@ export default function SmartMailboxesPage() {
                           ? 'bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
                           : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
                       }`}
-                      onClick={() => setSelectedMailboxId(mailbox.id)}
+                      onClick={() => { setSelectedMailboxId(mailbox.id); setSelectedChannelId(null) }}
                     >
                       <BoltIcon className="w-5 h-5 flex-shrink-0" />
                       <span className="flex-1 text-left text-sm truncate">{mailbox.name}</span>
@@ -457,6 +533,56 @@ export default function SmartMailboxesPage() {
                         >
                           <TrashIcon className="w-3.5 h-3.5" />
                         </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Channels section */}
+            {channels.length > 0 && (
+              <div className="mt-4">
+                <h3 className="px-3 text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">
+                  Kanaly ({channels.length})
+                </h3>
+                <div className="space-y-1">
+                  {channels.map(channel => (
+                    <div key={channel.id}>
+                      <button
+                        onClick={() => {
+                          if (selectedChannelId === channel.id) {
+                            setSelectedChannelId(null)
+                          } else {
+                            setSelectedChannelId(channel.id)
+                            setSelectedMailboxId('all')
+                          }
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
+                          selectedChannelId === channel.id
+                            ? 'bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                            : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        {getChannelIcon(channel.type || channel.name)}
+                        <span className="flex-1 text-left text-sm truncate">{channel.name}</span>
+                        <button
+                          onClick={(e) => handleSyncChannel(channel.id, e)}
+                          disabled={syncingChannelId === channel.id}
+                          className="p-1 text-slate-400 hover:text-blue-600 rounded transition-colors"
+                          title="Synchronizuj"
+                        >
+                          <ArrowPathIcon className={`w-3.5 h-3.5 ${syncingChannelId === channel.id ? 'animate-spin' : ''}`} />
+                        </button>
+                        {!channel.active && (
+                          <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-600 px-1 rounded">OFF</span>
+                        )}
+                      </button>
+                      {/* Last sync info */}
+                      <div className="px-3 pb-1">
+                        <span className="text-[10px] text-slate-400">
+                          Sync: {formatTimeAgo(channel.lastSyncAt)}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -1092,7 +1218,7 @@ function MessageRow({
           {/* Date & actions */}
           <div className="flex items-center gap-2 flex-shrink-0">
             <span className="text-xs text-slate-500">
-              {formatDate(message.receivedAt || message.sentAt)}
+              {formatDate(message.sentAt || message.receivedAt)}
             </span>
             <ChevronDownIcon className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
           </div>
@@ -1161,7 +1287,7 @@ function MessageRow({
                 <div className="flex gap-4 text-xs text-slate-500 mb-3">
                   <span>Od: {message.fromAddress}</span>
                   {message.toAddresses && <span>Do: {message.toAddresses}</span>}
-                  <span>{new Date(message.receivedAt || message.sentAt).toLocaleString('pl-PL')}</span>
+                  <span>{new Date(message.sentAt || message.receivedAt).toLocaleString('pl-PL')}</span>
                 </div>
 
                 <div className="prose prose-sm max-w-none dark:prose-invert">

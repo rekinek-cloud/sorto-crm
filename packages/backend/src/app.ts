@@ -85,20 +85,22 @@ import customFieldsRoutes from './routes/customFields';
 import brandingRoutes from './routes/branding';
 import billingRoutes from './routes/billing';
 import emailAccountsRoutes from './routes/emailAccounts';
-// import autoRepliesRoutes from './routes/autoReplies';
+import autoRepliesRoutes from './routes/autoReplies';
 // import aiV2Routes from './routes/aiV2';
-// import pipelineAnalyticsRoutes from './routes/pipelineAnalytics';
+import pipelineAnalyticsRoutes from './routes/pipelineAnalytics';
 // import universalRulesRoutes from './routes/universalRules';
-// import graphRoutes from './routes/graph';
+import graphRoutes from './routes/graph';
 import realVectorSearchRoutes from './routes/realVectorSearch';
-// import modernEmailRoutes from './routes/modernEmail';
-// import voiceSimpleRoutes from './routes/voice-simple';
+// import modernEmailRoutes from './routes/modernEmail';  // Requires @sendgrid/mail (not installed)
+import voiceSimpleRoutes from './routes/voice-simple';
 import bugReportsRoutes from './routes/bugReports';
+import mcpKeysRoutes from './routes/mcpKeys';
 import aiRulesRoutes from './routes/aiRules';
 // import filesRoutes from './routes/files';
 import weeklyReviewRoutes from './routes/weeklyReview';
 import streamHierarchyRoutes from './routes/streamHierarchy';
 import streamAccessRoutes from './routes/streamAccess';
+import communicationsRoutes from './routes/communications';
 
 const app = express();
 
@@ -200,6 +202,7 @@ apiRouter.use('/deals', dealsRoutes);
 apiRouter.use('/streams', streamsRoutes);
 apiRouter.use('/smart', smartRoutes);
 apiRouter.use('/communication', communicationRoutes);
+apiRouter.use('/communications', communicationsRoutes);
 apiRouter.use('/gtd', gtdRoutes);
 apiRouter.use('/gtd-streams', gtdStreamsRoutes);
 apiRouter.use('/analysis', analysisRoutes);
@@ -247,15 +250,16 @@ apiRouter.use('/custom-fields', customFieldsRoutes);  // Custom Fields - pola ni
 apiRouter.use('/branding', brandingRoutes);  // Branding - logo i kolory
 apiRouter.use('/billing', billingRoutes);  // Billing - subskrypcje i płatności
 apiRouter.use('/email-accounts', emailAccountsRoutes);  // Email Accounts - IMAP/SMTP
-// apiRouter.use('/auto-replies', autoRepliesRoutes);  // Auto Replies - automatyczne odpowiedzi
+apiRouter.use('/auto-replies', autoRepliesRoutes);  // Auto Replies - automatyczne odpowiedzi
 // apiRouter.use('/ai-v2', aiV2Routes);  // AI V2 - providers & models
-// apiRouter.use('/pipeline-analytics', pipelineAnalyticsRoutes);  // Pipeline Analytics
+apiRouter.use('/pipeline-analytics', pipelineAnalyticsRoutes);  // Pipeline Analytics
 // apiRouter.use('/universal-rules', universalRulesRoutes);  // Universal Rules
-// apiRouter.use('/graph', graphRoutes);  // Graph - relacje między encjami
+apiRouter.use('/graph', graphRoutes);  // Graph - relacje między encjami
 apiRouter.use('/real-vector-search', realVectorSearchRoutes);  // Real Vector Search - semantyczne
-// apiRouter.use('/modern-email', modernEmailRoutes);  // Modern Email - wysyłanie
-// apiRouter.use('/voice', voiceSimpleRoutes);  // Voice TTS - synteza mowy
+// apiRouter.use('/modern-email', modernEmailRoutes);  // Modern Email - requires @sendgrid/mail
+apiRouter.use('/voice', voiceSimpleRoutes);  // Voice TTS - synteza mowy
 apiRouter.use('/admin/bug-reports', bugReportsRoutes);  // Bug Reports
+apiRouter.use('/admin/mcp-keys', mcpKeysRoutes);  // MCP API Keys
 apiRouter.use('/ai-rules', aiRulesRoutes);  // AI Rules
 // apiRouter.use('/files', filesRoutes);  // Files - zarządzanie plikami
 apiRouter.use('/weekly-review', weeklyReviewRoutes);  // Weekly Review

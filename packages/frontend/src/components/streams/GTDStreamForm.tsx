@@ -29,6 +29,13 @@ const FrozenIcon = () => (
   </svg>
 );
 
+interface AvailableStream {
+  id: string;
+  name: string;
+  gtdRole?: GTDRole;
+  color?: string;
+}
+
 interface GTDStreamFormProps {
   stream?: {
     id: string;
@@ -46,6 +53,7 @@ interface GTDStreamFormProps {
     streamType?: StreamType;
     parentStreamId?: string;
   };
+  availableStreams?: AvailableStream[];
   onClose: () => void;
   onSubmit: (data: any) => void;
 }
@@ -122,6 +130,7 @@ const STREAM_TYPES = [
 const GTDStreamForm: React.FC<GTDStreamFormProps> = ({
   stream,
   initialData,
+  availableStreams = [],
   onClose,
   onSubmit
 }) => {
@@ -158,6 +167,9 @@ const GTDStreamForm: React.FC<GTDStreamFormProps> = ({
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const selectedRole = STREAM_ROLES.find(role => role.value === formData.gtdRole);
+
+  // Filter available streams for parent selection (exclude self in edit mode)
+  const parentStreamOptions = availableStreams.filter(s => !stream || s.id !== stream.id);
 
   const validate = () => {
     const newErrors: Record<string, string> = {};
@@ -256,6 +268,30 @@ const GTDStreamForm: React.FC<GTDStreamFormProps> = ({
               />
             </div>
           </div>
+
+          {/* Strumień nadrzędny */}
+          {parentStreamOptions.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Strumień nadrzędny (opcjonalny)
+              </label>
+              <select
+                value={formData.parentStreamId}
+                onChange={(e) => setFormData({ ...formData, parentStreamId: e.target.value })}
+                className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+              >
+                <option value="">Brak (strumień główny)</option>
+                {parentStreamOptions.map(s => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}{s.gtdRole ? ` (${STREAM_ROLES.find(r => r.value === s.gtdRole)?.label || s.gtdRole})` : ''}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-gray-500 mt-1">
+                Wybierz strumień nadrzędny, aby utworzyć hierarchię
+              </p>
+            </div>
+          )}
 
           {/* Typ strumienia */}
           <div>

@@ -1,5 +1,5 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken as requireAuth, AuthenticatedRequest } from '../shared/middleware/auth';
 import { emailService, EmailConfig } from '../services/emailService';
 import { slackService, SlackConfig } from '../services/slackService';
@@ -7,7 +7,6 @@ import { processMessageContent } from '../services/messageProcessor';
 import { aiAnalysisService } from '../services/aiAnalysisService';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Get all communication channels for organization
 router.get('/channels', requireAuth, async (req: AuthenticatedRequest, res) => {
@@ -108,7 +107,7 @@ router.post('/channels', requireAuth, async (req: AuthenticatedRequest, res) => 
 router.put('/channels/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
-    const updates = req.body;
+    const body = req.body;
 
     const channel = await prisma.communicationChannel.findFirst({
       where: {
@@ -121,25 +120,21 @@ router.put('/channels/:id', requireAuth, async (req: AuthenticatedRequest, res) 
       return res.status(404).json({ error: 'Channel not found' });
     }
 
+    // Whitelist allowed fields
+    const updates: any = {};
+    if (body.name !== undefined) updates.name = body.name;
+    if (body.type !== undefined) updates.type = body.type;
+    if (body.config !== undefined) updates.config = body.config;
+    if (body.active !== undefined) updates.active = body.active;
+    if (body.autoProcess !== undefined) updates.autoProcess = body.autoProcess;
+    if (body.createTasks !== undefined) updates.createTasks = body.createTasks;
+    if (body.emailAddress !== undefined) updates.emailAddress = body.emailAddress;
+    if (body.displayName !== undefined) updates.displayName = body.displayName;
+
     const updatedChannel = await prisma.communicationChannel.update({
       where: { id },
       data: updates
     });
-
-    // Restart monitoring if config changed
-    if (updates.config) {
-      if (channel.type === 'EMAIL') {
-        await emailService.disconnectChannel(id);
-        if (updatedChannel.autoProcess) {
-          await emailService.connectToChannel(id);
-        }
-      } else if (channel.type === 'SLACK') {
-        await slackService.disconnectChannel(id);
-        if (updatedChannel.autoProcess) {
-          await slackService.connectToChannel(id);
-        }
-      }
-    }
 
     return res.json(updatedChannel);
   } catch (error) {

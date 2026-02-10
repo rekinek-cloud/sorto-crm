@@ -264,7 +264,7 @@ router.get('/company/:id', async (req, res) => {
     }).then(contacts => contacts.map(c => c.id));
 
     // Get communication activities for this company from Activity table
-    const activities = await prisma.activity.findMany({
+    const activities = await prisma.activities.findMany({
       where: {
         organizationId: req.user.organizationId,
         companyId: id,
@@ -275,10 +275,10 @@ router.get('/company/:id', async (req, res) => {
       orderBy: { createdAt: 'desc' },
       take: 25, // Limit to make room for messages
       include: {
-        user: {
+        users: {
           select: { id: true, firstName: true, lastName: true }
         },
-        contact: {
+        contacts: {
           select: { id: true, firstName: true, lastName: true }
         }
       }
@@ -341,26 +341,26 @@ router.get('/company/:id', async (req, res) => {
       }
     }));
 
-    // Convert activities to communication format  
+    // Convert activities to communication format
     const activitiesCommunications = activities.map(activity => ({
       id: activity.id,
       type: activity.communicationType || 'unknown',
       direction: activity.communicationDirection || 'outbound',
       subject: activity.communicationSubject,
       content: activity.communicationBody || activity.description || '',
-      fromAddress: activity.metadata?.fromAddress,
-      fromName: activity.metadata?.fromName,
-      toAddress: activity.metadata?.toAddress,
+      fromAddress: (activity.metadata as any)?.fromAddress,
+      fromName: (activity.metadata as any)?.fromName,
+      toAddress: (activity.metadata as any)?.toAddress,
       createdAt: activity.createdAt,
-      contact: activity.contact,
-      channel: activity.metadata?.channelName ? {
-        name: activity.metadata.channelName,
-        type: activity.metadata.channelType || activity.communicationType
+      contact: activity.contacts,
+      channel: (activity.metadata as any)?.channelName ? {
+        name: (activity.metadata as any).channelName,
+        type: (activity.metadata as any).channelType || activity.communicationType
       } : null,
       // Keep original activity fields
       title: activity.title,
       description: activity.description,
-      user: activity.user
+      user: activity.users
     }));
 
     // Combine and sort all communications
@@ -371,6 +371,121 @@ router.get('/company/:id', async (req, res) => {
     res.json(allCommunications);
   } catch (error) {
     console.error('Error fetching company communications:', error);
+    res.status(500).json({ error: 'Failed to fetch communications' });
+  }
+});
+
+// GET /api/communications/contact/:id - Get communications for a contact (even without company)
+router.get('/contact/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Verify contact belongs to organization
+    const contact = await prisma.contact.findFirst({
+      where: {
+        id,
+        organizationId: req.user.organizationId
+      },
+      include: {
+        assignedCompany: { select: { id: true } }
+      }
+    });
+
+    if (!contact) {
+      return res.status(404).json({ error: 'Contact not found' });
+    }
+
+    // Get communication activities for this contact
+    const activities = await prisma.activities.findMany({
+      where: {
+        organizationId: req.user.organizationId,
+        contactId: id,
+        communicationType: { not: null }
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 25,
+      include: {
+        users: { select: { id: true, firstName: true, lastName: true } },
+        contacts: { select: { id: true, firstName: true, lastName: true } }
+      }
+    });
+
+    // Get messages linked to this contact
+    const messages = await prisma.message.findMany({
+      where: { contactId: id },
+      orderBy: { receivedAt: 'desc' },
+      take: 25,
+      include: {
+        contact: { select: { id: true, firstName: true, lastName: true } },
+        channel: { select: { name: true, type: true } }
+      }
+    });
+
+    // Convert messages to communication format
+    const messagesCommunications = messages.map(message => ({
+      id: `msg_${message.id}`,
+      type: message.channel.type.toLowerCase(),
+      direction: message.messageType === 'SENT' ? 'outbound' : 'inbound',
+      subject: message.subject,
+      content: message.content,
+      fromAddress: message.fromAddress,
+      fromName: message.fromName,
+      toAddress: message.toAddress,
+      createdAt: message.receivedAt,
+      contact: message.contact,
+      channel: message.channel,
+      title: message.channel.type === 'EMAIL'
+        ? (message.messageType === 'SENT' ? 'Email sent' : 'Email received')
+        : 'Message',
+      description: message.content,
+      user: null,
+      organizationId: req.user.organizationId,
+      companyId: message.companyId,
+      contactId: message.contactId,
+      communicationType: message.channel.type.toLowerCase(),
+      communicationDirection: message.messageType === 'SENT' ? 'outbound' : 'inbound',
+      communicationSubject: message.subject,
+      communicationBody: message.content,
+      metadata: {
+        messageId: message.id,
+        fromAddress: message.fromAddress,
+        fromName: message.fromName,
+        toAddress: message.toAddress,
+        subject: message.subject,
+        channelName: message.channel.name,
+        channelType: message.channel.type
+      }
+    }));
+
+    // Convert activities to communication format
+    const activitiesCommunications = activities.map(activity => ({
+      id: activity.id,
+      type: activity.communicationType || 'unknown',
+      direction: activity.communicationDirection || 'outbound',
+      subject: activity.communicationSubject,
+      content: activity.communicationBody || activity.description || '',
+      fromAddress: (activity.metadata as any)?.fromAddress,
+      fromName: (activity.metadata as any)?.fromName,
+      toAddress: (activity.metadata as any)?.toAddress,
+      createdAt: activity.createdAt,
+      contact: activity.contacts,
+      channel: (activity.metadata as any)?.channelName ? {
+        name: (activity.metadata as any).channelName,
+        type: (activity.metadata as any).channelType || activity.communicationType
+      } : null,
+      title: activity.title,
+      description: activity.description,
+      user: activity.users
+    }));
+
+    // Combine and sort
+    const allCommunications = [...messagesCommunications, ...activitiesCommunications]
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+      .slice(0, 50);
+
+    res.json(allCommunications);
+  } catch (error) {
+    console.error('Error fetching contact communications:', error);
     res.status(500).json({ error: 'Failed to fetch communications' });
   }
 });

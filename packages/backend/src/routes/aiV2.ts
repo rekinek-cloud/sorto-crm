@@ -1,5 +1,5 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { AIRouter } from '../services/ai/AIRouter';
 import { TemplateManager } from '../services/ai/TemplateManager';
 import { authenticateToken } from '../shared/middleware/auth';
@@ -7,7 +7,6 @@ import { validateRequest } from '../shared/middleware/validateRequest';
 import { z } from 'zod';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Apply authentication middleware
 router.use(authenticateToken);
@@ -21,16 +20,16 @@ router.get('/providers', async (req, res) => {
   try {
     const organizationId = req.user!.organizationId;
 
-    const providers = await prisma.aIProvider.findMany({
+    const providers = await prisma.ai_providers.findMany({
       where: { organizationId },
       include: {
-        models: {
+        ai_models: {
           where: { status: 'ACTIVE' },
           orderBy: { name: 'asc' }
         },
         _count: {
           select: {
-            executions: {
+            ai_executions: {
               where: {
                 createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
               }
@@ -72,7 +71,7 @@ router.post('/providers', validateRequest(createProviderSchema), async (req, res
   try {
     const organizationId = req.user!.organizationId;
 
-    const provider = await prisma.aIProvider.create({
+    const provider = await prisma.ai_providers.create({
       data: {
         ...req.body,
         organizationId,
@@ -96,7 +95,7 @@ router.put('/providers/:id', async (req, res) => {
     const organizationId = req.user!.organizationId;
     const providerId = req.params.id;
 
-    const provider = await prisma.aIProvider.update({
+    const provider = await prisma.ai_providers.update({
       where: { id: providerId, organizationId },
       data: req.body
     });
@@ -117,7 +116,7 @@ router.post('/providers/:id/test', async (req, res) => {
     const organizationId = req.user!.organizationId;
     const providerId = req.params.id;
 
-    const provider = await prisma.aIProvider.findUnique({
+    const provider = await prisma.ai_providers.findUnique({
       where: { id: providerId, organizationId }
     });
 
@@ -150,15 +149,15 @@ router.get('/models', async (req, res) => {
   try {
     const organizationId = req.user!.organizationId;
 
-    const models = await prisma.aIModel.findMany({
+    const models = await prisma.ai_models.findMany({
       where: {
-        provider: { organizationId }
+        ai_providers: { organizationId }
       },
       include: {
-        provider: true,
+        ai_providers: true,
         _count: {
           select: {
-            executions: {
+            ai_executions: {
               where: {
                 createdAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) }
               }
@@ -167,7 +166,7 @@ router.get('/models', async (req, res) => {
         }
       },
       orderBy: [
-        { provider: { priority: 'asc' } },
+        { ai_providers: { priority: 'asc' } },
         { name: 'asc' }
       ]
     });
@@ -200,7 +199,7 @@ router.post('/models', validateRequest(createModelSchema), async (req, res) => {
     const organizationId = req.user!.organizationId;
 
     // Verify provider belongs to organization
-    const provider = await prisma.aIProvider.findFirst({
+    const provider = await prisma.ai_providers.findFirst({
       where: { id: req.body.providerId, organizationId }
     });
 
@@ -208,7 +207,7 @@ router.post('/models', validateRequest(createModelSchema), async (req, res) => {
       return res.status(404).json({ error: 'Provider not found' });
     }
 
-    const model = await prisma.aIModel.create({
+    const model = await prisma.ai_models.create({
       data: {
         ...req.body,
         status: 'ACTIVE'
@@ -357,16 +356,15 @@ router.get('/rules', async (req, res) => {
   try {
     const organizationId = req.user!.organizationId;
 
-    const rules = await prisma.aIRule.findMany({
+    const rules = await prisma.ai_rules.findMany({
       where: { organizationId },
       include: {
-        template: {
+        ai_prompt_templates: {
           select: { id: true, name: true, category: true }
         },
-        model: {
-          select: { id: true, name: true, displayName: true },
-          include: {
-            provider: {
+        ai_models: {
+          select: { id: true, name: true, displayName: true,
+            ai_providers: {
               select: { id: true, name: true, displayName: true }
             }
           }
@@ -408,7 +406,7 @@ router.post('/rules', validateRequest(createRuleSchema), async (req, res) => {
   try {
     const organizationId = req.user!.organizationId;
 
-    const rule = await prisma.aIRule.create({
+    const rule = await prisma.ai_rules.create({
       data: {
         ...req.body,
         organizationId,
@@ -431,7 +429,7 @@ router.put('/rules/:id', async (req, res) => {
   try {
     const organizationId = req.user!.organizationId;
 
-    const rule = await prisma.aIRule.update({
+    const rule = await prisma.ai_rules.update({
       where: { id: req.params.id, organizationId },
       data: req.body
     });
@@ -490,20 +488,20 @@ router.get('/executions', async (req, res) => {
     if (ruleId) where.ruleId = ruleId;
     if (modelId) where.modelId = modelId;
 
-    const executions = await prisma.aIExecution.findMany({
+    const executions = await prisma.ai_executions.findMany({
       where,
       include: {
-        rule: { select: { id: true, name: true } },
-        model: { select: { id: true, name: true, displayName: true } },
-        provider: { select: { id: true, name: true, displayName: true } },
-        template: { select: { id: true, name: true } }
+        ai_rules: { select: { id: true, name: true } },
+        ai_models: { select: { id: true, name: true, displayName: true } },
+        ai_providers: { select: { id: true, name: true, displayName: true } },
+        ai_prompt_templates: { select: { id: true, name: true } }
       },
       orderBy: { createdAt: 'desc' },
       take: Number(limit),
       skip: Number(offset)
     });
 
-    const total = await prisma.aIExecution.count({ where });
+    const total = await prisma.ai_executions.count({ where });
 
     res.json({
       message: 'AI executions retrieved successfully',
@@ -529,7 +527,7 @@ router.get('/usage-stats', async (req, res) => {
 
     const since = new Date(Date.now() - Number(days) * 24 * 60 * 60 * 1000);
 
-    const stats = await prisma.aIExecution.aggregate({
+    const stats = await prisma.ai_executions.aggregate({
       where: {
         organizationId,
         createdAt: { gte: since }
@@ -545,7 +543,7 @@ router.get('/usage-stats', async (req, res) => {
       }
     });
 
-    const dailyStats = await prisma.aIUsageStats.findMany({
+    const dailyStats = await prisma.ai_usage_stats.findMany({
       where: {
         organizationId,
         date: { gte: since }

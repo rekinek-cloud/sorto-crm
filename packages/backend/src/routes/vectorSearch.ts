@@ -2,11 +2,10 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { authenticateUser } from '../shared/middleware/auth';
 import { VectorService } from '../services/VectorService';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import logger from '../config/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 const vectorService = new VectorService(prisma);
 
 // Validation schemas
@@ -455,7 +454,7 @@ async function syncTasks(organizationId: string, entityId?: string, force: boole
     try {
       // Check if already exists
       if (!force) {
-        const existing = await prisma.vectorDocument.findFirst({
+        const existing = await prisma.vector_documents.findFirst({
           where: { entityType: 'task', entityId: task.id }
         });
         if (existing) continue;
@@ -496,7 +495,7 @@ async function syncProjects(organizationId: string, entityId?: string, force: bo
     where,
     include: {
       assignedTo: { select: { firstName: true, lastName: true } },
-      company: { select: { name: true } },
+      companies: { select: { name: true } },
       tasks: { select: { title: true, status: true } }
     }
   });
@@ -505,7 +504,7 @@ async function syncProjects(organizationId: string, entityId?: string, force: bo
   for (const project of projects) {
     try {
       if (!force) {
-        const existing = await prisma.vectorDocument.findFirst({
+        const existing = await prisma.vector_documents.findFirst({
           where: { entityType: 'project', entityId: project.id }
         });
         if (existing) continue;
@@ -514,7 +513,7 @@ async function syncProjects(organizationId: string, entityId?: string, force: bo
       const content = [
         project.name,
         project.description || '',
-        project.company?.name ? `Klient: ${project.company.name}` : '',
+        project.companies?.name ? `Klient: ${project.companies.name}` : '',
         project.assignedTo ? `Właściciel: ${project.assignedTo.firstName} ${project.assignedTo.lastName}` : '',
         `Status: ${project.status}`,
         project.tasks.length > 0 ? `Zadania (${project.tasks.length}): ${project.tasks.map(t => t.title).join(', ')}` : ''
@@ -545,7 +544,7 @@ async function syncContacts(organizationId: string, entityId?: string, force: bo
   const contacts = await prisma.contact.findMany({
     where,
     include: {
-      company: { select: { name: true } }
+      assignedCompany: { select: { name: true } }
     }
   });
 
@@ -553,7 +552,7 @@ async function syncContacts(organizationId: string, entityId?: string, force: bo
   for (const contact of contacts) {
     try {
       if (!force) {
-        const existing = await prisma.vectorDocument.findFirst({
+        const existing = await prisma.vector_documents.findFirst({
           where: { entityType: 'contact', entityId: contact.id }
         });
         if (existing) continue;
@@ -564,7 +563,7 @@ async function syncContacts(organizationId: string, entityId?: string, force: bo
         contact.email,
         contact.phone || '',
         contact.position || '',
-        contact.company?.name ? `Firma: ${contact.company.name}` : '',
+        contact.assignedCompany?.name ? `Firma: ${contact.assignedCompany.name}` : '',
         contact.notes || ''
       ].filter(Boolean).join('\n');
 
@@ -602,7 +601,7 @@ async function syncDeals(organizationId: string, entityId?: string, force: boole
   for (const deal of deals) {
     try {
       if (!force) {
-        const existing = await prisma.vectorDocument.findFirst({
+        const existing = await prisma.vector_documents.findFirst({
           where: { entityType: 'deal', entityId: deal.id }
         });
         if (existing) continue;
@@ -615,7 +614,7 @@ async function syncDeals(organizationId: string, entityId?: string, force: boole
         deal.owner ? `Właściciel: ${deal.owner.firstName} ${deal.owner.lastName}` : '',
         `Wartość: ${deal.value} ${deal.currency}`,
         `Etap: ${deal.stage}`,
-        `Status: ${deal.status}`
+        `Etap: ${deal.stage}`
       ].filter(Boolean).join('\n');
 
       await vectorService.createVectorDocument(
@@ -643,7 +642,7 @@ async function syncCompanies(organizationId: string, entityId?: string, force: b
   const companies = await prisma.company.findMany({
     where,
     include: {
-      contacts: { select: { firstName: true, lastName: true } },
+      assignedContacts: { select: { firstName: true, lastName: true } },
       deals: { select: { title: true, value: true } }
     }
   });
@@ -652,7 +651,7 @@ async function syncCompanies(organizationId: string, entityId?: string, force: b
   for (const company of companies) {
     try {
       if (!force) {
-        const existing = await prisma.vectorDocument.findFirst({
+        const existing = await prisma.vector_documents.findFirst({
           where: { entityType: 'company', entityId: company.id }
         });
         if (existing) continue;
@@ -664,7 +663,7 @@ async function syncCompanies(organizationId: string, entityId?: string, force: b
         company.industry || '',
         company.website || '',
         `Status: ${company.status}`,
-        company.contacts.length > 0 ? `Kontakty: ${company.contacts.map(c => `${c.firstName} ${c.lastName}`).join(', ')}` : '',
+        company.assignedContacts.length > 0 ? `Kontakty: ${company.assignedContacts.map(c => `${c.firstName} ${c.lastName}`).join(', ')}` : '',
         company.deals.length > 0 ? `Transakcje: ${company.deals.map(d => d.title).join(', ')}` : ''
       ].filter(Boolean).join('\n');
 
@@ -698,7 +697,7 @@ async function syncKnowledge(organizationId: string, entityId?: string, force: b
   for (const item of knowledgeItems) {
     try {
       if (!force) {
-        const existing = await prisma.vectorDocument.findFirst({
+        const existing = await prisma.vector_documents.findFirst({
           where: { entityType: 'knowledge', entityId: item.id }
         });
         if (existing) continue;

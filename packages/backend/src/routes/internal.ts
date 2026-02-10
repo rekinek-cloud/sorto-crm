@@ -6,9 +6,8 @@
  */
 
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 
-const prisma = new PrismaClient();
 const router = express.Router();
 
 // Service token validation middleware

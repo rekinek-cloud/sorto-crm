@@ -7,7 +7,7 @@ import { Router, Request, Response } from 'express';
 import { authenticateToken, AuthenticatedRequest } from '../shared/middleware/auth';
 import { GeminiService, GEMINI_MODELS } from '../services/ai/GeminiService';
 import { GeminiCacheService } from '../services/ai/GeminiCacheService';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import multer from 'multer';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -37,7 +37,7 @@ function getCacheService(): GeminiCacheService {
     if (!apiKey) {
       throw new Error('GEMINI_API_KEY not configured');
     }
-    cacheService = new GeminiCacheService(apiKey, new PrismaClient());
+    cacheService = new GeminiCacheService(apiKey, prisma);
   }
   return cacheService;
 }

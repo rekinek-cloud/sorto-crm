@@ -75,6 +75,11 @@ import {
   CreditCard,
   CalendarCheck,
   Terminal,
+  ListPlus,
+  TrendUp,
+  GitFork,
+  Cube,
+  Kanban,
 } from 'phosphor-react';
 
 export interface NavItem {
@@ -124,9 +129,12 @@ export const streamsNavigation: NavItem[] = [
   },
   {
     name: 'Projekty',
-    href: '/dashboard/projects',
     icon: Folder,
     iconWeight: 'duotone',
+    children: [
+      { name: 'Wszystkie projekty', href: '/dashboard/projects', icon: Folder, iconWeight: 'duotone' },
+      { name: 'Zależności', href: '/dashboard/project-dependencies', icon: GitFork, iconWeight: 'duotone' },
+    ],
   },
   {
     name: 'Kalendarz',
@@ -136,9 +144,14 @@ export const streamsNavigation: NavItem[] = [
   },
   {
     name: 'Cele',
-    href: '/dashboard/goals',
     icon: Target,
     iconWeight: 'duotone',
+    children: [
+      { name: 'Cele', href: '/dashboard/goals', icon: Target, iconWeight: 'duotone' },
+      { name: 'Szablony SMART', href: '/dashboard/smart-templates', icon: ListPlus, iconWeight: 'duotone' },
+      { name: 'Ulepszenia SMART', href: '/dashboard/smart-improvements', icon: TrendUp, iconWeight: 'duotone' },
+      { name: 'Analiza SMART', href: '/dashboard/smart-analysis', icon: ChartLine, iconWeight: 'duotone' },
+    ],
   },
 
   // === CRM ===
@@ -183,6 +196,7 @@ export const streamsNavigation: NavItem[] = [
       { name: 'Filtry email', href: '/dashboard/communication/email-filters', icon: FunnelSimple, iconWeight: 'duotone' },
       { name: 'Reguły komunikacji', href: '/dashboard/communication/rules-manager', icon: ListChecks, iconWeight: 'duotone' },
       { name: 'Auto-odpowiedzi', href: '/dashboard/auto-replies', icon: EnvelopeSimple, iconWeight: 'duotone' },
+      { name: 'Pipeline email', href: '/dashboard/email-pipeline', icon: Kanban, iconWeight: 'duotone' },
       { name: 'Analiza email', href: '/dashboard/email-analysis', icon: ChartBar, iconWeight: 'duotone' },
       { name: 'Spotkania', href: '/dashboard/meetings', icon: VideoCamera, iconWeight: 'duotone' },
     ],
@@ -298,6 +312,7 @@ export const streamsNavigation: NavItem[] = [
       { name: 'Konta email', href: '/dashboard/email-accounts', icon: At, iconWeight: 'duotone' },
       { name: 'Integracje', href: '/dashboard/settings/integrations', icon: Lightning, iconWeight: 'duotone' },
       { name: 'Płatności', href: '/dashboard/billing', icon: CreditCard, iconWeight: 'duotone' },
+      { name: 'Moduły', href: '/dashboard/modules', icon: Cube, iconWeight: 'duotone' },
       { name: 'Metadane', href: '/dashboard/metadata', icon: Table, iconWeight: 'duotone' },
     ],
   },
@@ -354,8 +369,6 @@ export const urlRedirects: Record<string, string> = {
   '/dashboard/gtd-buckets': '/dashboard/streams',
   '/dashboard/gtd-horizons': '/dashboard/goals',
   '/dashboard/smart-day-planner': '/dashboard/day-planner',
-  '/dashboard/smart-analysis': '/dashboard/analysis',
-  '/dashboard/smart-templates': '/dashboard/templates',
 };
 
 export default streamsNavigation;

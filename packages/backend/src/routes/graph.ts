@@ -1,11 +1,10 @@
 import { Router } from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken } from '../shared/middleware/auth';
 import { z } from 'zod';
 import logger from '../config/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 const RelationshipQuerySchema = z.object({
   entityId: z.string(),
@@ -98,7 +97,6 @@ router.get('/relationships', authenticateToken, async (req, res) => {
           entityData = await prisma.deal.findFirst({
             where: { id: currentId, organizationId },
             include: {
-              contact: { select: { id: true, firstName: true, lastName: true } },
               company: { select: { id: true, name: true } }
             }
           });
@@ -203,11 +201,6 @@ router.get('/relationships', authenticateToken, async (req, res) => {
 
         // Deal relations
         if (currentType === 'deal' && entityData) {
-          // Contact
-          if (entityData.contact) {
-            await fetchRelatedEntities(entityData.contact.id, 'contact', nextDepth, nodeId);
-          }
-          
           // Company
           if (entityData.company) {
             await fetchRelatedEntities(entityData.company.id, 'company', nextDepth, nodeId);

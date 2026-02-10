@@ -73,14 +73,13 @@ export class AIInsightsEngine {
         include: {
           tasks: {
             include: {
-              assignee: true,
+              assignedTo: true,
               messages: true
             }
           },
           projects: {
             include: {
-              deals: true,
-              assignee: true
+              assignedTo: true
             }
           },
           channels: {
@@ -451,10 +450,10 @@ export class AIInsightsEngine {
   private getStreamMembers(stream: any): string[] {
     const members = new Set<string>();
     stream.tasks.forEach((task: any) => {
-      if (task.assignee?.id) members.add(task.assignee.id);
+      if (task.assignedTo?.id) members.add(task.assignedTo.id);
     });
     stream.projects.forEach((project: any) => {
-      if (project.assignee?.id) members.add(project.assignee.id);
+      if (project.assignedTo?.id) members.add(project.assignedTo.id);
     });
     return Array.from(members);
   }
@@ -525,8 +524,8 @@ export class AIInsightsEngine {
     for (const userId of memberIds) {
       const activeTasks = await prisma.task.count({
         where: {
-          assigneeId: userId,
-          status: { in: ['TODO', 'IN_PROGRESS'] },
+          assignedToId: userId,
+          status: { in: ['NEW', 'IN_PROGRESS'] },
           organizationId: this.organizationId
         }
       });

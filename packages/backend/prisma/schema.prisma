@@ -122,6 +122,7 @@ model Organization {
   aiSyncStatuses  AiSyncStatus[]
   aiAppMappings       AiAppMapping[]
   organizationModules organizationModule[]
+  mcp_api_keys        mcp_api_keys[]
 
   @@map("organizations")
 }
@@ -215,6 +216,7 @@ model User {
   flow_automation_rules   flow_automation_rules[]
   flow_processing_history flow_processing_history[]
   flow_conversations      flow_conversations[]
+  mcp_api_keys             mcp_api_keys[]           @relation("McpKeyCreator")
 
   @@map("users")
 }
@@ -4518,4 +4520,40 @@ model platformEvent {
   module platformModule? @relation(fields: [moduleId], references: [id])
 
   @@map("platform_events")
+}
+
+// === MCP API Keys ===
+
+model mcp_api_keys {
+  id             String    @id @default(uuid())
+  keyHash        String    @unique @map("key_hash")
+  keyPrefix      String    @map("key_prefix")
+  name           String?
+  isActive       Boolean   @default(true) @map("is_active")
+  organizationId String    @map("organization_id")
+  createdById    String    @map("created_by_id")
+  lastUsedAt     DateTime? @map("last_used_at")
+  expiresAt      DateTime? @map("expires_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation("McpKeyCreator", fields: [createdById], references: [id])
+  usageLogs    mcp_usage_logs[]
+
+  @@map("mcp_api_keys")
+}
+
+model mcp_usage_logs {
+  id             String   @id @default(uuid())
+  apiKeyId       String   @map("api_key_id")
+  toolName       String   @map("tool_name")
+  query          String?
+  success        Boolean  @default(true)
+  responseTimeMs Int?     @map("response_time_ms")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  apiKey mcp_api_keys @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@map("mcp_usage_logs")
 }

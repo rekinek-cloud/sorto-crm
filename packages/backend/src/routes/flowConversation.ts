@@ -5,12 +5,12 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { PrismaClient, FlowConversationStatus, FlowAction } from '@prisma/client';
+import { FlowConversationStatus, FlowAction } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken as authMiddleware } from '../shared/middleware/auth';
 import { AIRouter } from '../services/ai/AIRouter';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Cache for AIRouter instances
 const aiRouterCache: Map<string, AIRouter> = new Map();

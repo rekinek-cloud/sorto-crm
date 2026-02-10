@@ -1,9 +1,8 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateUser } from '../shared/middleware/auth';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // ================================
 // VIEW CONFIGURATIONS ENDPOINTS
@@ -25,13 +24,13 @@ router.get('/:type', authenticateUser, async (req, res) => {
       return res.status(400).json({ error: 'Invalid view type' });
     }
 
-    const views = await prisma.viewConfiguration.findMany({
+    const views = await prisma.view_configurations.findMany({
       where: {
         userId,
         viewType: type.toUpperCase() as any
       },
       include: {
-        kanbanColumns: {
+        kanban_columnss: {
           orderBy: { position: 'asc' }
         }
       },
@@ -78,7 +77,7 @@ router.post('/:type', authenticateUser, async (req, res) => {
 
     // If setting as default, unset other defaults first
     if (isDefault) {
-      await prisma.viewConfiguration.updateMany({
+      await prisma.view_configurations.updateMany({
         where: {
           userId,
           viewType: type.toUpperCase() as any,
@@ -92,7 +91,7 @@ router.post('/:type', authenticateUser, async (req, res) => {
 
     // Create view with columns in transaction
     const view = await prisma.$transaction(async (tx) => {
-      const createdView = await tx.viewConfiguration.create({
+      const createdView = await tx.view_configurations.create({
         data: {
           userId,
           viewType: type.toUpperCase() as any,
@@ -104,7 +103,7 @@ router.post('/:type', authenticateUser, async (req, res) => {
 
       // Create columns for Kanban views
       if (type.toUpperCase() === 'KANBAN' && columns && Array.isArray(columns)) {
-        await tx.kanbanColumn.createMany({
+        await tx.kanban_columns.createMany({
           data: columns.map((col: any, index: number) => ({
             viewId: createdView.id,
             title: col.title,
@@ -117,10 +116,10 @@ router.post('/:type', authenticateUser, async (req, res) => {
         });
       }
 
-      return tx.viewConfiguration.findUnique({
+      return tx.view_configurations.findUnique({
         where: { id: createdView.id },
         include: {
-          kanbanColumns: {
+          kanban_columnss: {
             orderBy: { position: 'asc' }
           }
         }
@@ -153,7 +152,7 @@ router.put('/:type/:id', authenticateUser, async (req, res) => {
     }
 
     // Check ownership
-    const existingView = await prisma.viewConfiguration.findFirst({
+    const existingView = await prisma.view_configurations.findFirst({
       where: {
         id,
         userId,
@@ -167,7 +166,7 @@ router.put('/:type/:id', authenticateUser, async (req, res) => {
 
     // If setting as default, unset other defaults first
     if (isDefault && !existingView.isDefault) {
-      await prisma.viewConfiguration.updateMany({
+      await prisma.view_configurations.updateMany({
         where: {
           userId,
           viewType: type.toUpperCase() as any,
@@ -182,7 +181,7 @@ router.put('/:type/:id', authenticateUser, async (req, res) => {
 
     const updatedView = await prisma.$transaction(async (tx) => {
       // Update view
-      const view = await tx.viewConfiguration.update({
+      const view = await tx.view_configurations.update({
         where: { id },
         data: {
           viewName: viewName || existingView.viewName,
@@ -195,12 +194,12 @@ router.put('/:type/:id', authenticateUser, async (req, res) => {
       // Update columns for Kanban views
       if (type.toUpperCase() === 'KANBAN' && columns && Array.isArray(columns)) {
         // Delete existing columns
-        await tx.kanbanColumn.deleteMany({
+        await tx.kanban_columns.deleteMany({
           where: { viewId: id }
         });
 
         // Create new columns
-        await tx.kanbanColumn.createMany({
+        await tx.kanban_columns.createMany({
           data: columns.map((col: any, index: number) => ({
             viewId: id,
             title: col.title,
@@ -213,10 +212,10 @@ router.put('/:type/:id', authenticateUser, async (req, res) => {
         });
       }
 
-      return tx.viewConfiguration.findUnique({
+      return tx.view_configurations.findUnique({
         where: { id },
         include: {
-          kanbanColumns: {
+          kanban_columnss: {
             orderBy: { position: 'asc' }
           }
         }
@@ -248,7 +247,7 @@ router.delete('/:type/:id', authenticateUser, async (req, res) => {
     }
 
     // Check ownership
-    const existingView = await prisma.viewConfiguration.findFirst({
+    const existingView = await prisma.view_configurations.findFirst({
       where: {
         id,
         userId,
@@ -260,7 +259,7 @@ router.delete('/:type/:id', authenticateUser, async (req, res) => {
       return res.status(404).json({ error: 'View not found' });
     }
 
-    await prisma.viewConfiguration.delete({
+    await prisma.view_configurations.delete({
       where: { id }
     });
 
@@ -290,14 +289,14 @@ router.post('/:type/:id/duplicate', authenticateUser, async (req, res) => {
     }
 
     // Get original view
-    const originalView = await prisma.viewConfiguration.findFirst({
+    const originalView = await prisma.view_configurations.findFirst({
       where: {
         id,
         userId,
         viewType: type.toUpperCase() as any
       },
       include: {
-        kanbanColumns: {
+        kanban_columnss: {
           orderBy: { position: 'asc' }
         }
       }
@@ -309,7 +308,7 @@ router.post('/:type/:id/duplicate', authenticateUser, async (req, res) => {
 
     // Create duplicate
     const duplicatedView = await prisma.$transaction(async (tx) => {
-      const newView = await tx.viewConfiguration.create({
+      const newView = await tx.view_configurations.create({
         data: {
           userId,
           viewType: originalView.viewType,
@@ -321,9 +320,9 @@ router.post('/:type/:id/duplicate', authenticateUser, async (req, res) => {
       });
 
       // Duplicate columns for Kanban views
-      if (type.toUpperCase() === 'KANBAN' && originalView.kanbanColumns.length > 0) {
-        await tx.kanbanColumn.createMany({
-          data: originalView.kanbanColumns.map(col => ({
+      if (type.toUpperCase() === 'KANBAN' && originalView.kanban_columnss.length > 0) {
+        await tx.kanban_columns.createMany({
+          data: originalView.kanban_columnss.map(col => ({
             viewId: newView.id,
             title: col.title,
             position: col.position,
@@ -335,10 +334,10 @@ router.post('/:type/:id/duplicate', authenticateUser, async (req, res) => {
         });
       }
 
-      return tx.viewConfiguration.findUnique({
+      return tx.view_configurations.findUnique({
         where: { id: newView.id },
         include: {
-          kanbanColumns: {
+          kanban_columnss: {
             orderBy: { position: 'asc' }
           }
         }
@@ -637,9 +636,9 @@ router.post('/kanban/:boardType/move', authenticateUser, async (req, res) => {
 
     // Create activity log for the move
     try {
-      await prisma.activity.create({
+      await prisma.activities.create({
         data: {
-          type: 'DEAL_MOVED',
+          type: 'DEAL_UPDATED',
           title: `Deal "${deal.title}" moved`,
           description: `Deal moved from ${fromColumn} to ${toColumn} in ${boardType} board`,
           metadata: {
@@ -686,7 +685,7 @@ router.get('/preferences/:type', authenticateUser, async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const preferences = await prisma.userViewPreference.findUnique({
+    const preferences = await prisma.user_view_preferences.findUnique({
       where: {
         userId_viewType: {
           userId,
@@ -724,7 +723,7 @@ router.put('/preferences/:type', authenticateUser, async (req, res) => {
       return res.status(400).json({ error: 'preferences object is required' });
     }
 
-    const updatedPreferences = await prisma.userViewPreference.upsert({
+    const updatedPreferences = await prisma.user_view_preferences.upsert({
       where: {
         userId_viewType: {
           userId,

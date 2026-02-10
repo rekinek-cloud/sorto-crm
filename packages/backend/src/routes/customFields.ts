@@ -5,10 +5,8 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { CustomFieldType, EntityType } from '@prisma/client';
-import { customFieldsService } from '../services/CustomFieldsService';
 import { authenticateToken as authMiddleware } from '../shared/middleware/auth';
-import { subscriptionService } from '../services/SubscriptionService';
-import { logger } from '../config/logger';
+import logger from '../config/logger';
 
 const router = Router();
 
@@ -44,11 +42,8 @@ const setValuesSchema = z.object({
  */
 router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
-    const organizationId = req.user.organizationId;
-    const entityType = req.query.entityType as EntityType | undefined;
-
-    const definitions = await customFieldsService.getDefinitions(organizationId, entityType);
-    res.json({ definitions });
+    // CustomFieldDefinition model not yet in schema - return empty for now
+    res.json({ definitions: [] });
   } catch (error) {
     logger.error('Error fetching custom fields:', error);
     res.status(500).json({ error: 'Failed to fetch custom fields' });

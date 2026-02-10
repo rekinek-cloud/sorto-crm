@@ -4,10 +4,9 @@ import { authenticateUser } from '../shared/middleware/auth';
 import { AIKnowledgeEngine, KnowledgeQuery } from '../services/ai/AIKnowledgeEngine';
 import { RAGService } from '../services/ai/RAGService';
 import { VectorService } from '../services/VectorService';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 
 const router = Router();
-const prisma = new PrismaClient();
 const knowledgeEngine = new AIKnowledgeEngine();
 const vectorService = new VectorService(prisma);
 

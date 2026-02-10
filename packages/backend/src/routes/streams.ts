@@ -1,10 +1,10 @@
 import express from 'express';
-import { PrismaClient, TaskStatus, Priority } from '@prisma/client';
+import { TaskStatus, Priority } from '@prisma/client';
+import { prisma } from '../config/database';
 import { authenticateToken as requireAuth, AuthenticatedRequest } from '../shared/middleware/auth';
 import { gtdService, GTDProcessingDecision } from '../services/gtdService';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Get all streams
 router.get('/', requireAuth, async (req: AuthenticatedRequest, res) => {
@@ -592,8 +592,8 @@ router.post('/inbox', requireAuth, async (req: AuthenticatedRequest, res) => {
         description,
         priority: priority as Priority,
         status: TaskStatus.NEW,
-        context,
-        estimatedTime,
+        contextId: context,
+        estimatedHours: estimatedTime,
         dueDate: dueDate ? new Date(dueDate) : null,
         organizationId: req.user!.organizationId,
         createdById: req.user!.id
@@ -618,8 +618,8 @@ router.post('/inbox', requireAuth, async (req: AuthenticatedRequest, res) => {
         urgencyScore: 50,
         actionable: true,
         processed: false,
-        estimatedTime: task.estimatedTime,
-        contextSuggested: task.context,
+        estimatedTime: task.estimatedHours,
+        contextSuggested: task.contextId,
         organizationId: task.organizationId,
         createdAt: task.createdAt,
         receivedAt: task.createdAt
@@ -678,24 +678,16 @@ router.post('/inbox/:id/quick-action', requireAuth, async (req: AuthenticatedReq
 // Get available contexts
 router.get('/contexts', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const contexts = await prisma.task.findMany({
+    const contexts = await prisma.context.findMany({
       where: {
         organizationId: req.user!.organizationId,
-        context: { not: null }
+        isActive: true
       },
-      select: { context: true },
-      distinct: ['context']
+      select: { id: true, name: true, color: true, icon: true },
+      orderBy: { name: 'asc' }
     });
 
-    const contextList = contexts
-      .map(t => t.context)
-      .filter(Boolean)
-      .sort();
-
-    const defaultContexts = ['@calls', '@computer', '@errands', '@home', '@office', '@waiting'];
-    const allContexts = [...new Set([...defaultContexts, ...contextList])];
-
-    res.json(allContexts);
+    res.json(contexts);
   } catch (error) {
     console.error('Error fetching contexts:', error);
     res.status(500).json({ error: 'Failed to fetch contexts' });

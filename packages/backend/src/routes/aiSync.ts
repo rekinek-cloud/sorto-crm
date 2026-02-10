@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { z } from 'zod';
 import { authenticateUser } from '../shared/middleware/auth';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import {
   AiConversationsService,
   SyncOrchestratorService,
@@ -9,7 +9,6 @@ import {
 import { AiSourceType } from '../modules/ai-conversations-sync/types';
 
 const router = Router();
-const prisma = new PrismaClient();
 
 // Services
 const conversationsService = new AiConversationsService(prisma);

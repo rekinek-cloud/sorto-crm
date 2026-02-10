@@ -2,11 +2,10 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { authenticateUser } from '../shared/middleware/auth';
 import { CacheService } from '../services/CacheService';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import logger from '../config/logger';
 
 const router = Router();
-const prisma = new PrismaClient();
 const cacheService = new CacheService(prisma);
 
 // Validation schemas
@@ -342,7 +341,7 @@ router.post('/warm-system', async (req, res) => {
               id: true,
               name: true,
               status: true,
-              dueDate: true,
+              endDate: true,
               _count: { select: { tasks: true } }
             }
           });
