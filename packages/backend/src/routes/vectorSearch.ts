@@ -308,6 +308,7 @@ router.post('/index-all', async (req, res) => {
       companies: 0,
       knowledge: 0,
       streams: 0,
+      messages: 0,
       errors: [] as string[]
     };
 
@@ -355,8 +356,14 @@ router.post('/index-all', async (req, res) => {
       results.errors.push(`Streams: ${e.message}`);
     }
 
+    try {
+      results.messages = await syncMessages(organizationId, undefined, force);
+    } catch (e: any) {
+      results.errors.push(`Messages: ${e.message}`);
+    }
+
     const totalIndexed = results.tasks + results.projects + results.contacts +
-                         results.deals + results.companies + results.knowledge + results.streams;
+                         results.deals + results.companies + results.knowledge + results.streams + results.messages;
 
     logger.info(`RAG indexing complete: ${totalIndexed} documents indexed`);
 
@@ -728,4 +735,66 @@ async function syncKnowledge(organizationId: string, entityId?: string, force: b
   return syncCount;
 }
 
+async function syncMessages(organizationId: string, entityId?: string, force: boolean = false): Promise<number> {
+  const where: any = { organizationId };
+  if (entityId) where.id = entityId;
+
+  const messages = await prisma.message.findMany({
+    where,
+    select: {
+      id: true,
+      subject: true,
+      content: true,
+      fromName: true,
+      fromAddress: true,
+      toAddress: true,
+      sentAt: true,
+      extractedContext: true,
+      messageType: true,
+      organizationId: true,
+    }
+  });
+
+  let syncCount = 0;
+  for (const msg of messages) {
+    try {
+      if (!force) {
+        const existing = await prisma.vector_documents.findFirst({
+          where: { entityType: 'message', entityId: msg.id }
+        });
+        if (existing) continue;
+      }
+
+      const textContent = (msg.content || '').replace(/<[^>]*>/g, '').substring(0, 2000);
+      const content = [
+        msg.subject ? `Temat: ${msg.subject}` : '',
+        msg.fromName ? `Od: ${msg.fromName} <${msg.fromAddress}>` : msg.fromAddress ? `Od: ${msg.fromAddress}` : '',
+        msg.toAddress ? `Do: ${msg.toAddress}` : '',
+        msg.sentAt ? `Data: ${new Date(msg.sentAt).toLocaleDateString('pl-PL')}` : '',
+        msg.messageType ? `Typ: ${msg.messageType}` : '',
+        msg.extractedContext || '',
+        textContent
+      ].filter(Boolean).join('\n');
+
+      if (content.trim().length < 10) continue;
+
+      await vectorService.createVectorDocument(
+        organizationId,
+        msg.subject || 'Wiadomość email',
+        content,
+        'message',
+        msg.id,
+        { source: 'sync', language: 'pl' }
+      );
+
+      syncCount++;
+    } catch (error) {
+      logger.error(`Failed to sync message ${msg.id}:`, error);
+    }
+  }
+
+  return syncCount;
+}
+
+export { syncTasks, syncProjects, syncContacts, syncDeals, syncCompanies, syncKnowledge, syncMessages, vectorService };
 export default router;

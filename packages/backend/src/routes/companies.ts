@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { prisma } from '../config/database';
 import { authenticateUser, AuthenticatedRequest } from '../shared/middleware/auth';
 import { z } from 'zod';
+import { vectorService, syncCompanies } from './vectorSearch';
 
 const router = Router();
 
@@ -181,6 +182,11 @@ router.post('/', async (req, res) => {
       contactsCount: company._count.assignedContacts,
       dealsCount: company._count.deals
     });
+
+      // Auto-index to RAG
+      syncCompanies(req.user!.organizationId, company.id).catch(err =>
+        console.error('RAG index failed for company:', err.message)
+      );
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
@@ -233,6 +239,11 @@ router.put('/:id', async (req, res) => {
       contactsCount: company._count.assignedContacts,
       dealsCount: company._count.deals
     });
+
+      // Auto-index to RAG
+      syncCompanies(req.user!.organizationId, company.id, true).catch(err =>
+        console.error('RAG reindex failed for company:', err.message)
+      );
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });

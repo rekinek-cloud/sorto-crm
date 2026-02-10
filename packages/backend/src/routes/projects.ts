@@ -4,6 +4,7 @@ import { Priority, ProjectStatus } from '@prisma/client';
 import { prisma } from '../config/database';
 import { validateRequest } from '../shared/middleware/validation';
 import { authenticateToken } from '../shared/middleware/auth';
+import { syncProjects } from './vectorSearch';
 
 const router = Router();
 
@@ -198,6 +199,11 @@ router.post('/', authenticateToken, validateRequest({ body: createProjectSchema 
     });
 
     res.status(201).json(project);
+
+      // Auto-index to RAG
+      syncProjects(req.user.organizationId, project.id).catch(err =>
+        console.error('RAG index failed for project:', err.message)
+      );
   } catch (error) {
     console.error('Error creating project:', error);
     res.status(500).json({ error: 'Failed to create project' });
@@ -240,6 +246,11 @@ router.put('/:id', authenticateToken, validateRequest({ body: updateProjectSchem
     });
 
     res.json(project);
+
+      // Auto-index to RAG
+      syncProjects(req.user.organizationId, project.id, true).catch(err =>
+        console.error('RAG reindex failed for project:', err.message)
+      );
   } catch (error) {
     console.error('Error updating project:', error);
     res.status(500).json({ error: 'Failed to update project' });

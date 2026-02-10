@@ -3,6 +3,7 @@ import { TaskStatus, Priority } from '@prisma/client';
 import { prisma } from '../config/database';
 import { authenticateToken as requireAuth, AuthenticatedRequest } from '../shared/middleware/auth';
 import { gtdService, GTDProcessingDecision } from '../services/gtdService';
+import { vectorService } from './vectorSearch';
 
 const router = express.Router();
 
@@ -89,6 +90,11 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
     });
 
     res.status(201).json(stream);
+
+    // Auto-index to RAG
+    vectorService.indexStream(
+      req.user!.organizationId, stream.id, stream.name, stream.description, stream.streamType
+    ).catch(err => console.error('RAG index failed for stream:', err.message));
   } catch (error) {
     console.error('Error creating stream:', error);
     res.status(500).json({ error: 'Failed to create stream' });
@@ -395,6 +401,11 @@ router.put('/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
     });
 
     res.json(stream);
+
+    // Auto-index to RAG
+    vectorService.indexStream(
+      req.user!.organizationId, stream.id, stream.name, stream.description, stream.streamType
+    ).catch(err => console.error('RAG reindex failed for stream:', err.message));
   } catch (error) {
     console.error('Error updating stream:', error);
     res.status(500).json({ error: 'Failed to update stream' });

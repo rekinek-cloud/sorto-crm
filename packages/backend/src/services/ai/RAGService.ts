@@ -6,6 +6,8 @@
 
 import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
+import { QwenChatService, ChatMessage } from './QwenChatService';
+import logger from '../../config/logger';
 
 // Configuration for text-embedding-3-small (faster, cheaper, 1536 dimensions)
 const EMBEDDING_MODEL = 'text-embedding-3-small';
@@ -212,9 +214,9 @@ export class RAGService {
   }
 
   /**
-   * Query with AI-generated answer
+   * Query with AI-generated answer (Qwen-powered)
    */
-  async query(question: string, options: SearchOptions = {}): Promise<{ answer: string; sources: any[] }> {
+  async query(question: string, options: SearchOptions = {}): Promise<{ answer: string; sources: any[]; confidence: number }> {
     const searchResults = await this.search(question, options.limit || 5);
 
     const sources = searchResults.map(r => ({
@@ -224,20 +226,65 @@ export class RAGService {
       preview: r.content.substring(0, 200),
     }));
 
-    if (searchResults.length === 0) {
+    // Build context from search results
+    const context = searchResults.slice(0, 5).map((r, i) =>
+      `[Dokument ${i + 1} (${r.sourceType}, trafność: ${(r.similarity * 100).toFixed(0)}%)]:\n${r.content.substring(0, 1000)}`
+    ).join('\n\n');
+
+    // Try to use Qwen for intelligent answer
+    try {
+      const qwen = new QwenChatService();
+
+      const systemPrompt = `Jesteś inteligentnym asystentem CRM systemu SORTO. Odpowiadasz po polsku, zwięźle i konkretnie.
+Masz dostęp do bazy wiedzy organizacji. Poniżej znajdują się dokumenty z bazy wiedzy, które mogą być przydatne do odpowiedzi.
+
+${context ? `KONTEKST Z BAZY WIEDZY:\n${context}` : 'Brak dokumentów w bazie wiedzy pasujących do pytania.'}
+
+ZASADY:
+- Odpowiadaj na podstawie kontekstu jeśli jest dostępny
+- Jeśli kontekst nie zawiera odpowiedzi, odpowiedz na podstawie swojej wiedzy i zaznacz to
+- Bądź pomocny, konkretny i zwięzły
+- Formatuj odpowiedzi używając markdown (nagłówki, listy, pogrubienia)`;
+
+      const messages: ChatMessage[] = [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: question }
+      ];
+
+      const response = await qwen.chat(messages, {
+        temperature: 0.7,
+        maxTokens: 2048,
+      });
+
+      const confidence = searchResults.length > 0
+        ? Math.min(0.95, searchResults[0].similarity + 0.1)
+        : 0.6;
+
       return {
-        answer: 'Nie znaleziono pasujących dokumentów w bazie wiedzy. Dodaj dokumenty w zakładce "Źródła".',
-        sources: [],
+        answer: response.content,
+        sources,
+        confidence,
       };
-    }
+    } catch (error: any) {
+      logger.warn('Qwen unavailable, falling back to search results:', error.message);
 
-    let answer = `Na podstawie ${searchResults.length} dokumentów z bazy wiedzy:\n\n`;
-    for (const result of searchResults.slice(0, 3)) {
-      const preview = result.content.substring(0, 500);
-      answer += `${preview}\n\n---\n\n`;
-    }
+      // Fallback: return concatenated search results
+      if (searchResults.length === 0) {
+        return {
+          answer: 'Nie znaleziono pasujących dokumentów w bazie wiedzy. Skonfiguruj klucz API Qwen (QWEN_API_KEY) aby włączyć inteligentne odpowiedzi.',
+          sources: [],
+          confidence: 0,
+        };
+      }
 
-    return { answer: answer.trim(), sources };
+      let answer = `Na podstawie ${searchResults.length} dokumentów z bazy wiedzy:\n\n`;
+      for (const result of searchResults.slice(0, 3)) {
+        const preview = result.content.substring(0, 500);
+        answer += `${preview}\n\n---\n\n`;
+      }
+
+      return { answer: answer.trim(), sources, confidence: 0.5 };
+    }
   }
 
   // ==================

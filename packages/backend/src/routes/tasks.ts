@@ -4,6 +4,7 @@ import { Priority, TaskStatus, EnergyLevel } from '@prisma/client';
 import { prisma } from '../config/database';
 import { validateRequest } from '../shared/middleware/validation';
 import { authenticateToken } from '../shared/middleware/auth';
+import { syncTasks } from './vectorSearch';
 
 const router = Router();
 
@@ -189,6 +190,11 @@ router.post('/', authenticateToken, validateRequest({ body: createTaskSchema }),
     });
 
     res.status(201).json(task);
+
+      // Auto-index to RAG
+      syncTasks(req.user.organizationId, task.id).catch(err =>
+        console.error('RAG index failed for task:', err.message)
+      );
   } catch (error) {
     console.error('Error creating task:', error);
     res.status(500).json({ error: 'Failed to create task' });
@@ -232,6 +238,11 @@ router.put('/:id', authenticateToken, validateRequest({ body: updateTaskSchema }
     });
 
     res.json(task);
+
+      // Auto-index to RAG
+      syncTasks(req.user.organizationId, task.id, true).catch(err =>
+        console.error('RAG reindex failed for task:', err.message)
+      );
   } catch (error) {
     console.error('Error updating task:', error);
     res.status(500).json({ error: 'Failed to update task' });

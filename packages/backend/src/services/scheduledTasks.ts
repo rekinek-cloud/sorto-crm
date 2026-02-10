@@ -1,8 +1,7 @@
-import { PrismaClient } from '@prisma/client';
 import logger from '../config/logger';
+import { prisma } from '../config/database';
 import { invoiceService } from './invoiceService';
-
-const prisma = new PrismaClient();
+import { syncTasks, syncProjects, syncContacts, syncDeals, syncCompanies, syncKnowledge, syncMessages, vectorService } from '../routes/vectorSearch';
 
 export class ScheduledTasksService {
   private intervals: Map<string, NodeJS.Timeout> = new Map();
@@ -12,6 +11,7 @@ export class ScheduledTasksService {
    */
   public startAll(): void {
     this.startInvoiceSyncTask();
+    this.startRAGReindexTask();
     logger.info('All scheduled tasks started');
   }
 
@@ -237,6 +237,77 @@ export class ScheduledTasksService {
         }
       }
     }
+  }
+
+  /**
+   * Start RAG reindex task
+   * Runs every 6 hours to keep vector database in sync with CRM data
+   */
+  private startRAGReindexTask(): void {
+    const taskName = 'rag-reindex';
+    const intervalMs = 6 * 60 * 60 * 1000; // 6 hours
+
+    const task = async () => {
+      try {
+        logger.info('Starting scheduled RAG reindex task');
+
+        const organizations = await prisma.organization.findMany({
+          select: { id: true, name: true }
+        });
+
+        for (const org of organizations) {
+          try {
+            const results = {
+              tasks: 0, projects: 0, contacts: 0, deals: 0,
+              companies: 0, knowledge: 0, streams: 0, messages: 0
+            };
+
+            results.tasks = await syncTasks(org.id);
+            results.projects = await syncProjects(org.id);
+            results.contacts = await syncContacts(org.id);
+            results.deals = await syncDeals(org.id);
+            results.companies = await syncCompanies(org.id);
+            results.knowledge = await syncKnowledge(org.id);
+            results.messages = await syncMessages(org.id);
+
+            try {
+              const streamResult = await vectorService.indexStreams(org.id);
+              results.streams = streamResult.indexed;
+            } catch { /* streams may fail silently */ }
+
+            const total = Object.values(results).reduce((a, b) => a + b, 0);
+            if (total > 0) {
+              logger.info(`RAG reindex for ${org.name}: ${total} new documents indexed`, { organizationId: org.id, ...results });
+            }
+          } catch (error: any) {
+            logger.error(`RAG reindex failed for ${org.name}:`, { error: error.message });
+          }
+        }
+
+        // Cleanup expired cache
+        try {
+          await prisma.vector_cache.deleteMany({
+            where: { expiresAt: { lt: new Date() } }
+          });
+        } catch { /* cache cleanup is optional */ }
+
+        logger.info('Scheduled RAG reindex task completed');
+      } catch (error: any) {
+        logger.error('Error in RAG reindex task:', { error: error.message });
+      }
+    };
+
+    // First run after 2 minutes (let server fully start)
+    setTimeout(() => {
+      task().catch(error => {
+        logger.error('Error in initial RAG reindex run:', { error: error.message });
+      });
+    }, 2 * 60 * 1000);
+
+    const interval = setInterval(task, intervalMs);
+    this.intervals.set(taskName, interval);
+
+    logger.info(`Started ${taskName} task with ${intervalMs / 1000 / 60 / 60} hour interval`);
   }
 
   /**

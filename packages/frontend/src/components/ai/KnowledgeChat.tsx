@@ -189,17 +189,14 @@ export function KnowledgeChat({ initialQuestion, context = 'general', className 
     try {
       const startTime = Date.now();
 
-      // Use RAG service directly for semantic search
-      const response = await ragClient.post('/query/', {
-        query: question,
-        userId: user.id,
-        organizationId: organization.id,
-        conversationId: conversationId || undefined,
+      // Use backend RAG + Qwen AI for intelligent answers
+      const response = await apiClient.post('/rag/query', {
+        question: question,
         limit: 5
       });
 
       const executionTime = Date.now() - startTime;
-      const data = response.data;
+      const data = response.data?.data || response.data;
 
       // Update conversation ID for context continuity
       if (data.conversationId) {

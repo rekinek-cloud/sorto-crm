@@ -50,6 +50,8 @@ services:
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-super-secret-refresh-key-min-32}
       BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      QWEN_API_KEY: ${QWEN_API_KEY:-sk-324be6749e174e32ad248d07617687c0}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-AIzaSyA_SeZ-oMUf5Q2IptPk2FevhWjIRA3wADg}
       NEXT_PUBLIC_APP_URL: https://crm.dev.sorto.ai
       SSO_PLATFORM_URL: http://platform-backend:3001
       SSO_CLIENT_ID: a613e6fc-c0d5-4207-b380-9d37a15022d2
