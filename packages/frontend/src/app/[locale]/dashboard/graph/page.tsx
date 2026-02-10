@@ -48,7 +48,7 @@ export default function GraphPage() {
 
     try {
       setLoading(true);
-      const result = await graphApi.getRelationships(entityId, entityType, depth);
+      const result = await graphApi.getRelationships({ entityId, entityType, depth });
 
       if (result.success) {
         setGraphData(result.data);

@@ -98,6 +98,7 @@ import mcpKeysRoutes from './routes/mcpKeys';
 import aiRulesRoutes from './routes/aiRules';
 import emailDomainRulesRoutes from './routes/emailDomainRules';
 import aiSuggestionsRoutes from './routes/aiSuggestions';
+import voiceResponseRoutes from './routes/voiceResponse';
 // import filesRoutes from './routes/files';
 import weeklyReviewRoutes from './routes/weeklyReview';
 import streamHierarchyRoutes from './routes/streamHierarchy';
@@ -260,6 +261,7 @@ apiRouter.use('/graph', graphRoutes);  // Graph - relacje między encjami
 apiRouter.use('/real-vector-search', realVectorSearchRoutes);  // Real Vector Search - semantyczne
 // apiRouter.use('/modern-email', modernEmailRoutes);  // Modern Email - requires @sendgrid/mail
 apiRouter.use('/voice', voiceSimpleRoutes);  // Voice TTS - synteza mowy
+apiRouter.use('/voice-response', voiceResponseRoutes);  // Voice Response - asystent glosowy
 apiRouter.use('/admin/bug-reports', bugReportsRoutes);  // Bug Reports
 apiRouter.use('/admin/mcp-keys', mcpKeysRoutes);  // MCP API Keys
 apiRouter.use('/ai-rules', aiRulesRoutes);  // AI Rules

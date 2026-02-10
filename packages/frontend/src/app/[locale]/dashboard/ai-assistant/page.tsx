@@ -335,13 +335,24 @@ export default function AIAssistantPage() {
               <Bot className="h-5 w-5 text-purple-600" />
               Oczekujące sugestie
             </h2>
-            {pendingSuggestions.length === 0 ? (
+            {error ? (
+              <Card className="border-red-200">
+                <CardContent className="py-8 text-center">
+                  <AlertTriangle className="h-12 w-12 mx-auto text-red-400 mb-3" />
+                  <p className="text-red-600 font-medium">Blad ladowania sugestii</p>
+                  <p className="text-sm text-gray-500 mt-1">{error}</p>
+                  <Button variant="outline" size="sm" className="mt-3" onClick={() => loadSuggestions()}>
+                    Sprobuj ponownie
+                  </Button>
+                </CardContent>
+              </Card>
+            ) : pendingSuggestions.length === 0 ? (
               <Card>
                 <CardContent className="py-8 text-center">
                   <Inbox className="h-12 w-12 mx-auto text-gray-400 mb-3" />
-                  <p className="text-gray-600">Brak oczekujących sugestii</p>
+                  <p className="text-gray-600">Brak oczekujacych sugestii</p>
                   <p className="text-sm text-gray-500 mt-1">
-                    Sugestie pojawią się gdy AI przeanalizuje nowe elementy ze Źródła
+                    Sugestie pojawia sie gdy AI przeanalizuje nowe elementy ze Zrodla
                   </p>
                 </CardContent>
               </Card>

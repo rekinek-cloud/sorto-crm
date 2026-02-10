@@ -216,10 +216,19 @@ export function KnowledgeChat({ initialQuestion, context = 'general', className 
     } catch (error: any) {
       console.error('Failed to send message:', error);
 
+      const statusCode = error?.response?.status;
+      const errorDetail = statusCode === 503 || statusCode === 502
+        ? 'Serwis RAG jest chwilowo niedostepny. Sprawdz konfiguracje AI w ustawieniach.'
+        : statusCode === 401
+        ? 'Sesja wygasla. Zaloguj sie ponownie.'
+        : error?.code === 'ECONNABORTED'
+        ? 'Przekroczono czas oczekiwania na odpowiedz. Sprobuj krotsze pytanie.'
+        : 'Wystapil blad podczas przetwarzania pytania. Sprobuj ponownie lub sformuluj pytanie inaczej.';
+
       const errorMessage: KnowledgeMessage = {
         id: (Date.now() + 1).toString(),
         type: 'assistant',
-        content: 'Przepraszam, wystąpił błąd podczas przetwarzania pytania. Spróbuj ponownie lub sformułuj pytanie inaczej.',
+        content: `Przepraszam, ${errorDetail}`,
         timestamp: new Date()
       };
 

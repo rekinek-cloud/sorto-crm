@@ -102,6 +102,7 @@ export function AISettingsPanel({ onSettingsChange, className = '' }: AISettings
     apiKey: '',
     enabled: true
   });
+  const [providerLoadError, setProviderLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     loadPatterns();
@@ -117,8 +118,10 @@ export function AISettingsPanel({ onSettingsChange, className = '' }: AISettings
       } else if (Array.isArray(response.data)) {
         setProviders(response.data);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load providers:', err);
+      setProviders([]);
+      setProviderLoadError(err?.response?.status === 403 ? 'Brak uprawnien do konfiguracji providerow AI' : 'Nie udalo sie zaladowac providerow AI');
     } finally {
       setLoadingProviders(false);
     }
@@ -434,6 +437,19 @@ export function AISettingsPanel({ onSettingsChange, className = '' }: AISettings
           {loadingProviders ? (
             <div className="text-center py-4">
               <LoadingSpinner size="sm" />
+            </div>
+          ) : providerLoadError ? (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="h-5 w-5 text-red-600 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-red-800">{providerLoadError}</p>
+                  <Button variant="outline" size="sm" onClick={() => { setProviderLoadError(null); loadProviders(); }} className="mt-2">
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Sprobuj ponownie
+                  </Button>
+                </div>
+              </div>
             </div>
           ) : providers.length === 0 ? (
             <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">

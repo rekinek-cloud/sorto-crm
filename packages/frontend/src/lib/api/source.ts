@@ -73,10 +73,25 @@ export interface ProcessSourceItemInput {
     };
 }
 
+export interface SourceFilters {
+    search?: string;
+    source?: string;
+    sortBy?: 'date_asc' | 'date_desc' | 'urgency_asc' | 'urgency_desc';
+    urgencyLevel?: 'high' | 'medium' | 'low' | 'all';
+    processed?: boolean;
+}
+
 export const sourceApi = {
-    // Get all source items
-    getItems: async (): Promise<SourceItem[]> => {
-        const response = await apiClient.get(API_URL);
+    // Get all source items with optional filters
+    getItems: async (filters?: SourceFilters): Promise<SourceItem[]> => {
+        const params = new URLSearchParams();
+        if (filters?.search) params.set('search', filters.search);
+        if (filters?.source) params.set('source', filters.source);
+        if (filters?.sortBy) params.set('sortBy', filters.sortBy);
+        if (filters?.urgencyLevel && filters.urgencyLevel !== 'all') params.set('urgencyLevel', filters.urgencyLevel);
+        if (filters?.processed !== undefined) params.set('processed', String(filters.processed));
+        const query = params.toString();
+        const response = await apiClient.get(query ? `${API_URL}?${query}` : API_URL);
         return response.data;
     },
 

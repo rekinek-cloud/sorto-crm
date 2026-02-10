@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { sourceApi, SourceItem } from '@/lib/api/source';
+import { sourceApi, SourceItem, SourceFilters } from '@/lib/api/source';
 import { flowApi, FlowAction, FlowPendingItem, FLOW_ELEMENT_TYPE_LABELS } from '@/lib/api/flow';
 import { FlowProcessModal, FlowBatchProcessor, FlowStatsPanel, FlowConversationModal } from '@/components/flow';
 import { toast } from 'react-hot-toast';
@@ -31,6 +31,10 @@ import {
     PencilSquareIcon,
     XCircleIcon,
     AcademicCapIcon,
+    MagnifyingGlassIcon,
+    FunnelIcon,
+    BarsArrowDownIcon,
+    ExclamationTriangleIcon,
 } from '@heroicons/react/24/outline';
 import VoiceRecorder from '@/components/source/VoiceRecorder';
 
@@ -103,6 +107,12 @@ export default function SourcePage() {
     const [useDialogMode, setUseDialogMode] = useState(true); // Domyslnie tryb dialogowy
     const [correctionMode, setCorrectionMode] = useState(false);
 
+    // Filter states
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterSource, setFilterSource] = useState('');
+    const [sortBy, setSortBy] = useState<SourceFilters['sortBy']>('date_desc');
+    const [urgencyLevel, setUrgencyLevel] = useState<SourceFilters['urgencyLevel']>('all');
+
     // Human-in-the-Loop states
     const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
     const [rejectingId, setRejectingId] = useState<string | null>(null);
@@ -115,8 +125,14 @@ export default function SourcePage() {
             setLoading(true);
             setError(null);
 
+            const filters: SourceFilters = {};
+            if (searchQuery.trim()) filters.search = searchQuery.trim();
+            if (filterSource) filters.source = filterSource;
+            if (sortBy) filters.sortBy = sortBy;
+            if (urgencyLevel && urgencyLevel !== 'all') filters.urgencyLevel = urgencyLevel;
+
             const [sourceItems, streamsResponse] = await Promise.all([
-                sourceApi.getItems(),
+                sourceApi.getItems(Object.keys(filters).length > 0 ? filters : undefined),
                 apiClient.get('/gtd-streams'),
             ]);
 
@@ -371,10 +387,18 @@ export default function SourcePage() {
         return undefined;
     };
 
-    // Load data on mount
+    // Load data on mount and when filters change
     useEffect(() => {
         loadData();
-    }, []);
+    }, [filterSource, sortBy, urgencyLevel]);
+
+    // Debounced search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            loadData();
+        }, 400);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
     const formatTimeAgo = (dateString: string) => {
         const date = new Date(dateString);
@@ -478,6 +502,71 @@ export default function SourcePage() {
             {showStats && (
                 <FlowStatsPanel />
             )}
+
+            {/* Filter Bar */}
+            <div className="bg-white rounded-lg shadow-sm border p-4">
+                <div className="flex flex-wrap items-center gap-3">
+                    {/* Search */}
+                    <div className="relative flex-1 min-w-[200px]">
+                        <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder="Szukaj w treści..."
+                            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                    </div>
+
+                    {/* Source Type Filter */}
+                    <div className="flex items-center gap-1.5">
+                        <FunnelIcon className="w-4 h-4 text-gray-500" />
+                        <select
+                            value={filterSource}
+                            onChange={(e) => setFilterSource(e.target.value)}
+                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="">Wszystkie typy</option>
+                            <option value="MEETING_NOTES">Notatki</option>
+                            <option value="IDEA">Pomysly</option>
+                            <option value="DOCUMENT">Dokumenty</option>
+                            <option value="EMAIL">E-maile</option>
+                            <option value="VOICE">Nagrania</option>
+                            <option value="OTHER">Inne</option>
+                        </select>
+                    </div>
+
+                    {/* Urgency Filter */}
+                    <div className="flex items-center gap-1.5">
+                        <ExclamationTriangleIcon className="w-4 h-4 text-gray-500" />
+                        <select
+                            value={urgencyLevel}
+                            onChange={(e) => setUrgencyLevel(e.target.value as SourceFilters['urgencyLevel'])}
+                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="all">Wszystkie pilnosci</option>
+                            <option value="high">Pilne</option>
+                            <option value="medium">Srednie</option>
+                            <option value="low">Niskie</option>
+                        </select>
+                    </div>
+
+                    {/* Sort */}
+                    <div className="flex items-center gap-1.5">
+                        <BarsArrowDownIcon className="w-4 h-4 text-gray-500" />
+                        <select
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value as SourceFilters['sortBy'])}
+                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="date_desc">Najnowsze</option>
+                            <option value="date_asc">Najstarsze</option>
+                            <option value="urgency_desc">Najbardziej pilne</option>
+                            <option value="urgency_asc">Najmniej pilne</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
 
             {/* Batch Actions Bar */}
             {items.length > 0 && (

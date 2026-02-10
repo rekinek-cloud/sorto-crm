@@ -220,6 +220,8 @@ model User {
   flow_processing_history flow_processing_history[]
   flow_conversations      flow_conversations[]
   mcp_api_keys             mcp_api_keys[]           @relation("McpKeyCreator")
+  voice_responses          voiceResponse[]          @relation("UserVoiceResponses")
+  voice_feedback           voiceFeedback[]          @relation("UserVoiceFeedback")
 
   @@map("users")
 }
@@ -4659,4 +4661,44 @@ model mcp_usage_logs {
   apiKey mcp_api_keys @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
 
   @@map("mcp_usage_logs")
+}
+
+// =============================================================================
+// Voice Response System
+// =============================================================================
+
+model voiceResponse {
+  id                  String   @id @default(uuid())
+  userId              String
+  responseType        String
+  text                String   @db.Text
+  ssml                String   @db.Text
+  emotionalContext     Json?
+  generationTime      Int      @default(0)
+  estimatedDuration   Int      @default(0)
+  followUpSuggestions String[] @default([])
+  createdAt           DateTime @default(now())
+
+  user User @relation("UserVoiceResponses", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("voice_responses")
+}
+
+model voiceFeedback {
+  id              String   @id @default(uuid())
+  responseId      String
+  userId          String
+  rating          Int
+  feedbackType    String?
+  comments        String?
+  responseTime    Int?
+  contextRelevant Boolean?
+  createdAt       DateTime @default(now())
+
+  user User @relation("UserVoiceFeedback", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([responseId])
+  @@map("voice_feedback")
 }
