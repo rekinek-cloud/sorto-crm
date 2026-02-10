@@ -69,6 +69,7 @@ export default function FlowEnginePage() {
     name: '',
     description: '',
     trigger: 'on_create',
+    action: 'ZAPLANUJ',
     priority: 1,
   });
 
@@ -110,13 +111,18 @@ export default function FlowEnginePage() {
     }
   };
 
-  const confirmSuggestion = async (itemId: string, suggestionId: string, accepted: boolean) => {
+  const confirmSuggestion = async (itemId: string, action: string, accepted: boolean) => {
     try {
-      await apiClient.post(`/flow/confirm/${itemId}`, { suggestionId, accepted });
-      toast.success(accepted ? 'Suggestion accepted' : 'Suggestion rejected');
+      if (accepted) {
+        await apiClient.post(`/flow/confirm/${itemId}`, { action, reason: 'Approved from Flow Engine' });
+        toast.success('Akcja zatwierdzona');
+      } else {
+        await apiClient.post(`/flow/confirm/${itemId}`, { action: 'USUN', reason: 'Odrzucone z Flow Engine' });
+        toast.success('Sugestia odrzucona');
+      }
       loadData();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Failed to confirm suggestion');
+      toast.error(error.response?.data?.error || 'Nie udało się potwierdzić');
     }
   };
 
@@ -135,14 +141,15 @@ export default function FlowEnginePage() {
   const createRule = async () => {
     try {
       await apiClient.post('/flow/rules', {
-        ...newRule,
-        conditions: [],
-        actions: [],
-        isActive: true,
+        name: newRule.name,
+        description: newRule.description,
+        conditions: { trigger: newRule.trigger },
+        action: newRule.action,
+        priority: newRule.priority,
       });
-      toast.success('Rule created');
+      toast.success('Reguła utworzona');
       setShowRuleForm(false);
-      setNewRule({ name: '', description: '', trigger: 'on_create', priority: 1 });
+      setNewRule({ name: '', description: '', trigger: 'on_create', action: 'ZAPLANUJ', priority: 1 });
       loadData();
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Failed to create rule');
@@ -196,7 +203,7 @@ export default function FlowEnginePage() {
           Flow Engine
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
-          AI-powered GTD processing and automation
+          Przetwarzanie i automatyzacja napędzana AI
         </p>
       </div>
 
@@ -328,32 +335,36 @@ export default function FlowEnginePage() {
                     <h3 className="font-medium mt-1">{item.title}</h3>
                   </div>
                 </div>
-                {item.suggestions && item.suggestions.length > 0 && (
+                {(item as any).suggestedAction && (
                   <div className="space-y-2 mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                    <p className="text-sm font-medium text-gray-600">AI Suggestions:</p>
-                    {item.suggestions.map((suggestion) => (
-                      <div key={suggestion.id} className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded">
-                        <div>
-                          <span className="text-sm font-medium">{suggestion.type}</span>
-                          <p className="text-xs text-gray-500">{suggestion.description}</p>
-                          <span className="text-xs text-indigo-600">{Math.round(suggestion.confidence * 100)}% confidence</span>
-                        </div>
-                        <div className="flex gap-2">
-                          <button
-                            onClick={() => confirmSuggestion(item.id, suggestion.id, true)}
-                            className="p-1 text-green-600 hover:bg-green-100 rounded"
-                          >
-                            <CheckCircleIcon className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={() => confirmSuggestion(item.id, suggestion.id, false)}
-                            className="p-1 text-red-600 hover:bg-red-100 rounded"
-                          >
-                            <XCircleIcon className="w-5 h-5" />
-                          </button>
-                        </div>
+                    <p className="text-sm font-medium text-gray-600">Sugestia AI:</p>
+                    <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded">
+                      <div>
+                        <span className="text-sm font-medium">{(item as any).suggestedAction}</span>
+                        {(item as any).aiReasoning && (
+                          <p className="text-xs text-gray-500">{(item as any).aiReasoning}</p>
+                        )}
+                        {(item as any).aiConfidence != null && (
+                          <span className="text-xs text-indigo-600">{Math.round((item as any).aiConfidence * 100)}% pewności</span>
+                        )}
                       </div>
-                    ))}
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => confirmSuggestion(item.id, (item as any).suggestedAction, true)}
+                          className="p-1 text-green-600 hover:bg-green-100 rounded"
+                          title="Zatwierdź"
+                        >
+                          <CheckCircleIcon className="w-5 h-5" />
+                        </button>
+                        <button
+                          onClick={() => confirmSuggestion(item.id, (item as any).suggestedAction, false)}
+                          className="p-1 text-red-600 hover:bg-red-100 rounded"
+                          title="Odrzuć"
+                        >
+                          <XCircleIcon className="w-5 h-5" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -399,6 +410,18 @@ export default function FlowEnginePage() {
                   <option value="on_update">On Update</option>
                   <option value="scheduled">Scheduled</option>
                   <option value="manual">Manual</option>
+                </select>
+                <select
+                  value={newRule.action}
+                  onChange={(e) => setNewRule({ ...newRule, action: e.target.value })}
+                  className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                >
+                  <option value="ZROB_TERAZ">Zrób teraz</option>
+                  <option value="ZAPLANUJ">Zaplanuj</option>
+                  <option value="PROJEKT">Projekt</option>
+                  <option value="KIEDYS_MOZE">Kiedyś/może</option>
+                  <option value="REFERENCJA">Referencja</option>
+                  <option value="USUN">Usuń</option>
                 </select>
                 <input
                   type="text"
