@@ -47,9 +47,12 @@ interface FlowConversationModalProps {
   goals?: Goal[];
   onClose: () => void;
   onProcessed: () => void;
+  correctionMode?: boolean;
+  initialAction?: FlowAction;
+  initialStreamId?: string;
 }
 
-export default function FlowConversationModal({ item, streams, projects = [], goals = [], onClose, onProcessed }: FlowConversationModalProps) {
+export default function FlowConversationModal({ item, streams, projects = [], goals = [], onClose, onProcessed, correctionMode, initialAction, initialStreamId }: FlowConversationModalProps) {
   const [conversation, setConversation] = useState<FlowConversation | null>(null);
   const [loading, setLoading] = useState(true);
   const [executing, setExecuting] = useState(false);
@@ -89,8 +92,67 @@ export default function FlowConversationModal({ item, streams, projects = [], go
   const [reminder, setReminder] = useState('3m');
 
   useEffect(() => {
-    startConversation();
+    if (correctionMode && initialAction) {
+      // Correction mode: show form immediately with pre-populated values
+      const syntheticMetadata: FlowAIMetadata = {
+        actionOptions: (Object.entries(FLOW_ACTION_LABELS) as [FlowAction, typeof FLOW_ACTION_LABELS[FlowAction]][]).map(([action, label]) => ({
+          action,
+          label: `${label.emoji} ${label.label}`,
+          isDefault: action === initialAction,
+          suggestedTasks: [],
+          suggestedTags: [],
+        })),
+        streamMatching: {
+          matches: streams.map(s => ({
+            streamId: s.id,
+            streamName: s.name,
+            confidence: s.id === initialStreamId ? 90 : 50,
+          })),
+          bestMatch: initialStreamId ? {
+            streamId: initialStreamId,
+            streamName: streams.find(s => s.id === initialStreamId)?.name || '',
+            confidence: 90,
+          } : undefined,
+        },
+      };
+      setAiMetadata(syntheticMetadata);
+      setSelectedAction(initialAction);
+      if (initialStreamId) setSelectedStreamId(initialStreamId);
+      setProjectName(getItemContent());
+      setLoading(false);
+
+      // Start conversation in background (needed for execute)
+      startConversationBackground();
+    } else {
+      startConversation();
+    }
   }, [item.id]);
+
+  // Background conversation start - doesn't block UI
+  const startConversationBackground = async () => {
+    try {
+      const conv = await flowApi.conversation.start(item.id);
+      setConversation(conv);
+
+      // Optionally enrich metadata from AI response (but don't overwrite user selections)
+      const aiMessage = (conv.messages || []).find(m => m.role === 'assistant');
+      const metadata = aiMessage?.metadata;
+      if (metadata) {
+        // Merge AI metadata (richer data) but keep user's current selections
+        setAiMetadata(prev => ({
+          ...prev,
+          analysis: metadata.analysis,
+          confidence: metadata.confidence,
+          // Keep actionOptions from AI if available (richer with suggestedTasks/Tags)
+          actionOptions: metadata.actionOptions || prev?.actionOptions,
+          streamMatching: metadata.streamMatching || prev?.streamMatching,
+        }));
+      }
+    } catch (error: any) {
+      console.error('Failed to start background conversation:', error);
+      toast.error('Błąd inicjalizacji - spróbuj ponownie');
+    }
+  };
 
   const startConversation = async () => {
     setLoading(true);
@@ -381,8 +443,8 @@ export default function FlowConversationModal({ item, streams, projects = [], go
           <div className="flex items-center gap-3">
             <SparklesIcon className="w-6 h-6" />
             <div>
-              <h2 className="text-lg font-bold">Przetwarzanie elementu</h2>
-              <p className="text-sm text-indigo-200">Zmodyfikuj i zatwierdz</p>
+              <h2 className="text-lg font-bold">{correctionMode ? 'Korygowanie sugestii AI' : 'Przetwarzanie elementu'}</h2>
+              <p className="text-sm text-indigo-200">{correctionMode ? 'Zmień akcję, strumień lub szczegóły' : 'Zmodyfikuj i zatwierdz'}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
@@ -852,13 +914,18 @@ export default function FlowConversationModal({ item, streams, projects = [], go
               </button>
               <button
                 onClick={handleExecute}
-                disabled={!selectedAction || executing}
+                disabled={!selectedAction || executing || !conversation}
                 className="px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white font-semibold rounded-lg hover:from-indigo-600 hover:to-purple-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all flex items-center gap-2"
               >
                 {executing ? (
                   <>
                     <ArrowPathIcon className="w-5 h-5 animate-spin" />
                     Wykonywanie...
+                  </>
+                ) : !conversation ? (
+                  <>
+                    <ArrowPathIcon className="w-5 h-5 animate-spin" />
+                    Przygotowywanie...
                   </>
                 ) : (
                   <>

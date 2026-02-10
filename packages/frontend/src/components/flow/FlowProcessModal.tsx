@@ -22,9 +22,15 @@ interface FlowProcessModalProps {
   streams: Stream[];
   onClose: () => void;
   onProcessed: () => void;
+  initialSuggestion?: {
+    action: FlowAction;
+    streamId?: string;
+    streamName?: string;
+    confidence: number;
+  };
 }
 
-export default function FlowProcessModal({ item, streams, onClose, onProcessed }: FlowProcessModalProps) {
+export default function FlowProcessModal({ item, streams, onClose, onProcessed, initialSuggestion }: FlowProcessModalProps) {
   const [selectedAction, setSelectedAction] = useState<FlowAction | null>(null);
   const [selectedStreamId, setSelectedStreamId] = useState<string>('');
   const [taskTitle, setTaskTitle] = useState(('title' in item ? item.title : '') || ('content' in item ? (item as any).content : ''));
@@ -76,8 +82,23 @@ export default function FlowProcessModal({ item, streams, onClose, onProcessed }
   const [loadingAi, setLoadingAi] = useState(false);
   const [showThinking, setShowThinking] = useState(false);
 
-  // Load AI suggestion on mount
+  // Load AI suggestion on mount (or use pre-existing one in correction mode)
   useEffect(() => {
+    if (initialSuggestion) {
+      // Correction mode: use existing analysis, skip AI call
+      setAiSuggestion({
+        ...initialSuggestion,
+        reasoning: [],
+        alternatives: [],
+      } as any);
+      // Pre-select action and stream for editing
+      setSelectedAction(initialSuggestion.action);
+      if (initialSuggestion.streamId) {
+        setSelectedStreamId(initialSuggestion.streamId);
+      }
+      return;
+    }
+
     const loadAiSuggestion = async () => {
       setLoadingAi(true);
       try {

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { sourceApi, SourceItem } from '@/lib/api/source';
-import { flowApi, FlowPendingItem, FLOW_ELEMENT_TYPE_LABELS } from '@/lib/api/flow';
+import { flowApi, FlowAction, FlowPendingItem, FLOW_ELEMENT_TYPE_LABELS } from '@/lib/api/flow';
 import { FlowProcessModal, FlowBatchProcessor, FlowStatsPanel, FlowConversationModal } from '@/components/flow';
 import { toast } from 'react-hot-toast';
 import apiClient from '@/lib/api/client';
@@ -101,6 +101,7 @@ export default function SourcePage() {
     const [processingItem, setProcessingItem] = useState<SourceItem | null>(null);
     const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
     const [useDialogMode, setUseDialogMode] = useState(true); // Domyslnie tryb dialogowy
+    const [correctionMode, setCorrectionMode] = useState(false);
 
     // Human-in-the-Loop states
     const [processingIds, setProcessingIds] = useState<Set<string>>(new Set());
@@ -226,8 +227,9 @@ export default function SourcePage() {
     };
 
     // Handle process item with Flow Engine
-    const handleProcess = (item: SourceItem) => {
+    const handleProcess = (item: SourceItem, isCorrection = false) => {
         setProcessingItem(item);
+        setCorrectionMode(isCorrection);
         if (useDialogMode) {
             setShowConversationModal(true);
         } else {
@@ -712,9 +714,9 @@ export default function SourcePage() {
                                                         Zatwierdź
                                                     </button>
 
-                                                    {/* Koryguj - Open modal for editing */}
+                                                    {/* Koryguj - Open modal with existing analysis for editing */}
                                                     <button
-                                                        onClick={() => handleProcess(item)}
+                                                        onClick={() => handleProcess(item, true)}
                                                         className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
                                                     >
                                                         <PencilSquareIcon className="w-4 h-4" />
@@ -871,9 +873,16 @@ export default function SourcePage() {
                 <FlowProcessModal
                     item={processingItem}
                     streams={streams}
+                    initialSuggestion={correctionMode && processingItem.suggestedAction ? {
+                        action: processingItem.suggestedAction as FlowAction,
+                        streamId: processingItem.suggestedStreams?.[0]?.streamId,
+                        streamName: processingItem.suggestedStreams?.[0]?.streamName,
+                        confidence: (processingItem.aiConfidence || 0.8) * 100,
+                    } : undefined}
                     onClose={() => {
                         setShowProcessModal(false);
                         setProcessingItem(null);
+                        setCorrectionMode(false);
                     }}
                     onProcessed={() => {
                         loadData();
@@ -887,9 +896,13 @@ export default function SourcePage() {
                 <FlowConversationModal
                     item={processingItem}
                     streams={streams}
+                    correctionMode={correctionMode}
+                    initialAction={correctionMode ? processingItem.suggestedAction as FlowAction : undefined}
+                    initialStreamId={correctionMode ? processingItem.suggestedStreams?.[0]?.streamId : undefined}
                     onClose={() => {
                         setShowConversationModal(false);
                         setProcessingItem(null);
+                        setCorrectionMode(false);
                     }}
                     onProcessed={() => {
                         loadData();
