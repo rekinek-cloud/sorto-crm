@@ -1196,6 +1196,16 @@ Odpowiedz w formacie JSON:
       splitItemIds.push(newItem.id);
     }
 
+    // Auto-analyze each split child (fire-and-forget)
+    for (const childId of splitItemIds) {
+      this.processSourceItem({
+        organizationId: context.organizationId,
+        userId: context.userId,
+        inboxItemId: childId,
+        autoExecute: context.autoExecute
+      }).catch(err => console.error(`❌ Auto-analysis of split child ${childId} failed:`, err));
+    }
+
     return { splitItemIds };
   }
 
