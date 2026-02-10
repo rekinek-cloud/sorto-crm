@@ -86,10 +86,10 @@ export default function FlowEnginePage() {
         apiClient.get('/flow/history', { params: { limit: 50 } }).catch(() => ({ data: { history: [] } })),
       ]);
 
-      setPendingItems(pendingRes.data?.items || []);
-      setAwaitingItems(awaitingRes.data?.items || []);
-      setRules(rulesRes.data?.rules || []);
-      setHistory(historyRes.data?.history || []);
+      setPendingItems(pendingRes.data?.data || pendingRes.data?.items || []);
+      setAwaitingItems(awaitingRes.data?.data || awaitingRes.data?.items || []);
+      setRules(rulesRes.data?.data || rulesRes.data?.rules || []);
+      setHistory(historyRes.data?.data || historyRes.data?.history || []);
     } catch (error) {
       console.error('Failed to load flow data:', error);
     } finally {

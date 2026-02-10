@@ -12,10 +12,35 @@ export interface SourceItem {
     processed: boolean;
     capturedAt: string;
     capturedBy: {
+        id: string;
         firstName: string;
         lastName: string;
         email: string;
     };
+    // Flow Engine AI fields
+    flowStatus?: string;
+    elementType?: string;
+    aiAnalysis?: {
+        summary: string;
+        elementType: string;
+        entities: Array<{ type: string; value: string; confidence: number }>;
+        keywords: string[];
+        sentiment: string;
+        urgency: string;
+        actionability: string;
+        estimatedTime?: string;
+        splitRequired?: boolean;
+    };
+    suggestedAction?: string;
+    suggestedStreams?: Array<{
+        streamId: string;
+        streamName: string;
+        confidence: number;
+        reason: string;
+    }>;
+    aiConfidence?: number;
+    aiReasoning?: string;
+    splitFromId?: string;
 }
 
 export interface AddSourceItemInput {

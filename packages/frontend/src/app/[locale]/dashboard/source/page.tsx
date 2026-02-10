@@ -21,6 +21,13 @@ import {
     ChartBarIcon,
     ChatBubbleLeftRightIcon,
     MicrophoneIcon,
+    BoltIcon,
+    TagIcon,
+    BuildingOfficeIcon,
+    CurrencyDollarIcon,
+    ClockIcon,
+    UserGroupIcon,
+    ScissorsIcon,
 } from '@heroicons/react/24/outline';
 import VoiceRecorder from '@/components/source/VoiceRecorder';
 
@@ -449,6 +456,117 @@ export default function SourcePage() {
                                                 </p>
                                             )}
 
+                                            {/* AI Analysis Results */}
+                                            {item.aiAnalysis && (
+                                                <div className="mb-3 p-3 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-lg">
+                                                    <div className="flex items-center gap-2 mb-2">
+                                                        <SparklesIcon className="w-4 h-4 text-indigo-600" />
+                                                        <span className="text-xs font-semibold text-indigo-700 uppercase">Analiza AI</span>
+                                                        {item.aiConfidence != null && (
+                                                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                                                                item.aiConfidence >= 0.8 ? 'bg-green-100 text-green-700' :
+                                                                item.aiConfidence >= 0.6 ? 'bg-yellow-100 text-yellow-700' :
+                                                                'bg-gray-100 text-gray-600'
+                                                            }`}>
+                                                                {Math.round(item.aiConfidence * 100)}%
+                                                            </span>
+                                                        )}
+                                                        {item.flowStatus && (
+                                                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                                                                item.flowStatus === 'AWAITING_DECISION' ? 'bg-amber-100 text-amber-700' :
+                                                                item.flowStatus === 'SPLIT' ? 'bg-blue-100 text-blue-700' :
+                                                                item.flowStatus === 'PROCESSED' ? 'bg-green-100 text-green-700' :
+                                                                'bg-gray-100 text-gray-600'
+                                                            }`}>
+                                                                {item.flowStatus === 'AWAITING_DECISION' ? 'Czeka na decyzję' :
+                                                                 item.flowStatus === 'SPLIT' ? 'Podzielony' :
+                                                                 item.flowStatus === 'PROCESSED' ? 'Przetworzony' :
+                                                                 item.flowStatus}
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    {/* AI Summary */}
+                                                    <p className="text-sm text-gray-700 mb-2">{item.aiAnalysis.summary}</p>
+
+                                                    {/* Suggested Action + Stream */}
+                                                    <div className="flex flex-wrap gap-2 mb-2">
+                                                        {item.suggestedAction && (
+                                                            <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md font-medium ${
+                                                                item.suggestedAction === 'ZROB_TERAZ' ? 'bg-red-100 text-red-700' :
+                                                                item.suggestedAction === 'ZAPLANUJ' ? 'bg-blue-100 text-blue-700' :
+                                                                item.suggestedAction === 'PROJEKT' ? 'bg-purple-100 text-purple-700' :
+                                                                item.suggestedAction === 'KIEDYS_MOZE' ? 'bg-cyan-100 text-cyan-700' :
+                                                                item.suggestedAction === 'REFERENCJA' ? 'bg-gray-100 text-gray-700' :
+                                                                item.suggestedAction === 'USUN' ? 'bg-red-50 text-red-500' :
+                                                                'bg-gray-100 text-gray-600'
+                                                            }`}>
+                                                                <BoltIcon className="w-3 h-3" />
+                                                                {item.suggestedAction === 'ZROB_TERAZ' ? 'Zrób teraz' :
+                                                                 item.suggestedAction === 'ZAPLANUJ' ? 'Zaplanuj' :
+                                                                 item.suggestedAction === 'PROJEKT' ? 'Projekt' :
+                                                                 item.suggestedAction === 'KIEDYS_MOZE' ? 'Kiedyś/może' :
+                                                                 item.suggestedAction === 'REFERENCJA' ? 'Referencja' :
+                                                                 item.suggestedAction === 'USUN' ? 'Usuń' :
+                                                                 item.suggestedAction}
+                                                            </span>
+                                                        )}
+                                                        {item.suggestedStreams?.[0] && (
+                                                            <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md font-medium bg-indigo-100 text-indigo-700">
+                                                                <TagIcon className="w-3 h-3" />
+                                                                → {item.suggestedStreams[0].streamName}
+                                                            </span>
+                                                        )}
+                                                        {item.aiAnalysis.urgency && (
+                                                            <span className={`text-xs px-2 py-1 rounded-md font-medium ${
+                                                                item.aiAnalysis.urgency === 'high' ? 'bg-red-50 text-red-600' :
+                                                                item.aiAnalysis.urgency === 'medium' ? 'bg-yellow-50 text-yellow-600' :
+                                                                'bg-green-50 text-green-600'
+                                                            }`}>
+                                                                {item.aiAnalysis.urgency === 'high' ? '🔴 Pilne' :
+                                                                 item.aiAnalysis.urgency === 'medium' ? '🟡 Średnie' : '🟢 Niskie'}
+                                                            </span>
+                                                        )}
+                                                        {item.aiAnalysis.estimatedTime && (
+                                                            <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-gray-50 text-gray-600">
+                                                                <ClockIcon className="w-3 h-3" />
+                                                                {item.aiAnalysis.estimatedTime}
+                                                            </span>
+                                                        )}
+                                                    </div>
+
+                                                    {/* Entities */}
+                                                    {item.aiAnalysis.entities.length > 0 && (
+                                                        <div className="flex flex-wrap gap-1.5">
+                                                            {item.aiAnalysis.entities.slice(0, 6).map((entity, idx) => (
+                                                                <span key={idx} className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded ${
+                                                                    entity.type === 'person' ? 'bg-blue-50 text-blue-600' :
+                                                                    entity.type === 'company' ? 'bg-purple-50 text-purple-600' :
+                                                                    entity.type === 'amount' ? 'bg-green-50 text-green-600' :
+                                                                    entity.type === 'date' || entity.type === 'deadline' ? 'bg-orange-50 text-orange-600' :
+                                                                    entity.type === 'task' ? 'bg-cyan-50 text-cyan-600' :
+                                                                    'bg-gray-50 text-gray-500'
+                                                                }`}>
+                                                                    {entity.type === 'person' && <UserGroupIcon className="w-3 h-3" />}
+                                                                    {entity.type === 'company' && <BuildingOfficeIcon className="w-3 h-3" />}
+                                                                    {entity.type === 'amount' && <CurrencyDollarIcon className="w-3 h-3" />}
+                                                                    {(entity.type === 'date' || entity.type === 'deadline') && <CalendarIcon className="w-3 h-3" />}
+                                                                    {entity.value}
+                                                                </span>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+
+                                            {/* Split indicator */}
+                                            {item.flowStatus === 'SPLIT' && (
+                                                <div className="mb-3 flex items-center gap-2 text-xs text-blue-600 bg-blue-50 px-3 py-1.5 rounded">
+                                                    <ScissorsIcon className="w-4 h-4" />
+                                                    Element podzielony na części — podzadania są w Źródle
+                                                </div>
+                                            )}
+
                                             <div className="flex items-center space-x-4 text-xs text-gray-500">
                                                 <span className="flex items-center gap-1">
                                                     <CalendarIcon className="w-4 h-4" />
@@ -456,7 +574,7 @@ export default function SourcePage() {
                                                 </span>
                                                 <span className="flex items-center gap-1">
                                                     <UserIcon className="w-4 h-4" />
-                                                    {item.capturedBy.firstName}
+                                                    {item.capturedBy?.firstName}
                                                 </span>
                                             </div>
                                         </div>
