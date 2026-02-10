@@ -85,6 +85,22 @@ export interface FlowHistory {
 }
 
 // =============================================================================
+// Autopilot Types
+// =============================================================================
+
+export interface AutopilotHistoryItem {
+  id: string;
+  inboxItemId: string;
+  action: FlowAction;
+  confidence: number;
+  streamId?: string;
+  completedAt: string;
+  content: string;
+  sourceType: string;
+  undone: boolean;
+}
+
+// =============================================================================
 // Conversational Flow Types (Dialogue Mode)
 // =============================================================================
 
@@ -364,6 +380,31 @@ export const flowApi = {
       elementId,
       ...data,
     });
+  },
+
+  // =============================================================================
+  // Autopilot API
+  // =============================================================================
+
+  autopilot: {
+    getHistory: async (params?: { limit?: number; offset?: number }): Promise<{
+      history: AutopilotHistoryItem[];
+      stats: { total: number; undone: number; accuracyPercent: number };
+    }> => {
+      const searchParams = new URLSearchParams();
+      if (params?.limit) searchParams.set('limit', params.limit.toString());
+      if (params?.offset) searchParams.set('offset', params.offset.toString());
+      const url = searchParams.toString()
+        ? `${API_URL}/autopilot/history?${searchParams}`
+        : `${API_URL}/autopilot/history`;
+      const response = await apiClient.get(url);
+      return response.data.data;
+    },
+
+    undo: async (historyId: string): Promise<{ success: boolean; message: string }> => {
+      const response = await apiClient.post(`${API_URL}/autopilot/undo/${historyId}`);
+      return response.data;
+    },
   },
 
   // =============================================================================

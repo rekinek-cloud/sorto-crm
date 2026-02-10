@@ -33,11 +33,26 @@ import { VectorService } from '../VectorService';
 // INTERFACES
 // =============================================================================
 
+export interface AutopilotConfig {
+  enabled: boolean;
+  confidenceThreshold: number;  // 0.80, 0.85, 0.90, 0.95
+  exceptions: {
+    neverDeleteAuto: boolean;
+  };
+}
+
 export interface FlowProcessingContext {
   organizationId: string;
   userId: string;
   inboxItemId: string;
   autoExecute?: boolean;  // Czy wykonac akcje automatycznie bez potwierdzenia
+  autopilotConfig?: AutopilotConfig;
+}
+
+export interface ExecuteActionResult {
+  action: FlowAction;
+  createdEntityId?: string;
+  createdEntityType?: 'task' | 'project' | 'somedayMaybe' | 'knowledgeBase';
 }
 
 export interface ContentAnalysis {
@@ -267,14 +282,32 @@ export class FlowEngineService {
       // 10. Zapisz historie przetwarzania
       await this.saveProcessingHistory(context, contentAnalysis, suggestedAction);
 
-      // 11. Jesli autoExecute i wysoka pewnosc - wykonaj akcje
+      // 11. AUTOPILOT: Jesli autoExecute i spelnione warunki - wykonaj akcje
       let executedAction: FlowAction | undefined;
-      if (context.autoExecute && suggestedAction.confidence >= 0.85) {
-        executedAction = await this.executeAction(
-          context.inboxItemId,
-          suggestedAction,
-          context.userId
-        );
+      if (context.autoExecute) {
+        const threshold = context.autopilotConfig?.confidenceThreshold ?? 0.85;
+        const isBlockedByException =
+          context.autopilotConfig?.exceptions?.neverDeleteAuto && suggestedAction.action === 'USUN';
+
+        if (suggestedAction.confidence >= threshold && !isBlockedByException) {
+          const executeResult = await this.executeAction(
+            context.inboxItemId,
+            suggestedAction,
+            context.userId
+          );
+          executedAction = executeResult.action;
+
+          // Oznacz jako AUTOPILOT
+          await this.prisma.inboxItem.update({
+            where: { id: context.inboxItemId },
+            data: { userDecisionReason: 'AUTOPILOT' }
+          });
+
+          // Zapisz undo data w historii
+          await this.saveAutopilotHistory(context, suggestedAction, executeResult);
+
+          console.log(`🤖 Autopilot executed: ${executeResult.action} (confidence: ${Math.round(suggestedAction.confidence * 100)}%, entity: ${executeResult.createdEntityType}:${executeResult.createdEntityId})`);
+        }
       }
 
       return {
@@ -1004,7 +1037,7 @@ Odpowiedz w formacie JSON:
     inboxItemId: string,
     suggestion: ActionSuggestion,
     userId: string
-  ): Promise<FlowAction> {
+  ): Promise<ExecuteActionResult> {
     const inboxItem = await this.prisma.inboxItem.findUnique({
       where: { id: inboxItemId }
     });
@@ -1013,25 +1046,33 @@ Odpowiedz w formacie JSON:
       throw new Error(`InboxItem not found: ${inboxItemId}`);
     }
 
+    let createdEntityId: string | undefined;
+    let createdEntityType: ExecuteActionResult['createdEntityType'];
+
     switch (suggestion.action) {
       case 'ZROB_TERAZ':
-        await this.executeZrobTeraz(inboxItem, suggestion, userId);
+        createdEntityId = await this.executeZrobTeraz(inboxItem, suggestion, userId);
+        createdEntityType = 'task';
         break;
 
       case 'ZAPLANUJ':
-        await this.executeZaplanuj(inboxItem, suggestion, userId);
+        createdEntityId = await this.executeZaplanuj(inboxItem, suggestion, userId);
+        createdEntityType = 'task';
         break;
 
       case 'PROJEKT':
-        await this.executeProjekt(inboxItem, suggestion, userId);
+        createdEntityId = await this.executeProjekt(inboxItem, suggestion, userId);
+        createdEntityType = suggestion.targetProjectId ? 'task' : 'project';
         break;
 
       case 'KIEDYS_MOZE':
-        await this.executeKiedysMoze(inboxItem, suggestion, userId);
+        createdEntityId = await this.executeKiedysMoze(inboxItem, suggestion, userId);
+        createdEntityType = 'somedayMaybe';
         break;
 
       case 'REFERENCJA':
-        await this.executeReferencja(inboxItem, suggestion, userId);
+        createdEntityId = await this.executeReferencja(inboxItem, suggestion, userId);
+        createdEntityType = 'knowledgeBase';
         break;
 
       case 'USUN':
@@ -1055,12 +1096,11 @@ Odpowiedz w formacie JSON:
     // Ucz sie z decyzji
     await this.learnFromDecision(inboxItem, suggestion, userId);
 
-    return suggestion.action;
+    return { action: suggestion.action, createdEntityId, createdEntityType };
   }
 
-  private async executeZrobTeraz(inboxItem: any, suggestion: ActionSuggestion, userId: string): Promise<void> {
-    // Utworz zadanie z najwyzszym priorytetem
-    await this.prisma.task.create({
+  private async executeZrobTeraz(inboxItem: any, suggestion: ActionSuggestion, userId: string): Promise<string> {
+    const task = await this.prisma.task.create({
       data: {
         title: suggestion.suggestedTitle || inboxItem.content.substring(0, 200),
         description: inboxItem.content,
@@ -1072,10 +1112,11 @@ Odpowiedz w formacie JSON:
         streamId: suggestion.targetStreamId
       }
     });
+    return task.id;
   }
 
-  private async executeZaplanuj(inboxItem: any, suggestion: ActionSuggestion, userId: string): Promise<void> {
-    await this.prisma.task.create({
+  private async executeZaplanuj(inboxItem: any, suggestion: ActionSuggestion, userId: string): Promise<string> {
+    const task = await this.prisma.task.create({
       data: {
         title: suggestion.suggestedTitle || inboxItem.content.substring(0, 200),
         description: inboxItem.content,
@@ -1088,12 +1129,12 @@ Odpowiedz w formacie JSON:
         streamId: suggestion.targetStreamId
       }
     });
+    return task.id;
   }
 
-  private async executeProjekt(inboxItem: any, suggestion: ActionSuggestion, userId: string): Promise<void> {
+  private async executeProjekt(inboxItem: any, suggestion: ActionSuggestion, userId: string): Promise<string> {
     if (suggestion.targetProjectId) {
-      // Dodaj do istniejacego projektu jako zadanie
-      await this.prisma.task.create({
+      const task = await this.prisma.task.create({
         data: {
           title: suggestion.suggestedTitle || inboxItem.content.substring(0, 200),
           description: inboxItem.content,
@@ -1105,9 +1146,9 @@ Odpowiedz w formacie JSON:
           streamId: suggestion.targetStreamId
         }
       });
+      return task.id;
     } else {
-      // Utworz nowy projekt
-      await this.prisma.project.create({
+      const project = await this.prisma.project.create({
         data: {
           name: suggestion.suggestedTitle || inboxItem.content.substring(0, 100),
           description: inboxItem.content,
@@ -1118,11 +1159,12 @@ Odpowiedz w formacie JSON:
           streamId: suggestion.targetStreamId
         }
       });
+      return project.id;
     }
   }
 
-  private async executeKiedysMoze(inboxItem: any, suggestion: ActionSuggestion, userId: string): Promise<void> {
-    await this.prisma.somedayMaybe.create({
+  private async executeKiedysMoze(inboxItem: any, suggestion: ActionSuggestion, userId: string): Promise<string> {
+    const entry = await this.prisma.somedayMaybe.create({
       data: {
         title: suggestion.suggestedTitle || inboxItem.content.substring(0, 200),
         description: inboxItem.content,
@@ -1132,11 +1174,11 @@ Odpowiedz w formacie JSON:
         createdById: userId
       }
     });
+    return entry.id;
   }
 
-  private async executeReferencja(inboxItem: any, suggestion: ActionSuggestion, userId: string): Promise<void> {
-    // Zapisz jako dokument referencyjny w knowledge base
-    await this.prisma.knowledgeBase.create({
+  private async executeReferencja(inboxItem: any, suggestion: ActionSuggestion, userId: string): Promise<string> {
+    const entry = await this.prisma.knowledgeBase.create({
       data: {
         title: suggestion.suggestedTitle || inboxItem.content.substring(0, 200),
         content: inboxItem.content,
@@ -1144,6 +1186,7 @@ Odpowiedz w formacie JSON:
         organizationId: this.organizationId
       }
     });
+    return entry.id;
   }
 
   private async executeUsun(inboxItem: any): Promise<void> {
@@ -1302,6 +1345,40 @@ Odpowiedz w formacie JSON:
     }
   }
 
+  /**
+   * Save autopilot execution data to history for undo support
+   */
+  private async saveAutopilotHistory(
+    context: FlowProcessingContext,
+    suggestion: ActionSuggestion,
+    result: ExecuteActionResult
+  ): Promise<void> {
+    try {
+      await this.prisma.flow_processing_history.updateMany({
+        where: { inboxItemId: context.inboxItemId },
+        data: {
+          finalAction: suggestion.action,
+          finalStreamId: suggestion.targetStreamId,
+          wasUserOverride: false,
+          completedAt: new Date(),
+          userFeedback: JSON.stringify({
+            mode: 'AUTOPILOT',
+            undoData: {
+              createdEntityId: result.createdEntityId,
+              createdEntityType: result.createdEntityType,
+              action: result.action,
+              streamId: suggestion.targetStreamId,
+              executedAt: new Date().toISOString(),
+              undone: false
+            }
+          })
+        }
+      });
+    } catch (error) {
+      console.error('[FlowEngine] Failed to save autopilot history:', error);
+    }
+  }
+
   // ===========================================================================
   // BULK PROCESSING
   // ===========================================================================
@@ -1377,7 +1454,7 @@ Odpowiedz w formacie JSON:
       targetStreamId: streamId
     };
 
-    await this.executeAction(inboxItemId, suggestion, userId);
+    const _executeResult = await this.executeAction(inboxItemId, suggestion, userId);
 
     // KLUCZOWE: Ucz się z korekty użytkownika (few-shot learning)
     if (wasOverride) {

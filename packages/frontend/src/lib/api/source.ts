@@ -41,6 +41,7 @@ export interface SourceItem {
     aiConfidence?: number;
     aiReasoning?: string;
     splitFromId?: string;
+    userDecisionReason?: string;
 }
 
 export interface AddSourceItemInput {

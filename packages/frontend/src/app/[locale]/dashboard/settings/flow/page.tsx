@@ -13,9 +13,12 @@ import {
   DocumentIcon,
   ArchiveBoxIcon,
   ExclamationTriangleIcon,
+  BoltIcon,
+  ArrowTopRightOnSquareIcon,
 } from '@heroicons/react/24/outline';
 import { toast } from 'react-hot-toast';
 import apiClient from '@/lib/api/client';
+import Link from 'next/link';
 
 // Source type definitions matching InboxSourceType enum
 const SOURCE_TYPES = [
@@ -32,18 +35,37 @@ const SOURCE_TYPES = [
   { key: 'OTHER', label: 'Inne', description: 'Wszystko inne', icon: ArchiveBoxIcon },
 ];
 
+const CONFIDENCE_THRESHOLDS = [
+  { value: 0.95, label: 'Ostrożny (95%)', description: 'Tylko najbardziej oczywiste elementy' },
+  { value: 0.90, label: 'Standardowy (90%)', description: 'Dobra równowaga między automatyzacją a kontrolą' },
+  { value: 0.85, label: 'Umiarkowany (85%)', description: 'Więcej automatyzacji, czasem niepewne decyzje' },
+  { value: 0.80, label: 'Agresywny (80%)', description: 'Maksymalna automatyzacja, wymaga monitorowania' },
+];
+
+interface AutopilotConfig {
+  enabled: boolean;
+  confidenceThreshold: number;
+  exceptions: {
+    neverDeleteAuto: boolean;
+  };
+}
+
 interface FlowSettings {
   enabled: boolean;
   sourceTypes: Record<string, boolean>;
   minContentLength: number;
-  autoExecuteHighConfidence: boolean;
+  autopilot: AutopilotConfig;
 }
 
 const DEFAULT_SETTINGS: FlowSettings = {
   enabled: false,
   sourceTypes: Object.fromEntries(SOURCE_TYPES.map(s => [s.key, true])),
   minContentLength: 10,
-  autoExecuteHighConfidence: false,
+  autopilot: {
+    enabled: false,
+    confidenceThreshold: 0.85,
+    exceptions: { neverDeleteAuto: true },
+  },
 };
 
 export default function FlowSettingsPage() {
@@ -59,11 +81,16 @@ export default function FlowSettingsPage() {
     try {
       const response = await apiClient.get('/flow/settings');
       const data = response.data?.data || response.data;
+      const autopilot = data.autopilot || {
+        enabled: data.autoExecuteHighConfidence || false,
+        confidenceThreshold: 0.85,
+        exceptions: { neverDeleteAuto: true },
+      };
       setSettings({
         enabled: data.enabled ?? false,
         sourceTypes: { ...DEFAULT_SETTINGS.sourceTypes, ...(data.sourceTypes || {}) },
         minContentLength: data.minContentLength ?? 10,
-        autoExecuteHighConfidence: data.autoExecuteHighConfidence ?? false,
+        autopilot,
       });
     } catch (error) {
       console.error('Failed to load flow settings:', error);
@@ -75,7 +102,10 @@ export default function FlowSettingsPage() {
   const handleSave = async () => {
     setLoading(true);
     try {
-      await apiClient.put('/flow/settings', settings);
+      await apiClient.put('/flow/settings', {
+        ...settings,
+        autoExecuteHighConfidence: settings.autopilot.enabled,
+      });
       toast.success('Ustawienia automatycznej analizy zostały zapisane');
     } catch (error: any) {
       console.error('Failed to save flow settings:', error);
@@ -106,6 +136,13 @@ export default function FlowSettingsPage() {
     setSettings(prev => ({
       ...prev,
       sourceTypes: Object.fromEntries(SOURCE_TYPES.map(s => [s.key, false])),
+    }));
+  };
+
+  const updateAutopilot = (updates: Partial<AutopilotConfig>) => {
+    setSettings(prev => ({
+      ...prev,
+      autopilot: { ...prev.autopilot, ...updates },
     }));
   };
 
@@ -220,39 +257,113 @@ export default function FlowSettingsPage() {
               className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
+        </div>
+      </div>
 
-          {/* Auto-execute */}
-          <div className="border-t border-gray-100 pt-6">
-            <div className="flex items-start gap-3">
-              <button
-                onClick={() => setSettings(prev => ({ ...prev, autoExecuteHighConfidence: !prev.autoExecuteHighConfidence }))}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors shrink-0 mt-0.5 ${
-                  settings.autoExecuteHighConfidence ? 'bg-amber-500' : 'bg-gray-300'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    settings.autoExecuteHighConfidence ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-              <div>
-                <div className="text-sm font-medium text-gray-900">Automatyczne wykonanie (wysoka pewność)</div>
-                <p className="text-xs text-gray-500 mt-1">
-                  Elementy z pewnością AI &ge; 85% zostaną automatycznie przetworzone bez potwierdzenia użytkownika
-                </p>
-                {settings.autoExecuteHighConfidence && (
-                  <div className="flex items-center gap-2 mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
-                    <ExclamationTriangleIcon className="h-4 w-4 text-amber-600 shrink-0" />
-                    <span className="text-xs text-amber-700">
-                      Uwaga: AI będzie automatycznie tworzyć zadania, projekty i przypisywać do strumieni bez Twojego potwierdzenia
-                    </span>
-                  </div>
-                )}
-              </div>
+      {/* Autopilot section */}
+      <div className={`bg-white rounded-xl border-2 ${settings.autopilot.enabled ? 'border-amber-300' : 'border-gray-200'} p-6 mb-6 transition-opacity ${!settings.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className={`p-2 rounded-lg ${settings.autopilot.enabled ? 'bg-amber-100' : 'bg-gray-100'}`}>
+              <BoltIcon className={`h-5 w-5 ${settings.autopilot.enabled ? 'text-amber-600' : 'text-gray-400'}`} />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Autopilot</h2>
+              <p className="text-sm text-gray-500 mt-0.5">
+                AI automatycznie wykonuje akcje gdy pewność przekracza próg
+              </p>
             </div>
           </div>
+          <button
+            onClick={() => updateAutopilot({ enabled: !settings.autopilot.enabled })}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              settings.autopilot.enabled ? 'bg-amber-500' : 'bg-gray-300'
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                settings.autopilot.enabled ? 'translate-x-6' : 'translate-x-1'
+              }`}
+            />
+          </button>
         </div>
+
+        {settings.autopilot.enabled && (
+          <div className="space-y-5 mt-4">
+            {/* Warning */}
+            <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <ExclamationTriangleIcon className="h-5 w-5 text-amber-600 shrink-0" />
+              <span className="text-sm text-amber-700">
+                Autopilot automatycznie tworzy zadania, projekty i przypisuje do strumieni bez potwierdzenia. Możesz cofnąć każdą akcję w historii.
+              </span>
+            </div>
+
+            {/* Confidence threshold */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Próg pewności AI
+              </label>
+              <div className="space-y-2">
+                {CONFIDENCE_THRESHOLDS.map(({ value, label, description }) => (
+                  <label
+                    key={value}
+                    className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                      settings.autopilot.confidenceThreshold === value
+                        ? 'border-amber-300 bg-amber-50'
+                        : 'border-gray-200 bg-white hover:bg-gray-50'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="confidenceThreshold"
+                      checked={settings.autopilot.confidenceThreshold === value}
+                      onChange={() => updateAutopilot({ confidenceThreshold: value })}
+                      className="h-4 w-4 text-amber-500 border-gray-300 focus:ring-amber-500"
+                    />
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">{label}</div>
+                      <div className="text-xs text-gray-500">{description}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Exceptions */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Wyjątki
+              </label>
+              <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+                <input
+                  type="checkbox"
+                  checked={settings.autopilot.exceptions.neverDeleteAuto}
+                  onChange={(e) => updateAutopilot({
+                    exceptions: { ...settings.autopilot.exceptions, neverDeleteAuto: e.target.checked }
+                  })}
+                  className="h-4 w-4 text-amber-500 rounded border-gray-300 focus:ring-amber-500"
+                />
+                <div>
+                  <div className="text-sm font-medium text-gray-900">Nigdy nie usuwaj automatycznie</div>
+                  <div className="text-xs text-gray-500">
+                    Elementy sugerowane do usunięcia zawsze wymagają ręcznego potwierdzenia
+                  </div>
+                </div>
+              </label>
+            </div>
+
+            {/* Link to history */}
+            <div className="pt-2">
+              <Link
+                href="/dashboard/flow/autopilot"
+                className="inline-flex items-center gap-1.5 text-sm text-amber-600 hover:text-amber-800 font-medium"
+              >
+                Zobacz historię autopilota
+                <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Save button */}

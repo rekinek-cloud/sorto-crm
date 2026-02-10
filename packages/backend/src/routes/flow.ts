@@ -1642,7 +1642,14 @@ router.get('/settings', async (req: Request, res: Response) => {
 
     const flowSettings = (org?.settings as any)?.flowAutoAnalysis || DEFAULT_FLOW_SETTINGS;
 
-    return res.json({ success: true, data: flowSettings });
+    // Normalize autopilot config (backward compat: old boolean → object)
+    const autopilot = flowSettings.autopilot || {
+      enabled: flowSettings.autoExecuteHighConfidence || false,
+      confidenceThreshold: 0.85,
+      exceptions: { neverDeleteAuto: true }
+    };
+
+    return res.json({ success: true, data: { ...flowSettings, autopilot } });
   } catch (error: any) {
     console.error('Get flow settings error:', error);
     return res.status(500).json({ success: false, error: error.message });
@@ -1660,7 +1667,7 @@ router.put('/settings', async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { enabled, sourceTypes, minContentLength, autoExecuteHighConfidence } = req.body;
+    const { enabled, sourceTypes, minContentLength, autoExecuteHighConfidence, autopilot } = req.body;
 
     const org = await prisma.organization.findUnique({
       where: { id: user.organizationId },
@@ -1668,6 +1675,13 @@ router.put('/settings', async (req: Request, res: Response) => {
     });
 
     const currentSettings = (org?.settings || {}) as any;
+
+    // Build normalized autopilot config
+    const autopilotConfig = autopilot || {
+      enabled: autoExecuteHighConfidence ?? false,
+      confidenceThreshold: 0.85,
+      exceptions: { neverDeleteAuto: true }
+    };
 
     await prisma.organization.update({
       where: { id: user.organizationId },
@@ -1678,7 +1692,8 @@ router.put('/settings', async (req: Request, res: Response) => {
             enabled: enabled ?? false,
             sourceTypes: sourceTypes ?? DEFAULT_FLOW_SETTINGS.sourceTypes,
             minContentLength: minContentLength ?? 10,
-            autoExecuteHighConfidence: autoExecuteHighConfidence ?? false,
+            autoExecuteHighConfidence: autopilotConfig.enabled ?? false,
+            autopilot: autopilotConfig,
           }
         }
       }
@@ -1689,6 +1704,193 @@ router.put('/settings', async (req: Request, res: Response) => {
     return res.json({ success: true, message: 'Settings saved' });
   } catch (error: any) {
     console.error('Update flow settings error:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * GET /api/v1/flow/autopilot/history
+ * Get autopilot execution history with stats
+ */
+router.get('/autopilot/history', async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user?.organizationId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = parseInt(req.query.offset as string) || 0;
+
+    // Get all autopilot history records
+    const records = await prisma.flow_processing_history.findMany({
+      where: {
+        organizationId: user.organizationId,
+        userFeedback: { contains: 'AUTOPILOT' }
+      },
+      orderBy: { completedAt: 'desc' },
+      take: limit,
+      skip: offset
+    });
+
+    const total = await prisma.flow_processing_history.count({
+      where: {
+        organizationId: user.organizationId,
+        userFeedback: { contains: 'AUTOPILOT' }
+      }
+    });
+
+    // Enrich with InboxItem data
+    const itemIds = records.map(r => r.inboxItemId).filter(Boolean) as string[];
+    const items = await prisma.inboxItem.findMany({
+      where: { id: { in: itemIds } },
+      select: {
+        id: true,
+        content: true,
+        sourceType: true,
+        suggestedAction: true,
+        aiConfidence: true,
+        suggestedStreams: true,
+      }
+    });
+    const itemMap = new Map(items.map(i => [i.id, i]));
+
+    const history = records.map(r => {
+      const item = r.inboxItemId ? itemMap.get(r.inboxItemId) : null;
+      let undoData = null;
+      try {
+        const feedback = r.userFeedback ? JSON.parse(r.userFeedback) : null;
+        undoData = feedback?.undoData || null;
+      } catch {}
+
+      return {
+        id: r.id,
+        inboxItemId: r.inboxItemId,
+        action: r.finalAction,
+        confidence: r.aiConfidence,
+        streamId: r.finalStreamId,
+        completedAt: r.completedAt,
+        content: item?.content?.substring(0, 200) || '',
+        sourceType: item?.sourceType || '',
+        undone: undoData?.undone || false,
+      };
+    });
+
+    // Stats
+    const undoneCount = history.filter(h => h.undone).length;
+
+    return res.json({
+      success: true,
+      data: {
+        history,
+        stats: {
+          total,
+          undone: undoneCount,
+          accuracyPercent: total > 0 ? Math.round(((total - undoneCount) / total) * 100) : 100
+        }
+      }
+    });
+  } catch (error: any) {
+    console.error('Get autopilot history error:', error);
+    return res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+/**
+ * POST /api/v1/flow/autopilot/undo/:historyId
+ * Undo an autopilot-executed action
+ */
+router.post('/autopilot/undo/:historyId', async (req: Request, res: Response) => {
+  try {
+    const user = (req as any).user;
+    if (!user?.organizationId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    const { historyId } = req.params;
+
+    // Find history record
+    const record = await prisma.flow_processing_history.findFirst({
+      where: {
+        id: historyId,
+        organizationId: user.organizationId,
+        userFeedback: { contains: 'AUTOPILOT' }
+      }
+    });
+
+    if (!record) {
+      return res.status(404).json({ error: 'Autopilot history record not found' });
+    }
+
+    // Parse undo data
+    let feedback;
+    try {
+      feedback = JSON.parse(record.userFeedback || '{}');
+    } catch {
+      return res.status(400).json({ error: 'Invalid autopilot data' });
+    }
+
+    const undoData = feedback?.undoData;
+    if (!undoData) {
+      return res.status(400).json({ error: 'No undo data available' });
+    }
+
+    if (undoData.undone) {
+      return res.status(400).json({ error: 'Action already undone' });
+    }
+
+    // Delete the created entity
+    if (undoData.createdEntityId) {
+      try {
+        switch (undoData.createdEntityType) {
+          case 'task':
+            await prisma.task.delete({ where: { id: undoData.createdEntityId } });
+            break;
+          case 'project':
+            await prisma.project.delete({ where: { id: undoData.createdEntityId } });
+            break;
+          case 'somedayMaybe':
+            await prisma.somedayMaybe.delete({ where: { id: undoData.createdEntityId } });
+            break;
+          case 'knowledgeBase':
+            await prisma.knowledgeBase.delete({ where: { id: undoData.createdEntityId } });
+            break;
+        }
+        console.log(`🔄 Undo: deleted ${undoData.createdEntityType}:${undoData.createdEntityId}`);
+      } catch (deleteError: any) {
+        console.warn(`⚠️ Undo: entity ${undoData.createdEntityType}:${undoData.createdEntityId} may already be deleted:`, deleteError.message);
+      }
+    }
+
+    // Reset InboxItem back to AWAITING_DECISION
+    if (record.inboxItemId) {
+      await prisma.inboxItem.update({
+        where: { id: record.inboxItemId },
+        data: {
+          flowStatus: 'AWAITING_DECISION',
+          processed: false,
+          processedAt: null,
+          userDecisionReason: null,
+        }
+      });
+    }
+
+    // Mark undo data as undone
+    undoData.undone = true;
+    undoData.undoneAt = new Date().toISOString();
+    undoData.undoneBy = user.id;
+    await prisma.flow_processing_history.update({
+      where: { id: historyId },
+      data: {
+        userFeedback: JSON.stringify({ ...feedback, undoData })
+      }
+    });
+
+    console.log(`✅ Autopilot undo completed for history ${historyId}`);
+
+    return res.json({ success: true, message: 'Action undone successfully' });
+  } catch (error: any) {
+    console.error('Autopilot undo error:', error);
     return res.status(500).json({ success: false, error: error.message });
   }
 });

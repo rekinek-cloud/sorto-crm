@@ -36,12 +36,23 @@ async function triggerAutoAnalysis(itemId: string, orgId: string, userId: string
       data: { flowStatus: 'ANALYZING' }
     });
 
+    // Build autopilot config with backward compat (old boolean → new object)
+    const autopilot = flowSettings.autopilot;
+    const autoExecuteEnabled = autopilot?.enabled ?? flowSettings.autoExecuteHighConfidence ?? false;
+
     const engine = await getFlowEngine(orgId);
     await engine.processSourceItem({
       organizationId: orgId,
       userId,
       inboxItemId: itemId,
-      autoExecute: flowSettings.autoExecuteHighConfidence || false
+      autoExecute: autoExecuteEnabled,
+      autopilotConfig: autoExecuteEnabled ? {
+        enabled: true,
+        confidenceThreshold: autopilot?.confidenceThreshold ?? 0.85,
+        exceptions: {
+          neverDeleteAuto: autopilot?.exceptions?.neverDeleteAuto ?? true
+        }
+      } : undefined
     });
 
     console.log(`✅ Auto-analysis complete for item ${itemId}`);
