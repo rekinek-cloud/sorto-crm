@@ -1,7 +1,6 @@
-import { PrismaClient, RecurringTask, Task, Priority } from '@prisma/client';
+import { RecurringTask, Task, Priority } from '@prisma/client';
+import { prisma } from '../config/database';
 import logger from '../config/logger';
-
-const prisma = new PrismaClient();
 
 export class TaskGenerationService {
   /**

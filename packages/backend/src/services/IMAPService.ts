@@ -6,6 +6,7 @@
 const Imap = require('imap');
 import { simpleParser, ParsedMail } from 'mailparser';
 import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import logger from '../config/logger';
 
 export interface IMAPConfig {
@@ -328,23 +329,20 @@ export class IMAPService {
    * Test connection with timeout
    */
   static async testConnection(config: IMAPConfig, timeoutMs = 10000): Promise<boolean> {
-    const prisma = new PrismaClient();
     const service = new IMAPService(config, prisma);
-    
+
     try {
       await Promise.race([
         service.connect(),
-        new Promise((_, reject) => 
+        new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Connection timeout')), timeoutMs)
         )
       ]);
-      
+
       await service.disconnect();
-      await prisma.$disconnect();
       return true;
     } catch (error) {
       await service.disconnect();
-      await prisma.$disconnect();
       logger.error(`❌ IMAP connection test failed: ${error}`, {
         service: 'imap-service',
         host: config.host,

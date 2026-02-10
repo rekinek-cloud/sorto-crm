@@ -1,8 +1,7 @@
-import { PrismaClient, UnifiedRuleType, UnifiedRuleStatus, ExecutionStatus } from '@prisma/client';
+import { UnifiedRuleType, UnifiedRuleStatus, ExecutionStatus } from '@prisma/client';
+import { prisma } from '../config/database';
 import logger from '../config/logger';
 import { universalRuleEngine } from './ai/UniversalRuleEngine';
-
-const prisma = new PrismaClient();
 
 /**
  * 🔥 UNIFIED RULE ENGINE - Zunifikowany silnik reguł

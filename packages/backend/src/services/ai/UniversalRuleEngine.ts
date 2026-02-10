@@ -1,15 +1,13 @@
-import { PrismaClient } from '@prisma/client';
 import logger from '../../config/logger';
-import type { 
-  CommunicationRule, 
-  RuleExecutionContext, 
+import { prisma } from '../../config/database';
+import type {
+  CommunicationRule,
+  RuleExecutionContext,
   RuleExecutionResult,
   RuleCondition,
   RuleAction,
-  AIPromptTemplate 
+  AIPromptTemplate
 } from '../../types/rules';
-
-const prisma = new PrismaClient();
 
 export class UniversalRuleEngine {
   

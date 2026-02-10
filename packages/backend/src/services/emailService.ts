@@ -1,10 +1,8 @@
 import Imap from 'imap';
 import { simpleParser } from 'mailparser';
 import * as nodemailer from 'nodemailer';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import { processMessageContent } from './messageProcessor';
-
-const prisma = new PrismaClient();
 
 export interface EmailConfig {
   id: string;

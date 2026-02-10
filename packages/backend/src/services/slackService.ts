@@ -1,7 +1,5 @@
 import { WebClient } from '@slack/web-api';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../config/database';
 
 export interface SlackConfig {
   token: string;

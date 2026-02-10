@@ -1,10 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { CacheService } from '../../services/CacheService';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../../config/database';
 import crypto from 'crypto';
 import logger from '../../config/logger';
 
-const prisma = new PrismaClient();
 const cacheService = new CacheService(prisma);
 
 export interface CacheConfig {

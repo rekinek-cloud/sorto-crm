@@ -1,6 +1,5 @@
-import { PrismaClient, InboxItem, ProcessingDecision, TaskStatus, Priority } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { InboxItem, ProcessingDecision, TaskStatus, Priority } from '@prisma/client';
+import { prisma } from '../config/database';
 
 export interface CreateInboxItemInput {
   content: string;

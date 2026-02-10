@@ -8,11 +8,9 @@
  * - Cache compiled prompts for performance
  */
 
-import { PrismaClient } from '@prisma/client';
 import type { ai_prompt_templates } from '@prisma/client';
 import Handlebars from 'handlebars';
-
-const prisma = new PrismaClient();
+import { prisma } from '../../config/database';
 
 // Types
 export interface PromptTemplate {

@@ -1,7 +1,6 @@
-import { PrismaClient, Contact, Company, Deal, ContactStatus, DealStage } from '@prisma/client';
+import { Contact, Company, Deal, ContactStatus, DealStage } from '@prisma/client';
+import { prisma } from '../config/database';
 import { EmailMessage } from './emailService';
-
-const prisma = new PrismaClient();
 
 export interface CRMLinkageResult {
   contactId?: string;

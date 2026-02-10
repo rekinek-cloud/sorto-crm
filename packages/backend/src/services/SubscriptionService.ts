@@ -3,11 +3,10 @@
  */
 
 import Stripe from 'stripe';
-import { PrismaClient, SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
+import { SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
+import { prisma } from '../config/database';
 import { PLAN_LIMITS, STRIPE_PRICE_IDS, TRIAL_DAYS, getPlanLimits, isWithinLimit, hasFeature, PlanLimits } from '../config/planLimits';
 import { logger } from '../config/logger';
-
-const prisma = new PrismaClient();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2023-10-16',

@@ -1,7 +1,6 @@
-import { PrismaClient, EmailCategory, EmailRule } from '@prisma/client';
+import { EmailCategory, EmailRule } from '@prisma/client';
+import { prisma } from '../config/database';
 import logger from '../config/logger';
-
-const prisma = new PrismaClient();
 
 export interface FilterResult {
   category: EmailCategory;

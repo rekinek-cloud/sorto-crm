@@ -1,6 +1,4 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../config/database';
 
 // =============================================================================
 // ENHANCED AI SERVICE - Machine Learning dla Smart Day Planner

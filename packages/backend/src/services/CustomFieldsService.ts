@@ -2,10 +2,9 @@
  * CustomFieldsService - Manages custom field definitions and values
  */
 
-import { PrismaClient, CustomFieldType, EntityType, CustomFieldDefinition, CustomFieldValue } from '@prisma/client';
+import { CustomFieldType, EntityType, CustomFieldDefinition, CustomFieldValue } from '@prisma/client';
+import { prisma } from '../config/database';
 import { logger } from '../config/logger';
-
-const prisma = new PrismaClient();
 
 export interface CustomFieldInput {
   name: string;

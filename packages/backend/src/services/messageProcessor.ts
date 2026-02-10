@@ -1,9 +1,8 @@
-import { PrismaClient, Priority, TaskStatus, MessagePriority, ContactStatus, DealStage } from '@prisma/client';
+import { Priority, TaskStatus, MessagePriority, ContactStatus, DealStage } from '@prisma/client';
+import { prisma } from '../config/database';
 import { EmailMessage } from './emailService';
 import { crmLinkageService } from './crmLinkageService';
 import { SmartAnalysisService } from './smartAnalysis';
-
-const prisma = new PrismaClient();
 const smartAnalysisService = new SmartAnalysisService();
 
 export interface ProcessingResult {

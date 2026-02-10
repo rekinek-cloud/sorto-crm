@@ -1,7 +1,6 @@
-import { PrismaClient, StreamRelationType, AccessLevel, DataScope, InheritanceRule, Stream, StreamRelation, StreamPermission } from '@prisma/client';
+import { StreamRelationType, AccessLevel, DataScope, InheritanceRule, Stream, StreamRelation, StreamPermission } from '@prisma/client';
 import { z } from 'zod';
-
-const prisma = new PrismaClient();
+import { prisma } from '../config/database';
 
 // DTOs for type safety
 export const CreateStreamRelationDto = z.object({

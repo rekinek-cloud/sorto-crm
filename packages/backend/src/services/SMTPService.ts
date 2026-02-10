@@ -5,6 +5,7 @@
 
 import nodemailer, { Transporter, SendMailOptions } from 'nodemailer';
 import { PrismaClient, EmailAccount } from '@prisma/client';
+import { prisma } from '../config/database';
 import logger from '../config/logger';
 
 export interface SMTPConfig {
@@ -422,32 +423,29 @@ export class SMTPService {
    * Test SMTP configuration without creating service instance
    */
   static async testConfig(config: SMTPConfig, timeoutMs = 10000): Promise<boolean> {
-    const prisma = new PrismaClient();
     const service = new SMTPService(config, prisma);
-    
+
     try {
       await Promise.race([
         service.initialize(),
-        new Promise((_, reject) => 
+        new Promise((_, reject) =>
           setTimeout(() => reject(new Error('Connection timeout')), timeoutMs)
         )
       ]);
-      
+
       const result = await service.testConnection();
       await service.close();
-      await prisma.$disconnect();
-      
+
       return result;
     } catch (error) {
       await service.close();
-      await prisma.$disconnect();
-      
+
       logger.error(`❌ SMTP config test failed: ${error}`, {
         service: 'smtp-service',
         host: config.host,
         error: error instanceof Error ? error.message : String(error)
       });
-      
+
       return false;
     }
   }

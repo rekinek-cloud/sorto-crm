@@ -1,14 +1,12 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../config/database';
 import logger from '../config/logger';
 import { config } from '../config';
-import { 
-  createFakturowniaClient, 
-  FakturowniaTransformer, 
+import {
+  createFakturowniaClient,
+  FakturowniaTransformer,
   FakturowniaConfig,
   FakturowniaClient
 } from './fakturownia';
-
-const prisma = new PrismaClient();
 
 export interface InvoiceSyncResult {
   success: boolean;

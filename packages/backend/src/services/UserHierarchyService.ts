@@ -1,7 +1,6 @@
-import { PrismaClient, UserDataScope, UserRelationType, UserInheritanceRule, User, user_relations, user_permissions, UserAction, UserAccessType } from '@prisma/client';
+import { UserDataScope, UserRelationType, UserInheritanceRule, User, user_relations, user_permissions, UserAction, UserAccessType } from '@prisma/client';
+import { prisma } from '../config/database';
 import { z } from 'zod';
-
-const prisma = new PrismaClient();
 
 // Alias for compatibility
 type UserRelation = user_relations;

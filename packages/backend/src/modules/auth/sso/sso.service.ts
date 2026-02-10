@@ -1,9 +1,7 @@
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
 import { config } from '../../../config';
+import { prisma } from '../../../config/database';
 import logger from '../../../config/logger';
-
-const prisma = new PrismaClient();
 
 interface SsoTokenPayload {
   userId: string;

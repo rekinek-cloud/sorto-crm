@@ -6,6 +6,7 @@
 
 import OpenAI from 'openai';
 import { PrismaClient } from '@prisma/client';
+import { prisma as prismaClient } from '../../config/database';
 import logger from '../../config/logger';
 
 // Types
@@ -81,7 +82,7 @@ export class QwenChatService {
       baseURL: 'https://dashscope-intl.aliyuncs.com/compatible-mode/v1',
     });
 
-    this.prisma = prisma || new PrismaClient();
+    this.prisma = prisma || prismaClient;
     this.defaultModel = QWEN_MODELS.MAX;
   }
 
