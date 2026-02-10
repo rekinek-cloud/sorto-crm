@@ -17,7 +17,9 @@ import {
   ClockIcon,
   ChevronDownIcon,
   ChevronRightIcon,
+  ShieldExclamationIcon,
 } from '@heroicons/react/24/outline';
+import Link from 'next/link';
 
 // Typy zostały przeniesione do api/aiRules.ts
 
@@ -158,6 +160,13 @@ export default function AIRulesPage() {
         </div>
         
         <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard/ai-rules/domain-lists"
+            className="flex items-center space-x-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <ShieldExclamationIcon className="w-5 h-5" />
+            <span>Listy domen</span>
+          </Link>
           {/* New Rule Button */}
           <button
             onClick={() => setIsCreateModalOpen(true)}

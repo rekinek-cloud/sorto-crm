@@ -9,7 +9,7 @@
  * Żadna akcja zewnętrzna bez zatwierdzenia użytkownika
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -19,6 +19,10 @@ import { AISuggestionPanel } from '@/components/ai/AISuggestionPanel';
 import { StreamRulesPanel } from '@/components/ai/StreamRulesPanel';
 import { AIPromptsPanel } from '@/components/ai/AIPromptsPanel';
 import { useAIAssistant } from '@/hooks/useAIAssistant';
+import { aiRulesApi, AIRule } from '@/lib/api/aiRules';
+import { emailDomainRulesApi, DomainRulesStats } from '@/lib/api/emailDomainRulesApi';
+import { aiSuggestionsApi, AISuggestion } from '@/lib/api/aiSuggestionsApi';
+import Link from 'next/link';
 import {
   Brain,
   Sparkles,
@@ -47,6 +51,10 @@ export default function AIAssistantPage() {
   const [activeTab, setActiveTab] = useState<TabType>('chat');
   const [selectedContext, setSelectedContext] = useState<'general' | 'source' | 'streams' | 'goals'>('general');
 
+  const [aiRulesSummary, setAiRulesSummary] = useState<AIRule[]>([]);
+  const [domainStats, setDomainStats] = useState<DomainRulesStats | null>(null);
+  const [pendingAiSuggestions, setPendingAiSuggestions] = useState<AISuggestion[]>([]);
+
   const {
     pendingSuggestions,
     loadSuggestions,
@@ -58,14 +66,31 @@ export default function AIAssistantPage() {
     error
   } = useAIAssistant({ autoLoadPatterns: false, autoLoadSuggestions: false });
 
+  const loadAutomationData = useCallback(async () => {
+    try {
+      const [rulesRes, statsRes, suggestionsRes] = await Promise.all([
+        aiRulesApi.getRules({ limit: 5 }).catch(() => ({ rules: [], pagination: { total: 0, page: 1, limit: 5, pages: 0 } })),
+        emailDomainRulesApi.getStats().catch(() => null),
+        aiSuggestionsApi.getSuggestions({ status: 'PENDING', limit: 5 }).catch(() => []),
+      ]);
+      setAiRulesSummary(rulesRes.rules);
+      setDomainStats(statsRes);
+      setPendingAiSuggestions(suggestionsRes);
+    } catch {
+      // Non-critical, ignore
+    }
+  }, []);
+
   useEffect(() => {
     if (activeTab === 'suggestions') {
       loadSuggestions();
       loadPatterns();
     } else if (activeTab === 'settings') {
       loadPatterns();
+    } else if (activeTab === 'automation') {
+      loadAutomationData();
     }
-  }, [activeTab]);
+  }, [activeTab, loadAutomationData]);
 
   // Demo suggestion zgodna z STREAMS
   const demoSuggestion = {
@@ -453,11 +478,160 @@ export default function AIAssistantPage() {
                 Automatyzacja
               </h2>
               <p className="text-gray-600 mt-1">
-                Reguły automatyzacji zintegrowane z AI dla routingu ze Źródła do Strumieni
+                Reguly automatyzacji zintegrowane z AI dla routingu ze Zrodla do Strumieni
               </p>
+            </div>
+            <div className="flex gap-2">
+              <Link href="/dashboard/ai-rules">
+                <Button variant="outline" size="sm">
+                  <Bot className="h-4 w-4 mr-1" />
+                  Reguly AI
+                </Button>
+              </Link>
+              <Link href="/dashboard/ai-rules/domain-lists">
+                <Button variant="outline" size="sm">
+                  <Zap className="h-4 w-4 mr-1" />
+                  Listy domen
+                </Button>
+              </Link>
             </div>
           </div>
 
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-purple-100 text-purple-600 rounded-lg">
+                    <Bot className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium mb-1">Reguly AI</h3>
+                    <p className="text-2xl font-bold text-purple-600">
+                      {aiRulesSummary.length}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {aiRulesSummary.filter(r => r.enabled).length} aktywnych
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-red-100 text-red-600 rounded-lg">
+                    <Zap className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium mb-1">Listy domen</h3>
+                    <p className="text-2xl font-bold text-red-600">
+                      {domainStats?.total || 0}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {domainStats ? `${domainStats.blacklist} czarna / ${domainStats.whitelist} biala / ${domainStats.vip} VIP` : 'Ladowanie...'}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-yellow-100 text-yellow-600 rounded-lg">
+                    <Sparkles className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium mb-1">Sugestie AI</h3>
+                    <p className="text-2xl font-bold text-yellow-600">
+                      {pendingAiSuggestions.length}
+                    </p>
+                    <p className="text-xs text-gray-500">oczekujacych na decyzje</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Pending AI Suggestions */}
+          {pendingAiSuggestions.length > 0 && (
+            <Card className="border-purple-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <Sparkles className="h-4 w-4 text-purple-600" />
+                  Oczekujace sugestie AI
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {pendingAiSuggestions.map(s => (
+                  <div key={s.id} className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-sm">{s.title}</p>
+                      <p className="text-xs text-gray-600">{s.description}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          await aiSuggestionsApi.acceptSuggestion(s.id);
+                          loadAutomationData();
+                        }}
+                        className="text-green-600 border-green-300 hover:bg-green-50"
+                      >
+                        Akceptuj
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          await aiSuggestionsApi.rejectSuggestion(s.id);
+                          loadAutomationData();
+                        }}
+                      >
+                        Odrzuc
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Active Rules List */}
+          {aiRulesSummary.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <Bot className="h-4 w-4 text-purple-600" />
+                  Ostatnie reguly
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {aiRulesSummary.map(rule => (
+                    <div key={rule.id} className="flex items-center justify-between p-2 rounded hover:bg-gray-50">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${rule.enabled ? 'bg-green-500' : 'bg-gray-300'}`} />
+                        <span className="text-sm font-medium">{rule.name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500">
+                        <span>{rule.executionCount} wykonan</span>
+                        <span>{rule.successRate}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <Link href="/dashboard/ai-rules" className="block mt-3 text-sm text-purple-600 hover:text-purple-700 font-medium">
+                  Zobacz wszystkie reguly &rarr;
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Stream Rules Panel */}
           <StreamRulesPanel />
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -468,9 +642,9 @@ export default function AIAssistantPage() {
                     <Bot className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-medium mb-1">Reguły AI</h3>
+                    <h3 className="font-medium mb-1">Pipeline przetwarzania</h3>
                     <p className="text-sm text-gray-600">
-                      AI analizuje treść i automatycznie sugeruje docelowy strumień
+                      4 etapy: CRM &rarr; Listy &rarr; Wzorce &rarr; AI
                     </p>
                   </div>
                 </div>
@@ -484,9 +658,9 @@ export default function AIAssistantPage() {
                     <TrendingUp className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-medium mb-1">Routing ze Źródła</h3>
+                    <h3 className="font-medium mb-1">Routing ze Zrodla</h3>
                     <p className="text-sm text-gray-600">
-                      Automatyczne kierowanie elementów do odpowiednich strumieni
+                      Automatyczne kierowanie elementow do odpowiednich strumieni
                     </p>
                   </div>
                 </div>
@@ -500,9 +674,9 @@ export default function AIAssistantPage() {
                     <GitBranch className="h-5 w-5" />
                   </div>
                   <div>
-                    <h3 className="font-medium mb-1">Workflow</h3>
+                    <h3 className="font-medium mb-1">Human-in-the-Loop</h3>
                     <p className="text-sm text-gray-600">
-                      Złożone automatyzacje z wieloma krokami przepływu
+                      AI sugeruje, Ty decydujesz i kontrolujesz
                     </p>
                   </div>
                 </div>

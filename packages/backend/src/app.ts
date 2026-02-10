@@ -96,6 +96,8 @@ import voiceSimpleRoutes from './routes/voice-simple';
 import bugReportsRoutes from './routes/bugReports';
 import mcpKeysRoutes from './routes/mcpKeys';
 import aiRulesRoutes from './routes/aiRules';
+import emailDomainRulesRoutes from './routes/emailDomainRules';
+import aiSuggestionsRoutes from './routes/aiSuggestions';
 // import filesRoutes from './routes/files';
 import weeklyReviewRoutes from './routes/weeklyReview';
 import streamHierarchyRoutes from './routes/streamHierarchy';
@@ -261,6 +263,8 @@ apiRouter.use('/voice', voiceSimpleRoutes);  // Voice TTS - synteza mowy
 apiRouter.use('/admin/bug-reports', bugReportsRoutes);  // Bug Reports
 apiRouter.use('/admin/mcp-keys', mcpKeysRoutes);  // MCP API Keys
 apiRouter.use('/ai-rules', aiRulesRoutes);  // AI Rules
+apiRouter.use('/email-domain-rules', emailDomainRulesRoutes);  // Email Domain Rules - listy domen
+apiRouter.use('/ai-suggestions', aiSuggestionsRoutes);  // AI Suggestions - sugestie AI
 // apiRouter.use('/files', filesRoutes);  // Files - zarządzanie plikami
 apiRouter.use('/weekly-review', weeklyReviewRoutes);  // Weekly Review
 apiRouter.use('/weekly-reviews', weeklyReviewRoutes);  // Weekly Review (plural alias)
