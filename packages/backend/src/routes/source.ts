@@ -3,8 +3,56 @@ import { authenticateToken as requireAuth, AuthenticatedRequest } from '../share
 import { gtdInboxService } from '../services/gtdInboxService';
 import { ProcessingDecision } from '@prisma/client';
 import { prisma } from '../config/database';
+import { getFlowEngine } from './flow';
 
 const router = express.Router();
+
+/**
+ * Auto-analysis trigger - fire-and-forget after item creation.
+ * Checks org settings to determine if this item type should be auto-analyzed.
+ */
+async function triggerAutoAnalysis(itemId: string, orgId: string, userId: string) {
+  try {
+    const org = await prisma.organization.findUnique({
+      where: { id: orgId },
+      select: { settings: true }
+    });
+    const flowSettings = (org?.settings as any)?.flowAutoAnalysis;
+    if (!flowSettings?.enabled) return;
+
+    const item = await prisma.inboxItem.findUnique({
+      where: { id: itemId },
+      select: { sourceType: true, content: true, flowStatus: true }
+    });
+    if (!item || item.flowStatus !== 'PENDING') return;
+
+    if (flowSettings.sourceTypes?.[item.sourceType] === false) return;
+    if (item.content.length < (flowSettings.minContentLength || 10)) return;
+
+    console.log(`🤖 Auto-analyzing item ${itemId} (type: ${item.sourceType})`);
+
+    await prisma.inboxItem.update({
+      where: { id: itemId },
+      data: { flowStatus: 'ANALYZING' }
+    });
+
+    const engine = await getFlowEngine(orgId);
+    await engine.processSourceItem({
+      organizationId: orgId,
+      userId,
+      inboxItemId: itemId,
+      autoExecute: flowSettings.autoExecuteHighConfidence || false
+    });
+
+    console.log(`✅ Auto-analysis complete for item ${itemId}`);
+  } catch (error) {
+    console.error(`❌ Auto-analysis failed for item ${itemId}:`, error);
+    await prisma.inboxItem.update({
+      where: { id: itemId },
+      data: { flowStatus: 'ERROR' }
+    }).catch(() => {});
+  }
+}
 
 /**
  * GET /api/v1/gtd-inbox/test-public
@@ -181,6 +229,11 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
       message: 'Inbox item created successfully',
       data: item
     });
+
+    // Fire-and-forget auto-analysis
+    triggerAutoAnalysis(item.id, req.user!.organizationId, req.user!.id).catch(err =>
+      console.error('Auto-analysis trigger failed:', err)
+    );
   } catch (error) {
     console.error('Error creating inbox item:', error);
     res.status(500).json({ error: 'Failed to create inbox item' });
@@ -241,6 +294,11 @@ router.post('/quick-capture', requireAuth, async (req: AuthenticatedRequest, res
       message: 'Item captured successfully',
       item
     });
+
+    // Fire-and-forget auto-analysis
+    triggerAutoAnalysis(item.id, req.user!.organizationId, req.user!.id).catch(err =>
+      console.error('Auto-analysis trigger failed:', err)
+    );
   } catch (error) {
     console.error('Error capturing item:', error);
     res.status(500).json({ error: 'Failed to capture item' });
