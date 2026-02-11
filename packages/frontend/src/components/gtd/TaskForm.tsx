@@ -2,12 +2,23 @@
 
 import React, { useState, useEffect } from 'react';
 import { Task, Context, Project, Stream, CreateTaskRequest, UpdateTaskRequest } from '@/types/gtd';
+import apiClient from '@/lib/api/client';
 
 interface TaskFormUser {
   id: string;
   firstName?: string;
   lastName?: string;
   email: string;
+}
+
+interface SimpleEntity {
+  id: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
+  title?: string;
+  value?: number;
+  stage?: string;
 }
 
 interface TaskFormProps {
@@ -47,10 +58,36 @@ export default function TaskForm({
     assignedToId: '',
     energy: 'MEDIUM' as 'LOW' | 'MEDIUM' | 'HIGH',
     isWaitingFor: false,
-    waitingForNote: ''
+    waitingForNote: '',
+    companyId: '',
+    contactId: '',
+    dealId: ''
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [companies, setCompanies] = useState<SimpleEntity[]>([]);
+  const [contacts, setContacts] = useState<SimpleEntity[]>([]);
+  const [deals, setDeals] = useState<SimpleEntity[]>([]);
+  const [showRelations, setShowRelations] = useState(false);
+
+  // Fetch companies, contacts, deals for relation pickers
+  useEffect(() => {
+    const fetchRelationData = async () => {
+      try {
+        const [companiesRes, contactsRes, dealsRes] = await Promise.allSettled([
+          apiClient.get('/companies?limit=100'),
+          apiClient.get('/contacts?limit=100'),
+          apiClient.get('/deals?limit=100')
+        ]);
+        if (companiesRes.status === 'fulfilled') setCompanies(companiesRes.value.data?.companies || []);
+        if (contactsRes.status === 'fulfilled') setContacts(contactsRes.value.data?.contacts || []);
+        if (dealsRes.status === 'fulfilled') setDeals(dealsRes.value.data?.deals || []);
+      } catch (e) {
+        console.error('Failed to fetch relation data:', e);
+      }
+    };
+    fetchRelationData();
+  }, []);
 
   // Populate form if editing
   useEffect(() => {
@@ -69,8 +106,14 @@ export default function TaskForm({
         assignedToId: task.assignedToId || '',
         energy: task.energy || 'MEDIUM',
         isWaitingFor: task.isWaitingFor || false,
-        waitingForNote: task.waitingForNote || ''
+        waitingForNote: task.waitingForNote || '',
+        companyId: task.companyId || '',
+        contactId: task.contactId || '',
+        dealId: task.dealId || ''
       });
+      if (task.companyId || task.contactId || task.dealId) {
+        setShowRelations(true);
+      }
     }
   }, [task]);
 
@@ -131,7 +174,10 @@ export default function TaskForm({
       energy: formData.energy,
       isWaitingFor: formData.isWaitingFor,
       waitingForNote: formData.isWaitingFor ? formData.waitingForNote.trim() : undefined,
-      parentTaskId: parentTaskId || undefined
+      parentTaskId: parentTaskId || undefined,
+      companyId: formData.companyId || undefined,
+      contactId: formData.contactId || undefined,
+      dealId: formData.dealId || undefined
     };
 
     // Add update-specific fields
@@ -382,6 +428,76 @@ export default function TaskForm({
                 {errors.actualHours && (
                   <p className="mt-1 text-sm text-red-600">{errors.actualHours}</p>
                 )}
+              </div>
+            )}
+          </div>
+
+          {/* Relations Section */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowRelations(!showRelations)}
+              className="flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              <svg className={`w-4 h-4 mr-1 transform transition-transform ${showRelations ? 'rotate-90' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+              Powiazania ({[formData.companyId, formData.contactId, formData.dealId].filter(Boolean).length})
+            </button>
+
+            {showRelations && (
+              <div className="mt-3 p-4 bg-gray-50 rounded-lg space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Firma
+                  </label>
+                  <select
+                    value={formData.companyId}
+                    onChange={(e) => handleChange('companyId', e.target.value)}
+                    className="input"
+                  >
+                    <option value="">-- Brak --</option>
+                    {companies.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Kontakt
+                  </label>
+                  <select
+                    value={formData.contactId}
+                    onChange={(e) => handleChange('contactId', e.target.value)}
+                    className="input"
+                  >
+                    <option value="">-- Brak --</option>
+                    {contacts.map(c => (
+                      <option key={c.id} value={c.id}>
+                        {c.firstName} {c.lastName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Deal
+                  </label>
+                  <select
+                    value={formData.dealId}
+                    onChange={(e) => handleChange('dealId', e.target.value)}
+                    className="input"
+                  >
+                    <option value="">-- Brak --</option>
+                    {deals.map(d => (
+                      <option key={d.id} value={d.id}>
+                        {d.title} {d.value ? `(${d.value} ${(d as any).currency || 'USD'})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             )}
           </div>

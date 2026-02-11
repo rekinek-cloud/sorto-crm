@@ -14,7 +14,8 @@ import ContactForm from '@/components/crm/ContactForm';
 import DealForm from '@/components/crm/DealForm';
 import CompanyForm from '@/components/crm/CompanyForm';
 import { CommunicationPanel } from '@/components/crm/CommunicationPanel';
-import { 
+import NotesSection from '@/components/shared/NotesSection';
+import {
   BuildingOfficeIcon,
   PhoneIcon,
   EnvelopeIcon,
@@ -382,6 +383,16 @@ export default function CompanyDetailsPage() {
               Zadania ({company.tasks?.length || 0})
             </button>
             <button
+              onClick={() => setActiveTab('notes')}
+              className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
+                activeTab === 'notes'
+                  ? 'border-primary-500 text-primary-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Notatki
+            </button>
+            <button
               onClick={() => setActiveTab('communication')}
               className={`whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm ${
                 activeTab === 'communication'
@@ -647,7 +658,7 @@ export default function CompanyDetailsPage() {
                       const name = prompt('Nazwa projektu:');
                       if (!name?.trim()) return;
                       try {
-                        await projectsApi.createProject({ name: name.trim() });
+                        await projectsApi.createProject({ name: name.trim(), companyId });
                         toast.success('Projekt utworzony');
                         await loadCompany();
                       } catch (err: any) {
@@ -710,7 +721,7 @@ export default function CompanyDetailsPage() {
                       const title = prompt('Tytuł zadania:');
                       if (!title?.trim()) return;
                       try {
-                        await tasksApi.createTask({ title: title.trim() });
+                        await tasksApi.createTask({ title: title.trim(), companyId });
                         toast.success('Zadanie utworzone');
                         await loadCompany();
                       } catch (err: any) {
@@ -725,6 +736,11 @@ export default function CompanyDetailsPage() {
                 </div>
               )}
             </div>
+          )}
+
+          {/* Notes Tab */}
+          {activeTab === 'notes' && (
+            <NotesSection entityType="COMPANY" entityId={companyId} />
           )}
 
           {/* Communication Tab */}

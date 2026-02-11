@@ -22,7 +22,11 @@ const createTaskSchema = z.object({
   energy: z.enum(['LOW', 'MEDIUM', 'HIGH']).default('MEDIUM'),
   isWaitingFor: z.boolean().default(false),
   waitingForNote: z.string().optional(),
-  parentTaskId: z.string().uuid().optional()
+  parentTaskId: z.string().uuid().optional(),
+  contactId: z.string().uuid().optional(),
+  dealId: z.string().uuid().optional(),
+  eventId: z.string().uuid().optional(),
+  milestoneId: z.string().uuid().optional()
 });
 
 const updateTaskSchema = createTaskSchema.partial().extend({
@@ -43,6 +47,10 @@ router.get('/', authenticateToken, async (req, res) => {
       assignedToId,
       dueDate,
       parentTaskId,
+      contactId,
+      dealId,
+      eventId,
+      milestoneId,
       page = '1',
       limit = '20',
       search
@@ -64,6 +72,10 @@ router.get('/', authenticateToken, async (req, res) => {
     if (assignedToId) where.assignedToId = assignedToId;
     if (parentTaskId) where.parentTaskId = parentTaskId;
     if (!parentTaskId && req.query.includeSubtasks !== 'true') where.parentTaskId = null;
+    if (contactId) where.contactId = contactId;
+    if (dealId) where.dealId = dealId;
+    if (eventId) where.eventId = eventId;
+    if (milestoneId) where.milestoneId = milestoneId;
     if (dueDate) {
       const date = new Date(dueDate as string);
       where.dueDate = {
@@ -87,6 +99,10 @@ router.get('/', authenticateToken, async (req, res) => {
           stream: { select: { id: true, name: true, color: true } },
           createdBy: { select: { id: true, firstName: true, lastName: true } },
           assignedTo: { select: { id: true, firstName: true, lastName: true } },
+          contact: { select: { id: true, firstName: true, lastName: true, email: true } },
+          deal: { select: { id: true, title: true, value: true, stage: true } },
+          event: { select: { id: true, name: true, startDate: true } },
+          milestone: { select: { id: true, name: true, dueDate: true, status: true } },
           subtasks: {
             select: { id: true, title: true, status: true, priority: true },
             orderBy: { createdAt: 'asc' as const }
@@ -132,6 +148,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
         stream: true,
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         assignedTo: { select: { id: true, firstName: true, lastName: true } },
+        contact: { select: { id: true, firstName: true, lastName: true, email: true } },
+        deal: { select: { id: true, title: true, value: true, stage: true } },
+        event: { select: { id: true, name: true, startDate: true } },
+        milestone: { select: { id: true, name: true, dueDate: true, status: true } },
         subtasks: {
           select: { id: true, title: true, status: true, priority: true },
           orderBy: { createdAt: 'asc' as const }
@@ -208,6 +228,10 @@ router.post('/', authenticateToken, validateRequest({ body: createTaskSchema }),
         stream: { select: { id: true, name: true, color: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         assignedTo: { select: { id: true, firstName: true, lastName: true } },
+        contact: { select: { id: true, firstName: true, lastName: true, email: true } },
+        deal: { select: { id: true, title: true, value: true, stage: true } },
+        event: { select: { id: true, name: true, startDate: true } },
+        milestone: { select: { id: true, name: true, dueDate: true, status: true } },
         subtasks: {
           select: { id: true, title: true, status: true, priority: true },
           orderBy: { createdAt: 'asc' as const }
@@ -260,6 +284,10 @@ router.put('/:id', authenticateToken, validateRequest({ body: updateTaskSchema }
         stream: { select: { id: true, name: true, color: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         assignedTo: { select: { id: true, firstName: true, lastName: true } },
+        contact: { select: { id: true, firstName: true, lastName: true, email: true } },
+        deal: { select: { id: true, title: true, value: true, stage: true } },
+        event: { select: { id: true, name: true, startDate: true } },
+        milestone: { select: { id: true, name: true, dueDate: true, status: true } },
         subtasks: {
           select: { id: true, title: true, status: true, priority: true },
           orderBy: { createdAt: 'asc' as const }

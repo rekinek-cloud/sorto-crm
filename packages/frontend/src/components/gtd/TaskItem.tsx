@@ -159,6 +159,27 @@ export default function TaskItem({ task, onEdit, onDelete, onStatusChange, onTas
                 </div>
               )}
 
+              {/* Relation badges */}
+              {(task.companies || task.contact || task.deal) && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {task.companies && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-700">
+                      {task.companies.name}
+                    </span>
+                  )}
+                  {task.contact && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-700">
+                      {task.contact.firstName} {task.contact.lastName}
+                    </span>
+                  )}
+                  {task.deal && (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-purple-50 text-purple-700">
+                      {task.deal.title} {task.deal.value ? `(${task.deal.value})` : ''}
+                    </span>
+                  )}
+                </div>
+              )}
+
               {/* Assigned to */}
               {task.assignedTo && (
                 <div className="mt-2 flex items-center space-x-2">

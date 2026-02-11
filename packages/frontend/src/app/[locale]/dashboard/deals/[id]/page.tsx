@@ -9,7 +9,8 @@ import { toast } from 'react-hot-toast';
 import { GraphModal } from '@/components/graph/GraphModal';
 import DealForm from '@/components/crm/DealForm';
 import { CommunicationPanel } from '@/components/crm/CommunicationPanel';
-import { 
+import NotesSection from '@/components/shared/NotesSection';
+import {
   CurrencyDollarIcon,
   BuildingOfficeIcon,
   UserIcon,
@@ -396,6 +397,11 @@ export default function DealDetailsPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Notes */}
+      <div className="bg-white rounded-lg shadow-sm border p-6">
+        <NotesSection entityType="DEAL" entityId={dealId} />
       </div>
 
       {/* Communication Panel */}

@@ -84,7 +84,13 @@ router.get('/', authenticateToken, async (req, res) => {
                 }
               }
             }
-          }
+          },
+          company: { select: { id: true, name: true } },
+          deal: { select: { id: true, title: true, value: true } },
+          stream: { select: { id: true, name: true } },
+          project: { select: { id: true, name: true } },
+          event: { select: { id: true, name: true } },
+          attendees: { include: { contact: { select: { id: true, firstName: true, lastName: true } } } }
         },
         orderBy: {
           [sortBy as string]: sortOrder
@@ -235,7 +241,13 @@ router.get('/:id', authenticateToken, async (req, res) => {
               }
             }
           }
-        }
+        },
+        company: { select: { id: true, name: true } },
+        deal: { select: { id: true, title: true, value: true } },
+        stream: { select: { id: true, name: true } },
+        project: { select: { id: true, name: true } },
+        event: { select: { id: true, name: true } },
+        attendees: { include: { contact: { select: { id: true, firstName: true, lastName: true } } } }
       }
     });
 
@@ -262,7 +274,12 @@ router.post('/', authenticateToken, async (req, res) => {
       location,
       meetingUrl,
       agenda,
-      contactId
+      contactId,
+      companyId,
+      dealId,
+      streamId,
+      projectId,
+      eventId
     } = req.body;
 
     if (!title?.trim()) {
@@ -340,7 +357,12 @@ router.post('/', authenticateToken, async (req, res) => {
         agenda: agenda?.trim() || null,
         organization: { connect: { id: organizationId } },
         organizedBy: { connect: { id: userId } },
-        ...(contactId && { contact: { connect: { id: contactId } } })
+        ...(contactId && { contact: { connect: { id: contactId } } }),
+        ...(companyId && { company: { connect: { id: companyId } } }),
+        ...(dealId && { deal: { connect: { id: dealId } } }),
+        ...(streamId && { stream: { connect: { id: streamId } } }),
+        ...(projectId && { project: { connect: { id: projectId } } }),
+        ...(eventId && { event: { connect: { id: eventId } } })
       },
       include: {
         organizedBy: {
@@ -364,7 +386,13 @@ router.post('/', authenticateToken, async (req, res) => {
               }
             }
           }
-        }
+        },
+        company: { select: { id: true, name: true } },
+        deal: { select: { id: true, title: true, value: true } },
+        stream: { select: { id: true, name: true } },
+        project: { select: { id: true, name: true } },
+        event: { select: { id: true, name: true } },
+        attendees: { include: { contact: { select: { id: true, firstName: true, lastName: true } } } }
       }
     });
 
@@ -391,7 +419,12 @@ router.put('/:id', authenticateToken, async (req, res) => {
       agenda,
       notes,
       status,
-      contactId
+      contactId,
+      companyId,
+      dealId,
+      streamId,
+      projectId,
+      eventId
     } = req.body;
 
     const existingMeeting = await prisma.meeting.findFirst({
@@ -411,6 +444,11 @@ router.put('/:id', authenticateToken, async (req, res) => {
     if (notes !== undefined) updateData.notes = notes?.trim() || null;
     if (status !== undefined) updateData.status = status;
     if (contactId !== undefined) updateData.contactId = contactId || null;
+    if (companyId !== undefined) updateData.companyId = companyId || null;
+    if (dealId !== undefined) updateData.dealId = dealId || null;
+    if (streamId !== undefined) updateData.streamId = streamId || null;
+    if (projectId !== undefined) updateData.projectId = projectId || null;
+    if (eventId !== undefined) updateData.eventId = eventId || null;
 
     // Handle time updates with conflict checking
     if (startTime !== undefined || endTime !== undefined) {
@@ -488,7 +526,13 @@ router.put('/:id', authenticateToken, async (req, res) => {
               }
             }
           }
-        }
+        },
+        company: { select: { id: true, name: true } },
+        deal: { select: { id: true, title: true, value: true } },
+        stream: { select: { id: true, name: true } },
+        project: { select: { id: true, name: true } },
+        event: { select: { id: true, name: true } },
+        attendees: { include: { contact: { select: { id: true, firstName: true, lastName: true } } } }
       }
     });
 
@@ -555,7 +599,12 @@ router.get('/calendar/:year/:month', authenticateToken, async (req, res) => {
               }
             }
           }
-        }
+        },
+        company: { select: { id: true, name: true } },
+        deal: { select: { id: true, title: true, value: true } },
+        stream: { select: { id: true, name: true } },
+        project: { select: { id: true, name: true } },
+        event: { select: { id: true, name: true } }
       },
       orderBy: {
         startTime: 'asc'

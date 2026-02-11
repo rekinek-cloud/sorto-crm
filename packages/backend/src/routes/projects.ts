@@ -16,7 +16,10 @@ const createProjectSchema = z.object({
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
   streamId: z.string().uuid().optional(),
-  assignedToId: z.string().uuid().optional()
+  assignedToId: z.string().uuid().optional(),
+  contactId: z.string().uuid().optional(),
+  dealId: z.string().uuid().optional(),
+  eventId: z.string().uuid().optional()
 });
 
 const updateProjectSchema = createProjectSchema.partial().extend({
@@ -30,8 +33,11 @@ router.get('/', authenticateToken, async (req, res) => {
     const { 
       status, 
       priority, 
-      streamId, 
+      streamId,
       assignedToId,
+      contactId,
+      dealId,
+      eventId,
       page = '1',
       limit = '20',
       search
@@ -49,6 +55,9 @@ router.get('/', authenticateToken, async (req, res) => {
     if (priority) where.priority = priority;
     if (streamId) where.streamId = streamId;
     if (assignedToId) where.assignedToId = assignedToId;
+    if (contactId) where.contactId = contactId;
+    if (dealId) where.dealId = dealId;
+    if (eventId) where.eventId = eventId;
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -63,11 +72,15 @@ router.get('/', authenticateToken, async (req, res) => {
           stream: { select: { id: true, name: true, color: true } },
           createdBy: { select: { id: true, firstName: true, lastName: true } },
           assignedTo: { select: { id: true, firstName: true, lastName: true } },
+          contact: { select: { id: true, firstName: true, lastName: true } },
+          deal: { select: { id: true, title: true, value: true } },
+          event: { select: { id: true, name: true } },
+          milestones: { select: { id: true, name: true, dueDate: true, status: true } },
           tasks: {
-            select: { 
-              id: true, 
+            select: {
+              id: true,
               status: true,
-              title: true 
+              title: true
             },
             where: { status: { not: 'CANCELED' } }
           },
@@ -129,6 +142,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
         stream: true,
         createdBy: { select: { id: true, firstName: true, lastName: true } },
         assignedTo: { select: { id: true, firstName: true, lastName: true } },
+        contact: { select: { id: true, firstName: true, lastName: true } },
+        deal: { select: { id: true, title: true, value: true } },
+        event: { select: { id: true, name: true } },
+        milestones: { select: { id: true, name: true, dueDate: true, status: true } },
         tasks: {
           include: {
             context: true,
@@ -194,7 +211,11 @@ router.post('/', authenticateToken, validateRequest({ body: createProjectSchema 
       include: {
         stream: { select: { id: true, name: true, color: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
-        assignedTo: { select: { id: true, firstName: true, lastName: true } }
+        assignedTo: { select: { id: true, firstName: true, lastName: true } },
+        contact: { select: { id: true, firstName: true, lastName: true } },
+        deal: { select: { id: true, title: true, value: true } },
+        event: { select: { id: true, name: true } },
+        milestones: { select: { id: true, name: true, dueDate: true, status: true } }
       }
     });
 
@@ -241,7 +262,11 @@ router.put('/:id', authenticateToken, validateRequest({ body: updateProjectSchem
       include: {
         stream: { select: { id: true, name: true, color: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
-        assignedTo: { select: { id: true, firstName: true, lastName: true } }
+        assignedTo: { select: { id: true, firstName: true, lastName: true } },
+        contact: { select: { id: true, firstName: true, lastName: true } },
+        deal: { select: { id: true, title: true, value: true } },
+        event: { select: { id: true, name: true } },
+        milestones: { select: { id: true, name: true, dueDate: true, status: true } }
       }
     });
 

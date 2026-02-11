@@ -105,6 +105,16 @@ import weeklyReviewRoutes from './routes/weeklyReview';
 import streamHierarchyRoutes from './routes/streamHierarchy';
 import streamAccessRoutes from './routes/streamAccess';
 import communicationsRoutes from './routes/communications';
+// Extension routes (9 extensions)
+import notesRoutes from './routes/notes';
+import eventsRoutes from './routes/events';
+import milestonesRoutes from './routes/milestones';
+import contactRelationsRoutes from './routes/contactRelations';
+import healthScoreRoutes from './routes/healthScore';
+import clientIntelligenceRoutes from './routes/clientIntelligence';
+import dealStakeholdersRoutes from './routes/dealStakeholders';
+import dealCompetitorsRoutes from './routes/dealCompetitors';
+import clientProductsRoutes from './routes/clientProducts';
 
 const app = express();
 
@@ -284,6 +294,17 @@ apiRouter.use('/precise-goals', preciseGoalsRoutes); // Alias dla /goals
 apiRouter.use('/day-planner', dayPlannerRoutes);  // Day Planner (ex smartDayPlanner)
 apiRouter.use('/mailboxes', smartMailboxesRoutes);     // Skrzynki (ex smartMailboxes)
 apiRouter.use('/smart-mailboxes', smartMailboxesRoutes); // Smart Mailboxes
+
+// Extension routes (9 extensions - Universal Relations, Events, etc.)
+apiRouter.use('/notes', notesRoutes);                       // Notes - uniwersalne notatki
+apiRouter.use('/events', eventsRoutes);                     // Events - targi/eventy
+apiRouter.use('/milestones', milestonesRoutes);             // Milestones - kamienie milowe projektów
+apiRouter.use('/contact-relations', contactRelationsRoutes); // Contact Relations - mapa relacji
+apiRouter.use('/health-score', healthScoreRoutes);          // Health Score - zdrowie relacji
+apiRouter.use('/client-intelligence', clientIntelligenceRoutes); // Client Intelligence - wywiad
+apiRouter.use('/deal-stakeholders', dealStakeholdersRoutes); // Deal Stakeholders - mapa decyzji
+apiRouter.use('/deal-competitors', dealCompetitorsRoutes);   // Deal Competitors - konkurencja
+apiRouter.use('/client-products', clientProductsRoutes);     // Client Products - historia produktów
 
 // Aliasy dla kompatybilności wstecznej (deprecated)
 apiRouter.use('/gtdinbox', sourceRoutes);         // deprecated -> use /source

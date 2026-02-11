@@ -80,6 +80,13 @@ import {
   GitFork,
   Cube,
   Kanban,
+  Heart,
+  Compass,
+  MapPin,
+  Scroll,
+  Sword,
+  ShoppingBag,
+  Flag,
 } from 'phosphor-react';
 
 export interface NavItem {
@@ -166,6 +173,14 @@ export const streamsNavigation: NavItem[] = [
       { name: 'Pipeline', href: '/dashboard/pipeline', icon: Funnel, iconWeight: 'duotone' },
       { name: 'Transakcje', href: '/dashboard/deals', icon: Handshake, iconWeight: 'duotone' },
       { name: 'Pipeline Analytics', href: '/dashboard/analytics/pipeline', icon: ChartLine, iconWeight: 'duotone' },
+      { name: 'Eventy', href: '/dashboard/events', icon: MapPin, iconWeight: 'duotone' },
+      { name: 'Wywiad klienta', href: '/dashboard/client-intelligence', icon: Brain, iconWeight: 'duotone' },
+      { name: 'Zdrowie relacji', href: '/dashboard/health-score', icon: Heart, iconWeight: 'duotone' },
+      { name: 'Mapa decyzji', href: '/dashboard/decision-map', icon: Compass, iconWeight: 'duotone' },
+      { name: 'Konkurencja', href: '/dashboard/competition', icon: Sword, iconWeight: 'duotone' },
+      { name: 'Kamienie milowe', href: '/dashboard/milestones', icon: Flag, iconWeight: 'duotone' },
+      { name: 'Relacje kontaktów', href: '/dashboard/contact-relations', icon: UsersThree, iconWeight: 'duotone' },
+      { name: 'Produkty klienta', href: '/dashboard/client-products', icon: ShoppingBag, iconWeight: 'duotone' },
     ],
   },
 

@@ -12,7 +12,8 @@ import { GraphModal } from '@/components/graph/GraphModal';
 import ContactForm from '@/components/crm/ContactForm';
 import DealForm from '@/components/crm/DealForm';
 import { CommunicationPanel } from '@/components/crm/CommunicationPanel';
-import { 
+import NotesSection from '@/components/shared/NotesSection';
+import {
   UserIcon,
   PhoneIcon,
   EnvelopeIcon,
@@ -395,7 +396,7 @@ export default function ContactDetailsPage() {
                   const title = prompt('Task title:');
                   if (!title?.trim()) return;
                   try {
-                    await tasksApi.createTask({ title: title.trim() });
+                    await tasksApi.createTask({ title: title.trim(), contactId });
                     toast.success('Task created');
                     await loadContact();
                   } catch (err: any) {
@@ -434,6 +435,11 @@ export default function ContactDetailsPage() {
             )}
           </div>
         </div>
+      </div>
+
+      {/* Notes */}
+      <div className="bg-white rounded-lg shadow-sm border p-6">
+        <NotesSection entityType="CONTACT" entityId={contactId} />
       </div>
 
       {/* Communication Panel */}

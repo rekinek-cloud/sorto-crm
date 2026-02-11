@@ -127,6 +127,16 @@ model Organization {
   organizationModules organizationModule[]
   mcp_api_keys        mcp_api_keys[]
 
+  // Extension models
+  notes               Note[]
+  events              Event[]
+  contactRelations    ContactRelation[]
+  relationshipHealth  RelationshipHealth[]
+  healthAlerts        HealthAlert[]
+  clientIntelligence  ClientIntelligence[]
+  clientProducts      ClientProduct[]
+  clientProductStats  ClientProductStats[]
+
   @@map("organizations")
 }
 
@@ -223,6 +233,21 @@ model User {
   voice_responses          voiceResponse[]          @relation("UserVoiceResponses")
   voice_feedback           voiceFeedback[]          @relation("UserVoiceFeedback")
 
+  // Extension models
+  createdNotes             Note[]
+  meetingAttendees         MeetingAttendee[]
+  createdEvents            Event[]
+  milestoneResponsible     Milestone[]              @relation("MilestoneResponsible")
+  milestoneCreated         Milestone[]              @relation("MilestoneCreator")
+  contactRelationsCreated  ContactRelation[]
+  createdIntelligence      ClientIntelligence[]
+  dealStakeholdersCreated  DealStakeholder[]
+  dealCompetitorsCreated   DealCompetitor[]
+  dealLostAnalyses         DealLostAnalysis[]
+  eventTeamMembers         EventTeamMember[]
+  eventExpensesCreated     EventExpense[]
+  createdClientProducts    ClientProduct[]
+
   @@map("users")
 }
 
@@ -317,6 +342,9 @@ model Stream {
   flow_conversations_proposed flow_conversations[]    @relation("ProposedStream")
   flow_conversations_final    flow_conversations[]    @relation("FinalStream")
 
+  streamMeetings          Meeting[]
+  streamNotes             Note[]
+
   // AI Knowledge Base fields (for REFERENCE streams)
   aiSource             AiSource?
   aiConversationsCount Int?      @default(0) @map("ai_conversations_count")
@@ -393,7 +421,18 @@ model Task {
   parentTask                                               Task?                 @relation("TaskSubtasks", fields: [parentTaskId], references: [id])
   subtasks                                                 Task[]                @relation("TaskSubtasks")
   waitingFor                                               WaitingFor[]
+  contactId                                                String?
+  dealId                                                   String?
+  eventId                                                  String?
+  milestoneId                                              String?
+  contact                                                  Contact?              @relation(fields: [contactId], references: [id])
+  deal                                                     Deal?                 @relation(fields: [dealId], references: [id])
+  event                                                    Event?                @relation(fields: [eventId], references: [id])
+  milestone                                                Milestone?            @relation(fields: [milestoneId], references: [id])
+  taskNotes                                                Note[]
 
+  @@index([organizationId, contactId])
+  @@index([organizationId, dealId])
   @@map("tasks")
 }
 
@@ -438,6 +477,17 @@ model Project {
   // Flow Engine relations
   flow_automation_rules flow_automation_rules[]
 
+  contactId             String?
+  dealId                String?
+  eventId               String?
+  contact               Contact?              @relation(fields: [contactId], references: [id])
+  deal                  Deal?                 @relation(fields: [dealId], references: [id])
+  event                 Event?                @relation(fields: [eventId], references: [id])
+  milestones            Milestone[]
+  projectMeetings       Meeting[]
+  projectNotes          Note[]
+  clientProducts        ClientProduct[]
+
   @@map("projects")
 }
 
@@ -471,6 +521,15 @@ model Contact {
   next_actions      next_actions[]
   offers            Offer[]
   recurring_tasks   RecurringTask[]
+  tasks             Task[]
+  projects          Project[]
+  contactNotes      Note[]
+  meetingAttendees  MeetingAttendee[]
+  relationsFrom     ContactRelation[]     @relation("ContactFrom")
+  relationsTo       ContactRelation[]     @relation("ContactTo")
+  intelligence      ClientIntelligence[]  @relation("IntelSourceContact")
+  dealStakeholders  DealStakeholder[]
+  eventContacts     EventContact[]
 
   @@map("contacts")
 }
@@ -511,6 +570,11 @@ model Company {
   projects          Project[]
   recurring_tasks   RecurringTask[]
   tasks             Task[]
+  companyMeetings   Meeting[]             @relation("MeetingCompany")
+  companyNotes      Note[]
+  eventCompanies    EventCompany[]
+  clientProducts    ClientProduct[]
+  clientProductStats ClientProductStats?
 
   @@map("companies")
 }
@@ -540,6 +604,15 @@ model Deal {
   messages          Message[]
   offers            Offer[]
   recurring_tasks   RecurringTask[]
+  dealTasks         Task[]
+  dealProjects      Project[]
+  dealMeetings      Meeting[]             @relation("MeetingDeal")
+  dealNotes         Note[]
+  stakeholders      DealStakeholder[]
+  competitors       DealCompetitor[]
+  lostAnalysis      DealLostAnalysis?
+  eventCompanies    EventCompany[]
+  clientProducts    ClientProduct[]
 
   @@map("deals")
 }
@@ -577,10 +650,23 @@ model Meeting {
   contactId      String?
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
+  companyId      String?
+  dealId         String?
+  streamId       String?
+  projectId      String?
+  eventId        String?
   activities     activities[]
   contact        Contact?      @relation(fields: [contactId], references: [id])
+  company        Company?      @relation("MeetingCompany", fields: [companyId], references: [id])
+  deal           Deal?         @relation("MeetingDeal", fields: [dealId], references: [id])
+  stream         Stream?       @relation(fields: [streamId], references: [id])
+  project        Project?      @relation(fields: [projectId], references: [id])
+  event          Event?        @relation(fields: [eventId], references: [id])
   organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   organizedBy    User          @relation(fields: [organizedById], references: [id])
+  attendees      MeetingAttendee[]
+  meetingNotes   Note[]
+  contactRelations ContactRelation[]
 
   @@map("meetings")
 }
@@ -1668,6 +1754,7 @@ model Product {
   offerItems     OfferItem[]
   orderItems     OrderItem[]
   organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clientProducts ClientProduct[]
 
   @@map("products")
 }
@@ -1700,6 +1787,7 @@ model Service {
   offerItems            OfferItem[]
   orderItems            OrderItem[]
   organization          Organization          @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  clientProducts        ClientProduct[]
 
   @@map("services")
 }
@@ -4708,4 +4796,643 @@ model voiceFeedback {
   @@index([userId])
   @@index([responseId])
   @@map("voice_feedback")
+}
+
+// =============================================
+// EXTENSION MODELS
+// =============================================
+
+// Universal Notes
+model Note {
+  id             String       @id @default(uuid())
+  organizationId String
+  content        String       @db.Text
+  streamId       String?
+  projectId      String?
+  taskId         String?
+  companyId      String?
+  contactId      String?
+  dealId         String?
+  meetingId      String?
+  eventId        String?
+  isPinned       Boolean      @default(false)
+  createdById    String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  stream         Stream?      @relation(fields: [streamId], references: [id])
+  project        Project?     @relation(fields: [projectId], references: [id])
+  task           Task?        @relation(fields: [taskId], references: [id])
+  company        Company?     @relation(fields: [companyId], references: [id])
+  contact        Contact?     @relation(fields: [contactId], references: [id])
+  deal           Deal?        @relation(fields: [dealId], references: [id])
+  meeting        Meeting?     @relation(fields: [meetingId], references: [id])
+  event          Event?       @relation(fields: [eventId], references: [id])
+  createdBy      User         @relation(fields: [createdById], references: [id])
+
+  @@index([organizationId, companyId])
+  @@index([organizationId, contactId])
+  @@map("notes")
+}
+
+// Meeting Attendees
+model MeetingAttendee {
+  id            String          @id @default(uuid())
+  meetingId     String
+  contactId     String?
+  userId        String?
+  externalEmail String?
+  status        AttendeeStatus  @default(PENDING)
+
+  meeting       Meeting         @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  contact       Contact?        @relation(fields: [contactId], references: [id])
+  user          User?           @relation(fields: [userId], references: [id])
+
+  @@map("meeting_attendees")
+}
+
+enum AttendeeStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+  TENTATIVE
+}
+
+// Events / Trade Shows
+model Event {
+  id             String       @id @default(uuid())
+  organizationId String
+  name           String
+  description    String?
+  eventType      EventType    @default(OTHER)
+  venue          String?
+  city           String?
+  country        String?
+  address        String?
+  startDate      DateTime
+  endDate        DateTime
+  setupDate      DateTime?
+  teardownDate   DateTime?
+  status         EventStatus  @default(PLANNING)
+  budgetPlanned  Float?
+  budgetActual   Float?
+  currency       String       @default("EUR")
+  goals          Json?
+  results        Json?
+  rating         Float?
+  retrospective  String?
+  createdById    String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy      User             @relation(fields: [createdById], references: [id])
+  companies      EventCompany[]
+  contacts       EventContact[]
+  team           EventTeamMember[]
+  tasks          Task[]
+  projects       Project[]
+  meetings       Meeting[]
+  expenses       EventExpense[]
+  eventNotes     Note[]
+  contactRelations ContactRelation[]
+
+  @@index([organizationId, startDate])
+  @@map("events")
+}
+
+enum EventType {
+  TRADE_SHOW
+  CONFERENCE
+  WEBINAR
+  WORKSHOP
+  NETWORKING
+  COMPANY_EVENT
+  OTHER
+}
+
+enum EventStatus {
+  DRAFT
+  PLANNING
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+// Event Companies
+model EventCompany {
+  id             String                  @id @default(uuid())
+  eventId        String
+  companyId      String
+  role           EventParticipantRole    @default(CLIENT)
+  boothNumber    String?
+  boothSize      String?
+  status         EventParticipantStatus  @default(CONFIRMED)
+  dealValue      Float?
+  dealId         String?
+  notes          String?
+  specialRequests String?
+
+  event          Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  company        Company  @relation(fields: [companyId], references: [id])
+  deal           Deal?    @relation(fields: [dealId], references: [id])
+
+  @@unique([eventId, companyId])
+  @@map("event_companies")
+}
+
+// Event Contacts
+model EventContact {
+  id                 String    @id @default(uuid())
+  eventId            String
+  contactId          String
+  plannedMeetingTime DateTime?
+  meetingPriority    Priority  @default(MEDIUM)
+  meetingNotes       String?
+  metDuringEvent     Boolean   @default(false)
+  followUpNeeded     Boolean   @default(false)
+
+  event              Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  contact            Contact   @relation(fields: [contactId], references: [id])
+
+  @@unique([eventId, contactId])
+  @@map("event_contacts")
+}
+
+// Event Team Members
+model EventTeamMember {
+  id                 String    @id @default(uuid())
+  eventId            String
+  userId             String
+  role               String?
+  responsibilities   String?
+  arrivalDate        DateTime?
+  departureDate      DateTime?
+  hotelName          String?
+  hotelConfirmation  String?
+  transportType      String?
+  transportDetails   String?
+  phoneNumber        String?
+  assignedCompanyIds String[]  @default([])
+
+  event              Event     @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user               User      @relation(fields: [userId], references: [id])
+
+  @@unique([eventId, userId])
+  @@map("event_team_members")
+}
+
+// Event Expenses
+model EventExpense {
+  id            String          @id @default(uuid())
+  eventId       String
+  category      ExpenseCategory
+  description   String
+  amount        Float
+  currency      String          @default("EUR")
+  status        ExpenseStatus   @default(PLANNED)
+  paidAt        DateTime?
+  invoiceNumber String?
+  receiptUrl    String?
+  createdById   String
+  createdAt     DateTime        @default(now())
+
+  event         Event           @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdBy     User            @relation(fields: [createdById], references: [id])
+
+  @@map("event_expenses")
+}
+
+enum EventParticipantRole {
+  CLIENT
+  PROSPECT
+  PARTNER
+  SPONSOR
+  EXHIBITOR
+  VISITOR
+}
+
+enum EventParticipantStatus {
+  INVITED
+  CONFIRMED
+  TENTATIVE
+  DECLINED
+  ATTENDED
+  NO_SHOW
+}
+
+enum ExpenseCategory {
+  BOOTH
+  HOTEL
+  TRANSPORT
+  CATERING
+  MATERIALS
+  GIFTS
+  MARKETING
+  OTHER
+}
+
+enum ExpenseStatus {
+  PLANNED
+  APPROVED
+  PAID
+  REJECTED
+}
+
+// Milestones
+model Milestone {
+  id            String          @id @default(uuid())
+  projectId     String
+  name          String
+  description   String?
+  dueDate       DateTime
+  completedAt   DateTime?
+  status        MilestoneStatus @default(PENDING)
+  isCritical    Boolean         @default(false)
+  dependsOnIds  String[]        @default([])
+  responsibleId String?
+  createdById   String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  project       Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  responsible   User?           @relation("MilestoneResponsible", fields: [responsibleId], references: [id])
+  createdBy     User            @relation("MilestoneCreator", fields: [createdById], references: [id])
+  tasks         Task[]
+
+  @@index([projectId, dueDate])
+  @@map("milestones")
+}
+
+enum MilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  DELAYED
+  BLOCKED
+}
+
+// Contact Relations
+model ContactRelation {
+  id              String              @id @default(uuid())
+  organizationId  String
+  fromContactId   String
+  toContactId     String
+  relationType    ContactRelationType
+  strength        Int                 @default(3)
+  isBidirectional Boolean             @default(true)
+  notes           String?
+  discoveredAt    DateTime            @default(now())
+  discoveredVia   String?
+  eventId         String?
+  meetingId       String?
+  createdById     String
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+
+  organization    Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  fromContact     Contact             @relation("ContactFrom", fields: [fromContactId], references: [id], onDelete: Cascade)
+  toContact       Contact             @relation("ContactTo", fields: [toContactId], references: [id], onDelete: Cascade)
+  event           Event?              @relation(fields: [eventId], references: [id])
+  meeting         Meeting?            @relation(fields: [meetingId], references: [id])
+  createdBy       User                @relation(fields: [createdById], references: [id])
+
+  @@unique([fromContactId, toContactId, relationType])
+  @@index([organizationId])
+  @@map("contact_relations")
+}
+
+enum ContactRelationType {
+  REPORTS_TO
+  WORKS_WITH
+  KNOWS
+  REFERRED_BY
+  FAMILY
+  TECHNICAL
+  FORMER_COLLEAGUE
+  MENTOR
+  PARTNER
+}
+
+// Health Score
+model RelationshipHealth {
+  id              String           @id @default(uuid())
+  organizationId  String
+  entityType      HealthEntityType
+  entityId        String
+  healthScore     Int              @default(50)
+  trend           HealthTrend      @default(STABLE)
+  trendChange     Int              @default(0)
+  recencyScore    Int              @default(50)
+  frequencyScore  Int              @default(50)
+  responseScore   Int              @default(50)
+  sentimentScore  Int              @default(50)
+  engagementScore Int              @default(50)
+  riskLevel       RiskLevel        @default(LOW)
+  riskFactors     Json             @default("[]")
+  lastContactAt   DateTime?
+  lastContactType String?
+  lastContactById String?
+  calculatedAt    DateTime         @default(now())
+  nextCheckAt     DateTime?
+
+  organization    Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  history         HealthHistory[]
+
+  @@unique([entityType, entityId])
+  @@index([organizationId, riskLevel])
+  @@index([organizationId, healthScore])
+  @@map("relationship_health")
+}
+
+model HealthHistory {
+  id             String             @id @default(uuid())
+  healthRecordId String
+  healthScore    Int
+  recencyScore   Int                @default(0)
+  frequencyScore Int                @default(0)
+  responseScore  Int                @default(0)
+  sentimentScore Int                @default(0)
+  engagementScore Int               @default(0)
+  note           String?
+  recordedAt     DateTime           @default(now())
+
+  healthRecord   RelationshipHealth @relation(fields: [healthRecordId], references: [id], onDelete: Cascade)
+
+  @@index([healthRecordId, recordedAt])
+  @@map("health_history")
+}
+
+model HealthAlert {
+  id             String           @id @default(uuid())
+  organizationId String
+  entityType     HealthEntityType
+  entityId       String
+  alertType      HealthAlertType
+  severity       AlertSeverity
+  title          String
+  message        String
+  suggestion     String?
+  isRead         Boolean          @default(false)
+  isDismissed    Boolean          @default(false)
+  isActioned     Boolean          @default(false)
+  actionTaken    String?
+  actionedAt     DateTime?
+  actionedById   String?
+  createdAt      DateTime         @default(now())
+  expiresAt      DateTime?
+
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId, isRead, severity])
+  @@map("health_alerts")
+}
+
+enum HealthEntityType {
+  COMPANY
+  CONTACT
+  DEAL
+}
+
+enum HealthTrend {
+  RISING
+  STABLE
+  DECLINING
+  CRITICAL
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum HealthAlertType {
+  HEALTH_DROP
+  NO_CONTACT
+  VIP_NEGLECTED
+  DEAL_STALLED
+  NEGATIVE_SENTIMENT
+  HEALTH_RECOVERED
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+// Client Intelligence
+model ClientIntelligence {
+  id             String          @id @default(uuid())
+  organizationId String
+  entityType     IntelEntityType
+  entityId       String
+  category       IntelCategory
+  content        String
+  importance     Int             @default(2)
+  source         String?
+  sourceDate     DateTime?
+  sourceContactId String?
+  isPrivate      Boolean         @default(false)
+  eventDate      DateTime?
+  isRecurring    Boolean         @default(false)
+  createdById    String
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy      User            @relation(fields: [createdById], references: [id])
+  sourceContact  Contact?        @relation("IntelSourceContact", fields: [sourceContactId], references: [id])
+
+  @@index([organizationId, entityType, entityId])
+  @@index([category])
+  @@map("client_intelligence")
+}
+
+enum IntelEntityType {
+  COMPANY
+  CONTACT
+}
+
+enum IntelCategory {
+  LIKES
+  DISLIKES
+  PREFERENCE
+  FACT
+  WARNING
+  TIP
+  IMPORTANT_DATE
+  DECISION_PROCESS
+  COMMUNICATION
+  SUCCESS
+}
+
+// Deal Stakeholders (Decision Map)
+model DealStakeholder {
+  id                  String          @id @default(uuid())
+  dealId              String
+  contactId           String
+  role                StakeholderRole
+  isChampion          Boolean         @default(false)
+  influence           Int             @default(50)
+  sentiment           Sentiment       @default(UNKNOWN)
+  objections          String?
+  motivations         String?
+  winStrategy         String?
+  hasApproved         Boolean         @default(false)
+  approvedAt          DateTime?
+  lastInteractionAt   DateTime?
+  lastInteractionNote String?
+  createdById         String
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
+
+  deal                Deal            @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  contact             Contact         @relation(fields: [contactId], references: [id])
+  createdBy           User            @relation(fields: [createdById], references: [id])
+
+  @@unique([dealId, contactId])
+  @@map("deal_stakeholders")
+}
+
+enum StakeholderRole {
+  DECISION_MAKER
+  INFLUENCER
+  CHAMPION
+  BLOCKER
+  USER_ROLE
+  TECHNICAL
+  FINANCIAL
+  LEGAL
+  PROCUREMENT
+}
+
+enum Sentiment {
+  POSITIVE
+  NEUTRAL
+  SKEPTICAL
+  NEGATIVE
+  UNKNOWN
+}
+
+// Deal Competitors
+model DealCompetitor {
+  id                String          @id @default(uuid())
+  dealId            String
+  competitorName    String
+  competitorWebsite String?
+  estimatedPrice    Float?
+  priceSource       String?
+  currency          String          @default("EUR")
+  threatLevel       ThreatLevel     @default(MEDIUM)
+  theirStrengths    String?
+  theirWeaknesses   String?
+  ourAdvantages     String?
+  status            CompetitorStatus @default(ACTIVE)
+  eliminatedReason  String?
+  intelNotes        String?
+  intelSource       String?
+  intelDate         DateTime?
+  createdById       String
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+
+  deal              Deal            @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  createdBy         User            @relation(fields: [createdById], references: [id])
+
+  @@map("deal_competitors")
+}
+
+// Deal Lost Analysis
+model DealLostAnalysis {
+  id               String    @id @default(uuid())
+  dealId           String    @unique
+  winnerName       String
+  winnerPrice      Float?
+  lostReasons      Json      @default("[]")
+  lessonsLearned   String?
+  improvementAreas String?
+  followUpDate     DateTime?
+  followUpDone     Boolean   @default(false)
+  followUpNotes    String?
+  analyzedById     String
+  analyzedAt       DateTime  @default(now())
+
+  deal             Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  analyzedBy       User      @relation(fields: [analyzedById], references: [id])
+
+  @@map("deal_lost_analyses")
+}
+
+enum ThreatLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum CompetitorStatus {
+  ACTIVE
+  ELIMINATED
+  WON
+  UNKNOWN
+}
+
+// Client Products (Order History)
+model ClientProduct {
+  id                String       @id @default(uuid())
+  organizationId    String
+  companyId         String
+  productId         String?
+  serviceId         String?
+  customName        String?
+  customDescription String?
+  deliveredAt       DateTime
+  value             Float
+  currency          String       @default("EUR")
+  rating            Int?
+  feedback          String?
+  dealId            String?
+  projectId         String?
+  invoiceId         String?
+  createdById       String
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  company           Company      @relation(fields: [companyId], references: [id])
+  product           Product?     @relation(fields: [productId], references: [id])
+  service           Service?     @relation(fields: [serviceId], references: [id])
+  deal              Deal?        @relation(fields: [dealId], references: [id])
+  project           Project?     @relation(fields: [projectId], references: [id])
+  createdBy         User         @relation(fields: [createdById], references: [id])
+
+  @@index([organizationId, companyId])
+  @@map("client_products")
+}
+
+// Client Product Stats
+model ClientProductStats {
+  id                 String       @id @default(uuid())
+  organizationId     String
+  companyId          String       @unique
+  totalValue         Float        @default(0)
+  orderCount         Int          @default(0)
+  averageValue       Float        @default(0)
+  averageRating      Float?
+  yearOverYearGrowth Float?
+  lastOrderAt        DateTime?
+  firstOrderAt       DateTime?
+  topProducts        Json?
+  seasonality        Json?
+  calculatedAt       DateTime     @default(now())
+
+  organization       Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  company            Company      @relation(fields: [companyId], references: [id])
+
+  @@map("client_product_stats")
 }
