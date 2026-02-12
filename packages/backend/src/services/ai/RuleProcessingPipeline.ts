@@ -55,6 +55,23 @@ export interface ExtractedTask {
   dueIndicator?: string;
 }
 
+export interface RuleMatchResult {
+  matched: boolean;
+  ruleId?: string;
+  ruleName?: string;
+  classification?: string;
+  confidence?: number;
+  actions?: {
+    forceClassification?: string;
+    setPriority?: string;
+    reject?: boolean;
+    skipAI?: boolean;
+    addToRag?: boolean;
+    addToFlow?: boolean;
+    list?: { action: string; target: string };
+  };
+}
+
 export interface ProcessingResult {
   entityType: string;
   entityId: string;
@@ -62,6 +79,7 @@ export interface ProcessingResult {
     crmCheck: CRMCheckResult;
     listCheck: ListCheckResult;
     patternCheck: PatternCheckResult;
+    ruleMatch?: RuleMatchResult;
     aiClassification?: AIClassResult;
   };
   finalClass: string;
@@ -161,7 +179,14 @@ export class RuleProcessingPipeline {
         ]);
       }
 
+      // Stage 2.5: AI Rules (from /dashboard/ai-rules)
+      let ruleMatch: RuleMatchResult = { matched: false };
+      if (!crmCheck.matched && !listCheck.matched && !patternCheck.matched) {
+        ruleMatch = await this.applyAIRules(organizationId, entityData, senderEmail, senderDomain);
+      }
+
       // Determine final classification
+      // Priority: CRM > Lists > Patterns > AI Rules > AI Classification
       let finalClass: string;
       let finalConfidence: number;
       let aiResult: AIClassResult | undefined;
@@ -176,8 +201,11 @@ export class RuleProcessingPipeline {
       } else if (patternCheck.matched) {
         finalClass = patternCheck.classification || 'NEWSLETTER';
         finalConfidence = patternCheck.confidence;
+      } else if (ruleMatch.matched && ruleMatch.actions?.forceClassification) {
+        finalClass = ruleMatch.actions.forceClassification;
+        finalConfidence = ruleMatch.confidence || 0.85;
       } else {
-        // Stage 3: AI Classification
+        // Stage 3: AI Classification (only if no rules matched)
         aiResult = await this.classifyWithAI(organizationId, entityData);
         if (aiResult) {
           finalClass = aiResult.confidence >= 0.4 ? aiResult.classification : 'UNKNOWN';
@@ -186,7 +214,6 @@ export class RuleProcessingPipeline {
             extractedTasks = aiResult.extraction.extractedTasks;
           }
         } else {
-          // Fallback when no AI provider available
           finalClass = 'UNKNOWN';
           finalConfidence = 0;
         }
@@ -225,27 +252,40 @@ export class RuleProcessingPipeline {
       let addedToFlow = false;
       let flowItemId: string | null = null;
 
-      if (finalClass === 'BUSINESS') {
-        // BUSINESS -> RAG + Flow
+      // Apply rule-based priority override
+      if (ruleMatch.matched && ruleMatch.actions?.setPriority) {
+        actionsExecuted.push(`SET_PRIORITY:${ruleMatch.actions.setPriority}`);
+      }
+
+      if (finalClass === 'BUSINESS' || ruleMatch.actions?.addToRag) {
+        // BUSINESS or rule-forced -> RAG
         addedToRag = await this.addToRAG(organizationId, entityType, entityId, entityData, finalClass);
         if (addedToRag) actionsExecuted.push('ADDED_TO_RAG');
+      }
 
+      if (finalClass === 'BUSINESS' || ruleMatch.actions?.addToFlow) {
+        // BUSINESS or rule-forced -> Flow
         const flowResult = await this.addToFlow(organizationId, entityType, entityId, entityData);
         if (flowResult) {
           addedToFlow = true;
           flowItemId = flowResult;
           actionsExecuted.push('ADDED_TO_FLOW');
         }
-      } else if (finalClass === 'NEWSLETTER') {
-        // NEWSLETTER -> RAG + suggest blacklist
-        addedToRag = await this.addToRAG(organizationId, entityType, entityId, entityData, finalClass);
-        if (addedToRag) actionsExecuted.push('ADDED_TO_RAG');
+      }
 
+      if (finalClass === 'NEWSLETTER' || ruleMatch.actions?.list?.action === 'SUGGEST_BLACKLIST') {
+        // NEWSLETTER or rule-forced -> suggest blacklist
+        if (!addedToRag) {
+          addedToRag = await this.addToRAG(organizationId, entityType, entityId, entityData, finalClass);
+          if (addedToRag) actionsExecuted.push('ADDED_TO_RAG');
+        }
         if (senderDomain && !FREE_EMAIL_DOMAINS.has(senderDomain)) {
           await this.suggestBlacklist(organizationId, senderDomain, senderEmail, finalConfidence);
           actionsExecuted.push('SUGGESTED_BLACKLIST');
         }
-      } else if (finalClass === 'SPAM') {
+      }
+
+      if (finalClass === 'SPAM' || ruleMatch.actions?.reject) {
         // SPAM -> ignore + auto-blacklist if confidence > 90%
         actionsExecuted.push('IGNORED_SPAM');
 
@@ -280,7 +320,7 @@ export class RuleProcessingPipeline {
       await this.logExecution(organizationId, entityType, entityId, {
         finalClass,
         finalConfidence,
-        stages: { crmCheck: crmCheck.matched, listCheck: listCheck.matched, patternCheck: patternCheck.matched, aiUsed: !!aiResult },
+        stages: { crmCheck: crmCheck.matched, listCheck: listCheck.matched, patternCheck: patternCheck.matched, ruleMatch: ruleMatch.matched, aiUsed: !!aiResult },
         actionsExecuted,
         executionTime: Date.now() - startTime,
       });
@@ -292,6 +332,7 @@ export class RuleProcessingPipeline {
           crmCheck,
           listCheck,
           patternCheck,
+          ruleMatch: ruleMatch.matched ? ruleMatch : undefined,
           aiClassification: aiResult,
         },
         finalClass,
@@ -514,6 +555,156 @@ export class RuleProcessingPipeline {
     }
 
     return { matched: false, confidence: 0 };
+  }
+
+  // ===========================================================================
+  // Stage 2.5: AI Rules (from /dashboard/ai-rules)
+  // ===========================================================================
+
+  private async applyAIRules(
+    organizationId: string,
+    entityData: EntityData,
+    senderEmail: string,
+    senderDomain: string
+  ): Promise<RuleMatchResult> {
+    try {
+      const rules = await this.prisma.ai_rules.findMany({
+        where: {
+          organizationId,
+          status: 'ACTIVE',
+          triggerType: 'MESSAGE_RECEIVED',
+          dataType: { in: ['EMAIL', 'ALL'] },
+        },
+        orderBy: { priority: 'desc' },
+      });
+
+      if (rules.length === 0) return { matched: false };
+
+      for (const rule of rules) {
+        const conditions = rule.triggerConditions as any;
+        const matched = this.evaluateRuleConditions(conditions, entityData, senderEmail, senderDomain);
+
+        if (matched) {
+          const actions = rule.actions as any || {};
+          logger.info(`[AIRules] Rule "${rule.name}" matched for ${senderEmail}`, {
+            ruleId: rule.id, classification: actions.forceClassification,
+          });
+
+          // Update execution stats (fire-and-forget)
+          this.prisma.ai_rules.update({
+            where: { id: rule.id },
+            data: {
+              executionCount: { increment: 1 },
+              successCount: { increment: 1 },
+              lastExecuted: new Date(),
+            },
+          }).catch(() => {});
+
+          // Log to ai_executions (fire-and-forget)
+          this.prisma.ai_executions.create({
+            data: {
+              id: `exec-rule-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
+              inputData: { senderEmail, subject: entityData.subject },
+              promptSent: `Rule: ${rule.name}`,
+              responseReceived: actions.forceClassification || 'matched',
+              parsedOutput: actions,
+              status: 'SUCCESS',
+              executionTime: 0,
+              actionsExecuted: Object.keys(actions),
+              createdAt: new Date(),
+              updatedAt: new Date(),
+              ai_rules: { connect: { id: rule.id } },
+              organizations: { connect: { id: organizationId } },
+            },
+          }).catch(() => {});
+
+          return {
+            matched: true,
+            ruleId: rule.id,
+            ruleName: rule.name,
+            classification: actions.forceClassification,
+            confidence: 0.85,
+            actions: {
+              forceClassification: actions.forceClassification,
+              setPriority: actions.setPriority,
+              reject: actions.reject,
+              skipAI: actions.skipAI,
+              addToRag: actions.addToRag,
+              addToFlow: actions.addToFlow,
+              list: actions.list,
+            },
+          };
+        }
+      }
+
+      return { matched: false };
+    } catch (error) {
+      logger.warn('[AIRules] Error applying rules:', error);
+      return { matched: false };
+    }
+  }
+
+  private evaluateRuleConditions(
+    triggerConditions: any,
+    entityData: EntityData,
+    senderEmail: string,
+    senderDomain: string
+  ): boolean {
+    if (!triggerConditions) return true;
+
+    const conditions = triggerConditions.conditions;
+    if (!conditions || !Array.isArray(conditions) || conditions.length === 0) {
+      return true; // Empty conditions = always match (e.g., CRM Protection rule)
+    }
+
+    const op = (triggerConditions.operator || 'AND').toUpperCase();
+
+    const results = conditions.map((cond: any) => {
+      const fieldValue = this.getRuleFieldValue(cond.field, entityData, senderEmail, senderDomain);
+      if (fieldValue === undefined || fieldValue === null) return false;
+      return this.evaluateRuleOperator(cond.operator, String(fieldValue).toLowerCase(), cond.value);
+    });
+
+    return op === 'OR' ? results.some(Boolean) : results.every(Boolean);
+  }
+
+  private getRuleFieldValue(
+    field: string, entityData: EntityData, senderEmail: string, senderDomain: string
+  ): any {
+    switch (field) {
+      case 'from': case 'senderEmail': return senderEmail;
+      case 'fromDomain': case 'domain': return senderDomain;
+      case 'subject': return entityData.subject || '';
+      case 'body': case 'content': return entityData.body || entityData.content || '';
+      case 'senderName': return entityData.senderName || '';
+      default: return (entityData as any)[field];
+    }
+  }
+
+  private evaluateRuleOperator(operator: string, fieldValue: string, target: any): boolean {
+    const targets = Array.isArray(target) ? target : [target];
+    const lowerTargets = targets.map((t: any) => String(t).toLowerCase());
+
+    switch (operator) {
+      case 'contains':
+        return lowerTargets.some(t => fieldValue.includes(t));
+      case 'equals':
+        return lowerTargets.some(t => fieldValue === t);
+      case 'startsWith':
+        return lowerTargets.some(t => fieldValue.startsWith(t));
+      case 'endsWith':
+        return lowerTargets.some(t => fieldValue.endsWith(t));
+      case 'regex':
+        return lowerTargets.some(t => { try { return new RegExp(t, 'i').test(fieldValue); } catch { return false; } });
+      case 'in':
+        return lowerTargets.includes(fieldValue);
+      case 'notIn':
+        return !lowerTargets.includes(fieldValue);
+      case 'exists':
+        return fieldValue !== '';
+      default:
+        return false;
+    }
   }
 
   // ===========================================================================
