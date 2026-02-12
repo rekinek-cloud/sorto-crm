@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Building2, ChevronDown, Check } from 'lucide-react';
 import { useCompanyContext } from '@/hooks/useCompanyContext';
 
-export default function CompanySwitcher() {
+export function CompanySwitcher() {
   const { organizations, activeOrganization, switchOrganization, isLoading } = useCompanyContext();
   const [open, setOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
