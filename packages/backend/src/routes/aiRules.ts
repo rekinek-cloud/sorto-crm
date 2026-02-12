@@ -144,6 +144,7 @@ function mapRuleToFrontend(rule: any): any {
     aiPrompt: rule.aiPrompt || '',
     aiSystemPrompt: rule.aiSystemPrompt || '',
     aiModel: rule.modelId || '',
+    aiModelName: rule.ai_models?.name || '',
     isSystem: rule.isSystem || false,
     createdBy: rule.createdBy || null,
     createdAt: rule.createdAt.toISOString(),
@@ -184,6 +185,7 @@ router.get('/',
 
       const dbRules = await prisma.ai_rules.findMany({
         where,
+        include: { ai_models: true },
         orderBy: [{ priority: 'desc' }, { createdAt: 'desc' }],
       });
 
@@ -211,6 +213,7 @@ router.get('/:id',
     try {
       const rule = await prisma.ai_rules.findFirst({
         where: { id: req.params.id, organizationId: req.user!.organizationId },
+        include: { ai_models: true },
       });
 
       if (!rule) throw new AppError('Reguła nie znaleziona', 404);
@@ -335,12 +338,23 @@ router.put('/:id',
       if (d.actions !== undefined) updateFields.actions = d.actions;
       if (d.aiPrompt !== undefined) updateFields.aiPrompt = d.aiPrompt;
       if (d.aiSystemPrompt !== undefined) updateFields.aiSystemPrompt = d.aiSystemPrompt;
-      if (d.modelId !== undefined) updateFields.modelId = d.modelId || null;
+      if (d.modelId !== undefined) {
+        let resolvedModelId = d.modelId || null;
+        // If modelId looks like a name (not UUID), resolve to UUID
+        if (resolvedModelId && !resolvedModelId.match(/^[0-9a-f]{8}-/)) {
+          const model = await prisma.ai_models.findFirst({
+            where: { name: resolvedModelId },
+          });
+          resolvedModelId = model?.id || null;
+        }
+        updateFields.modelId = resolvedModelId;
+      }
       updateFields.updatedAt = new Date();
 
       const dbRule = await prisma.ai_rules.update({
         where: { id },
         data: updateFields,
+        include: { ai_models: true },
       });
 
       logger.info(`AI rule updated: ${id} by ${req.user!.email}`);

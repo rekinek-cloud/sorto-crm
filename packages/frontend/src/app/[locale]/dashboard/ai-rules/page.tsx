@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { logger } from '@/lib/logger';
 import { toast } from 'react-hot-toast';
@@ -146,6 +146,7 @@ function normalizeRule(rule: any): AIRule {
 export default function AIRulesPage() {
   // Main tab from URL
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>(
     (searchParams?.get('tab') as TabType) || 'rules'
   );
@@ -594,7 +595,10 @@ export default function AIRulesPage() {
                                 )}
                               </button>
                               <div>
-                                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                                <h3
+                                  onClick={() => router.push(`/dashboard/ai-rules/${rule.id}`)}
+                                  className="text-lg font-semibold text-slate-900 dark:text-slate-100 hover:text-purple-600 dark:hover:text-purple-400 cursor-pointer"
+                                >
                                   {rule.name}
                                 </h3>
                                 <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
@@ -602,40 +606,34 @@ export default function AIRulesPage() {
                                 </p>
                               </div>
                             </div>
-                            <div className="flex items-center space-x-4 mt-3">
-                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                                {(() => {
-                                  const mod = modules.find(
-                                    (m) => m.value === rule.module
-                                  );
-                                  const ModIcon = mod?.icon || Sparkles;
-                                  return (
-                                    <ModIcon className="w-3 h-3 mr-1 inline" />
-                                  );
-                                })()}
-                                {
-                                  modules.find((m) => m.value === rule.module)
-                                    ?.label
-                                }
+                            <div className="flex items-center flex-wrap gap-2 mt-3">
+                              {rule.category && (
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  rule.category === 'FLOW_ANALYSIS'
+                                    ? 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400'
+                                    : rule.category === 'CLASSIFICATION'
+                                      ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                                      : 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-400'
+                                }`}>
+                                  {rule.category}
+                                </span>
+                              )}
+                              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400">
+                                {rule.dataType || 'ALL'}
                               </span>
-                              <span
-                                className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                  rule.trigger === 'automatic'
-                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
-                                    : rule.trigger === 'manual'
-                                      ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400'
-                                      : 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400'
-                                }`}
-                              >
-                                {rule.trigger === 'automatic'
-                                  ? 'Automatyczna'
-                                  : rule.trigger === 'manual'
-                                    ? 'Reczna'
-                                    : 'Oba'}
-                              </span>
+                              {rule.aiModelName && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                  {rule.aiModelName}
+                                </span>
+                              )}
+                              {rule.isSystem && (
+                                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                                  <ShieldAlert className="w-3 h-3 mr-1" /> Systemowa
+                                </span>
+                              )}
                               <span className="text-xs text-slate-500 dark:text-slate-400">
-                                Wykonana {rule.executionCount} razy -{' '}
-                                {rule.successRate}% sukces
+                                Wykonana {rule.executionCount || 0} razy -{' '}
+                                {rule.successRate || 0}% sukces
                               </span>
                             </div>
                           </div>
@@ -652,8 +650,9 @@ export default function AIRulesPage() {
                               <div className="w-11 h-6 bg-slate-200 dark:bg-slate-600 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 dark:peer-focus:ring-purple-800 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
                             </label>
                             <button
-                              onClick={() => setEditingRule(rule)}
+                              onClick={() => router.push(`/dashboard/ai-rules/${rule.id}`)}
                               className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+                              title="Edytuj regule"
                             >
                               <Pencil className="w-5 h-5" />
                             </button>
@@ -731,16 +730,34 @@ export default function AIRulesPage() {
                                 </div>
                               </div>
                             </div>
+                            {rule.aiModelName && (
+                              <div className="mt-4">
+                                <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">
+                                  Model AI:
+                                </h4>
+                                <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                                  {rule.aiModelName}
+                                </span>
+                              </div>
+                            )}
                             {rule.aiPrompt && (
                               <div className="mt-4">
                                 <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">
                                   Prompt AI:
                                 </h4>
-                                <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 text-sm text-slate-600 dark:text-slate-400 font-mono">
-                                  {(Array.isArray(rule.actions) && rule.actions.find(
-                                    (a: any) => a.type === 'ai-analysis'
-                                  )?.config?.prompt) || rule.aiPrompt}
-                                </div>
+                                <pre className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 text-sm text-slate-600 dark:text-slate-400 font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">
+                                  {rule.aiPrompt}
+                                </pre>
+                              </div>
+                            )}
+                            {rule.aiSystemPrompt && (
+                              <div className="mt-4">
+                                <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 mb-2">
+                                  Prompt systemowy:
+                                </h4>
+                                <pre className="bg-indigo-50 dark:bg-indigo-900/20 rounded-lg p-3 text-sm text-slate-600 dark:text-slate-400 font-mono whitespace-pre-wrap max-h-48 overflow-y-auto">
+                                  {rule.aiSystemPrompt}
+                                </pre>
                               </div>
                             )}
                           </motion.div>

@@ -65,7 +65,7 @@ export default function RuleEditorPage() {
       setActions(data.actions || {});
       setAiPrompt(data.aiPrompt || '');
       setAiSystemPrompt(data.aiSystemPrompt || '');
-      setAiModel(data.aiModel || '');
+      setAiModel(data.aiModelName || data.aiModel || '');
     } catch {
       // handled by UI
     } finally {
