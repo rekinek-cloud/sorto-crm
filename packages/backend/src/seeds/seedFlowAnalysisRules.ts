@@ -369,7 +369,7 @@ export async function seedFlowAnalysisRules(prisma: any, organizationId: string)
           id: uuidv4(),
           name: model.name,
           displayName: model.displayName,
-          type: 'CHAT',
+          type: 'TEXT_GENERATION',
           status: 'ACTIVE',
           maxTokens: model.maxTokens,
           inputCost: model.inputCost,
@@ -400,35 +400,38 @@ export async function seedFlowAnalysisRules(prisma: any, organizationId: string)
       where: { providerId, name: rule.modelId },
     });
 
-    await prisma.ai_rules.create({
-      data: {
-        id: `flow-${rule.dataType.toLowerCase()}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-        name: rule.name,
-        description: rule.description,
-        category: 'FLOW_ANALYSIS',
-        dataType: rule.dataType,
-        status: 'ACTIVE',
-        priority: 100,
-        triggerType: 'SOURCE_CREATED',
-        triggerConditions: { operator: 'AND', conditions: [] },
-        actions: { analyze: true, extractTasks: true, suggestCategory: true },
-        aiPrompt: rule.aiPrompt,
-        aiSystemPrompt: rule.aiSystemPrompt,
-        modelId: modelRecord?.id || null,
-        isSystem: true,
-        organizationId,
-        executionCount: 0,
-        successCount: 0,
-        errorCount: 0,
-        updatedAt: new Date(),
-      },
-    }).catch((err: any) => {
-      if (err.code !== 'P2002') {
-        console.warn(`Failed to seed flow rule ${rule.name}:`, err.message);
+    try {
+      await prisma.ai_rules.create({
+        data: {
+          id: `flow-${rule.dataType.toLowerCase()}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          name: rule.name,
+          description: rule.description,
+          category: 'FLOW_ANALYSIS',
+          dataType: rule.dataType,
+          status: 'ACTIVE',
+          priority: 100,
+          triggerType: 'WEBHOOK',
+          triggerConditions: { operator: 'AND', conditions: [] },
+          actions: { analyze: true, extractTasks: true, suggestCategory: true },
+          aiPrompt: rule.aiPrompt,
+          aiSystemPrompt: rule.aiSystemPrompt,
+          modelId: modelRecord?.id || null,
+          isSystem: true,
+          organizationId,
+          executionCount: 0,
+          successCount: 0,
+          errorCount: 0,
+          updatedAt: new Date(),
+        },
+      });
+      result.rulesCreated++;
+    } catch (err: any) {
+      if (err.code === 'P2002') {
+        result.rulesSkipped++;
+      } else {
+        throw err;
       }
-    });
-
-    result.rulesCreated++;
+    }
   }
 
   return result;

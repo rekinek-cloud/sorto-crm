@@ -276,6 +276,36 @@ router.post('/',
 );
 
 /**
+ * POST /api/v1/ai-rules/seed-flow-rules
+ * Seed Flow Analysis rules with per-source-type prompts + Qwen provider
+ * Idempotent — skips rules that already exist
+ */
+router.post('/seed-flow-rules',
+  authenticateToken,
+  requireRole(['OWNER', 'ADMIN']),
+  async (req, res) => {
+    try {
+      const orgId = req.user!.organizationId;
+      const result = await seedFlowAnalysisRules(prisma, orgId);
+
+      logger.info(`Flow analysis rules seeded by ${req.user!.email}: ${result.rulesCreated} rules, ${result.modelsCreated} models`);
+
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      logger.error('Failed to seed flow analysis rules:', error);
+      res.status(500).json({
+        success: false,
+        error: 'Nie udało się utworzyć reguł Flow Analysis',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+);
+
+/**
  * PUT /api/v1/ai-rules/:id
  * Update a rule
  */
@@ -530,32 +560,6 @@ router.get('/execution-history/:id',
       logger.error('Failed to get execution history:', error);
       // Fallback to empty if table doesn't have expected columns
       res.json({ success: true, data: [] });
-    }
-  }
-);
-
-/**
- * POST /api/v1/ai-rules/seed-flow-rules
- * Seed Flow Analysis rules with per-source-type prompts + Qwen provider
- * Idempotent — skips rules that already exist
- */
-router.post('/seed-flow-rules',
-  authenticateToken,
-  requireRole(['OWNER', 'ADMIN']),
-  async (req, res) => {
-    try {
-      const orgId = req.user!.organizationId;
-      const result = await seedFlowAnalysisRules(prisma, orgId);
-
-      logger.info(`Flow analysis rules seeded by ${req.user!.email}: ${result.rulesCreated} rules, ${result.modelsCreated} models`);
-
-      res.json({
-        success: true,
-        data: result,
-      });
-    } catch (error) {
-      logger.error('Failed to seed flow analysis rules:', error);
-      throw new AppError('Nie udało się utworzyć reguł Flow Analysis', 500);
     }
   }
 );
