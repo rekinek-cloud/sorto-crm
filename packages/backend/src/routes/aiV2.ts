@@ -410,7 +410,8 @@ router.post('/rules', validateRequest(createRuleSchema), async (req, res) => {
       data: {
         ...req.body,
         organizationId,
-        status: 'ACTIVE'
+        status: 'ACTIVE',
+        updatedAt: new Date(),
       }
     });
 

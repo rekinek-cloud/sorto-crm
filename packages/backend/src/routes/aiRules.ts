@@ -90,6 +90,7 @@ async function ensureSystemRules(organizationId: string): Promise<void> {
           executionCount: 0,
           successCount: 0,
           errorCount: 0,
+          updatedAt: new Date(),
         },
       }).catch((err: any) => {
         // Ignore unique constraint violation (already exists with different ID)
@@ -235,6 +236,7 @@ router.post('/',
           executionCount: 0,
           successCount: 0,
           errorCount: 0,
+          updatedAt: new Date(),
         },
       });
 
@@ -280,6 +282,7 @@ router.put('/:id',
       if (d.conditions !== undefined) updateFields.triggerConditions = d.conditions;
       if (d.actions !== undefined) updateFields.actions = d.actions;
       if (d.aiPrompt !== undefined) updateFields.aiPrompt = d.aiPrompt;
+      updateFields.updatedAt = new Date();
 
       const dbRule = await prisma.ai_rules.update({
         where: { id },
@@ -341,7 +344,7 @@ router.post('/:id/toggle',
 
       const dbRule = await prisma.ai_rules.update({
         where: { id, organizationId: req.user!.organizationId },
-        data: { status: enabled ? 'ACTIVE' : 'INACTIVE' },
+        data: { status: enabled ? 'ACTIVE' : 'INACTIVE', updatedAt: new Date() },
       });
 
       res.json({ success: true, data: { id, enabled, updatedAt: dbRule.updatedAt.toISOString() } });
@@ -372,7 +375,7 @@ router.patch('/:id/status',
 
       const dbRule = await prisma.ai_rules.update({
         where: { id, organizationId: req.user!.organizationId },
-        data: { status },
+        data: { status, updatedAt: new Date() },
       });
 
       res.json({ success: true, data: mapRuleToFrontend(dbRule) });
