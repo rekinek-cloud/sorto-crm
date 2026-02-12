@@ -250,9 +250,7 @@ export const streamsNavigation: NavItem[] = [
     children: [
       { name: 'AI Assistant', href: '/dashboard/ai-assistant', icon: Robot, iconWeight: 'duotone' },
       { name: 'AI Insights', href: '/dashboard/ai-insights', icon: Sparkle, iconWeight: 'duotone' },
-      { name: 'Prompty AI', href: '/dashboard/ai-prompts', icon: ChatCircle, iconWeight: 'duotone' },
-      { name: 'Zarządzanie AI', href: '/dashboard/ai-management', icon: Brain, iconWeight: 'duotone' },
-      { name: 'Reguły AI', href: '/dashboard/ai-rules', icon: Sparkle, iconWeight: 'duotone' },
+      { name: 'Konfiguracja AI', href: '/dashboard/ai-rules', icon: Sparkle, iconWeight: 'duotone' },
       { name: 'Wyszukiwanie AI', href: '/dashboard/search', icon: MagnifyingGlass, iconWeight: 'duotone' },
       { name: 'RAG Search', href: '/dashboard/rag-search', icon: MagnifyingGlassMinus, iconWeight: 'duotone' },
       { name: 'Rekomendacje', href: '/dashboard/recommendations', icon: Lightbulb, iconWeight: 'duotone' },
