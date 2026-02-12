@@ -123,6 +123,7 @@ import aiAgentsRoutes from './routes/aiAgents';
 import aiAgentTasksRoutes from './routes/aiAgentTasks';
 import aiMessagesRoutes from './routes/aiMessages';
 import teamRoutes from './routes/team';
+import dataProcessingRoutes from './routes/dataProcessing';
 
 const app = express();
 
@@ -322,6 +323,7 @@ apiRouter.use('/ai-agents', aiAgentsRoutes);
 apiRouter.use('/ai-agent-tasks', aiAgentTasksRoutes);
 apiRouter.use('/ai-messages', aiMessagesRoutes);
 apiRouter.use('/team', teamRoutes);
+apiRouter.use('/data-processing', dataProcessingRoutes);  // Data Processing - pipeline przetwarzania
 
 // Aliasy dla kompatybilności wstecznej (deprecated)
 apiRouter.use('/gtdinbox', sourceRoutes);         // deprecated -> use /source
