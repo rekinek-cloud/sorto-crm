@@ -811,8 +811,9 @@ export class RuleProcessingPipeline {
       await this.prisma.$executeRawUnsafe(`
         INSERT INTO vector_documents (id, title, content, "contentHash", embedding, "entityType", "entityId", source, language, "lastUpdated", "organizationId")
         VALUES ($1, $2, $3, $4, '{}', $5, $6, $7, 'pl', NOW(), $8)
-        ON CONFLICT ("contentHash") DO UPDATE SET
+        ON CONFLICT (id) DO UPDATE SET
           content = EXCLUDED.content,
+          "contentHash" = EXCLUDED."contentHash",
           "lastUpdated" = NOW()
       `,
         `rag-${entityType}-${entityId}`,
