@@ -464,6 +464,7 @@ export class FlowEngineService {
         subject: inboxItem?.subject || inboxItem?.title || '',
         sourceType: sourceType,
         senderName: inboxItem?.senderName || inboxItem?.fromName || '',
+        classification: inboxItem?.aiAnalysis?.classification || inboxItem?.metadata?.classification || '',
         metadata: inboxItem?.metadata ? JSON.stringify(inboxItem.metadata) : '',
       });
 
@@ -1233,6 +1234,28 @@ Odpowiedz w formacie JSON:
   }
 
   private async executeZrobTeraz(inboxItem: any, suggestion: ActionSuggestion, userId: string): Promise<string> {
+    // Find linked contact/company/deal from source email
+    let contactId: string | undefined;
+    let companyId: string | undefined;
+    let dealId: string | undefined;
+
+    if (inboxItem.source && inboxItem.sourceType === 'EMAIL') {
+      const contact = await this.prisma.contact.findFirst({
+        where: { organizationId: this.organizationId, email: inboxItem.source },
+      });
+      if (contact) {
+        contactId = contact.id;
+        companyId = contact.companyId || undefined;
+      }
+      if (companyId) {
+        const deal = await this.prisma.deal.findFirst({
+          where: { organizationId: this.organizationId, companyId, stage: 'PROSPECT' },
+          orderBy: { createdAt: 'desc' },
+        });
+        dealId = deal?.id;
+      }
+    }
+
     const task = await this.prisma.task.create({
       data: {
         title: suggestion.suggestedTitle || inboxItem.content.substring(0, 200),
@@ -1242,24 +1265,78 @@ Odpowiedz w formacie JSON:
         organizationId: this.organizationId,
         createdById: userId,
         assignedToId: userId,
-        streamId: suggestion.targetStreamId
+        streamId: suggestion.targetStreamId,
+        contactId: contactId || null,
+        companyId: companyId || null,
+        dealId: dealId || null,
       }
     });
     return task.id;
   }
 
   private async executeZaplanuj(inboxItem: any, suggestion: ActionSuggestion, userId: string): Promise<string> {
+    // Extract AI analysis data for enriched task
+    const aiData = inboxItem.aiAnalysis?.extractedData || {};
+    const missingInfo = aiData.missingInfo;
+    const suggestedReply = aiData.suggestedReply;
+    const completeness = aiData.completeness;
+
+    // Build rich description
+    let description = inboxItem.content || '';
+    if (completeness === 'incomplete' && missingInfo?.length > 0) {
+      description += '\n\n--- Brakujące informacje ---\n';
+      missingInfo.forEach((info: string, i: number) => {
+        description += `${i + 1}. ${info}\n`;
+      });
+    }
+    if (suggestedReply) {
+      description += '\n\n--- Proponowana odpowiedź (do zatwierdzenia) ---\n';
+      description += suggestedReply;
+    }
+
+    // Find linked contact/company/deal from source email
+    let contactId: string | undefined;
+    let companyId: string | undefined;
+    let dealId: string | undefined;
+
+    if (inboxItem.source && inboxItem.sourceType === 'EMAIL') {
+      const contact = await this.prisma.contact.findFirst({
+        where: { organizationId: this.organizationId, email: inboxItem.source },
+      });
+      if (contact) {
+        contactId = contact.id;
+        companyId = contact.companyId || undefined;
+      }
+      // Find deal linked to this company
+      if (companyId) {
+        const deal = await this.prisma.deal.findFirst({
+          where: { organizationId: this.organizationId, companyId, stage: 'PROSPECT' },
+          orderBy: { createdAt: 'desc' },
+        });
+        dealId = deal?.id;
+      }
+    }
+
     const task = await this.prisma.task.create({
       data: {
         title: suggestion.suggestedTitle || inboxItem.content.substring(0, 200),
-        description: inboxItem.content,
+        description,
         status: 'NEW',
         priority: 'HIGH',
         dueDate: suggestion.suggestedDueDate,
         organizationId: this.organizationId,
         createdById: userId,
         assignedToId: userId,
-        streamId: suggestion.targetStreamId
+        streamId: suggestion.targetStreamId,
+        contactId: contactId || null,
+        companyId: companyId || null,
+        dealId: dealId || null,
+        smartAnalysis: suggestedReply ? {
+          suggestedReply,
+          completeness,
+          missingInfo: missingInfo || [],
+          needsApproval: true,
+        } : undefined,
       }
     });
     return task.id;

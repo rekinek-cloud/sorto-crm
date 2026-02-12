@@ -69,21 +69,29 @@ const FLOW_RULES: FlowRule[] = [
     aiSystemPrompt: SYSTEM_PROMPT_BASE + `
 
 Dodatkowe pola w extractedData dla emaili:
-- senderIntent: cel nadawcy (zapytanie, oferta, reklamacja, informacja, prośba)
+- senderIntent: cel nadawcy (zapytanie | oferta | reklamacja | informacja | prośba | zamówienie)
 - category: business | newsletter | transactional | spam | personal | notification
 - actionItems: lista zadań do wykonania [{task, deadline?, owner?}]
 - replyNeeded: boolean
-- replyUrgency: immediate | today | this_week | no_rush | none`,
+- replyUrgency: immediate | today | this_week | no_rush | none
+- completeness: complete | incomplete | unclear
+- missingInfo: lista brakujących informacji potrzebnych do realizacji [string] (jeśli incomplete)
+- suggestedReply: proponowana treść odpowiedzi po polsku (string) — jeśli replyNeeded=true, napisz pełną, grzeczną odpowiedź gotową do wysłania. Jeśli incomplete — poproś o brakujące informacje z konkretną listą pytań.
+- dealValue: szacowana wartość transakcji jeśli można wywnioskować (number | null)
+- dealStage: sugerowany etap: PROSPECT | QUALIFIED | PROPOSAL | NEGOTIATION (string | null)`,
     aiPrompt: `Przeanalizuj ten email:
 
 Typ źródła: {{sourceType}}
 Temat: {{subject}}
 Nadawca: {{senderName}}
+Klasyfikacja: {{classification}}
 
 Treść:
 {{content}}
 
-{{metadata}}`,
+{{metadata}}
+
+WAŻNE: Jeśli to zapytanie ofertowe lub prośba o wycenę — oceń kompletność informacji. Jeśli brakuje danych potrzebnych do przygotowania odpowiedzi (np. ilości, wymiary, specyfikacja, termin) — wymień je w missingInfo i przygotuj suggestedReply z prośbą o uzupełnienie.`,
   },
   {
     name: 'Flow: Analiza notatek ze spotkań',

@@ -70,6 +70,7 @@ export interface RuleMatchResult {
     skipAI?: boolean;
     addToRag?: boolean;
     addToFlow?: boolean;
+    createDeal?: boolean;
     list?: { action: string; target: string };
   };
 }
@@ -88,7 +89,7 @@ export interface ProcessingResult {
   finalConfidence: number;
   actionsExecuted: string[];
   extractedTasks?: ExtractedTask[];
-  linkedEntities?: { contactId?: string; companyId?: string };
+  linkedEntities?: { contactId?: string; companyId?: string; dealId?: string };
 }
 
 // =============================================================================
@@ -204,7 +205,7 @@ export class RuleProcessingPipeline {
 
       // Stage 4: Post-classification Actions
       const actionsExecuted: string[] = [];
-      const linkedEntities: { contactId?: string; companyId?: string } = {};
+      const linkedEntities: { contactId?: string; companyId?: string; dealId?: string } = {};
 
       // Link to contact/company
       if (crmCheck.matched && crmCheck.matchedEntityId) {
@@ -253,6 +254,52 @@ export class RuleProcessingPipeline {
           addedToFlow = true;
           flowItemId = flowResult;
           actionsExecuted.push('ADDED_TO_FLOW');
+        }
+      }
+
+      // Create deal if rule says so (e.g. Cooperation Request)
+      if (ruleMatch.actions?.createDeal) {
+        try {
+          const senderDomainForDeal = senderEmail?.split('@')[1];
+          // Find or skip — look for company by domain
+          const company = await this.prisma.company.findFirst({
+            where: { organizationId, website: { contains: senderDomainForDeal || '' } },
+          });
+          const contact = senderEmail ? await this.prisma.contact.findFirst({
+            where: { organizationId, email: senderEmail },
+          }) : null;
+
+          const dealTitle = entityData.subject
+            ? `${entityData.subject}`
+            : `Zapytanie od ${entityData.fromName || senderEmail || 'nieznany'}`;
+
+          const adminUser = await this.prisma.user.findFirst({
+            where: { organizationId },
+            orderBy: { createdAt: 'asc' },
+          });
+
+          const deal = await this.prisma.deal.create({
+            data: {
+              title: dealTitle,
+              description: `Automatycznie utworzony z emaila.\nOd: ${senderEmail}\nTemat: ${entityData.subject || ''}`,
+              stage: 'PROSPECT',
+              value: 0,
+              source: 'Email',
+              companyId: company?.id || null,
+              ownerId: adminUser?.id || '',
+              organizationId,
+            },
+          });
+
+          // Link contact to deal if found
+          if (contact) {
+            linkedEntities.dealId = deal.id;
+          }
+
+          actionsExecuted.push(`CREATED_DEAL:${deal.id}`);
+          console.log(`💼 Created deal: ${deal.title} (${deal.id})`);
+        } catch (err) {
+          console.warn('⚠️ Failed to create deal:', err);
         }
       }
 
