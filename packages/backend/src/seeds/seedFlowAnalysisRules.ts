@@ -411,7 +411,13 @@ export async function seedFlowAnalysisRules(prisma: any, organizationId: string)
           status: 'ACTIVE',
           priority: 100,
           triggerType: 'WEBHOOK',
-          triggerConditions: { operator: 'AND', conditions: [] },
+          triggerConditions: {
+            operator: 'AND',
+            conditions: [
+              { field: 'sourceType', operator: 'equals', value: rule.dataType },
+              { field: 'status', operator: 'equals', value: 'NEW' },
+            ],
+          },
           actions: { analyze: true, extractTasks: true, suggestCategory: true },
           aiPrompt: rule.aiPrompt,
           aiSystemPrompt: rule.aiSystemPrompt,
