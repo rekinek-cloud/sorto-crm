@@ -19,11 +19,10 @@ import {
 import { pl } from 'date-fns/locale';
 import { motion } from 'framer-motion';
 import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  CalendarIcon,
-  ClockIcon
-} from '@heroicons/react/24/outline';
+  ChevronLeft,
+  ChevronRight,
+  Clock
+} from 'lucide-react';
 
 export interface CalendarEvent {
   id: string;
@@ -184,7 +183,7 @@ const Calendar: React.FC<CalendarProps> = ({
                     title={`${event.title} - ${format(event.start, 'HH:mm')}`}
                   >
                     <div className="flex items-center">
-                      {event.type === 'meeting' && <ClockIcon className="w-3 h-3 mr-1" />}
+                      {event.type === 'meeting' && <Clock className="w-3 h-3 mr-1" />}
                       <span className="truncate">{event.title}</span>
                     </div>
                   </motion.div>
@@ -293,7 +292,7 @@ const Calendar: React.FC<CalendarProps> = ({
               onClick={previousMonth}
               className="p-1 rounded hover:bg-gray-100"
             >
-              <ChevronLeftIcon className="w-5 h-5" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
             <span className="text-lg font-medium min-w-[160px] text-center">
               {format(currentDate, 'LLLL yyyy', { locale: pl })}
@@ -302,7 +301,7 @@ const Calendar: React.FC<CalendarProps> = ({
               onClick={nextMonth}
               className="p-1 rounded hover:bg-gray-100"
             >
-              <ChevronRightIcon className="w-5 h-5" />
+              <ChevronRight className="w-5 h-5" />
             </button>
           </div>
         </div>

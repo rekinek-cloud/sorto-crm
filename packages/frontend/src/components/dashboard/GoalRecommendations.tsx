@@ -3,15 +3,15 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiClient } from '@/lib/api/client';
-import { 
-  LightBulbIcon, 
-  ArrowRightIcon, 
-  ClockIcon,
-  CheckIcon,
-  XMarkIcon,
-  SparklesIcon,
-  ChartBarIcon
-} from '@heroicons/react/24/outline';
+import {
+  Lightbulb,
+  ArrowRight,
+  Clock,
+  Check,
+  X,
+  Sparkles,
+  BarChart3
+} from 'lucide-react';
 
 interface SmartCriteria {
   specific: string;
@@ -123,7 +123,7 @@ export default function GoalRecommendations() {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg">
-              <SparklesIcon className="w-5 h-5 text-white" />
+              <Sparkles className="w-5 h-5 text-white" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">AI Goal Recommendations</h3>
@@ -143,7 +143,7 @@ export default function GoalRecommendations() {
       <div className="p-6">
         {visibleRecommendations.length === 0 ? (
           <div className="text-center py-8">
-            <LightBulbIcon className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+            <Lightbulb className="w-12 h-12 text-gray-300 mx-auto mb-4" />
             <p className="text-gray-500">No recommendations available at the moment.</p>
             <button
               onClick={loadRecommendations}
@@ -193,11 +193,11 @@ export default function GoalRecommendations() {
 
                           <div className="flex items-center space-x-4 text-sm text-gray-500">
                             <div className="flex items-center space-x-1">
-                              <ClockIcon className="w-4 h-4" />
+                              <Clock className="w-4 h-4" />
                               <span>{recommendation.estimatedDuration}</span>
                             </div>
                             <div className="flex items-center space-x-1">
-                              <ChartBarIcon className="w-4 h-4" />
+                              <BarChart3 className="w-4 h-4" />
                               <span>{recommendation.confidence}% confidence</span>
                             </div>
                           </div>
@@ -214,7 +214,7 @@ export default function GoalRecommendations() {
                             onClick={() => dismissRecommendation(recommendation.id)}
                             className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
                           >
-                            <XMarkIcon className="w-4 h-4" />
+                            <X className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
@@ -249,7 +249,7 @@ export default function GoalRecommendations() {
                               <ul className="space-y-2">
                                 {recommendation.suggestedActions.map((action, idx) => (
                                   <li key={idx} className="flex items-start space-x-2">
-                                    <CheckIcon className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
+                                    <Check className="w-4 h-4 text-green-600 mt-0.5 flex-shrink-0" />
                                     <span className="text-sm text-gray-600">{action}</span>
                                   </li>
                                 ))}
@@ -314,7 +314,7 @@ export default function GoalRecommendations() {
                             <div className="flex items-center space-x-3 mt-6 pt-4 border-t border-gray-200">
                               <button className="btn btn-primary btn-sm">
                                 Create Goal
-                                <ArrowRightIcon className="w-4 h-4 ml-1" />
+                                <ArrowRight className="w-4 h-4 ml-1" />
                               </button>
                               <button className="btn btn-outline btn-sm">
                                 Save for Later

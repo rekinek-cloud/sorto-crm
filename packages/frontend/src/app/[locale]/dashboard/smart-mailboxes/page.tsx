@@ -9,41 +9,42 @@ import { getUnifiedRules, executeUnifiedRule, UnifiedRule } from '@/lib/api/unif
 import { useMessageFilters } from '@/hooks/useMessageFilters'
 import { toast } from 'react-hot-toast'
 import {
-  EnvelopeIcon,
-  CheckCircleIcon,
-  PlusIcon,
-  FunnelIcon,
-  MagnifyingGlassIcon,
-  XMarkIcon,
-  CalendarDaysIcon,
-  PaperClipIcon,
-  EyeIcon,
-  EyeSlashIcon,
-  ClockIcon,
-  ChevronDownIcon,
-  ChevronUpIcon,
-  ArchiveBoxIcon,
-  TrashIcon,
-  InboxIcon,
-  CheckIcon,
-  SparklesIcon,
-  ArrowPathIcon,
-  ExclamationCircleIcon,
-  BoltIcon,
-  FireIcon,
-  StarIcon,
-  UserCircleIcon,
-  Cog6ToothIcon,
-  DocumentTextIcon,
-  TagIcon,
-  PencilIcon
-} from '@heroicons/react/24/outline'
-import { CheckIcon as CheckIconSolid, StarIcon as StarIconSolid } from '@heroicons/react/24/solid'
+  Mail,
+  CheckCircle2,
+  Plus,
+  Filter,
+  Search,
+  X,
+  CalendarDays,
+  Paperclip,
+  Eye,
+  EyeOff,
+  Clock,
+  ChevronDown,
+  ChevronUp,
+  Archive,
+  Trash2,
+  Inbox,
+  Check,
+  Sparkles,
+  RefreshCw,
+  AlertCircle,
+  Zap,
+  Flame,
+  Star,
+  CircleUser,
+  Settings,
+  FileText,
+  Tag,
+  Pencil
+} from 'lucide-react'
 
 import QuickCaptureModal from '@/components/gtd/QuickCaptureModal'
 import ProcessInboxModal from '@/components/gtd/ProcessInboxModal'
 import { gtdInboxApi } from '@/lib/api/gtdInbox'
 import EmailWriterModal from '@/components/email/EmailWriterModal'
+
+const GLASS_CARD = 'bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm'
 
 interface SmartMailbox {
   id: string
@@ -63,17 +64,17 @@ interface SmartMailbox {
   }>
 }
 
-// Map mailbox icon string to Heroicons
+// Map mailbox icon string to Lucide icons
 const getMailboxIcon = (iconStr: string, className = "w-5 h-5") => {
   const icons: Record<string, JSX.Element> = {
-    'fire': <FireIcon className={className} />,
-    'clock': <ClockIcon className={className} />,
-    'star': <StarIcon className={className} />,
-    'paperclip': <PaperClipIcon className={className} />,
-    'sparkles': <SparklesIcon className={className} />,
-    'inbox': <InboxIcon className={className} />,
-    'bolt': <BoltIcon className={className} />,
-    'exclamation': <ExclamationCircleIcon className={className} />,
+    'fire': <Flame className={className} />,
+    'clock': <Clock className={className} />,
+    'star': <Star className={className} />,
+    'paperclip': <Paperclip className={className} />,
+    'sparkles': <Sparkles className={className} />,
+    'inbox': <Inbox className={className} />,
+    'bolt': <Zap className={className} />,
+    'exclamation': <AlertCircle className={className} />,
   }
 
   // Try to match known patterns
@@ -86,20 +87,20 @@ const getMailboxIcon = (iconStr: string, className = "w-5 h-5") => {
   if (lower.includes('wait') || lower.includes('pending')) return icons.clock
   if (lower.includes('priority') || lower.includes('high')) return icons.bolt
 
-  return <EnvelopeIcon className={className} />
+  return <Mail className={className} />
 }
 
 // Channel icon mapping
 const getChannelIcon = (channelName: string, className = "w-4 h-4") => {
-  if (!channelName) return <EnvelopeIcon className={className} />
+  if (!channelName) return <Mail className={className} />
   const name = channelName.toLowerCase()
 
   if (name.includes('gmail') || name.includes('email') || name.includes('mail'))
-    return <EnvelopeIcon className={className} />
+    return <Mail className={className} />
   if (name.includes('slack') || name.includes('teams') || name.includes('chat'))
-    return <DocumentTextIcon className={className} />
+    return <FileText className={className} />
 
-  return <EnvelopeIcon className={className} />
+  return <Mail className={className} />
 }
 
 export default function SmartMailboxesPage() {
@@ -358,7 +359,7 @@ export default function SmartMailboxesPage() {
       await gtdInboxApi.quickCapture(inboxItem)
       toast.success(`Dodano do ${action === 'INBOX' ? 'Inbox' : action === 'DO' ? 'Do zrobienia' : 'Odlozone'}`)
     } catch {
-      toast.error('Błąd przetwarzania')
+      toast.error('Blad przetwarzania')
     }
   }
 
@@ -402,20 +403,22 @@ export default function SmartMailboxesPage() {
   }).length
 
   return (
-    <div className="h-full bg-slate-50 dark:bg-slate-900 -m-6">
+    <div className="h-full bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-900 dark:via-slate-950 dark:to-slate-900 -m-6">
       {/* Header - compact */}
-      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30">
+      <header className="bg-white/80 backdrop-blur-xl border-b border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 sticky top-0 z-30">
         <div className="px-4 py-2 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <EnvelopeIcon className="w-5 h-5 text-blue-600" />
+            <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/40">
+              <Mail className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+            </div>
             <h1 className="text-base font-semibold text-slate-900 dark:text-white">
               Smart Mailboxes
             </h1>
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-slate-500 dark:text-slate-400">
               {stats.total} wiadomosci
             </span>
             {selectedChannelId && (
-              <span className="text-xs text-green-600 bg-green-50 dark:bg-green-900/30 px-2 py-0.5 rounded-full">
+              <span className="text-xs text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400 px-2 py-0.5 rounded-full">
                 {channels.find(c => c.id === selectedChannelId)?.name || 'Kanal'}
               </span>
             )}
@@ -425,16 +428,16 @@ export default function SmartMailboxesPage() {
             <button
               onClick={handleRefresh}
               disabled={refreshing || loading}
-              className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 rounded-lg transition-colors disabled:opacity-50"
+              className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors disabled:opacity-50"
               title="Odswiez"
             >
-              <ArrowPathIcon className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
             </button>
             <button
               onClick={() => setShowBuilder(true)}
               className="flex items-center gap-1 px-2 py-1.5 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
             >
-              <PlusIcon className="w-3.5 h-3.5" />
+              <Plus className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Nowa</span>
             </button>
           </div>
@@ -443,7 +446,7 @@ export default function SmartMailboxesPage() {
 
       <div className="flex flex-col lg:flex-row h-[calc(100vh-100px)]">
         {/* Sidebar - mailboxes */}
-        <aside className="w-full lg:w-56 flex-shrink-0 bg-white dark:bg-slate-800 border-b lg:border-b-0 lg:border-r border-slate-200 dark:border-slate-700 overflow-y-auto">
+        <aside className="w-full lg:w-56 flex-shrink-0 bg-white/60 backdrop-blur-lg dark:bg-slate-800/60 border-b lg:border-b-0 lg:border-r border-white/20 dark:border-slate-700/30 overflow-y-auto">
           <div className="p-3">
             {/* All mailbox */}
             <button
@@ -454,7 +457,7 @@ export default function SmartMailboxesPage() {
                   : 'text-slate-700 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700'
               }`}
             >
-              <InboxIcon className="w-5 h-5" />
+              <Inbox className="w-5 h-5" />
               <span className="flex-1 text-left text-sm font-medium">Wszystkie</span>
               <span className="text-xs bg-slate-200 dark:bg-slate-600 px-2 py-0.5 rounded-full">
                 {mailboxes.reduce((acc, m) => acc + (m.count || m.messageCount || 0), 0)}
@@ -464,7 +467,7 @@ export default function SmartMailboxesPage() {
             {/* Built-in mailboxes */}
             {builtInMailboxes.length > 0 && (
               <div className="mt-4">
-                <h3 className="px-3 text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">
+                <h3 className="px-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
                   Wbudowane
                 </h3>
                 <div className="space-y-1">
@@ -481,7 +484,7 @@ export default function SmartMailboxesPage() {
                       {getMailboxIcon(mailbox.icon || mailbox.name)}
                       <span className="flex-1 text-left text-sm truncate">{mailbox.name}</span>
                       {(mailbox.count || mailbox.messageCount) ? (
-                        <span className="text-xs text-slate-500">{mailbox.count || mailbox.messageCount}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">{mailbox.count || mailbox.messageCount}</span>
                       ) : null}
                     </button>
                   ))}
@@ -492,7 +495,7 @@ export default function SmartMailboxesPage() {
             {/* Custom mailboxes */}
             {customMailboxes.length > 0 && (
               <div className="mt-4">
-                <h3 className="px-3 text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">
+                <h3 className="px-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
                   Wlasne
                 </h3>
                 <div className="space-y-1">
@@ -506,10 +509,10 @@ export default function SmartMailboxesPage() {
                       }`}
                       onClick={() => { setSelectedMailboxId(mailbox.id); setSelectedChannelId(null) }}
                     >
-                      <BoltIcon className="w-5 h-5 flex-shrink-0" />
+                      <Zap className="w-5 h-5 flex-shrink-0" />
                       <span className="flex-1 text-left text-sm truncate">{mailbox.name}</span>
                       {(mailbox.count || mailbox.messageCount) ? (
-                        <span className="text-xs text-slate-500">{mailbox.count || mailbox.messageCount}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">{mailbox.count || mailbox.messageCount}</span>
                       ) : null}
                       {/* Edit/Delete buttons */}
                       <div className="opacity-0 group-hover:opacity-100 flex gap-1 transition-opacity">
@@ -518,20 +521,20 @@ export default function SmartMailboxesPage() {
                             e.stopPropagation()
                             handleEditMailbox(mailbox as any)
                           }}
-                          className="p-1 text-amber-600 hover:bg-amber-100 rounded"
+                          className="p-1 text-amber-600 hover:bg-amber-100 dark:hover:bg-amber-900/30 rounded"
                           title="Edytuj"
                         >
-                          <PencilIcon className="w-3.5 h-3.5" />
+                          <Pencil className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={(e) => {
                             e.stopPropagation()
                             handleDeleteMailbox(mailbox.id, mailbox.name)
                           }}
-                          className="p-1 text-red-600 hover:bg-red-100 rounded"
+                          className="p-1 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded"
                           title="Usun"
                         >
-                          <TrashIcon className="w-3.5 h-3.5" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
@@ -543,7 +546,7 @@ export default function SmartMailboxesPage() {
             {/* Channels section */}
             {channels.length > 0 && (
               <div className="mt-4">
-                <h3 className="px-3 text-xs font-medium text-slate-500 uppercase tracking-wider mb-2">
+                <h3 className="px-3 text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2">
                   Kanaly ({channels.length})
                 </h3>
                 <div className="space-y-1">
@@ -569,10 +572,10 @@ export default function SmartMailboxesPage() {
                         <button
                           onClick={(e) => handleSyncChannel(channel.id, e)}
                           disabled={syncingChannelId === channel.id}
-                          className="p-1 text-slate-400 hover:text-blue-600 rounded transition-colors"
+                          className="p-1 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 rounded transition-colors"
                           title="Synchronizuj"
                         >
-                          <ArrowPathIcon className={`w-3.5 h-3.5 ${syncingChannelId === channel.id ? 'animate-spin' : ''}`} />
+                          <RefreshCw className={`w-3.5 h-3.5 ${syncingChannelId === channel.id ? 'animate-spin' : ''}`} />
                         </button>
                         {!channel.active && (
                           <span className="text-[10px] text-slate-400 bg-slate-100 dark:bg-slate-600 px-1 rounded">OFF</span>
@@ -580,7 +583,7 @@ export default function SmartMailboxesPage() {
                       </button>
                       {/* Last sync info */}
                       <div className="px-3 pb-1">
-                        <span className="text-[10px] text-slate-400">
+                        <span className="text-[10px] text-slate-400 dark:text-slate-500">
                           Sync: {formatTimeAgo(channel.lastSyncAt)}
                         </span>
                       </div>
@@ -595,29 +598,29 @@ export default function SmartMailboxesPage() {
         {/* Main content */}
         <main className="flex-1 p-3 overflow-y-auto">
           {/* Search Bar */}
-          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 mb-3 p-3">
+          <div className={`${GLASS_CARD} mb-3 p-3`}>
             <div className="flex items-center gap-3">
               <div className="flex-1 relative">
-                <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   value={filters.search}
                   onChange={(e) => handleFilterChange('search', e.target.value)}
                   placeholder="Szukaj w temacie, tresci, nadawcy..."
-                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+                  className="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:text-white"
                 />
                 {filters.search && (
                   <button
                     onClick={() => handleFilterChange('search', '')}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                   >
-                    <XMarkIcon className="w-4 h-4" />
+                    <X className="w-4 h-4" />
                   </button>
                 )}
               </div>
               <div className="flex items-center gap-2">
                 {filters.search && (
-                  <span className="text-xs text-slate-500 bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded">
+                  <span className="text-xs text-slate-500 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-1 rounded">
                     {filteredCount} z {totalMessages}
                   </span>
                 )}
@@ -625,12 +628,12 @@ export default function SmartMailboxesPage() {
                   onClick={() => setShowFilters(!showFilters)}
                   className={`p-2 rounded-lg transition-colors ${
                     showFilters || activeFiltersCount > 0
-                      ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30'
-                      : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                      ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400'
+                      : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-700'
                   }`}
                   title="Zaawansowane filtry"
                 >
-                  <FunnelIcon className="w-5 h-5" />
+                  <Filter className="w-5 h-5" />
                   {activeFiltersCount > 0 && (
                     <span className="absolute -top-1 -right-1 w-4 h-4 text-[10px] bg-blue-600 text-white rounded-full flex items-center justify-center">
                       {activeFiltersCount}
@@ -642,15 +645,15 @@ export default function SmartMailboxesPage() {
           </div>
 
           {/* Advanced Filters Panel */}
-          <div className="bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 mb-3">
+          <div className={`${GLASS_CARD} mb-3`}>
             {/* Filters Header */}
-            <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+            <div className="px-4 py-3 border-b border-slate-200/50 dark:border-slate-700/50">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <FunnelIcon className="w-4 h-4 text-slate-500" />
+                  <Filter className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                   <h3 className="text-sm font-medium text-slate-900 dark:text-white">Filtry i sortowanie</h3>
                   {activeFiltersCount > 0 && (
-                    <span className="text-xs text-blue-600 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full">
+                    <span className="text-xs text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 px-2 py-0.5 rounded-full">
                       {activeFiltersCount} aktywnych
                     </span>
                   )}
@@ -659,16 +662,16 @@ export default function SmartMailboxesPage() {
                   {activeFiltersCount > 0 && (
                     <button
                       onClick={clearFilters}
-                      className="text-xs text-red-600 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
+                      className="text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
                     >
                       Wyczysc filtry
                     </button>
                   )}
                   <button
                     onClick={() => setShowFilters(!showFilters)}
-                    className="p-1 text-slate-500 hover:text-slate-700 rounded hover:bg-slate-100 dark:hover:bg-slate-700"
+                    className="p-1 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 rounded hover:bg-slate-100 dark:hover:bg-slate-700"
                   >
-                    {showFilters ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />}
+                    {showFilters ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
@@ -690,12 +693,12 @@ export default function SmartMailboxesPage() {
                       {/* Channels */}
                       <div>
                         <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                          <EnvelopeIcon className="w-3 h-3 inline mr-1" />
+                          <Mail className="w-3 h-3 inline mr-1" />
                           Kanaly ({filters.channels?.length || 0})
                         </label>
                         <div className="min-h-[40px] p-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700">
                           {availableChannels.length === 0 ? (
-                            <span className="text-xs text-slate-400">Brak kanalow</span>
+                            <span className="text-xs text-slate-400 dark:text-slate-500">Brak kanalow</span>
                           ) : (
                             <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
                               {availableChannels.map(channel => (
@@ -724,13 +727,13 @@ export default function SmartMailboxesPage() {
                       {/* Date Range */}
                       <div>
                         <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                          <CalendarDaysIcon className="w-3 h-3 inline mr-1" />
+                          <CalendarDays className="w-3 h-3 inline mr-1" />
                           Okres
                         </label>
                         <select
                           value={filters.dateRange}
                           onChange={(e) => handleFilterChange('dateRange', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+                          className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:text-white"
                         >
                           <option value="ALL">Wszystkie daty</option>
                           <option value="TODAY">Dzisiaj</option>
@@ -746,13 +749,13 @@ export default function SmartMailboxesPage() {
                               type="date"
                               value={filters.customDateFrom || ''}
                               onChange={(e) => handleFilterChange('customDateFrom', e.target.value)}
-                              className="w-full px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+                              className="w-full px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:text-white"
                             />
                             <input
                               type="date"
                               value={filters.customDateTo || ''}
                               onChange={(e) => handleFilterChange('customDateTo', e.target.value)}
-                              className="w-full px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+                              className="w-full px-2 py-1 text-xs border border-slate-300 dark:border-slate-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:text-white"
                             />
                           </div>
                         )}
@@ -761,13 +764,13 @@ export default function SmartMailboxesPage() {
                       {/* Priority */}
                       <div>
                         <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                          <ExclamationCircleIcon className="w-3 h-3 inline mr-1" />
+                          <AlertCircle className="w-3 h-3 inline mr-1" />
                           Priorytet
                         </label>
                         <select
                           value={filters.priority}
                           onChange={(e) => handleFilterChange('priority', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+                          className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:text-white"
                         >
                           <option value="ALL">Wszystkie priorytety</option>
                           <option value="HIGH">Wysoki</option>
@@ -779,13 +782,13 @@ export default function SmartMailboxesPage() {
                       {/* Read Status */}
                       <div>
                         <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                          <EyeIcon className="w-3 h-3 inline mr-1" />
+                          <Eye className="w-3 h-3 inline mr-1" />
                           Status
                         </label>
                         <select
                           value={filters.isRead}
                           onChange={(e) => handleFilterChange('isRead', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+                          className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:text-white"
                         >
                           <option value="ALL">Wszystkie</option>
                           <option value="UNREAD">Nieprzeczytane</option>
@@ -799,7 +802,7 @@ export default function SmartMailboxesPage() {
                       {/* Sender */}
                       <div>
                         <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                          <UserCircleIcon className="w-3 h-3 inline mr-1" />
+                          <CircleUser className="w-3 h-3 inline mr-1" />
                           Nadawca
                         </label>
                         <input
@@ -807,20 +810,20 @@ export default function SmartMailboxesPage() {
                           value={filters.sender || ''}
                           onChange={(e) => handleFilterChange('sender', e.target.value)}
                           placeholder="Nazwa lub email..."
-                          className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+                          className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:text-white"
                         />
                       </div>
 
                       {/* Has Attachments */}
                       <div>
                         <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                          <PaperClipIcon className="w-3 h-3 inline mr-1" />
+                          <Paperclip className="w-3 h-3 inline mr-1" />
                           Zalaczniki
                         </label>
                         <select
                           value={filters.hasAttachments || 'ALL'}
                           onChange={(e) => handleFilterChange('hasAttachments', e.target.value)}
-                          className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-white"
+                          className="w-full px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 dark:text-white"
                         >
                           <option value="ALL">Wszystkie</option>
                           <option value="WITH">Z zalacznikami</option>
@@ -831,7 +834,7 @@ export default function SmartMailboxesPage() {
                       {/* Urgency Score Range */}
                       <div className="lg:col-span-2">
                         <label className="block text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">
-                          <FireIcon className="w-3 h-3 inline mr-1" />
+                          <Flame className="w-3 h-3 inline mr-1" />
                           Pilnosc: {filters.urgencyMin || 0} - {filters.urgencyMax || 100}
                         </label>
                         <div className="flex items-center gap-2">
@@ -860,8 +863,8 @@ export default function SmartMailboxesPage() {
             </AnimatePresence>
 
             {/* Sort Row - Always Visible */}
-            <div className="flex items-center gap-4 px-4 py-3 border-t border-slate-200 dark:border-slate-700">
-              <span className="text-sm text-slate-500">Sortuj:</span>
+            <div className="flex items-center gap-4 px-4 py-3 border-t border-slate-200/50 dark:border-slate-700/50">
+              <span className="text-sm text-slate-500 dark:text-slate-400">Sortuj:</span>
               <div className="flex gap-1 flex-wrap">
                 {[
                   { field: 'receivedAt', label: 'Data' },
@@ -883,14 +886,14 @@ export default function SmartMailboxesPage() {
                     {label}
                     {sortConfig.field === field && (
                       sortConfig.direction === 'desc'
-                        ? <ChevronDownIcon className="w-3 h-3 inline ml-0.5" />
-                        : <ChevronUpIcon className="w-3 h-3 inline ml-0.5" />
+                        ? <ChevronDown className="w-3 h-3 inline ml-0.5" />
+                        : <ChevronUp className="w-3 h-3 inline ml-0.5" />
                     )}
                   </button>
                 ))}
               </div>
 
-              <div className="ml-auto text-sm text-slate-500">
+              <div className="ml-auto text-sm text-slate-500 dark:text-slate-400">
                 {filteredCount} z {totalMessages}
               </div>
             </div>
@@ -912,7 +915,7 @@ export default function SmartMailboxesPage() {
                     </span>
                     <button
                       onClick={deselectAllMessages}
-                      className="text-sm text-blue-600 hover:text-blue-800"
+                      className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                     >
                       Odznacz
                     </button>
@@ -921,16 +924,16 @@ export default function SmartMailboxesPage() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleBulkAction('archive')}
-                      className="flex items-center gap-1 px-3 py-1.5 text-sm bg-amber-500 text-white rounded-lg hover:bg-amber-600"
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors"
                     >
-                      <ArchiveBoxIcon className="w-4 h-4" />
+                      <Archive className="w-4 h-4" />
                       Archiwizuj
                     </button>
                     <button
                       onClick={() => handleBulkAction('delete')}
-                      className="flex items-center gap-1 px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600"
+                      className="flex items-center gap-1 px-3 py-1.5 text-sm bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                     >
-                      <TrashIcon className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4" />
                       Usun
                     </button>
                   </div>
@@ -941,38 +944,38 @@ export default function SmartMailboxesPage() {
 
           {/* Stats row - compact */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+            <div className={GLASS_CARD + ' p-3'}>
               <div className="flex items-center gap-2">
-                <EnvelopeIcon className="w-5 h-5 text-blue-500" />
+                <Mail className="w-5 h-5 text-blue-500" />
                 <div>
-                  <p className="text-xs text-slate-500">Wszystkie</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Wszystkie</p>
                   <p className="text-lg font-bold text-slate-900 dark:text-white">{stats.total}</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+            <div className={GLASS_CARD + ' p-3'}>
               <div className="flex items-center gap-2">
-                <EyeSlashIcon className="w-5 h-5 text-orange-500" />
+                <EyeOff className="w-5 h-5 text-orange-500" />
                 <div>
-                  <p className="text-xs text-slate-500">Nieprzeczytane</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Nieprzeczytane</p>
                   <p className="text-lg font-bold text-slate-900 dark:text-white">{stats.unread}</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+            <div className={GLASS_CARD + ' p-3'}>
               <div className="flex items-center gap-2">
-                <FireIcon className="w-5 h-5 text-red-500" />
+                <Flame className="w-5 h-5 text-red-500" />
                 <div>
-                  <p className="text-xs text-slate-500">Pilne</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Pilne</p>
                   <p className="text-lg font-bold text-slate-900 dark:text-white">{stats.urgent}</p>
                 </div>
               </div>
             </div>
-            <div className="bg-white dark:bg-slate-800 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+            <div className={GLASS_CARD + ' p-3'}>
               <div className="flex items-center gap-2">
-                <SparklesIcon className="w-5 h-5 text-purple-500" />
+                <Sparkles className="w-5 h-5 text-purple-500" />
                 <div>
-                  <p className="text-xs text-slate-500">AI</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">AI</p>
                   <p className="text-lg font-bold text-slate-900 dark:text-white">{stats.processed}</p>
                 </div>
               </div>
@@ -980,13 +983,13 @@ export default function SmartMailboxesPage() {
           </div>
 
           {/* Messages list */}
-          <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700">
+          <div className={GLASS_CARD}>
             {/* Header with select all */}
-            <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between">
+            <div className="px-4 py-3 border-b border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {selectedMailbox && (
                   <>
-                    {getMailboxIcon(selectedMailbox.icon || selectedMailbox.name, "w-5 h-5 text-slate-600")}
+                    {getMailboxIcon(selectedMailbox.icon || selectedMailbox.name, "w-5 h-5 text-slate-600 dark:text-slate-400")}
                     <h2 className="font-medium text-slate-900 dark:text-white">{selectedMailbox.name}</h2>
                   </>
                 )}
@@ -1001,7 +1004,7 @@ export default function SmartMailboxesPage() {
                       selectAllMessages()
                     }
                   }}
-                  className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400"
+                  className="flex items-center gap-2 text-sm text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
                 >
                   <div className={`w-4 h-4 rounded border-2 flex items-center justify-center ${
                     selectedMessageIds.length === filteredMessages.length && filteredMessages.length > 0
@@ -1009,7 +1012,7 @@ export default function SmartMailboxesPage() {
                       : 'bg-white border-slate-300 dark:bg-slate-700 dark:border-slate-500'
                   }`}>
                     {selectedMessageIds.length === filteredMessages.length && filteredMessages.length > 0 && (
-                      <CheckIconSolid className="w-2.5 h-2.5 text-white" />
+                      <Check className="w-2.5 h-2.5 text-white" />
                     )}
                   </div>
                   Zaznacz wszystkie
@@ -1023,7 +1026,7 @@ export default function SmartMailboxesPage() {
                 <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600"></div>
               </div>
             ) : filteredMessages.length > 0 ? (
-              <div className="divide-y divide-slate-200 dark:divide-slate-700">
+              <div className="divide-y divide-slate-200/50 dark:divide-slate-700/50">
                 {filteredMessages.map((message: any) => (
                   <MessageRow
                     key={message.id}
@@ -1046,11 +1049,11 @@ export default function SmartMailboxesPage() {
               </div>
             ) : (
               <div className="text-center py-20">
-                <InboxIcon className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
+                <Inbox className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
                 <h4 className="text-lg font-medium text-slate-900 dark:text-white mb-1">
                   {totalMessages > 0 ? 'Brak wynikow' : 'Brak wiadomosci'}
                 </h4>
-                <p className="text-slate-500">
+                <p className="text-slate-500 dark:text-slate-400">
                   {totalMessages > 0
                     ? 'Sprobuj zmienic filtry wyszukiwania'
                     : `Nie ma wiadomosci w skrzynce "${selectedMailbox?.name}"`
@@ -1118,7 +1121,7 @@ export default function SmartMailboxesPage() {
           onComplete={() => {
             setShowGTDModal(false)
             setCurrentMessage(null)
-            toast.success('Wiadomość przetworzona')
+            toast.success('Wiadomosc przetworzona')
           }}
         />
       )}
@@ -1169,7 +1172,7 @@ function MessageRow({
   }
 
   return (
-    <div className={`transition-colors ${isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-slate-50 dark:hover:bg-slate-700/50'}`}>
+    <div className={`transition-colors ${isSelected ? 'bg-blue-50/80 dark:bg-blue-900/20' : 'hover:bg-slate-50/80 dark:hover:bg-slate-700/50'}`}>
       <div
         className="px-4 py-3 cursor-pointer"
         onClick={onToggleExpand}
@@ -1184,7 +1187,7 @@ function MessageRow({
                 : 'bg-white border-slate-300 dark:bg-slate-700 dark:border-slate-500'
             }`}
           >
-            {isSelected && <CheckIconSolid className="w-2.5 h-2.5 text-white" />}
+            {isSelected && <Check className="w-2.5 h-2.5 text-white" />}
           </div>
 
           {/* Urgency indicator */}
@@ -1199,10 +1202,10 @@ function MessageRow({
                 {message.fromName || message.fromAddress || 'Nieznany nadawca'}
               </span>
               {hasAttachments && (
-                <PaperClipIcon className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                <Paperclip className="w-4 h-4 text-slate-400 dark:text-slate-500 flex-shrink-0" />
               )}
               {message.autoProcessed && (
-                <SparklesIcon className="w-4 h-4 text-purple-500 flex-shrink-0" />
+                <Sparkles className="w-4 h-4 text-purple-500 flex-shrink-0" />
               )}
             </div>
 
@@ -1217,10 +1220,10 @@ function MessageRow({
 
           {/* Date & actions */}
           <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-xs text-slate-500">
+            <span className="text-xs text-slate-500 dark:text-slate-400">
               {formatDate(message.sentAt || message.receivedAt)}
             </span>
-            <ChevronDownIcon className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`w-4 h-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
           </div>
         </div>
       </div>
@@ -1234,57 +1237,57 @@ function MessageRow({
             exit={{ height: 0, opacity: 0 }}
             className="overflow-hidden"
           >
-            <div className="px-4 pb-4 pt-2 ml-9 border-t border-slate-100 dark:border-slate-700">
+            <div className="px-4 pb-4 pt-2 ml-9 border-t border-slate-100 dark:border-slate-700/50">
               {/* Actions */}
               <div className="flex flex-wrap gap-2 mb-4">
                 <button
                   onClick={(e) => { e.stopPropagation(); onGTDAction('INBOX') }}
-                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100 rounded-lg hover:bg-blue-200 transition-colors"
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-100 dark:text-blue-300 dark:bg-blue-900/40 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/60 transition-colors"
                 >
-                  <InboxIcon className="w-3.5 h-3.5" />
+                  <Inbox className="w-3.5 h-3.5" />
                   Do Inbox
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); onGTDAction('DO') }}
-                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 rounded-lg hover:bg-green-200 transition-colors"
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/40 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/60 transition-colors"
                 >
-                  <CheckIcon className="w-3.5 h-3.5" />
+                  <Check className="w-3.5 h-3.5" />
                   DO
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); onGTDAction('DEFER') }}
-                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-100 rounded-lg hover:bg-amber-200 transition-colors"
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-amber-700 bg-amber-100 dark:text-amber-300 dark:bg-amber-900/40 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-900/60 transition-colors"
                 >
-                  <ClockIcon className="w-3.5 h-3.5" />
+                  <Clock className="w-3.5 h-3.5" />
                   Odloz
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); onEmailWriter() }}
-                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-100 rounded-lg hover:bg-purple-200 transition-colors"
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-100 dark:text-purple-300 dark:bg-purple-900/40 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/60 transition-colors"
                 >
-                  <SparklesIcon className="w-3.5 h-3.5" />
+                  <Sparkles className="w-3.5 h-3.5" />
                   AI Odpowiedz
                 </button>
                 <div className="flex-1" />
                 <button
                   onClick={(e) => { e.stopPropagation(); onArchive() }}
-                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 rounded-lg hover:bg-slate-200 transition-colors"
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 dark:text-slate-300 dark:bg-slate-700 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
                 >
-                  <ArchiveBoxIcon className="w-3.5 h-3.5" />
+                  <Archive className="w-3.5 h-3.5" />
                   Archiwizuj
                 </button>
                 <button
                   onClick={(e) => { e.stopPropagation(); onDelete() }}
-                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-100 rounded-lg hover:bg-red-200 transition-colors"
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-red-600 bg-red-100 dark:text-red-300 dark:bg-red-900/40 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/60 transition-colors"
                 >
-                  <TrashIcon className="w-3.5 h-3.5" />
+                  <Trash2 className="w-3.5 h-3.5" />
                   Usun
                 </button>
               </div>
 
               {/* Message details */}
               <div className="text-sm">
-                <div className="flex gap-4 text-xs text-slate-500 mb-3">
+                <div className="flex gap-4 text-xs text-slate-500 dark:text-slate-400 mb-3">
                   <span>Od: {message.fromAddress}</span>
                   {message.toAddresses && <span>Do: {message.toAddresses}</span>}
                   <span>{new Date(message.sentAt || message.receivedAt).toLocaleString('pl-PL')}</span>
@@ -1305,8 +1308,8 @@ function MessageRow({
 
                 {/* Attachments */}
                 {hasAttachments && (
-                  <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
-                    <h5 className="text-xs font-medium text-slate-500 mb-2">
+                  <div className="mt-4 pt-4 border-t border-slate-200/50 dark:border-slate-700/50">
+                    <h5 className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">
                       Zalaczniki ({message.attachments.length})
                     </h5>
                     <div className="flex flex-wrap gap-2">
@@ -1315,10 +1318,10 @@ function MessageRow({
                           key={idx}
                           className="flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-700 rounded-lg text-sm"
                         >
-                          <PaperClipIcon className="w-4 h-4 text-slate-500" />
-                          <span className="truncate max-w-[200px]">{att.filename || att.name}</span>
+                          <Paperclip className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                          <span className="truncate max-w-[200px] text-slate-700 dark:text-slate-300">{att.filename || att.name}</span>
                           {att.size && (
-                            <span className="text-xs text-slate-400">
+                            <span className="text-xs text-slate-400 dark:text-slate-500">
                               {Math.round(att.size / 1024)}KB
                             </span>
                           )}

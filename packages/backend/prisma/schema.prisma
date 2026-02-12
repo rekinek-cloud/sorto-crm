@@ -147,6 +147,7 @@ model Organization {
   baseStreamsCreated   Boolean              @default(false)
   employees           Employee[]           @relation("OrganizationEmployees")
   aiAgentAssignments  AIAgentAssignment[]  @relation("OrganizationAIAgents")
+  pipeline_config     pipeline_config?
 
   @@index([holdingId])
   @@map("organizations")
@@ -5688,4 +5689,27 @@ model AIAgentTemplate {
   updatedAt            DateTime @updatedAt
 
   @@map("ai_agent_templates")
+}
+
+model pipeline_config {
+  id               String   @id @default(uuid())
+  organizationId   String   @unique
+
+  classifications  Json     @default("{}")
+  aiParams         Json     @default("{}")
+  thresholds       Json     @default("{}")
+  keywords         Json     @default("{}")
+  domains          Json     @default("{}")
+  scheduling       Json     @default("{}")
+  contentLimits    Json     @default("{}")
+  postActions      Json     @default("{}")
+  systemRules      Json     @default("{}")
+  taskExtraction   Json     @default("{}")
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  organization     Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("pipeline_config")
 }

@@ -3,17 +3,22 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { StatCard } from '@/components/ui/StatCard';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
 import {
-  CalendarIcon,
-  ChartBarIcon,
-  TrophyIcon,
-  RocketLaunchIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  LightBulbIcon,
-  ArrowRightIcon,
-  AdjustmentsHorizontalIcon,
-} from '@heroicons/react/24/outline';
+  Calendar,
+  BarChart3,
+  Trophy,
+  Rocket,
+  CheckCircle,
+  AlertTriangle,
+  Lightbulb,
+  ArrowRight,
+  SlidersHorizontal,
+  Save,
+} from 'lucide-react';
 
 interface MonthlyStats {
   completedProjects: number;
@@ -31,6 +36,19 @@ interface ReviewSection {
   notes?: string;
 }
 
+const containerAnimation = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.06 }
+  }
+};
+
+const itemAnimation = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0 }
+};
+
 export default function MonthlyReviewPage() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [stats, setStats] = useState<MonthlyStats | null>(null);
@@ -44,7 +62,6 @@ export default function MonthlyReviewPage() {
   }, [currentMonth]);
 
   const loadMonthlyData = async () => {
-    // Mock data for demo
     setTimeout(() => {
       setStats({
         completedProjects: 3,
@@ -56,13 +73,13 @@ export default function MonthlyReviewPage() {
       });
 
       setReviewSections([
-        { id: 'achievements', title: 'Major Achievements', completed: false },
-        { id: 'projects', title: 'Project Review', completed: false },
-        { id: 'areas', title: 'Areas of Responsibility', completed: false },
-        { id: 'habits', title: 'Habit Tracking', completed: false },
-        { id: 'challenges', title: 'Challenges & Blockers', completed: false },
-        { id: 'lessons', title: 'Lessons Learned', completed: false },
-        { id: 'planning', title: 'Next Month Planning', completed: false },
+        { id: 'achievements', title: 'Glowne osiagniecia', completed: false },
+        { id: 'projects', title: 'Przeglad projektow', completed: false },
+        { id: 'areas', title: 'Obszary odpowiedzialnosci', completed: false },
+        { id: 'habits', title: 'Sledzenie nawykow', completed: false },
+        { id: 'challenges', title: 'Wyzwania i blokery', completed: false },
+        { id: 'lessons', title: 'Wyciagniete wnioski', completed: false },
+        { id: 'planning', title: 'Planowanie nastepnego miesiaca', completed: false },
       ]);
 
       setIsLoading(false);
@@ -70,427 +87,419 @@ export default function MonthlyReviewPage() {
   };
 
   const formatMonth = (date: Date) => {
-    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
+    return date.toLocaleDateString('pl-PL', { year: 'numeric', month: 'long' });
   };
 
   const toggleSection = (sectionId: string) => {
-    setReviewSections(prev => prev.map(section => 
-      section.id === sectionId 
+    setReviewSections(prev => prev.map(section =>
+      section.id === sectionId
         ? { ...section, completed: !section.completed }
         : section
     ));
   };
 
   const completedSections = reviewSections.filter(s => s.completed).length;
-  const progressPercentage = (completedSections / reviewSections.length) * 100;
+  const progressPercentage = reviewSections.length > 0 ? (completedSections / reviewSections.length) * 100 : 0;
 
   const achievementTemplates = [
-    "Completed project: Website redesign ahead of schedule",
-    "Established new morning routine with 90% consistency", 
-    "Improved client satisfaction scores by 15%",
-    "Launched new product feature used by 500+ users",
-    "Reduced task backlog by 40%"
+    "Ukonczony projekt: Redesign strony z wyprzedzeniem harmonogramu",
+    "Wdrozenie nowej rutyny porannej z 90% konsekwencja",
+    "Poprawa wskaznikow satysfakcji klientow o 15%",
+    "Uruchomienie nowej funkcji produktu uzywanej przez 500+ uzytkownikow",
+    "Redukcja zaleglosci w zadaniach o 40%"
   ];
 
   const challengeTemplates = [
-    "Time management during busy periods",
-    "Communication gaps with remote team members",
-    "Difficulty maintaining work-life balance",
-    "Technical challenges with new tools/systems",
-    "Unclear priorities leading to context switching"
+    "Zarzadzanie czasem w okresach natezenia pracy",
+    "Luki komunikacyjne z czlonkami zespolu zdalnego",
+    "Trudnosci w utrzymaniu rownotagi praca-zycie",
+    "Wyzwania techniczne z nowymi narzedziami/systemami",
+    "Niejasne priorytety prowadzace do przelaczania kontekstu"
   ];
 
   return (
-    <motion.div
-      className="space-y-6"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Monthly Review</h1>
-          <p className="text-gray-600">Comprehensive monthly progress review for {formatMonth(currentMonth)}</p>
-        </div>
-        
-        <div className="flex items-center space-x-3">
-          <select
-            value={currentMonth.getMonth()}
-            onChange={(e) => {
-              const newDate = new Date(currentMonth);
-              newDate.setMonth(parseInt(e.target.value));
-              setCurrentMonth(newDate);
-            }}
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-          >
-            {Array.from({length: 12}, (_, i) => (
-              <option key={i} value={i}>
-                {new Date(2024, i).toLocaleDateString('en-US', { month: 'long' })}
-              </option>
-            ))}
-          </select>
-          
-          <button
-            onClick={() => {
-              toast.success('Monthly review saved!');
-            }}
-            className="btn btn-primary"
-          >
-            <CheckCircleIcon className="w-5 h-5 mr-2" />
-            Save Review
-          </button>
-        </div>
-      </div>
-
-      {/* Progress Overview */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">Review Progress</h3>
-          <span className="text-sm text-gray-500">
-            {completedSections} of {reviewSections.length} sections completed
-          </span>
-        </div>
-        
-        <div className="w-full bg-gray-200 rounded-full h-2 mb-4">
-          <div 
-            className="bg-primary-600 h-2 rounded-full transition-all duration-300"
-            style={{ width: `${progressPercentage}%` }}
-          ></div>
-        </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {reviewSections.map((section) => (
-            <button
-              key={section.id}
-              onClick={() => setSelectedSection(section.id)}
-              className={`p-3 rounded-lg border text-left transition-all ${
-                selectedSection === section.id
-                  ? 'border-primary-500 bg-primary-50 text-primary-700'
-                  : section.completed
-                  ? 'border-green-200 bg-green-50 text-green-700'
-                  : 'border-gray-200 hover:border-gray-300'
-              }`}
+    <PageShell>
+      <PageHeader
+        title="Przeglad miesieczny"
+        subtitle="Miesieczna analiza i cele strategiczne"
+        icon={Calendar}
+        iconColor="text-purple-600"
+        breadcrumbs={[
+          { label: 'Przeglady', href: '/dashboard/reviews' },
+          { label: 'Miesieczny' }
+        ]}
+        actions={
+          <div className="flex items-center gap-3">
+            <select
+              value={currentMonth.getMonth()}
+              onChange={(e) => {
+                const newDate = new Date(currentMonth);
+                newDate.setMonth(parseInt(e.target.value));
+                setCurrentMonth(newDate);
+              }}
+              className="px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-xl text-sm"
             >
-              <div className="flex items-center space-x-2">
-                {section.completed ? (
-                  <CheckCircleIcon className="w-4 h-4 text-green-600" />
-                ) : (
-                  <div className="w-4 h-4 rounded-full border-2 border-gray-300"></div>
-                )}
-                <span className="text-sm font-medium">{section.title}</span>
-              </div>
+              {Array.from({length: 12}, (_, i) => (
+                <option key={i} value={i}>
+                  {new Date(2024, i).toLocaleDateString('pl-PL', { month: 'long' })}
+                </option>
+              ))}
+            </select>
+
+            <button
+              onClick={() => {
+                toast.success('Przeglad miesieczny zapisany!');
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-colors text-sm font-medium"
+            >
+              <Save className="w-4 h-4" />
+              Zapisz przeglad
             </button>
-          ))}
-        </div>
-      </div>
+          </div>
+        }
+      />
 
-      {/* Statistics */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        </div>
-      ) : stats && (
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <TrophyIcon className="w-6 h-6 text-green-600" />
+        <SkeletonPage />
+      ) : (
+        <motion.div variants={containerAnimation} initial="hidden" animate="show" className="space-y-6">
+          {/* Progress Overview */}
+          <motion.div variants={itemAnimation}>
+            <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Postep przegladu</h3>
+                <span className="text-sm text-slate-500 dark:text-slate-400">
+                  {completedSections} z {reviewSections.length} sekcji ukonczonych
+                </span>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Projects</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.completedProjects}</p>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <CheckCircleIcon className="w-6 h-6 text-blue-600" />
+              <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 mb-4">
+                <div
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${progressPercentage}%` }}
+                ></div>
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Tasks</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.completedTasks}</p>
-              </div>
-            </div>
-          </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <AdjustmentsHorizontalIcon className="w-6 h-6 text-purple-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Habits</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.completedHabits}</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {reviewSections.map((section) => (
+                  <button
+                    key={section.id}
+                    onClick={() => setSelectedSection(section.id)}
+                    className={`p-3 rounded-xl border text-left transition-all ${
+                      selectedSection === section.id
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
+                        : section.completed
+                        ? 'border-green-200 dark:border-green-700/30 bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                        : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2">
+                      {section.completed ? (
+                        <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                      ) : (
+                        <div className="w-4 h-4 rounded-full border-2 border-slate-300 dark:border-slate-600"></div>
+                      )}
+                      <span className="text-sm font-medium text-slate-900 dark:text-slate-100">{section.title}</span>
+                    </div>
+                  </button>
+                ))}
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <ExclamationTriangleIcon className="w-6 h-6 text-yellow-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Overdue</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.overdueTasks}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <div className="flex items-center">
-              <div className="p-2 bg-indigo-100 rounded-lg">
-                <LightBulbIcon className="w-6 h-6 text-indigo-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">New Areas</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.newAreasIdentified}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-            <div className="flex items-center">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <ChartBarIcon className="w-6 h-6 text-orange-600" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Score</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.productivityScore}%</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Review Content */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        {selectedSection === 'overview' && (
-          <div className="space-y-6">
-            <h3 className="text-lg font-semibold text-gray-900">Review Overview</h3>
-            <p className="text-gray-600">
-              Complete each section of your monthly review to reflect on progress and plan for the upcoming month.
-              This comprehensive review follows GTD methodology for optimal productivity insights.
-            </p>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <h4 className="font-medium text-gray-900">This Month's Highlights</h4>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li>• Completed {stats?.completedProjects} major projects</li>
-                  <li>• Finished {stats?.completedTasks} tasks across all areas</li>
-                  <li>• Maintained {stats?.completedHabits} habit streaks</li>
-                  <li>• Achieved {stats?.productivityScore}% productivity score</li>
-                </ul>
-              </div>
-              
-              <div className="space-y-4">
-                <h4 className="font-medium text-gray-900">Areas for Attention</h4>
-                <ul className="space-y-2 text-sm text-gray-600">
-                  <li>• {stats?.overdueTasks} overdue tasks need addressing</li>
-                  <li>• Review and update project priorities</li>
-                  <li>• Identify new areas of responsibility</li>
-                  <li>• Plan habit improvements for next month</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {selectedSection === 'achievements' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Major Achievements</h3>
-              <button
-                onClick={() => toggleSection('achievements')}
-                className={`btn ${reviewSections.find(s => s.id === 'achievements')?.completed ? 'btn-outline' : 'btn-primary'}`}
-              >
-                {reviewSections.find(s => s.id === 'achievements')?.completed ? 'Mark Incomplete' : 'Mark Complete'}
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  What were your biggest wins this month?
-                </label>
-                <textarea
-                  value={notes.achievements || ''}
-                  onChange={(e) => setNotes(prev => ({...prev, achievements: e.target.value}))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  rows={4}
-                  placeholder="List your major accomplishments, completed projects, and significant milestones..."
-                />
-              </div>
-              
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">Achievement Examples:</h4>
-                <ul className="space-y-1 text-sm text-gray-600">
-                  {achievementTemplates.map((template, index) => (
-                    <li key={index}>• {template}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {selectedSection === 'challenges' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Challenges & Blockers</h3>
-              <button
-                onClick={() => toggleSection('challenges')}
-                className={`btn ${reviewSections.find(s => s.id === 'challenges')?.completed ? 'btn-outline' : 'btn-primary'}`}
-              >
-                {reviewSections.find(s => s.id === 'challenges')?.completed ? 'Mark Incomplete' : 'Mark Complete'}
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  What obstacles did you encounter?
-                </label>
-                <textarea
-                  value={notes.challenges || ''}
-                  onChange={(e) => setNotes(prev => ({...prev, challenges: e.target.value}))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  rows={4}
-                  placeholder="Describe challenges, blockers, and areas where you struggled..."
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  How can you address these challenges?
-                </label>
-                <textarea
-                  value={notes.solutions || ''}
-                  onChange={(e) => setNotes(prev => ({...prev, solutions: e.target.value}))}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  rows={3}
-                  placeholder="Outline potential solutions and strategies for next month..."
-                />
-              </div>
-              
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h4 className="font-medium text-gray-900 mb-2">Common Challenges:</h4>
-                <ul className="space-y-1 text-sm text-gray-600">
-                  {challengeTemplates.map((template, index) => (
-                    <li key={index}>• {template}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {selectedSection === 'planning' && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Next Month Planning</h3>
-              <button
-                onClick={() => toggleSection('planning')}
-                className={`btn ${reviewSections.find(s => s.id === 'planning')?.completed ? 'btn-outline' : 'btn-primary'}`}
-              >
-                {reviewSections.find(s => s.id === 'planning')?.completed ? 'Mark Incomplete' : 'Mark Complete'}
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Top 3 Priorities for Next Month
-                  </label>
-                  <textarea
-                    value={notes.priorities || ''}
-                    onChange={(e) => setNotes(prev => ({...prev, priorities: e.target.value}))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    rows={3}
-                    placeholder="1. Priority one...&#10;2. Priority two...&#10;3. Priority three..."
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    New Projects to Start
-                  </label>
-                  <textarea
-                    value={notes.newProjects || ''}
-                    onChange={(e) => setNotes(prev => ({...prev, newProjects: e.target.value}))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    rows={3}
-                    placeholder="List new projects you want to initiate..."
-                  />
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Habit Adjustments
-                  </label>
-                  <textarea
-                    value={notes.habitChanges || ''}
-                    onChange={(e) => setNotes(prev => ({...prev, habitChanges: e.target.value}))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    rows={3}
-                    placeholder="Habits to improve, modify, or add..."
-                  />
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Learning Goals
-                  </label>
-                  <textarea
-                    value={notes.learning || ''}
-                    onChange={(e) => setNotes(prev => ({...prev, learning: e.target.value}))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    rows={3}
-                    placeholder="Skills to develop, courses to take, books to read..."
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Other sections would be similar with specific content for projects, areas, habits, lessons */}
-        {!['overview', 'achievements', 'challenges', 'planning'].includes(selectedSection) && (
-          <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">
-                {reviewSections.find(s => s.id === selectedSection)?.title}
-              </h3>
-              <button
-                onClick={() => toggleSection(selectedSection)}
-                className={`btn ${reviewSections.find(s => s.id === selectedSection)?.completed ? 'btn-outline' : 'btn-primary'}`}
-              >
-                {reviewSections.find(s => s.id === selectedSection)?.completed ? 'Mark Incomplete' : 'Mark Complete'}
-              </button>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Review Notes
-              </label>
-              <textarea
-                value={notes[selectedSection] || ''}
-                onChange={(e) => setNotes(prev => ({...prev, [selectedSection]: e.target.value}))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                rows={6}
-                placeholder={`Add your thoughts and observations about ${reviewSections.find(s => s.id === selectedSection)?.title.toLowerCase()}...`}
+          {/* Statistics */}
+          {stats && (
+            <motion.div variants={itemAnimation} className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <StatCard
+                label="Projekty"
+                value={stats.completedProjects}
+                icon={Trophy}
+                iconColor="text-green-600 bg-green-50 dark:bg-green-900/30 dark:text-green-400"
               />
+              <StatCard
+                label="Zadania"
+                value={stats.completedTasks}
+                icon={CheckCircle}
+                iconColor="text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"
+              />
+              <StatCard
+                label="Nawyki"
+                value={stats.completedHabits}
+                icon={SlidersHorizontal}
+                iconColor="text-purple-600 bg-purple-50 dark:bg-purple-900/30 dark:text-purple-400"
+              />
+              <StatCard
+                label="Zalegle"
+                value={stats.overdueTasks}
+                icon={AlertTriangle}
+                iconColor="text-yellow-600 bg-yellow-50 dark:bg-yellow-900/30 dark:text-yellow-400"
+              />
+              <StatCard
+                label="Nowe obszary"
+                value={stats.newAreasIdentified}
+                icon={Lightbulb}
+                iconColor="text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400"
+              />
+              <StatCard
+                label="Wynik"
+                value={`${stats.productivityScore}%`}
+                icon={BarChart3}
+                iconColor="text-orange-600 bg-orange-50 dark:bg-orange-900/30 dark:text-orange-400"
+              />
+            </motion.div>
+          )}
+
+          {/* Review Content */}
+          <motion.div variants={itemAnimation}>
+            <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+              {selectedSection === 'overview' && (
+                <div className="space-y-6">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Podsumowanie przegladu</h3>
+                  <p className="text-slate-500 dark:text-slate-400">
+                    Wypelnij kazda sekcje przegladu miesiecznego, aby przeanalizowac postepy i zaplanowac nastepny miesiac.
+                    Ten kompleksowy przeglad pomoze Ci w optymalizacji produktywnosci.
+                  </p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-slate-900 dark:text-slate-100">Najwazniejsze w tym miesiacu</h4>
+                      <ul className="space-y-2 text-sm text-slate-500 dark:text-slate-400">
+                        <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Ukonczone {stats?.completedProjects} projekty</li>
+                        <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Ukonczone {stats?.completedTasks} zadan</li>
+                        <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Utrzymane {stats?.completedHabits} nawykow</li>
+                        <li className="flex items-center gap-2"><CheckCircle className="h-4 w-4 text-green-500" /> Osiagniety wynik {stats?.productivityScore}%</li>
+                      </ul>
+                    </div>
+
+                    <div className="space-y-4">
+                      <h4 className="font-medium text-slate-900 dark:text-slate-100">Obszary wymagajace uwagi</h4>
+                      <ul className="space-y-2 text-sm text-slate-500 dark:text-slate-400">
+                        <li className="flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-500" /> {stats?.overdueTasks} zaleglych zadan wymaga uwagi</li>
+                        <li className="flex items-center gap-2"><ArrowRight className="h-4 w-4 text-slate-400" /> Przeglad i aktualizacja priorytetow</li>
+                        <li className="flex items-center gap-2"><ArrowRight className="h-4 w-4 text-slate-400" /> Identyfikacja nowych obszarow</li>
+                        <li className="flex items-center gap-2"><ArrowRight className="h-4 w-4 text-slate-400" /> Plan poprawy nawykow na nastepny miesiac</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedSection === 'achievements' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Glowne osiagniecia</h3>
+                    <button
+                      onClick={() => toggleSection('achievements')}
+                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                        reviewSections.find(s => s.id === 'achievements')?.completed
+                          ? 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      {reviewSections.find(s => s.id === 'achievements')?.completed ? 'Oznacz jako nieukonczone' : 'Oznacz jako ukonczone'}
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Jakie byly Twoje najwieksze sukcesy w tym miesiacu?
+                      </label>
+                      <textarea
+                        value={notes.achievements || ''}
+                        onChange={(e) => setNotes(prev => ({...prev, achievements: e.target.value}))}
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        rows={4}
+                        placeholder="Wymien glowne osiagniecia, ukonczone projekty i wazne kamienie milowe..."
+                      />
+                    </div>
+
+                    <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl">
+                      <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">Przyklady osiagniec:</h4>
+                      <ul className="space-y-1 text-sm text-slate-500 dark:text-slate-400">
+                        {achievementTemplates.map((template, index) => (
+                          <li key={index} className="flex items-start gap-2">
+                            <Trophy className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                            {template}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedSection === 'challenges' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Wyzwania i blokery</h3>
+                    <button
+                      onClick={() => toggleSection('challenges')}
+                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                        reviewSections.find(s => s.id === 'challenges')?.completed
+                          ? 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      {reviewSections.find(s => s.id === 'challenges')?.completed ? 'Oznacz jako nieukonczone' : 'Oznacz jako ukonczone'}
+                    </button>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Jakie przeszkody napotkales?
+                      </label>
+                      <textarea
+                        value={notes.challenges || ''}
+                        onChange={(e) => setNotes(prev => ({...prev, challenges: e.target.value}))}
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        rows={4}
+                        placeholder="Opisz wyzwania, blokery i obszary, w ktorych mieles trudnosci..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                        Jak mozesz rozwiazac te wyzwania?
+                      </label>
+                      <textarea
+                        value={notes.solutions || ''}
+                        onChange={(e) => setNotes(prev => ({...prev, solutions: e.target.value}))}
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        rows={3}
+                        placeholder="Nakresl potencjalne rozwiazania i strategie na nastepny miesiac..."
+                      />
+                    </div>
+
+                    <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl">
+                      <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">Typowe wyzwania:</h4>
+                      <ul className="space-y-1 text-sm text-slate-500 dark:text-slate-400">
+                        {challengeTemplates.map((template, index) => (
+                          <li key={index} className="flex items-start gap-2">
+                            <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                            {template}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {selectedSection === 'planning' && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Planowanie nastepnego miesiaca</h3>
+                    <button
+                      onClick={() => toggleSection('planning')}
+                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                        reviewSections.find(s => s.id === 'planning')?.completed
+                          ? 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      {reviewSections.find(s => s.id === 'planning')?.completed ? 'Oznacz jako nieukonczone' : 'Oznacz jako ukonczone'}
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                          Top 3 priorytety na nastepny miesiac
+                        </label>
+                        <textarea
+                          value={notes.priorities || ''}
+                          onChange={(e) => setNotes(prev => ({...prev, priorities: e.target.value}))}
+                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          rows={3}
+                          placeholder="1. Priorytet pierwszy...&#10;2. Priorytet drugi...&#10;3. Priorytet trzeci..."
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                          Nowe projekty do rozpoczecia
+                        </label>
+                        <textarea
+                          value={notes.newProjects || ''}
+                          onChange={(e) => setNotes(prev => ({...prev, newProjects: e.target.value}))}
+                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          rows={3}
+                          placeholder="Lista nowych projektow do zainicjowania..."
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                          Korekty nawykow
+                        </label>
+                        <textarea
+                          value={notes.habitChanges || ''}
+                          onChange={(e) => setNotes(prev => ({...prev, habitChanges: e.target.value}))}
+                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          rows={3}
+                          placeholder="Nawyki do poprawy, modyfikacji lub dodania..."
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                          Cele nauki
+                        </label>
+                        <textarea
+                          value={notes.learning || ''}
+                          onChange={(e) => setNotes(prev => ({...prev, learning: e.target.value}))}
+                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          rows={3}
+                          placeholder="Umiejetnosci do rozwoju, kursy, ksiazki do przeczytania..."
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Other sections */}
+              {!['overview', 'achievements', 'challenges', 'planning'].includes(selectedSection) && (
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                      {reviewSections.find(s => s.id === selectedSection)?.title}
+                    </h3>
+                    <button
+                      onClick={() => toggleSection(selectedSection)}
+                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-colors ${
+                        reviewSections.find(s => s.id === selectedSection)?.completed
+                          ? 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                          : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                    >
+                      {reviewSections.find(s => s.id === selectedSection)?.completed ? 'Oznacz jako nieukonczone' : 'Oznacz jako ukonczone'}
+                    </button>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      Notatki z przegladu
+                    </label>
+                    <textarea
+                      value={notes[selectedSection] || ''}
+                      onChange={(e) => setNotes(prev => ({...prev, [selectedSection]: e.target.value}))}
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      rows={6}
+                      placeholder={`Dodaj swoje przemyslenia na temat: ${reviewSections.find(s => s.id === selectedSection)?.title.toLowerCase()}...`}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
-          </div>
-        )}
-      </div>
-    </motion.div>
+          </motion.div>
+        </motion.div>
+      )}
+    </PageShell>
   );
 }

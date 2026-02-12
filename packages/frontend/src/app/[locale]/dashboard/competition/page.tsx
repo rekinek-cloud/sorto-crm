@@ -3,34 +3,63 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Swords,
+  Plus,
+  Building2,
+  AlertTriangle,
+  Activity,
+  Ban,
+  Trash2,
+  Search,
+  ExternalLink,
+  TrendingDown,
+  Lightbulb,
+  Target,
+  CalendarClock,
+  Trophy,
+  X,
+  ShieldAlert,
+} from 'lucide-react';
 import { dealCompetitorsApi, CreateDealCompetitorRequest, CreateLostAnalysisRequest, LostAnalysis } from '@/lib/api/dealCompetitors';
 import { DealCompetitor } from '@/types/gtd';
 import { dealsApi } from '@/lib/api/deals';
 
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { StatCard } from '@/components/ui/StatCard';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ActionButton } from '@/components/ui/ActionButton';
+import { FormModal } from '@/components/ui/FormModal';
+import { DataTable, Column } from '@/components/ui/DataTable';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
+
 const THREAT_LEVELS = [
-  { value: 'LOW', label: 'Niski', color: 'bg-green-100 text-green-700' },
-  { value: 'MEDIUM', label: 'Sredni', color: 'bg-yellow-100 text-yellow-700' },
-  { value: 'HIGH', label: 'Wysoki', color: 'bg-orange-100 text-orange-700' },
-  { value: 'CRITICAL', label: 'Krytyczny', color: 'bg-red-100 text-red-700' },
+  { value: 'LOW', label: 'Niski', variant: 'success' as const },
+  { value: 'MEDIUM', label: 'Sredni', variant: 'warning' as const },
+  { value: 'HIGH', label: 'Wysoki', variant: 'error' as const },
+  { value: 'CRITICAL', label: 'Krytyczny', variant: 'error' as const },
 ];
 
 const STATUSES = [
-  { value: 'ACTIVE', label: 'Aktywny', color: 'bg-blue-100 text-blue-700' },
-  { value: 'ELIMINATED', label: 'Wyeliminowany', color: 'bg-gray-100 text-gray-600' },
-  { value: 'WON', label: 'Wygral', color: 'bg-green-100 text-green-700' },
-  { value: 'UNKNOWN', label: 'Nieznany', color: 'bg-gray-100 text-gray-500' },
+  { value: 'ACTIVE', label: 'Aktywny', variant: 'info' as const },
+  { value: 'ELIMINATED', label: 'Wyeliminowany', variant: 'neutral' as const },
+  { value: 'WON', label: 'Wygral', variant: 'success' as const },
+  { value: 'UNKNOWN', label: 'Nieznany', variant: 'default' as const },
 ];
 
-const getThreatColor = (level: string) => {
-  return THREAT_LEVELS.find(t => t.value === level)?.color || 'bg-gray-100 text-gray-700';
+const getThreatVariant = (level: string) => {
+  return THREAT_LEVELS.find(t => t.value === level)?.variant || 'default';
 };
 
 const getThreatLabel = (level: string) => {
   return THREAT_LEVELS.find(t => t.value === level)?.label || level;
 };
 
-const getStatusColor = (status: string) => {
-  return STATUSES.find(s => s.value === status)?.color || 'bg-gray-100 text-gray-700';
+const getStatusVariant = (status: string) => {
+  return STATUSES.find(s => s.value === status)?.variant || 'default';
 };
 
 const getStatusLabel = (status: string) => {
@@ -44,6 +73,10 @@ const formatCurrency = (amount?: number, currency?: string) => {
     currency: currency || 'PLN',
   }).format(amount);
 };
+
+const cardClass = 'bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-sm dark:bg-slate-800/80 dark:border-slate-700/30';
+const inputClass = 'w-full px-3 py-2 text-sm bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors';
+const labelClass = 'block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1';
 
 export default function CompetitionPage() {
   const [deals, setDeals] = useState<any[]>([]);
@@ -180,14 +213,34 @@ export default function CompetitionPage() {
   };
 
   const handleDeleteCompetitor = async (id: string) => {
-    if (!confirm('Usunac tego konkurenta?')) return;
-    try {
-      await dealCompetitorsApi.deleteCompetitor(id);
-      toast.success('Konkurent usuniety');
-      loadCompetitors();
-    } catch (error) {
-      toast.error('Blad usuwania');
-    }
+    toast((t) => (
+      <div className="flex items-center gap-3">
+        <span className="text-sm text-slate-700 dark:text-slate-300">Usunac tego konkurenta?</span>
+        <div className="flex gap-1">
+          <button
+            onClick={async () => {
+              toast.dismiss(t.id);
+              try {
+                await dealCompetitorsApi.deleteCompetitor(id);
+                toast.success('Konkurent usuniety');
+                loadCompetitors();
+              } catch (error) {
+                toast.error('Blad usuwania');
+              }
+            }}
+            className="px-2 py-1 text-xs font-medium bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Usun
+          </button>
+          <button
+            onClick={() => toast.dismiss(t.id)}
+            className="px-2 py-1 text-xs font-medium bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
+          >
+            Anuluj
+          </button>
+        </div>
+      </div>
+    ), { duration: 8000 });
   };
 
   const handleUpdateStatus = async (id: string, status: string) => {
@@ -256,233 +309,339 @@ export default function CompetitionPage() {
 
   const isDealLost = selectedDeal && (selectedDeal.status === 'LOST' || selectedDeal.status === 'CLOSED_LOST');
 
-  return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+  // DataTable columns
+  const tableColumns: Column<DealCompetitor>[] = [
+    {
+      key: 'competitorName',
+      label: 'Konkurent',
+      sortable: true,
+      render: (_, row) => (
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Konkurencja w dealach</h1>
-          <p className="text-gray-600">Sledz konkurentow i analizuj ich oferty</p>
+          <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{row.competitorName}</div>
+          {row.competitorWebsite && (
+            <a
+              href={row.competitorWebsite.startsWith('http') ? row.competitorWebsite : `https://${row.competitorWebsite}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1 text-xs text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {row.competitorWebsite}
+              <ExternalLink className="w-3 h-3" />
+            </a>
+          )}
         </div>
-      </div>
+      ),
+    },
+    {
+      key: 'estimatedPrice',
+      label: 'Cena szacunkowa',
+      sortable: true,
+      render: (_, row) => (
+        <span className="text-sm text-slate-700 dark:text-slate-300">
+          {formatCurrency(row.estimatedPrice, row.currency)}
+        </span>
+      ),
+    },
+    {
+      key: 'threatLevel',
+      label: 'Zagrozenie',
+      sortable: true,
+      render: (_, row) => (
+        <StatusBadge variant={getThreatVariant(row.threatLevel)} dot>
+          {getThreatLabel(row.threatLevel)}
+        </StatusBadge>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_, row) => (
+        <select
+          value={row.status}
+          onChange={(e) => {
+            e.stopPropagation();
+            handleUpdateStatus(row.id, e.target.value);
+          }}
+          onClick={(e) => e.stopPropagation()}
+          className="px-2 py-1 text-xs font-medium rounded-full border-0 cursor-pointer bg-slate-50 dark:bg-slate-900/50 text-slate-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+        >
+          {STATUSES.map(s => (
+            <option key={s.value} value={s.value}>{s.label}</option>
+          ))}
+        </select>
+      ),
+    },
+    {
+      key: 'theirStrengths',
+      label: 'Mocne strony',
+      sortable: false,
+      render: (_, row) => (
+        <p className="text-sm text-slate-600 dark:text-slate-400 max-w-[200px] truncate" title={row.theirStrengths}>
+          {row.theirStrengths || '-'}
+        </p>
+      ),
+    },
+    {
+      key: 'ourAdvantages',
+      label: 'Nasze przewagi',
+      sortable: false,
+      render: (_, row) => (
+        <p className="text-sm text-slate-600 dark:text-slate-400 max-w-[200px] truncate" title={row.ourAdvantages}>
+          {row.ourAdvantages || '-'}
+        </p>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Akcje',
+      sortable: false,
+      width: 'w-20',
+      render: (_, row) => (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDeleteCompetitor(row.id);
+          }}
+          className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+          Usun
+        </button>
+      ),
+    },
+  ];
+
+  return (
+    <PageShell>
+      <PageHeader
+        title="Konkurencja w dealach"
+        subtitle="Sledz konkurentow i analizuj ich oferty"
+        icon={Swords}
+        iconColor="text-orange-600 dark:text-orange-400"
+        breadcrumbs={[
+          { label: 'Deale', href: '/dashboard/deals' },
+          { label: 'Konkurencja' },
+        ]}
+      />
 
       {/* Deal Selector */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wider">Wybierz deal</h3>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className={`${cardClass} p-6 mb-6`}
+      >
+        <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wider">
+          Wybierz deal
+        </h3>
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
               value={dealSearch}
               onChange={(e) => { setDealSearch(e.target.value); if (selectedDeal) { setSelectedDeal(null); } }}
               onFocus={() => setShowDealDropdown(true)}
               onBlur={() => setTimeout(() => setShowDealDropdown(false), 200)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className={`${inputClass} pl-9`}
               placeholder="Szukaj deala..."
             />
-            {showDealDropdown && filteredDeals.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                {filteredDeals.map((deal) => (
-                  <button
-                    key={deal.id}
-                    type="button"
-                    onClick={() => selectDeal(deal)}
-                    className="w-full text-left px-4 py-2 hover:bg-blue-50 text-sm transition-colors"
-                  >
-                    <div className="font-medium">{deal.title}</div>
-                    <div className="text-xs text-gray-500">
-                      {deal.stage} | {deal.status} | {deal.value ? formatCurrency(deal.value, deal.currency) : '-'}
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
+            <AnimatePresence>
+              {showDealDropdown && filteredDeals.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -5 }}
+                  className="absolute z-10 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg max-h-60 overflow-y-auto"
+                >
+                  {filteredDeals.map((deal) => (
+                    <button
+                      key={deal.id}
+                      type="button"
+                      onClick={() => selectDeal(deal)}
+                      className="w-full text-left px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/50 text-sm transition-colors first:rounded-t-xl last:rounded-b-xl"
+                    >
+                      <div className="font-medium text-slate-900 dark:text-slate-100">{deal.title}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">
+                        {deal.stage} | {deal.status} | {deal.value ? formatCurrency(deal.value, deal.currency) : '-'}
+                      </div>
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
 
           {selectedDeal && (
             <div className="flex gap-2">
-              <button
+              <ActionButton
+                icon={Plus}
                 onClick={() => setShowAddForm(true)}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
               >
-                <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
                 Dodaj konkurenta
-              </button>
+              </ActionButton>
               {isDealLost && !lostAnalysis && (
-                <button
+                <ActionButton
+                  variant="danger"
+                  icon={TrendingDown}
                   onClick={() => setShowLostForm(true)}
-                  className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors whitespace-nowrap"
                 >
                   Analiza przegranej
-                </button>
+                </ActionButton>
               )}
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
 
       {/* Content */}
       {!selectedDeal ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-          <div className="text-gray-400 text-4xl mb-3">⚔️</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">Wybierz deal</h3>
-          <p className="text-gray-600">Wyszukaj deal powyzej aby zobaczyc analize konkurencji</p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className={`${cardClass} p-6`}
+        >
+          <EmptyState
+            icon={Swords}
+            title="Wybierz deal"
+            description="Wyszukaj deal powyzej aby zobaczyc analize konkurencji"
+          />
+        </motion.div>
       ) : isLoading ? (
-        <div className="flex justify-center items-center h-48">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <SkeletonPage />
       ) : (
-        <>
+        <div className="space-y-6">
           {/* Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-white p-4 rounded-lg border border-gray-200 text-center">
-              <p className="text-sm text-gray-600">Konkurenci</p>
-              <p className="text-2xl font-bold text-gray-900">{competitors.length}</p>
-            </div>
-            <div className="bg-white p-4 rounded-lg border border-red-200 text-center">
-              <p className="text-sm text-gray-600">Krytyczni</p>
-              <p className="text-2xl font-bold text-red-600">{competitors.filter(c => c.threatLevel === 'CRITICAL').length}</p>
-            </div>
-            <div className="bg-white p-4 rounded-lg border border-blue-200 text-center">
-              <p className="text-sm text-gray-600">Aktywni</p>
-              <p className="text-2xl font-bold text-blue-600">{competitors.filter(c => c.status === 'ACTIVE').length}</p>
-            </div>
-            <div className="bg-white p-4 rounded-lg border border-gray-200 text-center">
-              <p className="text-sm text-gray-600">Wyeliminowani</p>
-              <p className="text-2xl font-bold text-gray-500">{competitors.filter(c => c.status === 'ELIMINATED').length}</p>
-            </div>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="grid grid-cols-2 md:grid-cols-4 gap-4"
+          >
+            <StatCard
+              label="Konkurenci"
+              value={competitors.length}
+              icon={Building2}
+              iconColor="text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"
+            />
+            <StatCard
+              label="Krytyczni"
+              value={competitors.filter(c => c.threatLevel === 'CRITICAL').length}
+              icon={ShieldAlert}
+              iconColor="text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400"
+            />
+            <StatCard
+              label="Aktywni"
+              value={competitors.filter(c => c.status === 'ACTIVE').length}
+              icon={Activity}
+              iconColor="text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"
+            />
+            <StatCard
+              label="Wyeliminowani"
+              value={competitors.filter(c => c.status === 'ELIMINATED').length}
+              icon={Ban}
+              iconColor="text-slate-500 bg-slate-50 dark:bg-slate-800 dark:text-slate-400"
+            />
+          </motion.div>
 
           {/* Competitors Table */}
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Konkurenci ({competitors.length})</h3>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className={`${cardClass} p-4`}
+          >
+            <div className="mb-3 px-2">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                Konkurenci ({competitors.length})
+              </h3>
             </div>
 
             {competitors.length === 0 ? (
-              <div className="px-6 py-12 text-center">
-                <div className="text-gray-400 text-4xl mb-3">🏢</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-1">Brak konkurentow</h3>
-                <p className="text-gray-600 mb-4">Dodaj pierwszego konkurenta do analizy</p>
-                <button
-                  onClick={() => setShowAddForm(true)}
-                  className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Dodaj konkurenta
-                </button>
-              </div>
+              <EmptyState
+                icon={Building2}
+                title="Brak konkurentow"
+                description="Dodaj pierwszego konkurenta do analizy"
+                action={
+                  <ActionButton icon={Plus} onClick={() => setShowAddForm(true)}>
+                    Dodaj konkurenta
+                  </ActionButton>
+                }
+              />
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Konkurent</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cena szacunkowa</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Zagrozenie</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Mocne strony</th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nasze przewagi</th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Akcje</th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {competitors.map((competitor) => (
-                      <tr key={competitor.id} className="hover:bg-gray-50 transition-colors">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{competitor.competitorName}</div>
-                          {competitor.competitorWebsite && (
-                            <a
-                              href={competitor.competitorWebsite.startsWith('http') ? competitor.competitorWebsite : `https://${competitor.competitorWebsite}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-xs text-blue-600 hover:text-blue-800"
-                            >
-                              {competitor.competitorWebsite}
-                            </a>
-                          )}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                          {formatCurrency(competitor.estimatedPrice, competitor.currency)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getThreatColor(competitor.threatLevel)}`}>
-                            {getThreatLabel(competitor.threatLevel)}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <select
-                            value={competitor.status}
-                            onChange={(e) => handleUpdateStatus(competitor.id, e.target.value)}
-                            className={`px-2 py-1 text-xs font-semibold rounded-full border-0 cursor-pointer ${getStatusColor(competitor.status)}`}
-                          >
-                            {STATUSES.map(s => (
-                              <option key={s.value} value={s.value}>{s.label}</option>
-                            ))}
-                          </select>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-700 max-w-xs">
-                          <p className="truncate" title={competitor.theirStrengths}>{competitor.theirStrengths || '-'}</p>
-                        </td>
-                        <td className="px-6 py-4 text-sm text-gray-700 max-w-xs">
-                          <p className="truncate" title={competitor.ourAdvantages}>{competitor.ourAdvantages || '-'}</p>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                          <button
-                            onClick={() => handleDeleteCompetitor(competitor.id)}
-                            className="text-red-600 hover:text-red-800"
-                          >
-                            Usun
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <DataTable
+                columns={tableColumns}
+                data={competitors}
+                storageKey="competition-table"
+                pageSize={20}
+                emptyMessage="Brak konkurentow"
+              />
             )}
-          </div>
+          </motion.div>
 
           {/* Lost Analysis Section (if deal is lost) */}
           {isDealLost && lostAnalysis && (
-            <div className="bg-red-50 rounded-lg border border-red-200 p-6">
-              <h3 className="text-lg font-semibold text-red-900 mb-4">Analiza przegranej</h3>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25 }}
+              className="bg-red-50/80 dark:bg-red-900/10 backdrop-blur-xl border border-red-200/50 dark:border-red-800/30 rounded-2xl p-6"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <div className="p-2 rounded-xl bg-red-100 dark:bg-red-900/30">
+                  <TrendingDown className="w-5 h-5 text-red-600 dark:text-red-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-red-900 dark:text-red-300">Analiza przegranej</h3>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
+                <div className="space-y-4">
                   {lostAnalysis.winnerName && (
-                    <div className="mb-3">
-                      <p className="text-sm font-medium text-gray-600">Zwyciezca</p>
-                      <p className="text-gray-900">{lostAnalysis.winnerName}</p>
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Trophy className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Zwyciezca</p>
+                      </div>
+                      <p className="text-sm text-slate-900 dark:text-slate-100">{lostAnalysis.winnerName}</p>
                     </div>
                   )}
                   {lostAnalysis.winnerPrice && (
-                    <div className="mb-3">
-                      <p className="text-sm font-medium text-gray-600">Cena zwyciezcy</p>
-                      <p className="text-gray-900">{formatCurrency(lostAnalysis.winnerPrice)}</p>
+                    <div>
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">Cena zwyciezcy</p>
+                      <p className="text-sm text-slate-900 dark:text-slate-100">{formatCurrency(lostAnalysis.winnerPrice)}</p>
                     </div>
                   )}
-                  <div className="mb-3">
-                    <p className="text-sm font-medium text-gray-600">Powody przegranej</p>
-                    <ul className="list-disc list-inside text-gray-900 text-sm mt-1">
+                  <div>
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <AlertTriangle className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                      <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Powody przegranej</p>
+                    </div>
+                    <ul className="list-disc list-inside text-sm text-slate-900 dark:text-slate-200 mt-1 space-y-0.5">
                       {lostAnalysis.lostReasons.map((reason, idx) => (
                         <li key={idx}>{reason}</li>
                       ))}
                     </ul>
                   </div>
                 </div>
-                <div>
+                <div className="space-y-4">
                   {lostAnalysis.lessonsLearned && (
-                    <div className="mb-3">
-                      <p className="text-sm font-medium text-gray-600">Wnioski</p>
-                      <p className="text-gray-900 text-sm">{lostAnalysis.lessonsLearned}</p>
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Lightbulb className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Wnioski</p>
+                      </div>
+                      <p className="text-sm text-slate-900 dark:text-slate-200">{lostAnalysis.lessonsLearned}</p>
                     </div>
                   )}
                   {lostAnalysis.improvementAreas.length > 0 && (
-                    <div className="mb-3">
-                      <p className="text-sm font-medium text-gray-600">Obszary do poprawy</p>
-                      <ul className="list-disc list-inside text-gray-900 text-sm mt-1">
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Target className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Obszary do poprawy</p>
+                      </div>
+                      <ul className="list-disc list-inside text-sm text-slate-900 dark:text-slate-200 mt-1 space-y-0.5">
                         {lostAnalysis.improvementAreas.map((area, idx) => (
                           <li key={idx}>{area}</li>
                         ))}
@@ -490,289 +649,278 @@ export default function CompetitionPage() {
                     </div>
                   )}
                   {lostAnalysis.followUpNotes && (
-                    <div className="mb-3">
-                      <p className="text-sm font-medium text-gray-600">Notatki follow-up</p>
-                      <p className="text-gray-900 text-sm">{lostAnalysis.followUpNotes}</p>
+                    <div>
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <CalendarClock className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+                        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Notatki follow-up</p>
+                      </div>
+                      <p className="text-sm text-slate-900 dark:text-slate-200">{lostAnalysis.followUpNotes}</p>
                     </div>
                   )}
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
-        </>
+        </div>
       )}
 
       {/* Add Competitor Modal */}
-      {showAddForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Nowy konkurent</h3>
-                <button onClick={() => setShowAddForm(false)} className="text-gray-400 hover:text-gray-600">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
+      <FormModal
+        isOpen={showAddForm}
+        onClose={() => setShowAddForm(false)}
+        title="Nowy konkurent"
+        subtitle="Dodaj konkurenta do analizy deala"
+        position="right"
+        footer={
+          <>
+            <ActionButton variant="secondary" onClick={() => setShowAddForm(false)}>
+              Anuluj
+            </ActionButton>
+            <ActionButton
+              onClick={handleAddCompetitor}
+              disabled={!formData.competitorName.trim()}
+              icon={Plus}
+            >
+              Dodaj konkurenta
+            </ActionButton>
+          </>
+        }
+      >
+        <div className="space-y-5">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Nazwa konkurenta *</label>
+              <input
+                type="text"
+                value={formData.competitorName}
+                onChange={(e) => setFormData({ ...formData, competitorName: e.target.value })}
+                className={inputClass}
+                placeholder="Np. FirmaCo"
+              />
             </div>
-
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nazwa konkurenta *</label>
-                  <input
-                    type="text"
-                    value={formData.competitorName}
-                    onChange={(e) => setFormData({ ...formData, competitorName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Np. FirmaCo"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Strona WWW</label>
-                  <input
-                    type="text"
-                    value={formData.competitorWebsite}
-                    onChange={(e) => setFormData({ ...formData, competitorWebsite: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="www.competitor.com"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cena szacunkowa</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.estimatedPrice}
-                    onChange={(e) => setFormData({ ...formData, estimatedPrice: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Waluta</label>
-                  <select
-                    value={formData.currency}
-                    onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="PLN">PLN</option>
-                    <option value="EUR">EUR</option>
-                    <option value="USD">USD</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Poziom zagrozenia</label>
-                  <select
-                    value={formData.threatLevel}
-                    onChange={(e) => setFormData({ ...formData, threatLevel: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  >
-                    {THREAT_LEVELS.map(t => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ich mocne strony</label>
-                <textarea
-                  value={formData.theirStrengths}
-                  onChange={(e) => setFormData({ ...formData, theirStrengths: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  rows={2}
-                  placeholder="W czym sa lepsi od nas..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ich slabe strony</label>
-                <textarea
-                  value={formData.theirWeaknesses}
-                  onChange={(e) => setFormData({ ...formData, theirWeaknesses: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  rows={2}
-                  placeholder="Jakie maja slabosci..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nasze przewagi</label>
-                <textarea
-                  value={formData.ourAdvantages}
-                  onChange={(e) => setFormData({ ...formData, ourAdvantages: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  rows={2}
-                  placeholder="W czym jestesmy lepsi..."
-                />
-              </div>
-            </div>
-
-            <div className="px-6 py-4 border-t border-gray-200 flex space-x-3">
-              <button
-                onClick={() => setShowAddForm(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-              >
-                Anuluj
-              </button>
-              <button
-                onClick={handleAddCompetitor}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                disabled={!formData.competitorName.trim()}
-              >
-                Dodaj konkurenta
-              </button>
+            <div>
+              <label className={labelClass}>Strona WWW</label>
+              <input
+                type="text"
+                value={formData.competitorWebsite}
+                onChange={(e) => setFormData({ ...formData, competitorWebsite: e.target.value })}
+                className={inputClass}
+                placeholder="www.competitor.com"
+              />
             </div>
           </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className={labelClass}>Cena szacunkowa</label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.estimatedPrice}
+                onChange={(e) => setFormData({ ...formData, estimatedPrice: e.target.value })}
+                className={inputClass}
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Waluta</label>
+              <select
+                value={formData.currency}
+                onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                className={inputClass}
+              >
+                <option value="PLN">PLN</option>
+                <option value="EUR">EUR</option>
+                <option value="USD">USD</option>
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Poziom zagrozenia</label>
+              <select
+                value={formData.threatLevel}
+                onChange={(e) => setFormData({ ...formData, threatLevel: e.target.value })}
+                className={inputClass}
+              >
+                {THREAT_LEVELS.map(t => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className={labelClass}>Ich mocne strony</label>
+            <textarea
+              value={formData.theirStrengths}
+              onChange={(e) => setFormData({ ...formData, theirStrengths: e.target.value })}
+              className={inputClass}
+              rows={2}
+              placeholder="W czym sa lepsi od nas..."
+            />
+          </div>
+
+          <div>
+            <label className={labelClass}>Ich slabe strony</label>
+            <textarea
+              value={formData.theirWeaknesses}
+              onChange={(e) => setFormData({ ...formData, theirWeaknesses: e.target.value })}
+              className={inputClass}
+              rows={2}
+              placeholder="Jakie maja slabosci..."
+            />
+          </div>
+
+          <div>
+            <label className={labelClass}>Nasze przewagi</label>
+            <textarea
+              value={formData.ourAdvantages}
+              onChange={(e) => setFormData({ ...formData, ourAdvantages: e.target.value })}
+              className={inputClass}
+              rows={2}
+              placeholder="W czym jestesmy lepsi..."
+            />
+          </div>
         </div>
-      )}
+      </FormModal>
 
       {/* Lost Analysis Modal */}
-      {showLostForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Analiza przegranej</h3>
-                <button onClick={() => setShowLostForm(false)} className="text-gray-400 hover:text-gray-600">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
+      <FormModal
+        isOpen={showLostForm}
+        onClose={() => setShowLostForm(false)}
+        title="Analiza przegranej"
+        subtitle="Dokumentuj wnioski z przegranego deala"
+        position="right"
+        size="lg"
+        footer={
+          <>
+            <ActionButton variant="secondary" onClick={() => setShowLostForm(false)}>
+              Anuluj
+            </ActionButton>
+            <ActionButton
+              variant="danger"
+              onClick={handleSaveLostAnalysis}
+              icon={TrendingDown}
+            >
+              Zapisz analize
+            </ActionButton>
+          </>
+        }
+      >
+        <div className="space-y-5">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Zwyciezca</label>
+              <input
+                type="text"
+                value={lostForm.winnerName}
+                onChange={(e) => setLostForm({ ...lostForm, winnerName: e.target.value })}
+                className={inputClass}
+                placeholder="Nazwa zwycieskiej firmy"
+              />
             </div>
+            <div>
+              <label className={labelClass}>Cena zwyciezcy</label>
+              <input
+                type="number"
+                step="0.01"
+                value={lostForm.winnerPrice}
+                onChange={(e) => setLostForm({ ...lostForm, winnerPrice: e.target.value })}
+                className={inputClass}
+                placeholder="0.00"
+              />
+            </div>
+          </div>
 
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Zwyciezca</label>
+          <div>
+            <label className={labelClass}>Powody przegranej *</label>
+            <div className="space-y-2">
+              {lostForm.lostReasons.map((reason, idx) => (
+                <div key={idx} className="flex gap-2">
                   <input
                     type="text"
-                    value={lostForm.winnerName}
-                    onChange={(e) => setLostForm({ ...lostForm, winnerName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="Nazwa zwycieskiej firmy"
+                    value={reason}
+                    onChange={(e) => updateLostReason(idx, e.target.value)}
+                    className={inputClass}
+                    placeholder={`Powod ${idx + 1}`}
                   />
+                  {lostForm.lostReasons.length > 1 && (
+                    <button
+                      onClick={() => removeLostReason(idx)}
+                      className="flex-shrink-0 p-2 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-colors"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cena zwyciezcy</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={lostForm.winnerPrice}
-                    onChange={(e) => setLostForm({ ...lostForm, winnerPrice: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="0.00"
-                  />
-                </div>
-              </div>
+              ))}
+            </div>
+            <button
+              onClick={addLostReason}
+              className="mt-2 flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Dodaj powod
+            </button>
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Powody przegranej *</label>
-                {lostForm.lostReasons.map((reason, idx) => (
-                  <div key={idx} className="flex gap-2 mb-2">
-                    <input
-                      type="text"
-                      value={reason}
-                      onChange={(e) => updateLostReason(idx, e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder={`Powod ${idx + 1}`}
-                    />
-                    {lostForm.lostReasons.length > 1 && (
-                      <button
-                        onClick={() => removeLostReason(idx)}
-                        className="text-red-500 hover:text-red-700 px-2"
-                      >
-                        x
-                      </button>
-                    )}
-                  </div>
-                ))}
-                <button
-                  onClick={addLostReason}
-                  className="text-sm text-blue-600 hover:text-blue-800"
-                >
-                  + Dodaj powod
-                </button>
-              </div>
+          <div>
+            <label className={labelClass}>Wnioski</label>
+            <textarea
+              value={lostForm.lessonsLearned}
+              onChange={(e) => setLostForm({ ...lostForm, lessonsLearned: e.target.value })}
+              className={inputClass}
+              rows={3}
+              placeholder="Czego sie nauczylismy..."
+            />
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Wnioski</label>
-                <textarea
-                  value={lostForm.lessonsLearned}
-                  onChange={(e) => setLostForm({ ...lostForm, lessonsLearned: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  rows={3}
-                  placeholder="Czego sie nauczylismy..."
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Obszary do poprawy</label>
-                {lostForm.improvementAreas.map((area, idx) => (
-                  <div key={idx} className="flex gap-2 mb-2">
-                    <input
-                      type="text"
-                      value={area}
-                      onChange={(e) => updateImprovementArea(idx, e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder={`Obszar ${idx + 1}`}
-                    />
-                  </div>
-                ))}
-                <button
-                  onClick={addImprovementArea}
-                  className="text-sm text-blue-600 hover:text-blue-800"
-                >
-                  + Dodaj obszar
-                </button>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Data follow-up</label>
-                  <input
-                    type="date"
-                    value={lostForm.followUpDate}
-                    onChange={(e) => setLostForm({ ...lostForm, followUpDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Notatki follow-up</label>
+          <div>
+            <label className={labelClass}>Obszary do poprawy</label>
+            <div className="space-y-2">
+              {lostForm.improvementAreas.map((area, idx) => (
+                <div key={idx} className="flex gap-2">
                   <input
                     type="text"
-                    value={lostForm.followUpNotes}
-                    onChange={(e) => setLostForm({ ...lostForm, followUpNotes: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="Plan dalszego dzialania..."
+                    value={area}
+                    onChange={(e) => updateImprovementArea(idx, e.target.value)}
+                    className={inputClass}
+                    placeholder={`Obszar ${idx + 1}`}
                   />
                 </div>
-              </div>
+              ))}
             </div>
+            <button
+              onClick={addImprovementArea}
+              className="mt-2 flex items-center gap-1 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Dodaj obszar
+            </button>
+          </div>
 
-            <div className="px-6 py-4 border-t border-gray-200 flex space-x-3">
-              <button
-                onClick={() => setShowLostForm(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-              >
-                Anuluj
-              </button>
-              <button
-                onClick={handleSaveLostAnalysis}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-              >
-                Zapisz analize
-              </button>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Data follow-up</label>
+              <input
+                type="date"
+                value={lostForm.followUpDate}
+                onChange={(e) => setLostForm({ ...lostForm, followUpDate: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Notatki follow-up</label>
+              <input
+                type="text"
+                value={lostForm.followUpNotes}
+                onChange={(e) => setLostForm({ ...lostForm, followUpNotes: e.target.value })}
+                className={inputClass}
+                placeholder="Plan dalszego dzialania..."
+              />
             </div>
           </div>
         </div>
-      )}
-    </div>
+      </FormModal>
+    </PageShell>
   );
 }

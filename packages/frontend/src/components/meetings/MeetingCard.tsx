@@ -5,17 +5,17 @@ import { motion } from 'framer-motion';
 import { Meeting } from '@/lib/api/meetings';
 import { meetingsApi } from '@/lib/api/meetings';
 import {
-  CalendarIcon,
-  ClockIcon,
-  UserIcon,
-  BuildingOfficeIcon,
-  VideoCameraIcon,
-  MapPinIcon,
-  EllipsisHorizontalIcon,
-  CheckCircleIcon,
-  XMarkIcon,
-  PlayIcon,
-} from '@heroicons/react/24/outline';
+  Calendar,
+  Clock,
+  User,
+  Building,
+  Video,
+  MapPin,
+  MoreHorizontal,
+  CheckCircle,
+  X,
+  Play,
+} from 'lucide-react';
 
 interface MeetingCardProps {
   meeting: Meeting;
@@ -78,7 +78,7 @@ export default function MeetingCard({ meeting, onEdit, onDelete, onStatusChange,
           
           <div className="relative group">
             <button className="p-1 text-gray-400 hover:text-gray-600 rounded-md">
-              <EllipsisHorizontalIcon className="w-5 h-5" />
+              <MoreHorizontal className="w-5 h-5" />
             </button>
             <div className="absolute right-0 top-8 bg-white rounded-md shadow-lg border border-gray-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
               <button
@@ -130,7 +130,7 @@ export default function MeetingCard({ meeting, onEdit, onDelete, onStatusChange,
         <div className="space-y-3 mb-4">
           {/* Time */}
           <div className="flex items-center text-sm text-gray-600">
-            <ClockIcon className="w-4 h-4 mr-2 text-gray-400" />
+            <Clock className="w-4 h-4 mr-2 text-gray-400" />
             <span>{timeRange}</span>
             <span className="mx-2">•</span>
             <span>{duration}</span>
@@ -140,9 +140,9 @@ export default function MeetingCard({ meeting, onEdit, onDelete, onStatusChange,
           {(meeting.location || meeting.meetingUrl) && (
             <div className="flex items-center text-sm text-gray-600">
               {meeting.meetingUrl ? (
-                <VideoCameraIcon className="w-4 h-4 mr-2 text-gray-400" />
+                <Video className="w-4 h-4 mr-2 text-gray-400" />
               ) : (
-                <MapPinIcon className="w-4 h-4 mr-2 text-gray-400" />
+                <MapPin className="w-4 h-4 mr-2 text-gray-400" />
               )}
               <span>{meetingType}</span>
               {meeting.meetingUrl && (
@@ -161,7 +161,7 @@ export default function MeetingCard({ meeting, onEdit, onDelete, onStatusChange,
           {/* Contact */}
           {meeting.contact && (
             <div className="flex items-center text-sm text-gray-600">
-              <UserIcon className="w-4 h-4 mr-2 text-gray-400" />
+              <User className="w-4 h-4 mr-2 text-gray-400" />
               <span>
                 {meeting.contact.firstName} {meeting.contact.lastName}
                 {meeting.contact.company && (
@@ -176,7 +176,7 @@ export default function MeetingCard({ meeting, onEdit, onDelete, onStatusChange,
 
           {/* Organizer */}
           <div className="flex items-center text-sm text-gray-600">
-            <BuildingOfficeIcon className="w-4 h-4 mr-2 text-gray-400" />
+            <Building className="w-4 h-4 mr-2 text-gray-400" />
             <span>
               Organized by {meeting.organizedBy.firstName} {meeting.organizedBy.lastName}
             </span>
@@ -206,7 +206,7 @@ export default function MeetingCard({ meeting, onEdit, onDelete, onStatusChange,
               onClick={() => handleStatusChange('IN_PROGRESS')}
               className="flex items-center space-x-1 px-3 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-sm font-medium"
             >
-              <PlayIcon className="w-4 h-4" />
+              <Play className="w-4 h-4" />
               <span>Start</span>
             </button>
             {meeting.meetingUrl && (
@@ -216,7 +216,7 @@ export default function MeetingCard({ meeting, onEdit, onDelete, onStatusChange,
                 rel="noopener noreferrer"
                 className="flex items-center space-x-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm font-medium"
               >
-                <VideoCameraIcon className="w-4 h-4" />
+                <Video className="w-4 h-4" />
                 <span>Join</span>
               </a>
             )}
@@ -229,7 +229,7 @@ export default function MeetingCard({ meeting, onEdit, onDelete, onStatusChange,
               onClick={() => handleStatusChange('COMPLETED')}
               className="flex items-center space-x-1 px-3 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-sm font-medium"
             >
-              <CheckCircleIcon className="w-4 h-4" />
+              <CheckCircle className="w-4 h-4" />
               <span>Complete</span>
             </button>
             {meeting.meetingUrl && (
@@ -239,7 +239,7 @@ export default function MeetingCard({ meeting, onEdit, onDelete, onStatusChange,
                 rel="noopener noreferrer"
                 className="flex items-center space-x-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm font-medium"
               >
-                <VideoCameraIcon className="w-4 h-4" />
+                <Video className="w-4 h-4" />
                 <span>Join</span>
               </a>
             )}
@@ -249,7 +249,7 @@ export default function MeetingCard({ meeting, onEdit, onDelete, onStatusChange,
         {/* Footer */}
         <div className="flex items-center justify-between text-sm text-gray-500 mt-4 pt-4 border-t border-gray-200">
           <div className="flex items-center space-x-1">
-            <CalendarIcon className="w-4 h-4" />
+            <Calendar className="w-4 h-4" />
             <span>
               {new Date(meeting.createdAt).toLocaleDateString('en-US', {
                 month: 'short',

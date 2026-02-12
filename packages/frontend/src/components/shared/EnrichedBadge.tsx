@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { SparklesIcon } from '@heroicons/react/24/solid';
+import { Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface EnrichedBadgeProps {
@@ -81,7 +81,7 @@ export function EnrichedBadge({
       )}
       title={showTooltip ? tooltipText() : undefined}
     >
-      <SparklesIcon className={iconSizes[size]} />
+      <Sparkles className={iconSizes[size]} />
       <span>Wzbogacone AI</span>
     </span>
   );
@@ -98,7 +98,7 @@ export function EnrichedIcon({
   size?: 'sm' | 'md' | 'lg';
 }) {
   return (
-    <SparklesIcon
+    <Sparkles
       className={cn(
         'text-violet-500 dark:text-violet-400',
         iconSizes[size],

@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { MicrophoneIcon, StopIcon, SparklesIcon, ChatBubbleBottomCenterTextIcon, CogIcon, SpeakerWaveIcon } from '@heroicons/react/24/outline';
+import { Mic, Square, Sparkles, MessageSquare, Settings, Volume2 } from 'lucide-react';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 interface VoiceCommand {
   id: string;
@@ -38,28 +40,27 @@ export default function VoiceRAGPage() {
   const synthRef = useRef<any>(null);
 
   useEffect(() => {
-    // Initialize Speech Recognition
     if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
-      const SpeechRecognition = window.webkitSpeechRecognition || window.SpeechRecognition;
+      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
       recognitionRef.current = new SpeechRecognition();
-      
+
       if (recognitionRef.current) {
         recognitionRef.current.continuous = true;
         recognitionRef.current.interimResults = true;
         recognitionRef.current.lang = settings.language;
-        
+
         recognitionRef.current.onstart = () => {
           setIsListening(true);
         };
-        
+
         recognitionRef.current.onend = () => {
           setIsListening(false);
         };
-        
+
         recognitionRef.current.onresult = (event: any) => {
           let finalTranscript = '';
           let interimTranscript = '';
-          
+
           for (let i = 0; i < event.results.length; i++) {
             if (event.results[i].isFinal) {
               finalTranscript += event.results[i][0].transcript;
@@ -67,14 +68,14 @@ export default function VoiceRAGPage() {
               interimTranscript += event.results[i][0].transcript;
             }
           }
-          
+
           setTranscript(finalTranscript || interimTranscript);
-          
+
           if (finalTranscript && settings.autoExecute) {
             processVoiceCommand(finalTranscript, event.results[event.results.length - 1][0].confidence);
           }
         };
-        
+
         recognitionRef.current.onerror = (event: any) => {
           console.error('Speech recognition error:', event.error);
           setIsListening(false);
@@ -82,7 +83,6 @@ export default function VoiceRAGPage() {
       }
     }
 
-    // Initialize Speech Synthesis
     if ('speechSynthesis' in window) {
       synthRef.current = window.speechSynthesis;
     }
@@ -115,12 +115,10 @@ export default function VoiceRAGPage() {
 
     try {
       let response = '';
-      
+
       if (settings.ragMode) {
-        // Process with RAG (Knowledge Base)
         response = await processWithRAG(command);
       } else {
-        // Process with traditional command matching
         response = await processTraditionalCommand(command);
       }
 
@@ -136,7 +134,6 @@ export default function VoiceRAGPage() {
 
       setCommands(prev => [newCommand, ...prev.slice(0, 9)]);
 
-      // Voice feedback
       if (settings.voiceFeedback && response) {
         speakResponse(response);
       }
@@ -150,15 +147,14 @@ export default function VoiceRAGPage() {
   };
 
   const processWithRAG = async (command: string): Promise<string> => {
-    // Mock RAG processing - replace with actual API call
-    const ragResponses = {
+    const ragResponses: Record<string, string> = {
       'projekt': 'Na podstawie analizy bazy danych: masz 3 aktywne projekty. Projekt "Q4 Strategy" wymaga uwagi - 2 zadania po terminie.',
-      'zadania': 'Dziś masz 5 zadań: 2 wysokiego priorytetu (prezentacja klienta, analiza budżetu), 3 średniego. Zalecam zacząć od zadań @computer.',
-      'klient': 'W systemie znalazłem 12 aktywnych kontaktów. 3 klientów wymaga kontaktu w tym tygodniu: TechCorp, StartupXYZ, Global Solutions.',
-      'default': 'Przeanalizowałem zapytanie w kontekście bazy wiedzy. Czy możesz być bardziej precyzyjny?'
+      'zadania': 'Dzis masz 5 zadan: 2 wysokiego priorytetu (prezentacja klienta, analiza budzetu), 3 sredniego. Zalecam zaczac od zadan @computer.',
+      'klient': 'W systemie znalazlem 12 aktywnych kontaktow. 3 klientow wymaga kontaktu w tym tygodniu: TechCorp, StartupXYZ, Global Solutions.',
+      'default': 'Przeanalyzowalem zapytanie w kontekscie bazy wiedzy. Czy mozesz byc bardziej precyzyjny?'
     };
 
-    await new Promise(resolve => setTimeout(resolve, 800)); // Simulate processing
+    await new Promise(resolve => setTimeout(resolve, 800));
 
     const lowerCommand = command.toLowerCase();
     for (const [key, response] of Object.entries(ragResponses)) {
@@ -166,20 +162,19 @@ export default function VoiceRAGPage() {
         return response;
       }
     }
-    
+
     return ragResponses.default;
   };
 
   const processTraditionalCommand = async (command: string): Promise<string> => {
-    // Mock traditional command processing
-    const traditionalResponses = {
-      'utwórz projekt': 'Projekt utworzony. Podaj nazwę i szczegóły.',
+    const traditionalResponses: Record<string, string> = {
+      'utworz projekt': 'Projekt utworzony. Podaj nazwe i szczegoly.',
       'dodaj zadanie': 'Nowe zadanie dodane do listy.',
-      'pokaż kalendarz': 'Otwieranie kalendarza...',
-      'default': 'Komenda rozpoznana. Sprawdź szczegóły w systemie.'
+      'pokaz kalendarz': 'Otwieranie kalendarza...',
+      'default': 'Komenda rozpoznana. Sprawdz szczegoly w systemie.'
     };
 
-    await new Promise(resolve => setTimeout(resolve, 300)); // Simulate processing
+    await new Promise(resolve => setTimeout(resolve, 300));
 
     const lowerCommand = command.toLowerCase();
     for (const [key, response] of Object.entries(traditionalResponses)) {
@@ -187,7 +182,7 @@ export default function VoiceRAGPage() {
         return response;
       }
     }
-    
+
     return traditionalResponses.default;
   };
 
@@ -208,207 +203,211 @@ export default function VoiceRAGPage() {
   };
 
   const exampleCommands = [
-    { 
+    {
       category: 'RAG Queries',
       commands: [
-        'Które projekty są zagrożone?',
-        'Jakie mam zadania na dziś?',
-        'Pokaż komunikację z klientami',
-        'Analiza wydajności zespołu'
+        'Ktore projekty sa zagrozone?',
+        'Jakie mam zadania na dzis?',
+        'Pokaz komunikacje z klientami',
+        'Analiza wydajnosci zespolu'
       ]
     },
     {
       category: 'Direct Commands',
       commands: [
-        'Utwórz nowy projekt',
+        'Utworz nowy projekt',
         'Dodaj zadanie pilne',
-        'Otwórz kalendarz',
-        'Wyślij raport'
+        'Otworz kalendarz',
+        'Wyslij raport'
       ]
     }
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Voice Commands + RAG</h1>
-          <p className="text-gray-600">Komendy głosowe z integracją RAG Knowledge Base</p>
-        </div>
-        <div className="flex items-center space-x-4">
-          <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-            settings.ragMode ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
-          }`}>
-            {settings.ragMode ? 'RAG Mode' : 'Traditional'}
+    <PageShell>
+      <PageHeader
+        title="Voice Commands + RAG"
+        subtitle="Komendy glosowe z integracja RAG Knowledge Base"
+        icon={Mic}
+        iconColor="text-purple-600"
+        actions={
+          <div className="flex items-center space-x-4">
+            <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+              settings.ragMode ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300'
+            }`}>
+              {settings.ragMode ? 'RAG Mode' : 'Traditional'}
+            </div>
+            <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+              isListening ? 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 animate-pulse' : 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+            }`}>
+              {isListening ? 'Slucham...' : 'Gotowy'}
+            </div>
           </div>
-          <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-            isListening ? 'bg-red-100 text-red-800 animate-pulse' : 'bg-green-100 text-green-800'
-          }`}>
-            {isListening ? 'Słucham...' : 'Gotowy'}
-          </div>
-        </div>
-      </div>
+        }
+      />
 
-      {/* Voice Input Interface */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <div className="text-center space-y-6">
-          <div className="flex justify-center">
-            <button
-              onClick={isListening ? stopListening : startListening}
-              disabled={processing}
-              className={`w-24 h-24 rounded-full flex items-center justify-center transition-all ${
-                isListening 
-                  ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
-                  : 'bg-purple-500 hover:bg-purple-600'
-              } ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
-            >
-              {processing ? (
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white" />
-              ) : isListening ? (
-                <StopIcon className="w-10 h-10 text-white" />
-              ) : (
-                <MicrophoneIcon className="w-10 h-10 text-white" />
-              )}
-            </button>
-          </div>
-
-          <div className="space-y-2">
-            <h3 className="text-lg font-semibold text-gray-900">
-              {isListening ? 'Słucham...' : 'Kliknij aby rozpocząć'}
-            </h3>
-            {transcript && (
-              <div className="bg-gray-50 rounded-lg p-4 max-w-md mx-auto">
-                <p className="text-gray-700">{transcript}</p>
-                {!settings.autoExecute && transcript && (
-                  <button
-                    onClick={manualProcess}
-                    disabled={processing}
-                    className="mt-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
-                  >
-                    Wykonaj komendę
-                  </button>
+      <div className="space-y-6">
+        {/* Voice Input Interface */}
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+          <div className="text-center space-y-6">
+            <div className="flex justify-center">
+              <button
+                onClick={isListening ? stopListening : startListening}
+                disabled={processing}
+                className={`w-24 h-24 rounded-full flex items-center justify-center transition-all ${
+                  isListening
+                    ? 'bg-red-500 hover:bg-red-600 animate-pulse'
+                    : 'bg-purple-500 hover:bg-purple-600'
+                } ${processing ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                {processing ? (
+                  <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-white" />
+                ) : isListening ? (
+                  <Square className="w-10 h-10 text-white" />
+                ) : (
+                  <Mic className="w-10 h-10 text-white" />
                 )}
-              </div>
-            )}
+              </button>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                {isListening ? 'Slucham...' : 'Kliknij aby rozpoczac'}
+              </h3>
+              {transcript && (
+                <div className="bg-slate-50 dark:bg-slate-700/40 rounded-lg p-4 max-w-md mx-auto">
+                  <p className="text-slate-700 dark:text-slate-300">{transcript}</p>
+                  {!settings.autoExecute && transcript && (
+                    <button
+                      onClick={manualProcess}
+                      disabled={processing}
+                      className="mt-2 px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 disabled:opacity-50"
+                    >
+                      Wykonaj komende
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Settings Panel */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-          <CogIcon className="w-5 h-5 mr-2" />
-          Ustawienia Voice
-        </h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={settings.ragMode}
-              onChange={(e) => setSettings({...settings, ragMode: e.target.checked})}
-              className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-            />
-            <span className="text-sm">RAG Mode</span>
-          </label>
+        {/* Settings Panel */}
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4 flex items-center">
+            <Settings className="w-5 h-5 mr-2" />
+            Ustawienia Voice
+          </h3>
 
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={settings.autoExecute}
-              onChange={(e) => setSettings({...settings, autoExecute: e.target.checked})}
-              className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-            />
-            <span className="text-sm">Auto Execute</span>
-          </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={settings.ragMode}
+                onChange={(e) => setSettings({...settings, ragMode: e.target.checked})}
+                className="rounded border-slate-300 dark:border-slate-600 text-purple-600 focus:ring-purple-500"
+              />
+              <span className="text-sm text-slate-700 dark:text-slate-300">RAG Mode</span>
+            </label>
 
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={settings.voiceFeedback}
-              onChange={(e) => setSettings({...settings, voiceFeedback: e.target.checked})}
-              className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-            />
-            <span className="text-sm">Voice Feedback</span>
-          </label>
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={settings.autoExecute}
+                onChange={(e) => setSettings({...settings, autoExecute: e.target.checked})}
+                className="rounded border-slate-300 dark:border-slate-600 text-purple-600 focus:ring-purple-500"
+              />
+              <span className="text-sm text-slate-700 dark:text-slate-300">Auto Execute</span>
+            </label>
 
-          <select
-            value={settings.language}
-            onChange={(e) => setSettings({...settings, language: e.target.value})}
-            className="border border-gray-300 rounded px-3 py-1 text-sm"
-          >
-            <option value="pl-PL">Polski</option>
-            <option value="en-US">English</option>
-          </select>
+            <label className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={settings.voiceFeedback}
+                onChange={(e) => setSettings({...settings, voiceFeedback: e.target.checked})}
+                className="rounded border-slate-300 dark:border-slate-600 text-purple-600 focus:ring-purple-500"
+              />
+              <span className="text-sm text-slate-700 dark:text-slate-300">Voice Feedback</span>
+            </label>
+
+            <select
+              value={settings.language}
+              onChange={(e) => setSettings({...settings, language: e.target.value})}
+              className="border border-slate-300 dark:border-slate-600 rounded px-3 py-1 text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
+            >
+              <option value="pl-PL">Polski</option>
+              <option value="en-US">English</option>
+            </select>
+          </div>
         </div>
-      </div>
 
-      {/* Command History */}
-      {commands.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Historia komend</h3>
-          <div className="space-y-3">
-            {commands.map((command) => (
-              <div key={command.id} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <MicrophoneIcon className="w-4 h-4 text-gray-400" />
-                    <span className="font-medium text-gray-900">{command.transcript}</span>
-                    <div className={`px-2 py-1 rounded text-xs font-medium ${
-                      command.ragEnabled ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {command.ragEnabled ? 'RAG' : 'CMD'}
+        {/* Command History */}
+        {commands.length > 0 && (
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Historia komend</h3>
+            <div className="space-y-3">
+              {commands.map((command) => (
+                <div key={command.id} className="border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center space-x-2">
+                      <Mic className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+                      <span className="font-medium text-slate-900 dark:text-slate-100">{command.transcript}</span>
+                      <div className={`px-2 py-1 rounded text-xs font-medium ${
+                        command.ragEnabled ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400' : 'bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300'
+                      }`}>
+                        {command.ragEnabled ? 'RAG' : 'CMD'}
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
+                      <span>{command.processingTime}ms</span>
+                      <span>{Math.round(command.confidence * 100)}%</span>
+                      <span>{command.timestamp.toLocaleTimeString()}</span>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2 text-xs text-gray-500">
-                    <span>{command.processingTime}ms</span>
-                    <span>{Math.round(command.confidence * 100)}%</span>
-                    <span>{command.timestamp.toLocaleTimeString()}</span>
-                  </div>
-                </div>
-                
-                {command.response && (
-                  <div className="flex items-start space-x-2 mt-2 p-3 bg-gray-50 rounded">
-                    <ChatBubbleBottomCenterTextIcon className="w-4 h-4 text-purple-500 mt-0.5" />
-                    <p className="text-sm text-gray-700">{command.response}</p>
-                    {settings.voiceFeedback && (
-                      <button
-                        onClick={() => speakResponse(command.response!)}
-                        className="ml-auto p-1 text-gray-400 hover:text-purple-600"
-                      >
-                        <SpeakerWaveIcon className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
-      {/* Example Commands */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {exampleCommands.map((category, index) => (
-          <div key={index} className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <SparklesIcon className="w-5 h-5 mr-2 text-purple-500" />
-              {category.category}
-            </h3>
-            <div className="space-y-2">
-              {category.commands.map((cmd, cmdIndex) => (
-                <button
-                  key={cmdIndex}
-                  onClick={() => processVoiceCommand(cmd, 1)}
-                  className="block w-full text-left px-3 py-2 text-sm bg-gray-50 hover:bg-gray-100 rounded transition-colors"
-                >
-                  "{cmd}"
-                </button>
+                  {command.response && (
+                    <div className="flex items-start space-x-2 mt-2 p-3 bg-slate-50 dark:bg-slate-700/40 rounded">
+                      <MessageSquare className="w-4 h-4 text-purple-500 mt-0.5" />
+                      <p className="text-sm text-slate-700 dark:text-slate-300">{command.response}</p>
+                      {settings.voiceFeedback && (
+                        <button
+                          onClick={() => speakResponse(command.response!)}
+                          className="ml-auto p-1 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400"
+                        >
+                          <Volume2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
           </div>
-        ))}
+        )}
+
+        {/* Example Commands */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {exampleCommands.map((category, index) => (
+            <div key={index} className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4 flex items-center">
+                <Sparkles className="w-5 h-5 mr-2 text-purple-500" />
+                {category.category}
+              </h3>
+              <div className="space-y-2">
+                {category.commands.map((cmd, cmdIndex) => (
+                  <button
+                    key={cmdIndex}
+                    onClick={() => processVoiceCommand(cmd, 1)}
+                    className="block w-full text-left px-3 py-2 text-sm bg-slate-50 dark:bg-slate-700/40 hover:bg-slate-100 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-300 rounded transition-colors"
+                  >
+                    &quot;{cmd}&quot;
+                  </button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

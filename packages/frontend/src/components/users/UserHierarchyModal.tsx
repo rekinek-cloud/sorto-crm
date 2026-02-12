@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { UserWithHierarchy } from '@/lib/api/userHierarchy';
 import UserHierarchyTree from './UserHierarchyTree';
 import CreateUserRelationModal from './CreateUserRelationModal';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { X } from 'lucide-react';
 
 interface UserHierarchyModalProps {
   isOpen: boolean;
@@ -57,7 +57,7 @@ export default function UserHierarchyModal({
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100"
             >
-              <XMarkIcon className="h-6 w-6" />
+              <X className="h-6 w-6" />
             </button>
           </div>
 

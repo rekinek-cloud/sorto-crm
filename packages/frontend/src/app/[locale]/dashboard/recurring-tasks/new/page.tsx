@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ArrowPathIcon, ArrowLeftIcon, CalendarDaysIcon, ClockIcon, TagIcon } from '@heroicons/react/24/outline';
+import { RefreshCw, ArrowLeft, CalendarDays, Clock, Tag } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 interface RecurringTaskForm {
   title: string;
@@ -19,10 +21,10 @@ interface RecurringTaskForm {
 
 const frequencies = [
   { value: 'daily', label: 'Codziennie' },
-  { value: 'weekly', label: 'Co tydzień' },
+  { value: 'weekly', label: 'Co tydzien' },
   { value: 'biweekly', label: 'Co 2 tygodnie' },
-  { value: 'monthly', label: 'Co miesiąc' },
-  { value: 'quarterly', label: 'Co kwartał' },
+  { value: 'monthly', label: 'Co miesiac' },
+  { value: 'quarterly', label: 'Co kwartal' },
   { value: 'yearly', label: 'Co rok' },
   { value: 'custom', label: 'Niestandardowa' }
 ];
@@ -30,13 +32,13 @@ const frequencies = [
 const streams = [
   'Inbox',
   'W trakcie',
-  'Oczekujące',
+  'Oczekujace',
   'Someday/Maybe'
 ];
 
 const priorities = [
   { value: 'high', label: 'Wysoki', color: 'text-red-600' },
-  { value: 'medium', label: 'Średni', color: 'text-yellow-600' },
+  { value: 'medium', label: 'Sredni', color: 'text-yellow-600' },
   { value: 'low', label: 'Niski', color: 'text-blue-600' }
 ];
 
@@ -66,34 +68,34 @@ export default function NewRecurringTaskPage() {
   };
 
   return (
-    <div className="p-6 max-w-3xl">
+    <PageShell>
       {/* Header */}
       <div className="flex items-center gap-4 mb-6">
         <button
           onClick={() => router.back()}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-lg transition-colors"
         >
-          <ArrowLeftIcon className="h-5 w-5 text-gray-600" />
+          <ArrowLeft className="h-5 w-5 text-slate-600 dark:text-slate-400" />
         </button>
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-purple-100 rounded-lg">
-            <ArrowPathIcon className="h-6 w-6 text-purple-600" />
+          <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
+            <RefreshCw className="h-6 w-6 text-purple-600 dark:text-purple-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Nowe zadanie cykliczne</h1>
-            <p className="text-sm text-gray-600">Utwórz zadanie powtarzające się automatycznie</p>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Nowe zadanie cykliczne</h1>
+            <p className="text-sm text-slate-600 dark:text-slate-400">Utworz zadanie powtarzajace sie automatycznie</p>
           </div>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Basic Info */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Informacje podstawowe</h2>
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Informacje podstawowe</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Tytuł zadania *
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Tytul zadania *
               </label>
               <input
                 type="text"
@@ -101,13 +103,13 @@ export default function NewRecurringTaskPage() {
                 value={form.title}
                 onChange={handleChange}
                 required
-                placeholder="np. Przegląd tygodniowy"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                placeholder="np. Przeglad tygodniowy"
+                className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white dark:bg-slate-700/50 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 Opis
               </label>
               <textarea
@@ -115,21 +117,21 @@ export default function NewRecurringTaskPage() {
                 value={form.description}
                 onChange={handleChange}
                 rows={3}
-                placeholder="Dodaj szczegóły zadania..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                placeholder="Dodaj szczegoly zadania..."
+                className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white dark:bg-slate-700/50 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Strumień docelowy
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Strumien docelowy
                 </label>
                 <select
                   name="stream"
                   value={form.stream}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white dark:bg-slate-700/50 text-slate-900 dark:text-slate-100"
                 >
                   {streams.map(stream => (
                     <option key={stream} value={stream}>{stream}</option>
@@ -137,14 +139,14 @@ export default function NewRecurringTaskPage() {
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Priorytet
                 </label>
                 <select
                   name="priority"
                   value={form.priority}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white dark:bg-slate-700/50 text-slate-900 dark:text-slate-100"
                 >
                   {priorities.map(p => (
                     <option key={p.value} value={p.value}>{p.label}</option>
@@ -156,23 +158,23 @@ export default function NewRecurringTaskPage() {
         </div>
 
         {/* Schedule */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
             <div className="flex items-center gap-2">
-              <CalendarDaysIcon className="h-5 w-5" />
+              <CalendarDays className="h-5 w-5" />
               Harmonogram
             </div>
           </h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Częstotliwość *
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                Czestotliwosc *
               </label>
               <select
                 name="frequency"
                 value={form.frequency}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white dark:bg-slate-700/50 text-slate-900 dark:text-slate-100"
               >
                 {frequencies.map(freq => (
                   <option key={freq.value} value={freq.value}>{freq.label}</option>
@@ -182,7 +184,7 @@ export default function NewRecurringTaskPage() {
 
             {form.frequency === 'custom' && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                   Co ile dni?
                 </label>
                 <input
@@ -192,15 +194,15 @@ export default function NewRecurringTaskPage() {
                   onChange={handleChange}
                   min="1"
                   max="365"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white dark:bg-slate-700/50 text-slate-900 dark:text-slate-100"
                 />
               </div>
             )}
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Data rozpoczęcia *
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Data rozpoczecia *
                 </label>
                 <input
                   type="date"
@@ -208,27 +210,27 @@ export default function NewRecurringTaskPage() {
                   value={form.startDate}
                   onChange={handleChange}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white dark:bg-slate-700/50 text-slate-900 dark:text-slate-100"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Data zakończenia (opcjonalnie)
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Data zakonczenia (opcjonalnie)
                 </label>
                 <input
                   type="date"
                   name="endDate"
                   value={form.endDate}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white dark:bg-slate-700/50 text-slate-900 dark:text-slate-100"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                 <div className="flex items-center gap-2">
-                  <ClockIcon className="h-4 w-4" />
+                  <Clock className="h-4 w-4" />
                   Preferowana godzina
                 </div>
               </label>
@@ -237,17 +239,17 @@ export default function NewRecurringTaskPage() {
                 name="time"
                 value={form.time}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white dark:bg-slate-700/50 text-slate-900 dark:text-slate-100"
               />
             </div>
           </div>
         </div>
 
         {/* Tags */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
             <div className="flex items-center gap-2">
-              <TagIcon className="h-5 w-5" />
+              <Tag className="h-5 w-5" />
               Tagi
             </div>
           </h2>
@@ -257,22 +259,22 @@ export default function NewRecurringTaskPage() {
             value={form.tags}
             onChange={handleChange}
             placeholder="Wpisz tagi oddzielone przecinkami..."
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white dark:bg-slate-700/50 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
           />
-          <p className="text-sm text-gray-500 mt-2">np. przegląd, gtd, rutyna</p>
+          <p className="text-sm text-slate-500 dark:text-slate-400 mt-2">np. przeglad, gtd, rutyna</p>
         </div>
 
         {/* Preview */}
-        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 border border-purple-200 rounded-xl p-6">
-          <h3 className="font-semibold text-gray-900 mb-3">Podgląd harmonogramu</h3>
-          <div className="text-gray-700">
-            {form.title || 'Nowe zadanie'} będzie tworzone{' '}
-            <span className="font-medium text-purple-700">
+        <div className="bg-gradient-to-r from-purple-50 to-indigo-50 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200 dark:border-purple-800/30 rounded-2xl p-6">
+          <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">Podglad harmonogramu</h3>
+          <div className="text-slate-700 dark:text-slate-300">
+            {form.title || 'Nowe zadanie'} bedzie tworzone{' '}
+            <span className="font-medium text-purple-700 dark:text-purple-400">
               {frequencies.find(f => f.value === form.frequency)?.label.toLowerCase()}
             </span>
             {form.frequency === 'custom' && ` (co ${form.customDays} dni)`}
             {form.time && ` o godzinie ${form.time}`}
-            , począwszy od <span className="font-medium">{form.startDate || 'dzisiaj'}</span>
+            , poczawszy od <span className="font-medium">{form.startDate || 'dzisiaj'}</span>
             {form.endDate && ` do ${form.endDate}`}.
           </div>
         </div>
@@ -282,18 +284,18 @@ export default function NewRecurringTaskPage() {
           <button
             type="button"
             onClick={() => router.back()}
-            className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            className="px-6 py-2 border border-slate-300 dark:border-slate-600 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors text-slate-700 dark:text-slate-300"
           >
             Anuluj
           </button>
           <button
             type="submit"
-            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            className="px-6 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors"
           >
-            Utwórz zadanie cykliczne
+            Utworz zadanie cykliczne
           </button>
         </div>
       </form>
-    </div>
+    </PageShell>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { X } from 'lucide-react';
 import type { AIModel } from '@/lib/api/aiConfig';
 
 interface AIModelModalProps {
@@ -104,7 +104,7 @@ export default function AIModelModal({ isOpen, onClose, onSave, model, providers
               onClick={onClose}
               className="text-gray-400 hover:text-gray-500"
             >
-              <XMarkIcon className="h-6 w-6" />
+              <X className="h-6 w-6" />
             </button>
           </div>
         </div>

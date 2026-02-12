@@ -31,6 +31,9 @@ model Organization {
   ai_rules                ai_rules[]
   ai_suggestions          ai_suggestions[]
   ai_usage_stats          ai_usage_stats[]
+  email_domain_rules      email_domain_rules[]
+  email_patterns          email_patterns[]
+  data_processing         data_processing[]
   areasOfResponsibility   AreaOfResponsibility[]
   autoReplies             AutoReply[]
   break_templates         break_templates[]
@@ -120,10 +123,9 @@ model Organization {
   // AI Conversations Sync relations
   aiConversations AiConversation[]
   aiSyncStatuses  AiSyncStatus[]
-  aiAppMappings   AiAppMapping[]
-
-  // AI Chat (Qwen)
-  aiChatConversations AiChatConversation[]
+  aiAppMappings       AiAppMapping[]
+  organizationModules organizationModule[]
+  mcp_api_keys        mcp_api_keys[]
 
   @@map("organizations")
 }
@@ -217,9 +219,9 @@ model User {
   flow_automation_rules   flow_automation_rules[]
   flow_processing_history flow_processing_history[]
   flow_conversations      flow_conversations[]
-
-  // AI Chat (Qwen)
-  aiChatConversations AiChatConversation[]
+  mcp_api_keys             mcp_api_keys[]           @relation("McpKeyCreator")
+  voice_responses          voiceResponse[]          @relation("UserVoiceResponses")
+  voice_feedback           voiceFeedback[]          @relation("UserVoiceFeedback")
 
   @@map("users")
 }
@@ -324,9 +326,6 @@ model Stream {
 
   // AI Conversations Sync relations
   aiConversations AiConversation[]
-
-  // AI Chat (Qwen)
-  aiChatConversations AiChatConversation[]
 
   @@index([horizonLevel])
   @@index([streamType])
@@ -2234,12 +2233,112 @@ model ai_rules {
   lastExecuted         DateTime?
   createdAt            DateTime             @default(now())
   updatedAt            DateTime
+
+  // Task 6: AI Rules System - new fields
+  dataType             String               @default("EMAIL") // EMAIL | DOCUMENT | OFFER | ALL
+  aiPrompt             String?              @db.Text
+  isSystem             Boolean              @default(false)
+  createdBy            String?
+
   ai_executions        ai_executions[]
   ai_models            ai_models?           @relation(fields: [modelId], references: [id])
   organizations        Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   ai_prompt_templates  ai_prompt_templates? @relation(fields: [templateId], references: [id])
 
   @@unique([organizationId, name])
+  @@index([organizationId, status, priority])
+  @@index([organizationId, category])
+  @@index([organizationId, dataType])
+}
+
+// ============================================
+// TASK 6: AI RULES SYSTEM - Domain lists, Patterns, Processing
+// ============================================
+
+model email_domain_rules {
+  id              String   @id @default(uuid())
+  organizationId  String
+
+  pattern         String
+  patternType     String   // DOMAIN | EMAIL | WILDCARD
+  listType        String   // BLACKLIST | WHITELIST | VIP
+  classification  String?  // SPAM | NEWSLETTER | AUTO_REPLY
+
+  source          String   @default("MANUAL") // MANUAL | AI_SUGGESTED | SYSTEM
+  reason          String?
+  confidence      Float?
+
+  matchCount      Int      @default(0)
+  lastMatchAt     DateTime?
+
+  status          String   @default("ACTIVE") // ACTIVE | DISABLED | PENDING
+
+  createdBy       String?
+  createdAt       DateTime @default(now())
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, pattern, listType])
+  @@index([organizationId, listType, status])
+}
+
+model email_patterns {
+  id              String   @id @default(uuid())
+  organizationId  String?
+
+  patternType     String   // HEADER | SUBJECT | BODY | SENDER
+  pattern         String
+  isRegex         Boolean  @default(false)
+
+  classification  String   // NEWSLETTER | SPAM | AUTO_REPLY | TRANSACTIONAL
+  confidence      Float    @default(0.9)
+
+  matchCount      Int      @default(0)
+
+  isSystem        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  organization    Organization? @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([patternType, classification])
+}
+
+model data_processing {
+  id              String   @id @default(uuid())
+  organizationId  String
+
+  entityType      String   // EMAIL | DOCUMENT | OFFER
+  entityId        String
+
+  crmMatch        Json?
+  listMatch       Json?
+  patternMatch    Json?
+
+  aiClassification String?
+  aiConfidence    Float?
+  aiExtraction    Json?
+
+  finalClass      String?
+  finalConfidence Float?
+
+  addedToRag      Boolean  @default(false)
+  addedToFlow     Boolean  @default(false)
+  flowItemId      String?
+  linkedEntities  Json?
+
+  status          String   @default("PENDING") // PENDING | PROCESSING | COMPLETED | FAILED
+  error           String?
+
+  startedAt       DateTime?
+  completedAt     DateTime?
+
+  createdAt       DateTime @default(now())
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([entityType, entityId])
+  @@index([organizationId, status])
+  @@index([organizationId, finalClass])
 }
 
 model ai_suggestions {
@@ -4440,64 +4539,166 @@ model AiAppMapping {
   @@map("ai_app_mappings")
 }
 
-// ==========================================
-// AI Chat (Qwen) - Unlimited Chat
-// ==========================================
+// ========================================
+// SSO & Platform Module Models
+// ========================================
 
-model AiChatConversation {
-  id             String   @id @default(uuid())
-  organizationId String   @map("organization_id")
-  userId         String   @map("user_id")
+model platformModule {
+  id              String    @id
+  slug            String    @unique
+  name            String
+  description     String?
+  icon            String?
+  type            String    @default("external")
+  url             String?
+  healthUrl       String?   @map("health_url")
+  monthlyPrice    Decimal   @default(0) @map("monthly_price")
+  yearlyPrice     Decimal   @default(0) @map("yearly_price")
+  isActive        Boolean   @default(true) @map("is_active")
+  isPublic        Boolean   @default(true) @map("is_public")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @map("updated_at")
+  clientId        String    @unique @map("client_id")
+  clientSecret    String    @map("client_secret")
+  healthStatus    String    @default("unknown") @map("health_status")
+  lastHealthCheck DateTime? @map("last_health_check")
 
-  title        String   @default("Nowa rozmowa")
-  model        String   @default("qwen-max-2025-01-25")
-  systemPrompt String?  @map("system_prompt") @db.Text
+  organizationModules organizationModule[]
+  ssoTokens           ssoToken[]
+  platformEvents      platformEvent[]
 
-  // Stats
-  messageCount Int @default(0) @map("message_count")
-  totalTokens  Int @default(0) @map("total_tokens")
-
-  // Status
-  isArchived Boolean @default(false) @map("is_archived")
-  isPinned   Boolean @default(false) @map("is_pinned")
-
-  // Optional link to Stream
-  streamId String? @map("stream_id")
-
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-
-  // Relations
-  organization Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  stream       Stream?            @relation(fields: [streamId], references: [id], onDelete: SetNull)
-  messages     AiChatMessage[]
-
-  @@index([organizationId, userId])
-  @@index([streamId])
-  @@map("ai_chat_conversations")
+  @@map("platform_modules")
 }
 
-model AiChatMessage {
-  id             String @id @default(uuid())
-  conversationId String @map("conversation_id")
+model organizationModule {
+  id                      String    @id
+  organizationId          String    @map("organization_id")
+  moduleId                String    @map("module_id")
+  isActive                Boolean   @default(true) @map("is_active")
+  activatedAt             DateTime  @default(now()) @map("activated_at")
+  expiresAt               DateTime? @map("expires_at")
+  stripeSubscriptionItemId String?  @map("stripe_subscription_item_id")
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @map("updated_at")
 
-  role    String // user, assistant, system
-  content String @db.Text
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  module       platformModule @relation(fields: [moduleId], references: [id])
 
-  // Token usage
-  promptTokens     Int? @map("prompt_tokens")
-  completionTokens Int? @map("completion_tokens")
+  @@unique([organizationId, moduleId])
+  @@index([organizationId])
+  @@index([moduleId])
+  @@map("organization_modules")
+}
 
-  // Metadata
-  model     String?
-  latencyMs Int?    @map("latency_ms")
+model ssoToken {
+  id             String    @id
+  token          String    @unique
+  userId         String    @map("user_id")
+  organizationId String    @map("organization_id")
+  moduleId       String    @map("module_id")
+  redirectUrl    String?   @map("redirect_url")
+  isUsed         Boolean   @default(false) @map("is_used")
+  usedAt         DateTime? @map("used_at")
+  ipAddress      String?   @map("ip_address")
+  userAgent      String?   @map("user_agent")
+  expiresAt      DateTime  @map("expires_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
 
-  createdAt DateTime @default(now()) @map("created_at")
+  module platformModule @relation(fields: [moduleId], references: [id])
 
-  // Relations
-  conversation AiChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  @@map("sso_tokens")
+}
 
-  @@index([conversationId])
-  @@map("ai_chat_messages")
+model platformEvent {
+  id             String    @id
+  eventType      String    @map("event_type")
+  source         String
+  payload        Json      @default("{}")
+  metadata       Json      @default("{}")
+  userId         String?   @map("user_id")
+  organizationId String?   @map("organization_id")
+  moduleId       String?   @map("module_id")
+  status         String    @default("published")
+  processedAt    DateTime? @map("processed_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  module platformModule? @relation(fields: [moduleId], references: [id])
+
+  @@map("platform_events")
+}
+
+// === MCP API Keys ===
+
+model mcp_api_keys {
+  id             String    @id @default(uuid())
+  keyHash        String    @unique @map("key_hash")
+  keyPrefix      String    @map("key_prefix")
+  name           String?
+  isActive       Boolean   @default(true) @map("is_active")
+  organizationId String    @map("organization_id")
+  createdById    String    @map("created_by_id")
+  lastUsedAt     DateTime? @map("last_used_at")
+  expiresAt      DateTime? @map("expires_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy    User         @relation("McpKeyCreator", fields: [createdById], references: [id])
+  usageLogs    mcp_usage_logs[]
+
+  @@map("mcp_api_keys")
+}
+
+model mcp_usage_logs {
+  id             String   @id @default(uuid())
+  apiKeyId       String   @map("api_key_id")
+  toolName       String   @map("tool_name")
+  query          String?
+  success        Boolean  @default(true)
+  responseTimeMs Int?     @map("response_time_ms")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  apiKey mcp_api_keys @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@map("mcp_usage_logs")
+}
+
+// =============================================================================
+// Voice Response System
+// =============================================================================
+
+model voiceResponse {
+  id                  String   @id @default(uuid())
+  userId              String
+  responseType        String
+  text                String   @db.Text
+  ssml                String   @db.Text
+  emotionalContext     Json?
+  generationTime      Int      @default(0)
+  estimatedDuration   Int      @default(0)
+  followUpSuggestions String[] @default([])
+  createdAt           DateTime @default(now())
+
+  user User @relation("UserVoiceResponses", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("voice_responses")
+}
+
+model voiceFeedback {
+  id              String   @id @default(uuid())
+  responseId      String
+  userId          String
+  rating          Int
+  feedbackType    String?
+  comments        String?
+  responseTime    Int?
+  contextRelevant Boolean?
+  createdAt       DateTime @default(now())
+
+  user User @relation("UserVoiceFeedback", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([responseId])
+  @@map("voice_feedback")
 }

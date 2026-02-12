@@ -3,16 +3,16 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import {
-  CommandLineIcon,
-  FolderIcon,
-  ArrowPathIcon,
-  ClipboardDocumentIcon,
-  CheckIcon,
-  CodeBracketIcon,
-  TrashIcon,
-  PlusIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/outline';
+  Terminal,
+  Folder,
+  RefreshCw,
+  Clipboard,
+  Check,
+  Code2,
+  Trash2,
+  Plus,
+  X,
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import {
   getProjects,
@@ -25,8 +25,8 @@ const WebTerminal = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex items-center justify-center h-full bg-gray-950">
-        <div className="text-gray-500">Loading terminal...</div>
+      <div className="flex items-center justify-center h-full bg-slate-950">
+        <div className="text-slate-500">Loading terminal...</div>
       </div>
     ),
   }
@@ -114,13 +114,13 @@ export default function CodingCenterPage() {
   return (
     <div className="flex h-[calc(100vh-64px)]">
       {/* Sidebar - Projects */}
-      <div className={`${showProjectList ? 'w-64' : 'w-12'} bg-gray-900 text-gray-100 flex flex-col transition-all duration-200`}>
-        <div className="p-2 border-b border-gray-700">
+      <div className={`${showProjectList ? 'w-64' : 'w-12'} bg-slate-900 text-slate-100 flex flex-col transition-all duration-200`}>
+        <div className="p-2 border-b border-slate-700">
           <button
             onClick={() => setShowProjectList(!showProjectList)}
-            className="w-full flex items-center justify-center gap-2 p-2 hover:bg-gray-800 rounded"
+            className="w-full flex items-center justify-center gap-2 p-2 hover:bg-slate-800 rounded"
           >
-            <CodeBracketIcon className="h-5 w-5 text-green-400" />
+            <Code2 className="h-5 w-5 text-green-400" />
             {showProjectList && <span className="font-semibold flex-1 text-left">Projekty ({projects.length})</span>}
           </button>
         </div>
@@ -129,20 +129,20 @@ export default function CodingCenterPage() {
           <div className="flex-1 overflow-y-auto">
             {loading ? (
               <div className="flex items-center justify-center py-8">
-                <ArrowPathIcon className="h-6 w-6 animate-spin text-gray-500" />
+                <RefreshCw className="h-6 w-6 animate-spin text-slate-500" />
               </div>
             ) : (
               projects.map(project => (
                 <div
                   key={project.name}
-                  className="group flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-gray-800"
+                  className="group flex items-center justify-between px-3 py-2 cursor-pointer hover:bg-slate-800"
                   onClick={() => openTerminal(project)}
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <FolderIcon className="h-4 w-4 text-yellow-400 flex-shrink-0" />
+                    <Folder className="h-4 w-4 text-yellow-400 flex-shrink-0" />
                     <span className="truncate text-sm">{project.name}</span>
                   </div>
-                  <PlusIcon className="h-4 w-4 text-gray-500 opacity-0 group-hover:opacity-100" />
+                  <Plus className="h-4 w-4 text-slate-500 opacity-0 group-hover:opacity-100" />
                 </div>
               ))
             )}
@@ -151,26 +151,26 @@ export default function CodingCenterPage() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col bg-gray-950">
+      <div className="flex-1 flex flex-col bg-slate-950">
         {/* Tabs Bar */}
-        <div className="flex items-center bg-gray-900 border-b border-gray-700 overflow-x-auto">
+        <div className="flex items-center bg-slate-900 border-b border-slate-700 overflow-x-auto">
           {tabs.map(tab => (
             <div
               key={tab.id}
               onClick={() => setActiveTabId(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 cursor-pointer border-r border-gray-700 min-w-0 max-w-[200px] ${
+              className={`flex items-center gap-2 px-4 py-2 cursor-pointer border-r border-slate-700 min-w-0 max-w-[200px] ${
                 activeTabId === tab.id
-                  ? 'bg-gray-800 text-white'
-                  : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
+                  ? 'bg-slate-800 text-white'
+                  : 'text-slate-400 hover:bg-slate-800 hover:text-slate-200'
               }`}
             >
               <div className={`w-2 h-2 rounded-full flex-shrink-0 ${tab.connected ? 'bg-green-400' : 'bg-red-400'}`} />
               <span className="truncate text-sm">{tab.title}</span>
               <button
                 onClick={(e) => closeTab(tab.id, e)}
-                className="p-0.5 hover:bg-gray-700 rounded flex-shrink-0"
+                className="p-0.5 hover:bg-slate-700 rounded flex-shrink-0"
               >
-                <XMarkIcon className="h-3 w-3" />
+                <X className="h-3 w-3" />
               </button>
             </div>
           ))}
@@ -178,9 +178,9 @@ export default function CodingCenterPage() {
           {/* New Tab Button */}
           <button
             onClick={() => setShowProjectList(true)}
-            className="flex items-center gap-1 px-3 py-2 text-gray-500 hover:text-gray-300 hover:bg-gray-800"
+            className="flex items-center gap-1 px-3 py-2 text-slate-500 hover:text-slate-300 hover:bg-slate-800"
           >
-            <PlusIcon className="h-4 w-4" />
+            <Plus className="h-4 w-4" />
           </button>
         </div>
 
@@ -188,8 +188,8 @@ export default function CodingCenterPage() {
         {activeTab ? (
           <div className="flex-1 flex flex-col min-h-0">
             {/* Quick Commands */}
-            <div className="px-4 py-2 bg-gray-900 border-b border-gray-800 flex flex-wrap gap-2">
-              <span className="text-xs text-gray-500 py-1">{activeTab.projectPath}</span>
+            <div className="px-4 py-2 bg-slate-900 border-b border-slate-800 flex flex-wrap gap-2">
+              <span className="text-xs text-slate-500 py-1">{activeTab.projectPath}</span>
               <div className="flex-1" />
               {[
                 { label: 'Aider', cmd: `cd ${activeTab.projectPath} && aider` },
@@ -200,12 +200,12 @@ export default function CodingCenterPage() {
                 <button
                   key={label}
                   onClick={() => copyToClipboard(cmd, label)}
-                  className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 rounded"
+                  className="flex items-center gap-1 px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded"
                 >
                   {copiedCmd === label ? (
-                    <CheckIcon className="h-3 w-3 text-green-400" />
+                    <Check className="h-3 w-3 text-green-400" />
                   ) : (
-                    <ClipboardDocumentIcon className="h-3 w-3" />
+                    <Clipboard className="h-3 w-3" />
                   )}
                   {label}
                 </button>
@@ -229,10 +229,10 @@ export default function CodingCenterPage() {
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center">
-            <div className="text-center text-gray-500">
-              <CommandLineIcon className="h-16 w-16 mx-auto mb-4 text-gray-700" />
+            <div className="text-center text-slate-500">
+              <Terminal className="h-16 w-16 mx-auto mb-4 text-slate-700" />
               <p className="mb-4">Kliknij projekt aby otworzyc terminal</p>
-              <p className="text-sm text-gray-600">Mozesz otworzyc wiele terminali jednoczesnie</p>
+              <p className="text-sm text-slate-600">Mozesz otworzyc wiele terminali jednoczesnie</p>
             </div>
           </div>
         )}

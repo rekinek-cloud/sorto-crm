@@ -4,12 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { UserWithHierarchy, CreateUserRelationRequest, userHierarchyApi } from '@/lib/api/userHierarchy';
 import { toast } from 'react-hot-toast';
 import {
-  XMarkIcon,
-  UserGroupIcon,
-  MagnifyingGlassIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon
-} from '@heroicons/react/24/outline';
+  X,
+  Users,
+  Search,
+  AlertTriangle,
+  CheckCircle
+} from 'lucide-react';
 
 interface CreateUserRelationModalProps {
   isOpen: boolean;
@@ -184,7 +184,7 @@ export default function CreateUserRelationModal({
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <UserGroupIcon className="h-6 w-6 text-indigo-600" />
+            <Users className="h-6 w-6 text-indigo-600" />
             <div>
               <h2 className="text-xl font-semibold text-gray-900">
                 Utwórz relację hierarchiczną
@@ -198,7 +198,7 @@ export default function CreateUserRelationModal({
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100"
           >
-            <XMarkIcon className="h-6 w-6" />
+            <X className="h-6 w-6" />
           </button>
         </div>
 
@@ -258,7 +258,7 @@ export default function CreateUserRelationModal({
               
               {/* Search */}
               <div className="relative mb-4">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Szukaj użytkowników..."
@@ -279,7 +279,7 @@ export default function CreateUserRelationModal({
                       <p className="font-medium text-gray-900">{userHierarchyApi.formatUserName(selectedUser)}</p>
                       <p className="text-sm text-gray-600">{selectedUser.email}</p>
                     </div>
-                    <CheckCircleIcon className="h-5 w-5 text-green-500 ml-auto" />
+                    <CheckCircle className="h-5 w-5 text-green-500 ml-auto" />
                   </div>
                 </div>
               )}
@@ -314,7 +314,7 @@ export default function CreateUserRelationModal({
                           <p className="text-xs text-gray-500">{userHierarchyApi.formatUserRole(user.role)}</p>
                         </div>
                         {selectedUser?.id === user.id && (
-                          <CheckCircleIcon className="h-5 w-5 text-indigo-500" />
+                          <CheckCircle className="h-5 w-5 text-indigo-500" />
                         )}
                       </div>
                     </button>

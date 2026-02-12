@@ -7,14 +7,20 @@ import Cookies from 'js-cookie';
 import { recurringTasksApi } from '@/lib/api/recurring';
 import { toast } from 'react-hot-toast';
 import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  PlusIcon,
-  CalendarDaysIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/outline';
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  CalendarDays,
+  Clock,
+  CheckCircle2,
+  X,
+  CalendarClock,
+  RefreshCw,
+  Timer,
+  MapPin,
+} from 'lucide-react';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 interface RecurringTask {
   id: string;
@@ -58,13 +64,24 @@ interface RecurringTaskOccurrence {
   task: RecurringTask;
   time: string;
   isCompleted: boolean;
-  canComplete: boolean; // czy można oznaczyć jako wykonane
+  canComplete: boolean;
 }
+
+const FrequencyIcon = ({ frequency }: { frequency: string }) => {
+  switch (frequency) {
+    case 'DAILY': return <CalendarDays className="h-3.5 w-3.5" />;
+    case 'WEEKLY': return <CalendarClock className="h-3.5 w-3.5" />;
+    case 'MONTHLY': return <CalendarDays className="h-3.5 w-3.5" />;
+    case 'QUARTERLY': return <CalendarDays className="h-3.5 w-3.5" />;
+    case 'YEARLY': return <CalendarDays className="h-3.5 w-3.5" />;
+    default: return <RefreshCw className="h-3.5 w-3.5" />;
+  }
+};
 
 export default function RecurringTasksCalendarPage() {
   const { user, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
-  
+
   useEffect(() => {
     if (!isLoading && (!isAuthenticated || !Cookies.get('access_token'))) {
       window.location.href = '/auth/login/';
@@ -93,7 +110,7 @@ export default function RecurringTasksCalendarPage() {
       setLoading(false);
       return;
     }
-    
+
     try {
       setLoading(true);
       const response = await recurringTasksApi.getTasks({
@@ -103,7 +120,7 @@ export default function RecurringTasksCalendarPage() {
       setTasks(response.recurringTasks || []);
     } catch (error: any) {
       console.error('Error loading recurring tasks:', error);
-      toast.error('Failed to load recurring tasks');
+      toast.error('Nie udalo sie zaladowac zadan cyklicznych');
     } finally {
       setLoading(false);
     }
@@ -112,14 +129,14 @@ export default function RecurringTasksCalendarPage() {
   const generateCalendarDays = () => {
     const year = currentDate.getFullYear();
     const month = currentDate.getMonth();
-    
+
     const firstDay = new Date(year, month, 1);
     const lastDay = new Date(year, month + 1, 0);
     const firstDayOfWeek = (firstDay.getDay() + 6) % 7; // Monday = 0
     const daysInMonth = lastDay.getDate();
-    
+
     const days: CalendarDay[] = [];
-    
+
     // Previous month days
     const prevMonth = new Date(year, month - 1, 0);
     for (let i = firstDayOfWeek - 1; i >= 0; i--) {
@@ -131,13 +148,13 @@ export default function RecurringTasksCalendarPage() {
         tasks: []
       });
     }
-    
+
     // Current month days
     for (let date = 1; date <= daysInMonth; date++) {
       const currentDay = new Date(year, month, date);
       const isToday = isDateToday(currentDay);
       const taskOccurrences = getTaskOccurrencesForDate(currentDay);
-      
+
       days.push({
         date,
         isCurrentMonth: true,
@@ -145,7 +162,7 @@ export default function RecurringTasksCalendarPage() {
         tasks: taskOccurrences
       });
     }
-    
+
     // Next month days
     const totalCells = Math.ceil(days.length / 7) * 7;
     let nextMonthDate = 1;
@@ -157,21 +174,21 @@ export default function RecurringTasksCalendarPage() {
         tasks: []
       });
     }
-    
+
     setCalendarDays(days);
   };
 
   const getTaskOccurrencesForDate = (date: Date): RecurringTaskOccurrence[] => {
     const occurrences: RecurringTaskOccurrence[] = [];
-    
+
     tasks.forEach(task => {
       if (!task.isActive) return;
-      
+
       const shouldOccurOnDate = checkIfTaskOccursOnDate(task, date);
       if (shouldOccurOnDate) {
         const dateKey = getDateKey(date);
         const taskKey = `${task.id}-${dateKey}`;
-        
+
         occurrences.push({
           task,
           time: task.time,
@@ -180,7 +197,7 @@ export default function RecurringTasksCalendarPage() {
         });
       }
     });
-    
+
     return occurrences.sort((a, b) => a.time.localeCompare(b.time));
   };
 
@@ -188,23 +205,18 @@ export default function RecurringTasksCalendarPage() {
     const dayOfWeek = date.getDay();
     const dayOfMonth = date.getDate();
     const month = date.getMonth() + 1;
-    
+
     switch (task.frequency) {
       case 'DAILY':
         return true;
-        
       case 'WEEKLY':
         return task.daysOfWeek.includes(dayOfWeek);
-        
       case 'MONTHLY':
         return task.dayOfMonth ? dayOfMonth === task.dayOfMonth : dayOfMonth === 1;
-        
       case 'QUARTERLY':
         return [1, 4, 7, 10].includes(month) && dayOfMonth === (task.dayOfMonth || 1);
-        
       case 'YEARLY':
         return month === (task.months[0] || 1) && dayOfMonth === (task.dayOfMonth || 1);
-        
       default:
         return false;
     }
@@ -229,14 +241,14 @@ export default function RecurringTasksCalendarPage() {
   const handleCompleteTask = (task: RecurringTask, date: Date) => {
     const dateKey = getDateKey(date);
     const taskKey = `${task.id}-${dateKey}`;
-    
+
     const newCompleted = new Set(completedTasks);
     if (completedTasks.has(taskKey)) {
       newCompleted.delete(taskKey);
-      toast.success('Task marked as incomplete');
+      toast.success('Zadanie oznaczone jako niewykonane');
     } else {
       newCompleted.add(taskKey);
-      toast.success('Task marked as completed');
+      toast.success('Zadanie oznaczone jako wykonane');
     }
     setCompletedTasks(newCompleted);
   };
@@ -257,119 +269,111 @@ export default function RecurringTasksCalendarPage() {
 
   const formatMonthYear = (date: Date): string => {
     const months = [
-      'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
-      'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'
+      'Styczen', 'Luty', 'Marzec', 'Kwiecien', 'Maj', 'Czerwiec',
+      'Lipiec', 'Sierpien', 'Wrzesien', 'Pazdziernik', 'Listopad', 'Grudzien'
     ];
     return `${months[date.getMonth()]} ${date.getFullYear()}`;
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'HIGH': return 'bg-red-100 text-red-800 border-red-200';
-      case 'MEDIUM': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'LOW': return 'bg-green-100 text-green-800 border-green-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  const getFrequencyIcon = (frequency: string) => {
-    switch (frequency) {
-      case 'DAILY': return '📅';
-      case 'WEEKLY': return '📆';
-      case 'MONTHLY': return '🗓️';
-      case 'QUARTERLY': return '📊';
-      case 'YEARLY': return '🎯';
-      default: return '🔄';
+      case 'HIGH': return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/30';
+      case 'MEDIUM': return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800/30';
+      case 'LOW': return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/30';
+      default: return 'bg-slate-100 text-slate-800 border-slate-200 dark:bg-slate-700/50 dark:text-slate-300 dark:border-slate-600';
     }
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
+      <PageShell>
+        <div className="flex justify-center items-center h-96">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
+        </div>
+      </PageShell>
     );
   }
 
-  const selectedDay = selectedDate ? calendarDays.find(day => 
+  const selectedDay = selectedDate ? calendarDays.find(day =>
     day.isCurrentMonth && getDateKey(new Date(currentDate.getFullYear(), currentDate.getMonth(), day.date)) === selectedDate
   ) : null;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Recurring Tasks Calendar</h1>
-          <p className="text-gray-600">View and manage your recurring tasks schedule</p>
-        </div>
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => router.push('/dashboard/recurring-tasks')}
-            className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
-          >
-            List View
-          </button>
-          <button 
-            onClick={() => router.push('/dashboard/recurring-tasks/new')}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium flex items-center"
-          >
-            <PlusIcon className="w-4 h-4 mr-2" />
-            Add Recurring Task
-          </button>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Kalendarz zadan cyklicznych"
+        subtitle="Przegladaj i zarzadzaj harmonogramem zadan cyklicznych"
+        icon={CalendarDays}
+        iconColor="text-blue-600"
+        actions={
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.push('/dashboard/recurring-tasks')}
+              className="px-4 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-300"
+            >
+              Widok listy
+            </button>
+            <button
+              onClick={() => router.push('/dashboard/recurring-tasks/new')}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl font-medium flex items-center"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Dodaj zadanie
+            </button>
+          </div>
+        }
+      />
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow p-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
           <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <CalendarDaysIcon className="w-6 h-6 text-blue-600" />
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+              <CalendarDays className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Tasks</p>
-              <p className="text-2xl font-semibold text-gray-900">{tasks.length}</p>
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Lacznie zadan</p>
+              <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{tasks.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
           <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <CheckCircleIcon className="w-6 h-6 text-green-600" />
+            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-xl">
+              <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Active</p>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Aktywne</p>
+              <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
                 {tasks.filter(t => t.isActive).length}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
           <div className="flex items-center">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <ClockIcon className="w-6 h-6 text-orange-600" />
+            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
+              <Clock className="w-6 h-6 text-orange-600 dark:text-orange-400" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Today</p>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Dzisiaj</p>
+              <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
                 {calendarDays.find(d => d.isToday)?.tasks.length || 0}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow p-4">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
           <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <div className="w-6 h-6 text-purple-600">✅</div>
+            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
+              <CheckCircle2 className="w-6 h-6 text-purple-600 dark:text-purple-400" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Completed Today</p>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Wykonane dzis</p>
+              <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
                 {calendarDays.find(d => d.isToday)?.tasks.filter(t => t.isCompleted).length || 0}
               </p>
             </div>
@@ -378,31 +382,31 @@ export default function RecurringTasksCalendarPage() {
       </div>
 
       {/* Calendar */}
-      <div className="bg-white rounded-lg shadow">
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
         {/* Calendar Header */}
-        <div className="p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-slate-200 dark:border-slate-700/50">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">
               {formatMonthYear(currentDate)}
             </h2>
             <div className="flex items-center space-x-2">
               <button
                 onClick={goToToday}
-                className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+                className="px-3 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-300"
               >
-                Dziś
+                Dzis
               </button>
               <button
                 onClick={() => navigateMonth('prev')}
-                className="p-2 rounded-md hover:bg-gray-100"
+                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50"
               >
-                <ChevronLeftIcon className="w-5 h-5" />
+                <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
               </button>
               <button
                 onClick={() => navigateMonth('next')}
-                className="p-2 rounded-md hover:bg-gray-100"
+                className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-700/50"
               >
-                <ChevronRightIcon className="w-5 h-5" />
+                <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400" />
               </button>
             </div>
           </div>
@@ -412,8 +416,8 @@ export default function RecurringTasksCalendarPage() {
         <div className="p-6">
           {/* Weekday Headers */}
           <div className="grid grid-cols-7 gap-1 mb-4">
-            {['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Nie'].map((day) => (
-              <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
+            {['Pon', 'Wt', 'Sr', 'Czw', 'Pt', 'Sob', 'Nie'].map((day) => (
+              <div key={day} className="p-2 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
                 {day}
               </div>
             ))}
@@ -424,11 +428,11 @@ export default function RecurringTasksCalendarPage() {
             {calendarDays.map((day, index) => (
               <div
                 key={index}
-                className={`min-h-[100px] p-2 border border-gray-200 rounded-md cursor-pointer hover:bg-gray-50 ${
-                  day.isToday ? 'bg-blue-50 border-blue-200' : ''
-                } ${!day.isCurrentMonth ? 'bg-gray-50 text-gray-400' : ''} ${
-                  selectedDate === getDateKey(new Date(currentDate.getFullYear(), currentDate.getMonth(), day.date)) 
-                    ? 'ring-2 ring-blue-500' : ''
+                className={`min-h-[100px] p-2 border border-slate-200 dark:border-slate-700/50 rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors ${
+                  day.isToday ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800/50' : ''
+                } ${!day.isCurrentMonth ? 'bg-slate-50 dark:bg-slate-900/30 text-slate-400 dark:text-slate-600' : ''} ${
+                  selectedDate === getDateKey(new Date(currentDate.getFullYear(), currentDate.getMonth(), day.date))
+                    ? 'ring-2 ring-blue-500 dark:ring-blue-400' : ''
                 }`}
                 onClick={() => {
                   if (day.isCurrentMonth) {
@@ -439,7 +443,7 @@ export default function RecurringTasksCalendarPage() {
               >
                 <div className="h-full flex flex-col">
                   <div className={`text-sm font-medium mb-1 ${
-                    day.isToday ? 'text-blue-600' : day.isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
+                    day.isToday ? 'text-blue-600 dark:text-blue-400' : day.isCurrentMonth ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400 dark:text-slate-600'
                   }`}>
                     {day.date}
                   </div>
@@ -455,23 +459,23 @@ export default function RecurringTasksCalendarPage() {
                           e.stopPropagation();
                           if (occurrence.canComplete) {
                             handleCompleteTask(
-                              occurrence.task, 
+                              occurrence.task,
                               new Date(currentDate.getFullYear(), currentDate.getMonth(), day.date)
                             );
                           }
                         }}
                       >
                         <div className="flex items-center space-x-1">
-                          <span>{getFrequencyIcon(occurrence.task.frequency)}</span>
+                          <FrequencyIcon frequency={occurrence.task.frequency} />
                           <span>{occurrence.time}</span>
-                          {occurrence.isCompleted && <span>✅</span>}
+                          {occurrence.isCompleted && <CheckCircle2 className="h-3 w-3 text-green-500" />}
                         </div>
                         <div className="truncate">{occurrence.task.title}</div>
                       </div>
                     ))}
                     {day.tasks.length > 3 && (
-                      <div className="text-xs text-gray-500 p-1">
-                        +{day.tasks.length - 3} więcej
+                      <div className="text-xs text-slate-500 dark:text-slate-400 p-1">
+                        +{day.tasks.length - 3} wiecej
                       </div>
                     )}
                   </div>
@@ -483,33 +487,33 @@ export default function RecurringTasksCalendarPage() {
 
         {/* Selected Day Details */}
         {selectedDay && selectedDay.tasks.length > 0 && (
-          <div className="border-t border-gray-200 p-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">
+          <div className="border-t border-slate-200 dark:border-slate-700/50 p-6">
+            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-4">
               Zadania na {selectedDay.date} {formatMonthYear(currentDate)}
             </h3>
             <div className="space-y-3">
               {selectedDay.tasks.map((occurrence, index) => (
                 <div
                   key={index}
-                  className={`p-4 border rounded-lg ${getPriorityColor(occurrence.task.priority)} ${
+                  className={`p-4 border rounded-xl ${getPriorityColor(occurrence.task.priority)} ${
                     occurrence.isCompleted ? 'opacity-75' : ''
                   }`}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-3">
-                      <span className="text-lg">{getFrequencyIcon(occurrence.task.frequency)}</span>
+                      <FrequencyIcon frequency={occurrence.task.frequency} />
                       <div>
                         <h4 className={`font-medium ${occurrence.isCompleted ? 'line-through' : ''}`}>
                           {occurrence.task.title}
                         </h4>
-                        <div className="text-sm space-x-2">
-                          <span>🕒 {occurrence.time}</span>
-                          <span>🔄 {occurrence.task.frequency}</span>
+                        <div className="text-sm space-x-2 flex items-center gap-2 mt-1">
+                          <span className="flex items-center gap-1"><Clock className="h-3 w-3" /> {occurrence.time}</span>
+                          <span className="flex items-center gap-1"><RefreshCw className="h-3 w-3" /> {occurrence.task.frequency}</span>
                           {occurrence.task.estimatedMinutes && (
-                            <span>⏱️ {occurrence.task.estimatedMinutes}min</span>
+                            <span className="flex items-center gap-1"><Timer className="h-3 w-3" /> {occurrence.task.estimatedMinutes}min</span>
                           )}
                           {occurrence.task.context && (
-                            <span>📍 {occurrence.task.context}</span>
+                            <span className="flex items-center gap-1"><MapPin className="h-3 w-3" /> {occurrence.task.context}</span>
                           )}
                         </div>
                       </div>
@@ -520,14 +524,14 @@ export default function RecurringTasksCalendarPage() {
                           occurrence.task,
                           new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay.date)
                         )}
-                        className={`p-2 rounded-md ${
+                        className={`p-2 rounded-xl ${
                           occurrence.isCompleted
-                            ? 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                            : 'bg-green-100 text-green-600 hover:bg-green-200'
+                            ? 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-700/50 dark:text-slate-400 dark:hover:bg-slate-600/50'
+                            : 'bg-green-100 text-green-600 hover:bg-green-200 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/50'
                         }`}
-                        title={occurrence.isCompleted ? 'Mark as incomplete' : 'Mark as completed'}
+                        title={occurrence.isCompleted ? 'Oznacz jako niewykonane' : 'Oznacz jako wykonane'}
                       >
-                        {occurrence.isCompleted ? <XMarkIcon className="w-4 h-4" /> : <CheckCircleIcon className="w-4 h-4" />}
+                        {occurrence.isCompleted ? <X className="w-4 h-4" /> : <CheckCircle2 className="w-4 h-4" />}
                       </button>
                     )}
                   </div>
@@ -543,12 +547,12 @@ export default function RecurringTasksCalendarPage() {
 
       {/* Empty State */}
       {tasks.length === 0 && (
-        <div className="bg-white rounded-lg shadow text-center py-12">
-          <div className="text-6xl mb-4">🔄</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Recurring Tasks</h3>
-          <p className="text-gray-600">Create your first recurring task to see it on the calendar</p>
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm text-center py-12 mt-6">
+          <RefreshCw className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Brak zadan cyklicznych</h3>
+          <p className="text-slate-600 dark:text-slate-400">Utworz pierwsze zadanie cykliczne, aby zobaczyc je w kalendarzu</p>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

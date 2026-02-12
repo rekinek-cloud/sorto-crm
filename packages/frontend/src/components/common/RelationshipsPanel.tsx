@@ -4,14 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api/client';
 import { Card } from '../ui/Card';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
-import { 
-  UserIcon, 
-  BuildingOfficeIcon, 
-  CurrencyDollarIcon,
-  CubeIcon,
-  ClipboardDocumentListIcon,
-  XMarkIcon 
-} from '@heroicons/react/24/outline';
+import {
+  User,
+  Building2,
+  DollarSign,
+  Box,
+  ClipboardList,
+  X
+} from 'lucide-react';
 
 interface RelationshipItem {
   id: string;
@@ -38,12 +38,12 @@ interface RelationshipsPanelProps {
 
 const getIcon = (type: string) => {
   switch (type) {
-    case 'contact': return UserIcon;
-    case 'company': return BuildingOfficeIcon;
-    case 'deal': return CurrencyDollarIcon;
-    case 'project': return CubeIcon;
-    case 'task': return ClipboardDocumentListIcon;
-    default: return UserIcon;
+    case 'contact': return User;
+    case 'company': return Building2;
+    case 'deal': return DollarSign;
+    case 'project': return Box;
+    case 'task': return ClipboardList;
+    default: return User;
   }
 };
 
@@ -340,7 +340,7 @@ export function RelationshipsPanel({ entityId, entityType, entityName, onClose }
             onClick={onClose}
             className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <XMarkIcon className="w-5 h-5" />
+            <X className="w-5 h-5" />
           </button>
         )}
       </div>

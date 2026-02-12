@@ -3,15 +3,15 @@
 import React, { useState } from 'react';
 import { PreciseGoal } from '@/types/streams';
 import {
-  PencilIcon,
-  TrashIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  XCircleIcon,
-  PauseCircleIcon,
-  CalendarIcon,
-  ChartBarIcon,
-} from '@heroicons/react/24/outline';
+  Pencil,
+  Trash2,
+  CheckCircle,
+  Clock,
+  XCircle,
+  PauseCircle,
+  Calendar,
+  BarChart3,
+} from 'lucide-react';
 
 interface GoalCardProps {
   goal: PreciseGoal;
@@ -43,7 +43,7 @@ export default function GoalCard({
     switch (goal.status) {
       case 'active':
         return {
-          icon: <ClockIcon className="w-4 h-4" />,
+          icon: <Clock className="w-4 h-4" />,
           label: 'Aktywny',
           bgColor: 'bg-blue-100',
           textColor: 'text-blue-800',
@@ -51,7 +51,7 @@ export default function GoalCard({
         };
       case 'achieved':
         return {
-          icon: <CheckCircleIcon className="w-4 h-4" />,
+          icon: <CheckCircle className="w-4 h-4" />,
           label: 'Osiągnięty',
           bgColor: 'bg-green-100',
           textColor: 'text-green-800',
@@ -59,7 +59,7 @@ export default function GoalCard({
         };
       case 'failed':
         return {
-          icon: <XCircleIcon className="w-4 h-4" />,
+          icon: <XCircle className="w-4 h-4" />,
           label: 'Nieosiągnięty',
           bgColor: 'bg-red-100',
           textColor: 'text-red-800',
@@ -67,7 +67,7 @@ export default function GoalCard({
         };
       case 'paused':
         return {
-          icon: <PauseCircleIcon className="w-4 h-4" />,
+          icon: <PauseCircle className="w-4 h-4" />,
           label: 'Wstrzymany',
           bgColor: 'bg-amber-100',
           textColor: 'text-amber-800',
@@ -135,14 +135,14 @@ export default function GoalCard({
               className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
               title="Edytuj"
             >
-              <PencilIcon className="w-4 h-4" />
+              <Pencil className="w-4 h-4" />
             </button>
             <button
               onClick={() => onDelete(goal.id)}
               className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
               title="Usuń"
             >
-              <TrashIcon className="w-4 h-4" />
+              <Trash2 className="w-4 h-4" />
             </button>
           </div>
         </div>
@@ -220,7 +220,7 @@ export default function GoalCard({
                 onClick={() => setIsUpdatingProgress(true)}
                 className="w-full px-3 py-1.5 text-xs text-blue-600 border border-blue-200 rounded-lg hover:bg-blue-50 flex items-center justify-center gap-1"
               >
-                <ChartBarIcon className="w-3.5 h-3.5" />
+                <BarChart3 className="w-3.5 h-3.5" />
                 Aktualizuj postęp
               </button>
             )}
@@ -233,7 +233,7 @@ export default function GoalCard({
             onClick={() => onAchieve(goal.id)}
             className="w-full px-3 py-1.5 text-xs bg-green-600 text-white rounded-lg hover:bg-green-700 flex items-center justify-center gap-1"
           >
-            <CheckCircleIcon className="w-3.5 h-3.5" />
+            <CheckCircle className="w-3.5 h-3.5" />
             Oznacz jako osiągnięty
           </button>
         )}
@@ -244,7 +244,7 @@ export default function GoalCard({
         <div className="flex items-center justify-between text-xs">
           {/* U - Ujście (deadline) */}
           <div className={`flex items-center gap-1 ${isOverdue ? 'text-red-600' : 'text-gray-600'}`}>
-            <CalendarIcon className="w-3.5 h-3.5" />
+            <Calendar className="w-3.5 h-3.5" />
             <span>
               {new Date(goal.deadline).toLocaleDateString('pl-PL')}
               {goal.status === 'active' && (

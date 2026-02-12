@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { DelegatedTask } from '@/lib/api/delegated';
 import { delegatedApi } from '@/lib/api/delegated';
 import { tasksApi } from '@/lib/api/tasks';
-import { XMarkIcon, UserIcon, CalendarIcon } from '@heroicons/react/24/outline';
+import { X, User, Calendar } from 'lucide-react';
 
 interface DelegatedTaskFormProps {
   task?: DelegatedTask;
@@ -131,7 +131,7 @@ export default function DelegatedTaskForm({ task, onSubmit, onCancel }: Delegate
             onClick={onCancel}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <XMarkIcon className="w-6 h-6" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
@@ -164,7 +164,7 @@ export default function DelegatedTaskForm({ task, onSubmit, onCancel }: Delegate
               Delegate To *
             </label>
             <div className="relative">
-              <UserIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 id="delegatedTo"
@@ -205,7 +205,7 @@ export default function DelegatedTaskForm({ task, onSubmit, onCancel }: Delegate
               Follow-up Date (Optional)
             </label>
             <div className="relative">
-              <CalendarIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Calendar className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <input
                 type="datetime-local"
                 id="followUpDate"

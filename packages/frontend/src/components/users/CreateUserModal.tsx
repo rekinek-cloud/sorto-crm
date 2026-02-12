@@ -2,13 +2,13 @@
 
 import React, { useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { 
-  XMarkIcon,
-  UserPlusIcon,
-  EnvelopeIcon,
-  UserIcon,
-  ShieldCheckIcon
-} from '@heroicons/react/24/outline';
+import {
+  X,
+  UserPlus,
+  Mail,
+  User,
+  ShieldCheck
+} from 'lucide-react';
 
 interface CreateUserModalProps {
   isOpen: boolean;
@@ -84,7 +84,7 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated }: Crea
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-indigo-100 rounded-lg">
-              <UserPlusIcon className="h-6 w-6 text-indigo-600" />
+              <UserPlus className="h-6 w-6 text-indigo-600" />
             </div>
             <h3 className="text-lg font-semibold text-gray-900">
               Zaproś nowego użytkownika
@@ -94,7 +94,7 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated }: Crea
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <XMarkIcon className="h-6 w-6" />
+            <X className="h-6 w-6" />
           </button>
         </div>
 
@@ -113,7 +113,7 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated }: Crea
               Adres e-mail *
             </label>
             <div className="relative">
-              <EnvelopeIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="email"
                 id="email"
@@ -133,7 +133,7 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated }: Crea
               Imię *
             </label>
             <div className="relative">
-              <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
                 id="firstName"
@@ -153,7 +153,7 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated }: Crea
               Nazwisko *
             </label>
             <div className="relative">
-              <UserIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
                 id="lastName"
@@ -173,7 +173,7 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated }: Crea
               Rola
             </label>
             <div className="relative">
-              <ShieldCheckIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <ShieldCheck className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <select
                 id="role"
                 name="role"
@@ -209,7 +209,7 @@ export default function CreateUserModal({ isOpen, onClose, onUserCreated }: Crea
                 </>
               ) : (
                 <>
-                  <EnvelopeIcon className="h-4 w-4" />
+                  <Mail className="h-4 w-4" />
                   Wyślij zaproszenie
                 </>
               )}

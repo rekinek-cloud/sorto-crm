@@ -7,22 +7,33 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  PlusIcon,
-  InboxIcon,
-  Cog6ToothIcon,
-  TrashIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ArrowPathIcon,
-  ExclamationTriangleIcon,
-  CloudArrowUpIcon
-} from '@heroicons/react/24/outline';
+  Plus,
+  Inbox,
+  Settings,
+  Trash2,
+  CheckCircle2,
+  XCircle,
+  RefreshCw,
+  AlertTriangle,
+  CloudUpload,
+  Mail,
+  Monitor,
+  Circle,
+  Building2,
+  Mailbox,
+  Lightbulb,
+  X,
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import { emailAccountsApi, type EmailAccount, type EmailProvider } from '@/lib/api/emailAccounts';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+
+const GLASS_CARD = 'bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm';
 
 // Types imported from @/lib/api/emailAccounts
 
@@ -168,7 +179,7 @@ export default function EmailAccountsPage() {
       const result = await emailAccountsApi.testConnection(testData);
 
       if (result.success) {
-        toast.success('🎉 Połączenie udane! Możesz utworzyć konto.');
+        toast.success('Połączenie udane! Możesz utworzyć konto.');
         setStep('test');
       } else {
         const errors = [];
@@ -215,7 +226,7 @@ export default function EmailAccountsPage() {
       const result = await emailAccountsApi.createAccount(accountData);
 
       if (result.success) {
-        toast.success('✅ Konto email zostało utworzone!');
+        toast.success('Konto email zostało utworzone!');
         setShowCreateModal(false);
         resetForm();
         loadAccounts();
@@ -263,148 +274,162 @@ export default function EmailAccountsPage() {
 
   const getProviderIcon = (provider: string) => {
     switch (provider) {
-      case 'GMAIL': return '📧';
-      case 'OUTLOOK': return '🔷';
-      case 'YAHOO': return '🟣';
-      case 'EXCHANGE': return '🏢';
-      default: return '📮';
+      case 'GMAIL': return <Mail className="w-8 h-8 text-red-500" />;
+      case 'OUTLOOK': return <Monitor className="w-8 h-8 text-blue-500" />;
+      case 'YAHOO': return <Circle className="w-8 h-8 text-purple-500" />;
+      case 'EXCHANGE': return <Building2 className="w-8 h-8 text-slate-600 dark:text-slate-400" />;
+      default: return <Mailbox className="w-8 h-8 text-slate-500" />;
+    }
+  };
+
+  const getProviderIconSmall = (provider: string) => {
+    switch (provider) {
+      case 'GMAIL': return <Mail className="w-6 h-6 text-red-500" />;
+      case 'OUTLOOK': return <Monitor className="w-6 h-6 text-blue-500" />;
+      case 'YAHOO': return <Circle className="w-6 h-6 text-purple-500" />;
+      case 'EXCHANGE': return <Building2 className="w-6 h-6 text-slate-600 dark:text-slate-400" />;
+      default: return <Mailbox className="w-6 h-6 text-slate-500" />;
     }
   };
 
   const formatLastSync = (lastSyncAt?: string) => {
     if (!lastSyncAt) return 'Nigdy';
-    
+
     const date = new Date(lastSyncAt);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
     const diffMins = Math.floor(diffMs / (1000 * 60));
-    
+
     if (diffMins < 1) return 'Przed chwilą';
     if (diffMins < 60) return `${diffMins} min temu`;
-    
+
     const diffHours = Math.floor(diffMins / 60);
     if (diffHours < 24) return `${diffHours} godz. temu`;
-    
+
     const diffDays = Math.floor(diffHours / 24);
     return `${diffDays} dni temu`;
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <LoadingSpinner size="lg" />
-      </div>
+      <PageShell>
+        <div className="flex items-center justify-center h-64">
+          <LoadingSpinner size="lg" />
+        </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Konta Email</h1>
-          <p className="text-gray-600 mt-1">
-            Zarządzaj kontami IMAP/SMTP dla automatycznej synchronizacji emaili
-          </p>
-        </div>
-        
-        <div className="flex items-center space-x-3">
-          <Button
-            variant="outline"
-            onClick={handleSyncAll}
-            disabled={syncing || accounts.length === 0}
-          >
-            <ArrowPathIcon className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
-            {syncing ? 'Synchronizacja...' : 'Synchronizuj Wszystkie'}
-          </Button>
-          
-          <Button
-            variant="default"
-            onClick={() => setShowCreateModal(true)}
-          >
-            <PlusIcon className="w-4 h-4 mr-2" />
-            Dodaj Konto Email
-          </Button>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Konta Email"
+        subtitle="Zarządzaj kontami IMAP/SMTP dla automatycznej synchronizacji emaili"
+        icon={Mail}
+        iconColor="text-blue-600"
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Konta Email' },
+        ]}
+        actions={
+          <div className="flex items-center space-x-3">
+            <Button
+              variant="outline"
+              onClick={handleSyncAll}
+              disabled={syncing || accounts.length === 0}
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+              {syncing ? 'Synchronizacja...' : 'Synchronizuj Wszystkie'}
+            </Button>
+
+            <Button
+              variant="default"
+              onClick={() => setShowCreateModal(true)}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Dodaj Konto Email
+            </Button>
+          </div>
+        }
+      />
 
       {/* Stats */}
-      <div className="grid grid-cols-4 gap-4">
-        <Card className="p-4">
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        <div className={`${GLASS_CARD} p-4`}>
           <div className="flex items-center">
-            <InboxIcon className="w-8 h-8 text-blue-500" />
+            <Inbox className="w-8 h-8 text-blue-500" />
             <div className="ml-3">
-              <div className="text-2xl font-bold text-gray-900">{accounts.length}</div>
-              <div className="text-sm text-gray-500">Wszystkie konta</div>
+              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{accounts.length}</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400">Wszystkie konta</div>
             </div>
           </div>
-        </Card>
-        
-        <Card className="p-4">
+        </div>
+
+        <div className={`${GLASS_CARD} p-4`}>
           <div className="flex items-center">
-            <CheckCircleIcon className="w-8 h-8 text-green-500" />
+            <CheckCircle2 className="w-8 h-8 text-green-500" />
             <div className="ml-3">
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                 {accounts.filter(a => a.status === 'ACTIVE').length}
               </div>
-              <div className="text-sm text-gray-500">Aktywne</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400">Aktywne</div>
             </div>
           </div>
-        </Card>
-        
-        <Card className="p-4">
+        </div>
+
+        <div className={`${GLASS_CARD} p-4`}>
           <div className="flex items-center">
-            <XCircleIcon className="w-8 h-8 text-red-500" />
+            <XCircle className="w-8 h-8 text-red-500" />
             <div className="ml-3">
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                 {accounts.filter(a => a.status === 'ERROR').length}
               </div>
-              <div className="text-sm text-gray-500">Błędy</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400">Błędy</div>
             </div>
           </div>
-        </Card>
-        
-        <Card className="p-4">
+        </div>
+
+        <div className={`${GLASS_CARD} p-4`}>
           <div className="flex items-center">
-            <CloudArrowUpIcon className="w-8 h-8 text-purple-500" />
+            <CloudUpload className="w-8 h-8 text-purple-500" />
             <div className="ml-3">
-              <div className="text-2xl font-bold text-gray-900">
+              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                 {accounts.reduce((sum, a) => sum + a.syncCount, 0)}
               </div>
-              <div className="text-sm text-gray-500">Zsynchronizowane</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400">Zsynchronizowane</div>
             </div>
           </div>
-        </Card>
+        </div>
       </div>
 
       {/* Accounts List */}
       <div className="space-y-4">
         {accounts.length === 0 ? (
-          <Card className="p-8 text-center">
-            <InboxIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <div className={`${GLASS_CARD} p-8 text-center`}>
+            <Inbox className="w-12 h-12 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">
               Brak kont email
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-slate-600 dark:text-slate-400 mb-4">
               Dodaj swoje pierwsze konto email, aby automatycznie synchronizować wiadomości
             </p>
             <Button onClick={() => setShowCreateModal(true)}>
-              <PlusIcon className="w-4 h-4 mr-2" />
+              <Plus className="w-4 h-4 mr-2" />
               Dodaj Konto Email
             </Button>
-          </Card>
+          </div>
         ) : (
           accounts.map((account) => (
-            <Card key={account.id} className="p-6">
+            <div key={account.id} className={`${GLASS_CARD} p-6`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4">
-                  <div className="text-3xl">
+                  <div>
                     {getProviderIcon(account.provider)}
                   </div>
-                  
+
                   <div>
                     <div className="flex items-center space-x-2">
-                      <h3 className="text-lg font-semibold text-gray-900">
+                      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                         {account.name}
                       </h3>
                       <Badge variant={getStatusColor(account.status)}>
@@ -414,27 +439,27 @@ export default function EmailAccountsPage() {
                         <Badge variant="default">Nieaktywne</Badge>
                       )}
                     </div>
-                    
-                    <div className="text-sm text-gray-600 mt-1">
+
+                    <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">
                       <div>{account.email}</div>
                       <div className="flex items-center space-x-4 mt-1">
                         <span>Provider: {account.provider}</span>
-                        <span>•</span>
+                        <span className="text-slate-400 dark:text-slate-500">|</span>
                         <span>Ostatnia sync: {formatLastSync(account.lastSyncAt)}</span>
-                        <span>•</span>
+                        <span className="text-slate-400 dark:text-slate-500">|</span>
                         <span>{account.syncCount} wiadomości</span>
                       </div>
                     </div>
 
                     {account.errorMessage && (
-                      <div className="flex items-center mt-2 text-red-600 text-sm">
-                        <ExclamationTriangleIcon className="w-4 h-4 mr-1" />
+                      <div className="flex items-center mt-2 text-red-600 dark:text-red-400 text-sm">
+                        <AlertTriangle className="w-4 h-4 mr-1" />
                         {account.errorMessage}
                       </div>
                     )}
                   </div>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <Button
                     variant="outline"
@@ -442,83 +467,84 @@ export default function EmailAccountsPage() {
                     onClick={() => handleSyncAccount(account.id)}
                     disabled={!account.isActive}
                   >
-                    <ArrowPathIcon className="w-4 h-4" />
+                    <RefreshCw className="w-4 h-4" />
                   </Button>
-                  
+
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => {/* TODO: Edit account */}}
                   >
-                    <Cog6ToothIcon className="w-4 h-4" />
+                    <Settings className="w-4 h-4" />
                   </Button>
-                  
+
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => handleDeleteAccount(account.id, account.email)}
-                    className="text-red-600 hover:text-red-700"
+                    className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                   >
-                    <TrashIcon className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
-              
+
               {/* Account Details */}
               <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
                 <div>
-                  <span className="text-gray-500">Interwał sync:</span>
-                  <span className="ml-2 font-medium">{account.syncIntervalMin} min</span>
+                  <span className="text-slate-500 dark:text-slate-400">Interwał sync:</span>
+                  <span className="ml-2 font-medium text-slate-900 dark:text-slate-100">{account.syncIntervalMin} min</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Max wiadomości:</span>
-                  <span className="ml-2 font-medium">{account.maxMessages}</span>
+                  <span className="text-slate-500 dark:text-slate-400">Max wiadomości:</span>
+                  <span className="ml-2 font-medium text-slate-900 dark:text-slate-100">{account.maxMessages}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">Foldery:</span>
-                  <span className="ml-2 font-medium">{account.syncFolders.join(', ')}</span>
+                  <span className="text-slate-500 dark:text-slate-400">Foldery:</span>
+                  <span className="ml-2 font-medium text-slate-900 dark:text-slate-100">{account.syncFolders.join(', ')}</span>
                 </div>
               </div>
-            </Card>
+            </div>
           ))
         )}
       </div>
 
       {/* Create Account Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 w-full border border-slate-200 dark:border-slate-700 mx-4 overflow-y-auto" style={{ maxWidth: '48rem', maxHeight: '90vh' }}>
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">Dodaj Konto Email</h2>
+              <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">Dodaj Konto Email</h2>
               <button
                 onClick={handleCloseModal}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
               >
-                <XCircleIcon className="w-6 h-6" />
+                <X className="w-6 h-6" />
               </button>
             </div>
 
             {/* Step 1: Provider Selection */}
             {step === 'provider' && (
               <div>
-                <h3 className="text-lg font-medium mb-4">Wybierz dostawcę email</h3>
+                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-4">Wybierz dostawcę email</h3>
                 <div className="grid grid-cols-2 gap-4">
                   {providers.map((provider) => (
                     <button
                       key={provider.provider}
                       onClick={() => handleProviderSelect(provider)}
-                      className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-colors text-left"
+                      className="p-4 border-2 border-slate-200 dark:border-slate-600 rounded-2xl hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-left"
                     >
                       <div className="flex items-center space-x-3">
-                        <div className="text-2xl">{getProviderIcon(provider.provider)}</div>
+                        <div>{getProviderIconSmall(provider.provider)}</div>
                         <div>
-                          <div className="font-semibold">{provider.name}</div>
-                          <div className="text-sm text-gray-600">{provider.description}</div>
+                          <div className="font-semibold text-slate-900 dark:text-slate-100">{provider.name}</div>
+                          <div className="text-sm text-slate-600 dark:text-slate-400">{provider.description}</div>
                         </div>
                       </div>
                       {provider.helpText && (
-                        <div className="text-xs text-gray-500 mt-2">
-                          💡 {provider.helpText}
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-2 flex items-start gap-1">
+                          <Lightbulb className="w-3 h-3 mt-0.5 flex-shrink-0 text-amber-500" />
+                          <span>{provider.helpText}</span>
                         </div>
                       )}
                     </button>
@@ -533,36 +559,36 @@ export default function EmailAccountsPage() {
                 <div className="flex items-center space-x-3 mb-4">
                   <button
                     onClick={() => setStep('provider')}
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                   >
-                    ← Powrót
+                    &larr; Powrót
                   </button>
-                  <h3 className="text-lg font-medium">Konfiguracja {selectedProvider.name}</h3>
+                  <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">Konfiguracja {selectedProvider.name}</h3>
                 </div>
 
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Nazwa konta
                       </label>
                       <input
                         type="text"
                         value={formData.name}
                         onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         placeholder="Np. Główne konto Gmail"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Adres email
                       </label>
                       <input
                         type="email"
                         value={formData.email}
                         onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value, name: `${selectedProvider.name} - ${e.target.value}` }))}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         placeholder="your@email.com"
                       />
                     </div>
@@ -570,26 +596,26 @@ export default function EmailAccountsPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Hasło IMAP {selectedProvider.provider === 'GMAIL' ? '(App Password)' : ''}
                       </label>
                       <input
                         type="password"
                         value={formData.imapPassword}
                         onChange={(e) => setFormData(prev => ({ ...prev, imapPassword: e.target.value, smtpPassword: e.target.value }))}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         placeholder="Hasło do konta email"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Hasło SMTP
                       </label>
                       <input
                         type="password"
                         value={formData.smtpPassword}
                         onChange={(e) => setFormData(prev => ({ ...prev, smtpPassword: e.target.value }))}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         placeholder="Zwykle takie samo jak IMAP"
                       />
                     </div>
@@ -597,13 +623,13 @@ export default function EmailAccountsPage() {
 
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Interwał sync (min)
                       </label>
                       <select
                         value={formData.syncIntervalMin}
                         onChange={(e) => setFormData(prev => ({ ...prev, syncIntervalMin: parseInt(e.target.value) }))}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                       >
                         <option value={1}>1 minuta</option>
                         <option value={5}>5 minut</option>
@@ -613,13 +639,13 @@ export default function EmailAccountsPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Max wiadomości
                       </label>
                       <select
                         value={formData.maxMessages}
                         onChange={(e) => setFormData(prev => ({ ...prev, maxMessages: parseInt(e.target.value) }))}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                       >
                         <option value={100}>100</option>
                         <option value={500}>500</option>
@@ -629,29 +655,29 @@ export default function EmailAccountsPage() {
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Foldery
                       </label>
                       <input
                         type="text"
                         value={formData.syncFolders}
                         onChange={(e) => setFormData(prev => ({ ...prev, syncFolders: e.target.value }))}
-                        className="w-full p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full p-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         placeholder="INBOX, Sent, Drafts"
                       />
                     </div>
                   </div>
 
                   {/* Connection Details */}
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-900 mb-2">Ustawienia połączenia</h4>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl">
+                    <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">Ustawienia połączenia</h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm text-slate-700 dark:text-slate-300">
                       <div>
-                        <strong>IMAP:</strong> {selectedProvider.imapHost}:{selectedProvider.imapPort} 
+                        <strong>IMAP:</strong> {selectedProvider.imapHost}:{selectedProvider.imapPort}
                         ({selectedProvider.imapSecure ? 'SSL' : 'STARTTLS'})
                       </div>
                       <div>
-                        <strong>SMTP:</strong> {selectedProvider.smtpHost}:{selectedProvider.smtpPort} 
+                        <strong>SMTP:</strong> {selectedProvider.smtpHost}:{selectedProvider.smtpPort}
                         ({selectedProvider.smtpSecure ? 'SSL' : 'STARTTLS'})
                       </div>
                     </div>
@@ -671,7 +697,7 @@ export default function EmailAccountsPage() {
                   >
                     {testingConnection ? (
                       <>
-                        <ArrowPathIcon className="w-4 h-4 mr-2 animate-spin" />
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                         Testowanie...
                       </>
                     ) : (
@@ -688,26 +714,26 @@ export default function EmailAccountsPage() {
                 <div className="flex items-center space-x-3 mb-4">
                   <button
                     onClick={() => setStep('config')}
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
                   >
-                    ← Powrót
+                    &larr; Powrót
                   </button>
-                  <h3 className="text-lg font-medium">Gotowe do utworzenia</h3>
+                  <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">Gotowe do utworzenia</h3>
                 </div>
 
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl p-4 mb-6">
                   <div className="flex items-center">
-                    <CheckCircleIcon className="w-6 h-6 text-green-600 mr-3" />
+                    <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400 mr-3" />
                     <div>
-                      <h4 className="font-medium text-green-900">Połączenie udane!</h4>
-                      <p className="text-green-700 text-sm">Konto {formData.email} jest gotowe do synchronizacji</p>
+                      <h4 className="font-medium text-green-900 dark:text-green-100">Połączenie udane!</h4>
+                      <p className="text-green-700 dark:text-green-300 text-sm">Konto {formData.email} jest gotowe do synchronizacji</p>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-gray-50 p-4 rounded-lg mb-6">
-                  <h4 className="font-medium text-gray-900 mb-3">Podsumowanie konfiguracji</h4>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="bg-slate-50 dark:bg-slate-700/50 p-4 rounded-xl mb-6">
+                  <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-3">Podsumowanie konfiguracji</h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm text-slate-700 dark:text-slate-300">
                     <div>
                       <strong>Nazwa:</strong> {formData.name}
                     </div>
@@ -742,12 +768,12 @@ export default function EmailAccountsPage() {
                   >
                     {creating ? (
                       <>
-                        <ArrowPathIcon className="w-4 h-4 mr-2 animate-spin" />
+                        <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                         Tworzenie...
                       </>
                     ) : (
                       <>
-                        <PlusIcon className="w-4 h-4 mr-2" />
+                        <Plus className="w-4 h-4 mr-2" />
                         Utwórz Konto
                       </>
                     )}
@@ -758,6 +784,6 @@ export default function EmailAccountsPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

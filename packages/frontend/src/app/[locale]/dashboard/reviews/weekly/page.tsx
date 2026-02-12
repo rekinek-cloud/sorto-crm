@@ -2,6 +2,31 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { StatCard } from '@/components/ui/StatCard';
+import { ActionButton } from '@/components/ui/ActionButton';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
+import {
+  ClipboardCheck,
+  BarChart3,
+  LayoutGrid,
+  Play,
+  RotateCcw,
+  CheckCircle,
+  Circle,
+  Inbox,
+  Waves,
+  Snowflake,
+  Target,
+  AlertTriangle,
+  Users,
+  Lightbulb,
+  CalendarDays,
+  ListChecks,
+} from 'lucide-react';
 
 interface ReviewItem {
   id: string;
@@ -24,6 +49,39 @@ interface WeeklyReviewData {
   reviewProgress: number;
 }
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { staggerChildren: 0.06 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: { opacity: 1, y: 0 },
+};
+
+const getCategoryIcon = (category: string) => {
+  switch (category) {
+    case 'Zrodlo': return Inbox;
+    case 'Strumienie': return Waves;
+    case 'Zamrozone': return Snowflake;
+    case 'Planowanie': return Target;
+    default: return CheckCircle;
+  }
+};
+
+const getCategoryColor = (category: string) => {
+  switch (category) {
+    case 'Zrodlo': return 'text-slate-500 bg-slate-100 dark:bg-slate-700/50 dark:text-slate-400';
+    case 'Strumienie': return 'text-cyan-600 bg-cyan-100 dark:bg-cyan-900/30 dark:text-cyan-400';
+    case 'Zamrozone': return 'text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400';
+    case 'Planowanie': return 'text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400';
+    default: return 'text-slate-500 bg-slate-100 dark:bg-slate-700/50';
+  }
+};
+
 export default function WeeklyReviewPage() {
   const [reviewData, setReviewData] = useState<WeeklyReviewData>({
     sourceItems: 0,
@@ -40,82 +98,81 @@ export default function WeeklyReviewPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  // Przegląd strumieni według metodologii SORTO STREAMS
   const reviewSteps: ReviewItem[] = [
     {
       id: '1',
-      category: 'Źródło',
-      title: 'Opróżnij Źródło',
-      description: 'Przetwórz wszystkie elementy ze Źródła - kategoryzuj, przypisz do strumieni lub usuń',
+      category: 'Zrodlo',
+      title: 'Oproznij Zrodlo',
+      description: 'Przetworz wszystkie elementy ze Zrodla - kategoryzuj, przypisz do strumieni lub usun',
       completed: false,
       actionRequired: true
     },
     {
       id: '2',
-      category: 'Źródło',
-      title: 'Przejrzyj pocztę',
-      description: 'Przetwórz nieprzeczytane wiadomości i utwórz zadania w odpowiednich strumieniach',
+      category: 'Zrodlo',
+      title: 'Przejrzyj poczte',
+      description: 'Przetworz nieprzeczytane wiadomosci i utworz zadania w odpowiednich strumieniach',
       completed: false,
       actionRequired: true
     },
     {
       id: '3',
-      category: 'Źródło',
+      category: 'Zrodlo',
       title: 'Zbierz notatki fizyczne',
-      description: 'Zbierz elementy z notesów, karteczek i innych fizycznych źródeł do systemu',
+      description: 'Zbierz elementy z notesow, karteczek i innych fizycznych zrodel do systemu',
       completed: false
     },
     {
       id: '4',
       category: 'Strumienie',
-      title: 'Przegląd aktywnych strumieni',
-      description: 'Sprawdź każdy aktywny strumień - czy ma zadania do zrobienia? Czy przepływa?',
+      title: 'Przeglad aktywnych strumieni',
+      description: 'Sprawdz kazdy aktywny strumien - czy ma zadania do zrobienia? Czy przeplywa?',
       completed: false,
       actionRequired: true
     },
     {
       id: '5',
       category: 'Strumienie',
-      title: 'Przegląd delegowanych zadań',
-      description: 'Sprawdź zadania przekazane innym - czy są postępy? Przypomnij jeśli trzeba',
+      title: 'Przeglad delegowanych zadan',
+      description: 'Sprawdz zadania przekazane innym - czy sa postepy? Przypomnij jesli trzeba',
       completed: false,
       actionRequired: true
     },
     {
       id: '6',
       category: 'Strumienie',
-      title: 'Przegląd strumieni projektowych',
-      description: 'Każdy projekt powinien mieć jasne następne działanie. Dodaj brakujące',
+      title: 'Przeglad strumieni projektowych',
+      description: 'Kazdy projekt powinien miec jasne nastepne dzialanie. Dodaj brakujace',
       completed: false,
       actionRequired: true
     },
     {
       id: '7',
       category: 'Strumienie',
-      title: 'Przegląd kalendarza',
-      description: 'Sprawdź minione i przyszłe wydarzenia - czy wymagają działań w strumieniach?',
+      title: 'Przeglad kalendarza',
+      description: 'Sprawdz minione i przyszle wydarzenia - czy wymagaja dzialan w strumieniach?',
       completed: false
     },
     {
       id: '8',
-      category: 'Zamrożone',
-      title: 'Przegląd zamrożonych strumieni',
-      description: 'Czy któryś zamrożony strumień powinien zostać odmrożony? Czy coś jest już nieaktualne?',
+      category: 'Zamrozone',
+      title: 'Przeglad zamrozonych strumieni',
+      description: 'Czy ktorys zamrozony strumien powinien zostac odmrozony? Czy cos jest juz nieaktualne?',
       completed: false,
       actionRequired: true
     },
     {
       id: '9',
       category: 'Planowanie',
-      title: 'Nowe pomysły i strumienie',
-      description: 'Rozważ nowe możliwości, cele i kreatywne idee. Utwórz nowe strumienie jeśli potrzeba',
+      title: 'Nowe pomysly i strumienie',
+      description: 'Rozwaz nowe mozliwosci, cele i kreatywne idee. Utworz nowe strumienie jesli potrzeba',
       completed: false
     },
     {
       id: '10',
       category: 'Planowanie',
-      title: 'Zaplanuj następny tydzień',
-      description: 'Ustal priorytety i główne strumienie na nadchodzący tydzień',
+      title: 'Zaplanuj nastepny tydzien',
+      description: 'Ustal priorytety i glowne strumienie na nadchodzacy tydzien',
       completed: false
     }
   ];
@@ -127,8 +184,6 @@ export default function WeeklyReviewPage() {
   const loadReviewData = async () => {
     try {
       setLoading(true);
-
-      // Mock data - w prawdziwej aplikacji wywołanie API
       setReviewData({
         lastReviewDate: '2024-01-08T10:00:00Z',
         sourceItems: 12,
@@ -139,11 +194,10 @@ export default function WeeklyReviewPage() {
         delegatedItems: 5,
         reviewProgress: 0
       });
-
       setReviewItems(reviewSteps);
     } catch (error: any) {
       console.error('Error loading review data:', error);
-      toast.error('Nie udało się załadować danych przeglądu');
+      toast.error('Nie udalo sie zaladowac danych przegladu');
     } finally {
       setLoading(false);
     }
@@ -152,7 +206,7 @@ export default function WeeklyReviewPage() {
   const startReview = () => {
     setReviewStarted(true);
     setCurrentStep(0);
-    toast.success('Przegląd tygodniowy rozpoczęty! Postępuj według listy kontrolnej.');
+    toast.success('Przeglad tygodniowy rozpoczety! Postepuj wedlug listy kontrolnej.');
   };
 
   const completeStep = (stepId: string) => {
@@ -178,7 +232,7 @@ export default function WeeklyReviewPage() {
     setReviewData(prev => ({ ...prev, reviewProgress: progress }));
 
     if (completedCount === reviewItems.length) {
-      toast.success('🎉 Przegląd tygodniowy zakończony! Świetna robota.');
+      toast.success('Przeglad tygodniowy zakonczony! Swietna robota.');
     }
   };
 
@@ -189,233 +243,245 @@ export default function WeeklyReviewPage() {
     setReviewData(prev => ({ ...prev, reviewProgress: 0 }));
   };
 
-  const getStepIcon = (category: string) => {
-    switch (category) {
-      case 'Źródło': return '⚪';
-      case 'Strumienie': return '🌊';
-      case 'Zamrożone': return '❄️';
-      case 'Planowanie': return '🎯';
-      default: return '✅';
-    }
-  };
-
   const getProgressColor = (progress: number) => {
-    if (progress >= 80) return 'bg-green-500';
-    if (progress >= 50) return 'bg-yellow-500';
+    if (progress >= 80) return 'bg-emerald-500';
+    if (progress >= 50) return 'bg-amber-500';
     if (progress >= 20) return 'bg-orange-500';
-    return 'bg-gray-300';
+    return 'bg-slate-300 dark:bg-slate-600';
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
+      <PageShell>
+        <SkeletonPage />
+      </PageShell>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Przegląd Tygodniowy</h1>
-          <p className="text-gray-600">Przegląd strumieni: Źródło → Strumienie → Planowanie</p>
-        </div>
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => window.location.href = '/dashboard/reviews/weekly/burndown'}
-            className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center"
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            Wykres postępu
-          </button>
-          <button
-            onClick={() => window.location.href = '/dashboard/reviews/weekly/scrum'}
-            className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center"
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17V7m0 10a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h2a2 2 0 012 2m0 10a2 2 0 002 2h2a2 2 0 002-2M9 7a2 2 0 012-2h2a2 2 0 012 2m0 10V7m0 10a2 2 0 002 2h2a2 2 0 002-2V7a2 2 0 00-2-2h-2a2 2 0 00-2 2" />
-            </svg>
-            Tablica Scrum
-          </button>
-          {!reviewStarted ? (
-            <button onClick={startReview} className="btn btn-primary">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-              Rozpocznij przegląd
-            </button>
-          ) : (
-            <button onClick={resetReview} className="btn btn-secondary">
-              <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              Zresetuj
-            </button>
-          )}
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Przeglad tygodniowy"
+        subtitle="Cotygodniowa refleksja i planowanie"
+        icon={ClipboardCheck}
+        iconColor="text-blue-600"
+        breadcrumbs={[{ label: 'Przeglady', href: '/dashboard/reviews' }, { label: 'Tygodniowy' }]}
+        actions={
+          <div className="flex items-center gap-2">
+            <ActionButton
+              onClick={() => window.location.href = '/dashboard/reviews/weekly/burndown'}
+              variant="ghost"
+              icon={BarChart3}
+              size="sm"
+            >
+              Wykres postepu
+            </ActionButton>
+            <ActionButton
+              onClick={() => window.location.href = '/dashboard/reviews/weekly/scrum'}
+              variant="ghost"
+              icon={LayoutGrid}
+              size="sm"
+            >
+              Tablica Scrum
+            </ActionButton>
+            {!reviewStarted ? (
+              <ActionButton onClick={startReview} variant="primary" icon={Play}>
+                Rozpocznij przeglad
+              </ActionButton>
+            ) : (
+              <ActionButton onClick={resetReview} variant="secondary" icon={RotateCcw}>
+                Zresetuj
+              </ActionButton>
+            )}
+          </div>
+        }
+      />
 
       {/* Progress Bar */}
-      {reviewStarted && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Postęp przeglądu</h2>
-            <span className="text-sm font-medium text-gray-600">
-              {reviewData.reviewProgress}% ukończono
-            </span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-3">
-            <div
-              className={`h-3 rounded-full transition-all duration-500 ${getProgressColor(reviewData.reviewProgress)}`}
-              style={{ width: `${reviewData.reviewProgress}%` }}
-            ></div>
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {reviewStarted && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden mb-6"
+          >
+            <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-sm dark:bg-slate-800/80 dark:border-slate-700/30 p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">Postep przegladu</h2>
+                <span className="text-sm font-medium text-slate-500 dark:text-slate-400">
+                  {reviewData.reviewProgress}% ukonczono
+                </span>
+              </div>
+              <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3">
+                <motion.div
+                  className={`h-3 rounded-full transition-all duration-500 ${getProgressColor(reviewData.reviewProgress)}`}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${reviewData.reviewProgress}%` }}
+                  transition={{ duration: 0.5 }}
+                />
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="text-2xl">⚪</div>
-            </div>
-            <div className="ml-4">
-              <div className="text-2xl font-bold text-blue-600">{reviewData.sourceItems}</div>
-              <div className="text-sm text-gray-500">Elementów w Źródle</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="text-2xl">🌊</div>
-            </div>
-            <div className="ml-4">
-              <div className="text-2xl font-bold text-cyan-600">{reviewData.activeStreams}</div>
-              <div className="text-sm text-gray-500">Aktywnych strumieni</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="text-2xl">✅</div>
-            </div>
-            <div className="ml-4">
-              <div className="text-2xl font-bold text-green-600">{reviewData.completedThisWeek}</div>
-              <div className="text-sm text-gray-500">Ukończono w tym tyg.</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center">
-            <div className="flex-shrink-0">
-              <div className="text-2xl">🚨</div>
-            </div>
-            <div className="ml-4">
-              <div className="text-2xl font-bold text-red-600">{reviewData.overdueItems}</div>
-              <div className="text-sm text-gray-500">Przeterminowanych</div>
-            </div>
-          </div>
-        </div>
-      </div>
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+      >
+        <motion.div variants={itemVariants}>
+          <StatCard
+            label="Elementow w Zrodle"
+            value={reviewData.sourceItems}
+            icon={Inbox}
+            iconColor="text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"
+          />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatCard
+            label="Aktywnych strumieni"
+            value={reviewData.activeStreams}
+            icon={Waves}
+            iconColor="text-cyan-600 bg-cyan-50 dark:bg-cyan-900/30 dark:text-cyan-400"
+          />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatCard
+            label="Ukonczono w tym tyg."
+            value={reviewData.completedThisWeek}
+            icon={CheckCircle}
+            iconColor="text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400"
+          />
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <StatCard
+            label="Przeterminowanych"
+            value={reviewData.overdueItems}
+            icon={AlertTriangle}
+            iconColor="text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400"
+          />
+        </motion.div>
+      </motion.div>
 
       {/* Review Checklist */}
-      <div className="bg-white rounded-lg shadow">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold text-gray-900">
-            {reviewStarted ? 'Lista kontrolna przeglądu' : 'Przegląd strumieni'}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-sm dark:bg-slate-800/80 dark:border-slate-700/30 overflow-hidden mb-6"
+      >
+        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700/30">
+          <h2 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            {reviewStarted ? 'Lista kontrolna przegladu' : 'Przeglad strumieni'}
           </h2>
           {reviewData.lastReviewDate && (
-            <p className="text-sm text-gray-600 mt-1">
-              Ostatni przegląd: {new Date(reviewData.lastReviewDate).toLocaleDateString('pl-PL')}
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Ostatni przeglad: {new Date(reviewData.lastReviewDate).toLocaleDateString('pl-PL')}
             </p>
           )}
         </div>
 
-        <div className="divide-y divide-gray-200">
-          {reviewItems.map((item, index) => (
-            <div key={item.id} className={`p-6 ${reviewStarted && currentStep === index ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`}>
-              <div className="flex items-start justify-between">
-                <div className="flex items-start space-x-4">
-                  <div className="flex-shrink-0 pt-1">
-                    <div className="text-2xl">{getStepIcon(item.category)}</div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <span className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-                        {item.category}
-                      </span>
-                      {item.actionRequired && (
-                        <span className="inline-flex items-center px-2 py-0.5 text-xs font-medium bg-red-100 text-red-800 rounded">
-                          Wymaga działania
+        <div className="divide-y divide-slate-100 dark:divide-slate-700/30">
+          {reviewItems.map((item, index) => {
+            const CategoryIcon = getCategoryIcon(item.category);
+            const categoryColor = getCategoryColor(item.category);
+
+            return (
+              <motion.div
+                key={item.id}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.03 }}
+                className={`p-5 transition-all duration-200 ${
+                  reviewStarted && currentStep === index
+                    ? 'bg-blue-50/50 dark:bg-blue-900/10 border-l-4 border-l-blue-500'
+                    : 'hover:bg-slate-50/50 dark:hover:bg-slate-700/20'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start space-x-4">
+                    <div className={`flex-shrink-0 p-2 rounded-xl ${categoryColor}`}>
+                      <CategoryIcon className="w-5 h-5" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center space-x-2 mb-1">
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                          {item.category}
                         </span>
+                        {item.actionRequired && (
+                          <StatusBadge variant="error">
+                            Wymaga dzialania
+                          </StatusBadge>
+                        )}
+                      </div>
+                      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">
+                        {item.title}
+                      </h3>
+                      <p className="text-slate-500 dark:text-slate-400 text-xs">
+                        {item.description}
+                      </p>
+                      {item.count && (
+                        <p className="text-xs text-blue-600 dark:text-blue-400 mt-2 font-medium">
+                          {item.count} elementow do przegladu
+                        </p>
                       )}
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-1">
-                      {item.title}
-                    </h3>
-                    <p className="text-gray-600 text-sm">
-                      {item.description}
-                    </p>
-                    {item.count && (
-                      <p className="text-sm text-blue-600 mt-2">
-                        {item.count} elementów do przeglądu
-                      </p>
+                  </div>
+
+                  <div className="flex-shrink-0 ml-4">
+                    {item.completed ? (
+                      <div className="flex items-center text-emerald-600 dark:text-emerald-400">
+                        <CheckCircle className="w-6 h-6" />
+                      </div>
+                    ) : reviewStarted ? (
+                      <ActionButton
+                        onClick={() => completeStep(item.id)}
+                        variant="primary"
+                        size="sm"
+                      >
+                        Ukoncz
+                      </ActionButton>
+                    ) : (
+                      <Circle className="w-6 h-6 text-slate-300 dark:text-slate-600" />
                     )}
                   </div>
                 </div>
-
-                <div className="flex-shrink-0 ml-4">
-                  {item.completed ? (
-                    <div className="flex items-center text-green-600">
-                      <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                      </svg>
-                    </div>
-                  ) : reviewStarted ? (
-                    <button
-                      onClick={() => completeStep(item.id)}
-                      className="btn btn-sm btn-primary"
-                    >
-                      Ukończ
-                    </button>
-                  ) : (
-                    <div className="w-6 h-6 border-2 border-gray-300 rounded-full"></div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
+              </motion.div>
+            );
+          })}
         </div>
-      </div>
+      </motion.div>
 
       {/* Review Tips */}
-      <div className="bg-blue-50 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-blue-900 mb-3">💡 Wskazówki do przeglądu strumieni</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="bg-blue-50/80 dark:bg-blue-900/10 backdrop-blur-xl border border-blue-200/50 dark:border-blue-800/30 rounded-2xl p-6"
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <Lightbulb className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+          <h3 className="text-sm font-semibold text-blue-900 dark:text-blue-200">Wskazowki do przegladu strumieni</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-blue-800 dark:text-blue-300">
           <div>
-            <strong>Regularność:</strong> Ustal stały czas na przegląd (piątek popołudniu lub niedziela wieczorem)
+            <strong>Regularnosc:</strong> Ustal staly czas na przeglad (piatek popoludniu lub niedziela wieczorem)
           </div>
           <div>
-            <strong>Środowisko:</strong> Znajdź spokojne miejsce gdzie nikt Ci nie przerwie
+            <strong>Srodowisko:</strong> Znajdz spokojne miejsce gdzie nikt Ci nie przerwie
           </div>
           <div>
-            <strong>Nie spiesz się:</strong> Dokładny przegląd zajmuje zwykle 1-2 godziny
+            <strong>Nie spiesz sie:</strong> Dokladny przeglad zajmuje zwykle 1-2 godziny
           </div>
           <div>
-            <strong>Skup się:</strong> Nie zaczynaj wykonywać zadań podczas przeglądu - tylko kategoryzuj i planuj
+            <strong>Skup sie:</strong> Nie zaczynaj wykonywac zadan podczas przegladu - tylko kategoryzuj i planuj
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </PageShell>
   );
 }

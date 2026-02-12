@@ -1,15 +1,95 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import {
+  Handshake,
+  Plus,
+  DollarSign,
+  TrendingUp,
+  Building2,
+  Calendar,
+} from 'lucide-react';
+import { toast } from 'react-hot-toast';
+
 import { Deal, Company, Contact } from '@/types/crm';
-import DealForm from './DealForm';
-import DealItem from './DealItem';
 import { dealsApi } from '@/lib/api/deals';
 import { companiesApi } from '@/lib/api/companies';
 import { contactsApi } from '@/lib/api/contacts';
-import { toast } from 'react-hot-toast';
+import { formatCurrency } from '@/lib/utils';
+
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { FilterBar } from '@/components/ui/FilterBar';
+import { DataTable, Column } from '@/components/ui/DataTable';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ActionButton } from '@/components/ui/ActionButton';
+import { StatCard } from '@/components/ui/StatCard';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
+import DealForm from './DealForm';
+
+// --- helpers ---
+
+function getStageBadgeVariant(stage: string): 'info' | 'warning' | 'success' | 'error' | 'default' {
+  switch (stage) {
+    case 'LEAD':
+    case 'QUALIFICATION':
+    case 'PROSPECT':
+    case 'QUALIFIED':
+      return 'info';
+    case 'PROPOSAL':
+    case 'NEGOTIATION':
+      return 'warning';
+    case 'WON':
+    case 'CLOSED_WON':
+      return 'success';
+    case 'LOST':
+    case 'CLOSED_LOST':
+      return 'error';
+    default:
+      return 'default';
+  }
+}
+
+function getStageLabel(stage: string): string {
+  const labels: Record<string, string> = {
+    PROSPECT: 'Prospekt',
+    QUALIFIED: 'Kwalifikacja',
+    PROPOSAL: 'Oferta',
+    NEGOTIATION: 'Negocjacja',
+    CLOSED_WON: 'Wygrana',
+    CLOSED_LOST: 'Przegrana',
+  };
+  return labels[stage] ?? stage;
+}
+
+function formatDate(dateStr?: string): string {
+  if (!dateStr) return '-';
+  return new Intl.DateTimeFormat('pl-PL', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(dateStr));
+}
+
+// --- animation variants ---
+
+const statsAnimation = {
+  hidden: { opacity: 0, y: 12 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: { delay: i * 0.08, duration: 0.4, ease: 'easeOut' },
+  }),
+};
+
+// --- component ---
 
 export default function DealsList() {
+  const router = useRouter();
+
   const [deals, setDeals] = useState<Deal[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -18,10 +98,13 @@ export default function DealsList() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingDeal, setEditingDeal] = useState<Deal | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStage, setSelectedStage] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'list' | 'pipeline'>('list');
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
 
-  // Fetch data
+  // Derived selected stage from filter values
+  const selectedStage = filterValues.stage && filterValues.stage !== 'all' ? filterValues.stage : '';
+
+  // --- data fetching (preserved) ---
+
   useEffect(() => {
     fetchData();
   }, [searchTerm, selectedStage]);
@@ -36,16 +119,16 @@ export default function DealsList() {
         }),
         companiesApi.getCompanies({ limit: 100 }),
         contactsApi.getContacts({ limit: 500 }),
-        dealsApi.getPipeline()
+        dealsApi.getPipeline(),
       ]);
-      
+
       setDeals(dealsResponse.deals);
       setCompanies(companiesResponse.companies);
       setContacts(contactsResponse.contacts);
       setPipeline(pipelineResponse);
     } catch (error: any) {
       console.error('Error fetching data:', error);
-      toast.error('Failed to load deals');
+      toast.error('Nie udalo sie zaladowac transakcji');
     } finally {
       setIsLoading(false);
     }
@@ -54,56 +137,49 @@ export default function DealsList() {
   const handleCreateDeal = async (data: any) => {
     try {
       const newDeal = await dealsApi.createDeal(data);
-      setDeals(prev => [newDeal, ...prev]);
+      setDeals((prev) => [newDeal, ...prev]);
       setIsFormOpen(false);
-      toast.success('Deal created successfully');
-      
-      // Refresh pipeline data
+      toast.success('Transakcja utworzona');
+
       const pipelineResponse = await dealsApi.getPipeline();
       setPipeline(pipelineResponse);
     } catch (error: any) {
       console.error('Error creating deal:', error);
-      toast.error('Failed to create deal');
+      toast.error('Nie udalo sie utworzyc transakcji');
       throw error;
     }
   };
 
   const handleUpdateDeal = async (data: any) => {
     if (!editingDeal) return;
-    
+
     try {
       const updatedDeal = await dealsApi.updateDeal(editingDeal.id, data);
-      setDeals(prev => prev.map(deal => 
-        deal.id === editingDeal.id ? updatedDeal : deal
-      ));
+      setDeals((prev) => prev.map((deal) => (deal.id === editingDeal.id ? updatedDeal : deal)));
       setEditingDeal(null);
       setIsFormOpen(false);
-      toast.success('Deal updated successfully');
-      
-      // Refresh pipeline data
+      toast.success('Transakcja zaktualizowana');
+
       const pipelineResponse = await dealsApi.getPipeline();
       setPipeline(pipelineResponse);
     } catch (error: any) {
       console.error('Error updating deal:', error);
-      toast.error('Failed to update deal');
+      toast.error('Nie udalo sie zaktualizowac transakcji');
       throw error;
     }
   };
 
   const handleDeleteDeal = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this deal?')) return;
-    
     try {
       await dealsApi.deleteDeal(id);
-      setDeals(prev => prev.filter(deal => deal.id !== id));
-      toast.success('Deal deleted successfully');
-      
-      // Refresh pipeline data
+      setDeals((prev) => prev.filter((deal) => deal.id !== id));
+      toast.success('Transakcja usunieta');
+
       const pipelineResponse = await dealsApi.getPipeline();
       setPipeline(pipelineResponse);
     } catch (error: any) {
       console.error('Error deleting deal:', error);
-      toast.error('Failed to delete deal');
+      toast.error('Nie udalo sie usunac transakcji');
     }
   };
 
@@ -117,192 +193,226 @@ export default function DealsList() {
     setEditingDeal(null);
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(value);
-  };
+  const handleFilterChange = useCallback((key: string, value: string) => {
+    setFilterValues((prev) => ({ ...prev, [key]: value }));
+  }, []);
 
-  const getStageColor = (stage: string) => {
-    switch (stage) {
-      case 'PROSPECT': return 'bg-gray-100 text-gray-800';
-      case 'QUALIFIED': return 'bg-blue-100 text-blue-800';
-      case 'PROPOSAL': return 'bg-yellow-100 text-yellow-800';
-      case 'NEGOTIATION': return 'bg-orange-100 text-orange-800';
-      case 'CLOSED_WON': return 'bg-green-100 text-green-800';
-      case 'CLOSED_LOST': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
+  const handleRowClick = useCallback(
+    (deal: Deal) => {
+      router.push(`/dashboard/deals/${deal.id}`);
+    },
+    [router],
+  );
+
+  // --- computed stats ---
+
+  const stats = useMemo(() => {
+    const total = deals.length;
+    const won = deals.filter((d) => d.stage === 'CLOSED_WON').length;
+    const inProgress = deals.filter((d) => !['CLOSED_WON', 'CLOSED_LOST'].includes(d.stage)).length;
+    const pipelineValue = deals
+      .filter((d) => !['CLOSED_WON', 'CLOSED_LOST'].includes(d.stage))
+      .reduce((sum, d) => sum + (d.value || 0), 0);
+
+    return { total, won, inProgress, pipelineValue };
+  }, [deals]);
+
+  // --- filter config ---
+
+  const stageFilterConfig = useMemo(
+    () => [
+      {
+        key: 'stage',
+        label: 'Wszystkie etapy',
+        options: [
+          { value: 'PROSPECT', label: 'Prospekt' },
+          { value: 'QUALIFIED', label: 'Kwalifikacja' },
+          { value: 'PROPOSAL', label: 'Oferta' },
+          { value: 'NEGOTIATION', label: 'Negocjacja' },
+          { value: 'CLOSED_WON', label: 'Wygrana' },
+          { value: 'CLOSED_LOST', label: 'Przegrana' },
+        ],
+      },
+    ],
+    [],
+  );
+
+  // --- table columns ---
+
+  const columns: Column<Deal>[] = useMemo(
+    () => [
+      {
+        key: 'title',
+        label: 'Tytul',
+        sortable: true,
+        render: (_value: any, row: Deal) => (
+          <span className="font-semibold text-slate-900 dark:text-slate-100">{row.title}</span>
+        ),
+      },
+      {
+        key: 'company',
+        label: 'Firma',
+        sortable: true,
+        getValue: (row: Deal) => row.company?.name ?? '',
+        render: (_value: any, row: Deal) => (
+          <span className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+            <Building2 className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+            {row.company?.name ?? '-'}
+          </span>
+        ),
+      },
+      {
+        key: 'value',
+        label: 'Wartosc',
+        sortable: true,
+        getValue: (row: Deal) => row.value ?? 0,
+        render: (_value: any, row: Deal) => (
+          <span className="font-medium text-slate-800 dark:text-slate-200">
+            {row.value != null ? formatCurrency(row.value, row.currency || 'PLN') : '-'}
+          </span>
+        ),
+      },
+      {
+        key: 'stage',
+        label: 'Etap',
+        sortable: true,
+        render: (_value: any, row: Deal) => (
+          <StatusBadge variant={getStageBadgeVariant(row.stage)} dot>
+            {getStageLabel(row.stage)}
+          </StatusBadge>
+        ),
+      },
+      {
+        key: 'probability',
+        label: 'Prawdopodobienstwo',
+        sortable: true,
+        render: (_value: any, row: Deal) => (
+          <span className="text-slate-600 dark:text-slate-400">
+            {row.probability != null ? `${row.probability}%` : '-'}
+          </span>
+        ),
+      },
+      {
+        key: 'expectedCloseDate',
+        label: 'Planowane zamkniecie',
+        sortable: true,
+        render: (_value: any, row: Deal) => (
+          <span className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+            <Calendar className="w-3.5 h-3.5" />
+            {formatDate(row.expectedCloseDate)}
+          </span>
+        ),
+      },
+    ],
+    [],
+  );
+
+  // --- loading state ---
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-      </div>
+      <PageShell>
+        <SkeletonPage />
+      </PageShell>
     );
   }
 
+  // --- render ---
+
   return (
-    <div className="space-y-6">
+    <PageShell>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Deals</h1>
-          <p className="text-gray-600">Track your sales pipeline and revenue opportunities</p>
-        </div>
-        <div className="flex space-x-3">
-          <div className="flex bg-gray-100 rounded-lg p-1">
-            <button
-              onClick={() => setViewMode('list')}
-              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                viewMode === 'list' 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              List
-            </button>
-            <button
-              onClick={() => setViewMode('pipeline')}
-              className={`px-3 py-1 text-sm font-medium rounded-md transition-colors ${
-                viewMode === 'pipeline' 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              Pipeline
-            </button>
-          </div>
-          <button
-            onClick={() => setIsFormOpen(true)}
-            className="btn btn-primary"
-          >
-            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-            </svg>
-            New Deal
-          </button>
-        </div>
+      <PageHeader
+        title="Transakcje"
+        subtitle="Zarzadzaj pipeline sprzedazy i monitoruj przychody"
+        icon={Handshake}
+        iconColor="text-blue-600"
+        breadcrumbs={[{ label: 'Transakcje' }]}
+        actions={
+          <ActionButton icon={Plus} onClick={() => setIsFormOpen(true)}>
+            Dodaj transakcje
+          </ActionButton>
+        }
+      />
+
+      {/* Stats row */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <motion.div custom={0} initial="hidden" animate="visible" variants={statsAnimation}>
+          <StatCard
+            label="Lacznie"
+            value={stats.total}
+            icon={Handshake}
+            iconColor="text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"
+          />
+        </motion.div>
+        <motion.div custom={1} initial="hidden" animate="visible" variants={statsAnimation}>
+          <StatCard
+            label="Wygrane"
+            value={stats.won}
+            icon={TrendingUp}
+            iconColor="text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400"
+          />
+        </motion.div>
+        <motion.div custom={2} initial="hidden" animate="visible" variants={statsAnimation}>
+          <StatCard
+            label="W toku"
+            value={stats.inProgress}
+            icon={Building2}
+            iconColor="text-amber-600 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-400"
+          />
+        </motion.div>
+        <motion.div custom={3} initial="hidden" animate="visible" variants={statsAnimation}>
+          <StatCard
+            label="Wartosc pipeline"
+            value={formatCurrency(stats.pipelineValue)}
+            icon={DollarSign}
+            iconColor="text-violet-600 bg-violet-50 dark:bg-violet-900/30 dark:text-violet-400"
+          />
+        </motion.div>
       </div>
 
-      {viewMode === 'pipeline' ? (
-        /* Pipeline View */
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          {pipeline.map((stage) => (
-            <div key={stage.stage} className="bg-white rounded-lg shadow p-4">
-              <div className="flex items-center justify-between mb-3">
-                <h3 className="font-medium text-gray-900">{stage.stage}</h3>
-                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStageColor(stage.stage)}`}>
-                  {stage.count}
-                </span>
-              </div>
-              <div className="text-2xl font-bold text-primary-600 mb-1">
-                {formatCurrency(stage.value)}
-              </div>
-              <div className="text-sm text-gray-500">
-                {stage.count} {stage.count === 1 ? 'deal' : 'deals'}
-              </div>
-            </div>
-          ))}
-        </div>
+      {/* Filter bar */}
+      <div className="mb-6">
+        <FilterBar
+          search={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Szukaj transakcji..."
+          filters={stageFilterConfig}
+          filterValues={filterValues}
+          onFilterChange={handleFilterChange}
+        />
+      </div>
+
+      {/* Deals table or empty state */}
+      {deals.length === 0 ? (
+        <EmptyState
+          icon={Handshake}
+          title="Brak transakcji"
+          description={
+            searchTerm || selectedStage
+              ? 'Sprobuj zmienic filtry wyszukiwania'
+              : 'Zacznij od dodania pierwszej transakcji'
+          }
+          action={
+            !searchTerm && !selectedStage ? (
+              <ActionButton icon={Plus} onClick={() => setIsFormOpen(true)}>
+                Dodaj pierwsza transakcje
+              </ActionButton>
+            ) : undefined
+          }
+        />
       ) : (
-        /* List View */
-        <>
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <input
-                type="text"
-                placeholder="Search deals..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="input w-full"
-              />
-            </div>
-            <div className="sm:w-48">
-              <select
-                value={selectedStage}
-                onChange={(e) => setSelectedStage(e.target.value)}
-                className="input w-full"
-              >
-                <option value="">All stages</option>
-                <option value="PROSPECT">Prospect</option>
-                <option value="QUALIFIED">Qualified</option>
-                <option value="PROPOSAL">Proposal</option>
-                <option value="NEGOTIATION">Negotiation</option>
-                <option value="CLOSED_WON">Won</option>
-                <option value="CLOSED_LOST">Lost</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Deals</h3>
-              <p className="text-3xl font-bold text-primary-600">{deals.length}</p>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Open Deals</h3>
-              <p className="text-3xl font-bold text-blue-600">
-                {deals.filter(d => !['CLOSED_WON', 'CLOSED_LOST'].includes(d.stage)).length}
-              </p>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Won Deals</h3>
-              <p className="text-3xl font-bold text-success-600">
-                {deals.filter(d => d.stage === 'CLOSED_WON').length}
-              </p>
-            </div>
-            <div className="bg-white rounded-lg shadow p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Value</h3>
-              <p className="text-3xl font-bold text-primary-600">
-                {formatCurrency(deals.reduce((sum, deal) => sum + (deal.value || 0), 0))}
-              </p>
-            </div>
-          </div>
-
-          {/* Deals List */}
-          <div className="bg-white rounded-lg shadow">
-            {deals.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="text-6xl mb-4">💰</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No deals found</h3>
-                <p className="text-gray-600 mb-4">
-                  {searchTerm || selectedStage 
-                    ? 'Try adjusting your filters' 
-                    : 'Start by creating your first deal'
-                  }
-                </p>
-                {!searchTerm && !selectedStage && (
-                  <button
-                    onClick={() => setIsFormOpen(true)}
-                    className="btn btn-primary"
-                  >
-                    Create First Deal
-                  </button>
-                )}
-              </div>
-            ) : (
-              <div className="divide-y divide-gray-200">
-                {deals.map(deal => (
-                  <DealItem
-                    key={deal.id}
-                    deal={deal}
-                    companies={companies}
-                    contacts={contacts}
-                    onEdit={handleEditDeal}
-                    onDelete={handleDeleteDeal}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}>
+          <DataTable<Deal>
+            columns={columns}
+            data={deals}
+            onRowClick={handleRowClick}
+            storageKey="deals-list"
+            pageSize={20}
+            emptyMessage="Brak transakcji"
+            stickyHeader
+          />
+        </motion.div>
       )}
 
       {/* Deal Form Modal */}
@@ -315,6 +425,6 @@ export default function DealsList() {
           onCancel={handleCloseForm}
         />
       )}
-    </div>
+    </PageShell>
   );
 }

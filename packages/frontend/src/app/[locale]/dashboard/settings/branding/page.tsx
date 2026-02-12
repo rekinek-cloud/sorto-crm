@@ -1,9 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { PaintBrushIcon, PhotoIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { Paintbrush, Image, Check } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { brandingApi, type OrganizationBranding } from '@/lib/api/branding';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
 
 interface Branding {
   logoUrl: string | null;
@@ -88,52 +91,49 @@ export default function BrandingPage() {
 
   if (loading) {
     return (
-      <div className="p-6 flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
-      </div>
+      <PageShell>
+        <SkeletonPage />
+      </PageShell>
     );
   }
 
   return (
-    <div className="p-6 max-w-4xl">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-pink-100 rounded-lg">
-          <PaintBrushIcon className="h-6 w-6 text-pink-600" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Branding</h1>
-          <p className="text-sm text-gray-600">Personalizuj wyglad aplikacji</p>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Branding"
+        subtitle="Personalizuj wyglad aplikacji"
+        icon={Paintbrush}
+        iconColor="text-pink-600"
+        breadcrumbs={[{ label: 'Ustawienia', href: '/dashboard/settings' }, { label: 'Branding' }]}
+      />
 
       {/* Color Presets */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Predefiniowane schematy</h2>
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6 mb-6">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Predefiniowane schematy</h2>
         <div className="grid grid-cols-3 md:grid-cols-6 gap-3">
           {presetColors.map((preset) => (
             <button
               key={preset.name}
               onClick={() => applyPreset(preset)}
-              className="p-3 rounded-xl border-2 border-gray-200 hover:border-gray-400 transition-colors"
+              className="p-3 rounded-xl border-2 border-slate-200 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500 transition-colors"
             >
               <div className="flex gap-1 mb-2">
                 <div className="w-4 h-4 rounded-full" style={{ backgroundColor: preset.primary }} />
                 <div className="w-4 h-4 rounded-full" style={{ backgroundColor: preset.secondary }} />
                 <div className="w-4 h-4 rounded-full" style={{ backgroundColor: preset.accent }} />
               </div>
-              <div className="text-xs font-medium text-gray-700">{preset.name}</div>
+              <div className="text-xs font-medium text-slate-700 dark:text-slate-300">{preset.name}</div>
             </button>
           ))}
         </div>
       </div>
 
       {/* Colors */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Kolory</h2>
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6 mb-6">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Kolory</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Kolor glowny</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Kolor glowny</label>
             <div className="flex items-center gap-3">
               <input
                 type="color"
@@ -145,12 +145,12 @@ export default function BrandingPage() {
                 type="text"
                 value={branding.primaryColor}
                 onChange={(e) => setBranding({ ...branding, primaryColor: e.target.value })}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-700 dark:text-slate-100"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Kolor dodatkowy</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Kolor dodatkowy</label>
             <div className="flex items-center gap-3">
               <input
                 type="color"
@@ -162,12 +162,12 @@ export default function BrandingPage() {
                 type="text"
                 value={branding.secondaryColor}
                 onChange={(e) => setBranding({ ...branding, secondaryColor: e.target.value })}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-700 dark:text-slate-100"
               />
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Kolor akcentu</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Kolor akcentu</label>
             <div className="flex items-center gap-3">
               <input
                 type="color"
@@ -179,7 +179,7 @@ export default function BrandingPage() {
                 type="text"
                 value={branding.accentColor}
                 onChange={(e) => setBranding({ ...branding, accentColor: e.target.value })}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                className="flex-1 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm dark:bg-slate-700 dark:text-slate-100"
               />
             </div>
           </div>
@@ -187,46 +187,46 @@ export default function BrandingPage() {
       </div>
 
       {/* Logo & Identity */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Tozsamosc</h2>
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6 mb-6">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Tozsamosc</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Nazwa firmy</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nazwa firmy</label>
             <input
               type="text"
               value={branding.companyName || ''}
               onChange={(e) => setBranding({ ...branding, companyName: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100"
               placeholder="Moja Firma"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Slogan</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Slogan</label>
             <input
               type="text"
               value={branding.tagline || ''}
               onChange={(e) => setBranding({ ...branding, tagline: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100"
               placeholder="Twoj slogan tutaj"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">URL Logo</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">URL Logo</label>
             <input
               type="url"
               value={branding.logoUrl || ''}
               onChange={(e) => setBranding({ ...branding, logoUrl: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100"
               placeholder="https://..."
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">URL Favicon</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">URL Favicon</label>
             <input
               type="url"
               value={branding.faviconUrl || ''}
               onChange={(e) => setBranding({ ...branding, faviconUrl: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100"
               placeholder="https://..."
             />
           </div>
@@ -234,25 +234,25 @@ export default function BrandingPage() {
       </div>
 
       {/* Email Branding */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Branding email</h2>
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6 mb-6">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Branding email</h2>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Nazwa nadawcy</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Nazwa nadawcy</label>
             <input
               type="text"
               value={branding.emailFromName || ''}
               onChange={(e) => setBranding({ ...branding, emailFromName: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100"
               placeholder="Moja Firma"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Stopka email</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Stopka email</label>
             <textarea
               value={branding.emailSignature || ''}
               onChange={(e) => setBranding({ ...branding, emailSignature: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100"
               rows={3}
               placeholder="Pozdrawiamy,&#10;Zespol Moja Firma"
             />
@@ -261,8 +261,8 @@ export default function BrandingPage() {
       </div>
 
       {/* Preview */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Podglad</h2>
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6 mb-6">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Podglad</h2>
         <div className="p-4 rounded-lg" style={{ backgroundColor: `${branding.primaryColor}10` }}>
           <div className="flex items-center gap-3 mb-4">
             {branding.logoUrl ? (
@@ -272,7 +272,7 @@ export default function BrandingPage() {
                 className="w-10 h-10 rounded-lg flex items-center justify-center"
                 style={{ backgroundColor: branding.primaryColor }}
               >
-                <PhotoIcon className="h-6 w-6 text-white" />
+                <Image className="h-6 w-6 text-white" />
               </div>
             )}
             <div>
@@ -280,7 +280,7 @@ export default function BrandingPage() {
                 {branding.companyName || 'Nazwa Firmy'}
               </div>
               {branding.tagline && (
-                <div className="text-sm text-gray-500">{branding.tagline}</div>
+                <div className="text-sm text-slate-500 dark:text-slate-400">{branding.tagline}</div>
               )}
             </div>
           </div>
@@ -317,11 +317,11 @@ export default function BrandingPage() {
           {saving ? (
             <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent" />
           ) : (
-            <CheckIcon className="h-5 w-5" />
+            <Check className="h-5 w-5" />
           )}
           Zapisz zmiany
         </button>
       </div>
-    </div>
+    </PageShell>
   );
 }

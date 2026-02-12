@@ -8,50 +8,50 @@ import { MailboxPreview } from './MailboxPreview'
 import { createSmartMailbox, updateSmartMailbox } from '@/lib/api/smartMailboxes'
 import { toast } from 'react-hot-toast'
 import {
-  EnvelopeIcon,
-  EnvelopeOpenIcon,
-  InboxIcon,
-  InboxArrowDownIcon,
-  PaperAirplaneIcon,
-  FireIcon,
-  BoltIcon,
-  RocketLaunchIcon,
-  LightBulbIcon,
-  StarIcon,
-  TrophyIcon,
-  SparklesIcon,
-  PaintBrushIcon,
-  ChartBarIcon,
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
-  CurrencyDollarIcon,
-  BellIcon,
-  ClockIcon,
-  CalendarIcon,
-  CalendarDaysIcon,
-  UserGroupIcon,
-  UserIcon,
-  CpuChipIcon,
-  BriefcaseIcon,
-  BuildingOfficeIcon,
-  ClipboardDocumentListIcon,
-  CheckCircleIcon,
-  HeartIcon,
-  FolderIcon,
-  FolderOpenIcon,
-  TagIcon,
-  FlagIcon,
-  ExclamationTriangleIcon,
-  ShieldCheckIcon,
-  XMarkIcon,
-  PencilIcon,
-  PlusIcon,
-  EyeIcon,
-  EyeSlashIcon,
-  ArchiveBoxIcon,
-  TrashIcon,
-  MagnifyingGlassIcon,
-} from '@heroicons/react/24/outline'
+  Mail,
+  MailOpen,
+  Inbox,
+  ArrowDownToLine,
+  Send,
+  Flame,
+  Zap,
+  Rocket,
+  Lightbulb,
+  Star,
+  Trophy,
+  Sparkles,
+  Paintbrush,
+  BarChart3,
+  TrendingUp,
+  TrendingDown,
+  DollarSign,
+  Bell,
+  Clock,
+  Calendar,
+  CalendarDays,
+  Users,
+  User,
+  Cpu,
+  Briefcase,
+  Building2,
+  ClipboardList,
+  CheckCircle,
+  Heart,
+  Folder,
+  FolderOpen,
+  Tag,
+  Flag,
+  AlertTriangle,
+  ShieldCheck,
+  X,
+  Pencil,
+  Plus,
+  Eye,
+  EyeOff,
+  Archive,
+  Trash2,
+  Search,
+} from 'lucide-react'
 
 interface SmartMailboxBuilderProps {
   mailbox?: SmartMailbox | null
@@ -60,41 +60,41 @@ interface SmartMailboxBuilderProps {
 
 // Definicja ikon dostępnych do wyboru
 const iconOptions = [
-  { name: 'envelope', Icon: EnvelopeIcon, label: 'Koperta' },
-  { name: 'envelope-open', Icon: EnvelopeOpenIcon, label: 'Otwarta koperta' },
-  { name: 'inbox', Icon: InboxIcon, label: 'Skrzynka' },
-  { name: 'inbox-arrow', Icon: InboxArrowDownIcon, label: 'Przychodzące' },
-  { name: 'paper-airplane', Icon: PaperAirplaneIcon, label: 'Wysłane' },
-  { name: 'fire', Icon: FireIcon, label: 'Ogień' },
-  { name: 'bolt', Icon: BoltIcon, label: 'Błyskawica' },
-  { name: 'rocket', Icon: RocketLaunchIcon, label: 'Rakieta' },
-  { name: 'lightbulb', Icon: LightBulbIcon, label: 'Żarówka' },
-  { name: 'star', Icon: StarIcon, label: 'Gwiazda' },
-  { name: 'trophy', Icon: TrophyIcon, label: 'Trofeum' },
-  { name: 'sparkles', Icon: SparklesIcon, label: 'Iskry' },
-  { name: 'paint-brush', Icon: PaintBrushIcon, label: 'Pędzel' },
-  { name: 'chart-bar', Icon: ChartBarIcon, label: 'Wykres' },
-  { name: 'trending-up', Icon: ArrowTrendingUpIcon, label: 'W górę' },
-  { name: 'trending-down', Icon: ArrowTrendingDownIcon, label: 'W dół' },
-  { name: 'currency', Icon: CurrencyDollarIcon, label: 'Pieniądze' },
-  { name: 'bell', Icon: BellIcon, label: 'Dzwonek' },
-  { name: 'clock', Icon: ClockIcon, label: 'Zegar' },
-  { name: 'calendar', Icon: CalendarIcon, label: 'Kalendarz' },
-  { name: 'calendar-days', Icon: CalendarDaysIcon, label: 'Dni' },
-  { name: 'user-group', Icon: UserGroupIcon, label: 'Zespół' },
-  { name: 'user', Icon: UserIcon, label: 'Osoba' },
-  { name: 'cpu', Icon: CpuChipIcon, label: 'AI' },
-  { name: 'briefcase', Icon: BriefcaseIcon, label: 'Teczka' },
-  { name: 'building', Icon: BuildingOfficeIcon, label: 'Firma' },
-  { name: 'clipboard', Icon: ClipboardDocumentListIcon, label: 'Lista' },
-  { name: 'check-circle', Icon: CheckCircleIcon, label: 'Gotowe' },
-  { name: 'heart', Icon: HeartIcon, label: 'Serce' },
-  { name: 'folder', Icon: FolderIcon, label: 'Folder' },
-  { name: 'folder-open', Icon: FolderOpenIcon, label: 'Otwarty folder' },
-  { name: 'tag', Icon: TagIcon, label: 'Tag' },
-  { name: 'flag', Icon: FlagIcon, label: 'Flaga' },
-  { name: 'warning', Icon: ExclamationTriangleIcon, label: 'Ostrzeżenie' },
-  { name: 'shield', Icon: ShieldCheckIcon, label: 'Bezpieczeństwo' },
+  { name: 'envelope', Icon: Mail, label: 'Koperta' },
+  { name: 'envelope-open', Icon: MailOpen, label: 'Otwarta koperta' },
+  { name: 'inbox', Icon: Inbox, label: 'Skrzynka' },
+  { name: 'inbox-arrow', Icon: ArrowDownToLine, label: 'Przychodzące' },
+  { name: 'paper-airplane', Icon: Send, label: 'Wysłane' },
+  { name: 'fire', Icon: Flame, label: 'Ogień' },
+  { name: 'bolt', Icon: Zap, label: 'Błyskawica' },
+  { name: 'rocket', Icon: Rocket, label: 'Rakieta' },
+  { name: 'lightbulb', Icon: Lightbulb, label: 'Żarówka' },
+  { name: 'star', Icon: Star, label: 'Gwiazda' },
+  { name: 'trophy', Icon: Trophy, label: 'Trofeum' },
+  { name: 'sparkles', Icon: Sparkles, label: 'Iskry' },
+  { name: 'paint-brush', Icon: Paintbrush, label: 'Pędzel' },
+  { name: 'chart-bar', Icon: BarChart3, label: 'Wykres' },
+  { name: 'trending-up', Icon: TrendingUp, label: 'W górę' },
+  { name: 'trending-down', Icon: TrendingDown, label: 'W dół' },
+  { name: 'currency', Icon: DollarSign, label: 'Pieniądze' },
+  { name: 'bell', Icon: Bell, label: 'Dzwonek' },
+  { name: 'clock', Icon: Clock, label: 'Zegar' },
+  { name: 'calendar', Icon: Calendar, label: 'Kalendarz' },
+  { name: 'calendar-days', Icon: CalendarDays, label: 'Dni' },
+  { name: 'user-group', Icon: Users, label: 'Zespół' },
+  { name: 'user', Icon: User, label: 'Osoba' },
+  { name: 'cpu', Icon: Cpu, label: 'AI' },
+  { name: 'briefcase', Icon: Briefcase, label: 'Teczka' },
+  { name: 'building', Icon: Building2, label: 'Firma' },
+  { name: 'clipboard', Icon: ClipboardList, label: 'Lista' },
+  { name: 'check-circle', Icon: CheckCircle, label: 'Gotowe' },
+  { name: 'heart', Icon: Heart, label: 'Serce' },
+  { name: 'folder', Icon: Folder, label: 'Folder' },
+  { name: 'folder-open', Icon: FolderOpen, label: 'Otwarty folder' },
+  { name: 'tag', Icon: Tag, label: 'Tag' },
+  { name: 'flag', Icon: Flag, label: 'Flaga' },
+  { name: 'warning', Icon: AlertTriangle, label: 'Ostrzeżenie' },
+  { name: 'shield', Icon: ShieldCheck, label: 'Bezpieczeństwo' },
 ]
 
 // Funkcja pomocnicza do renderowania ikony po nazwie
@@ -104,7 +104,7 @@ const getIconByName = (iconName: string, className: string = 'w-5 h-5') => {
     const IconComponent = iconDef.Icon
     return <IconComponent className={className} />
   }
-  return <EnvelopeIcon className={className} />
+  return <Mail className={className} />
 }
 
 export function SmartMailboxBuilder({ mailbox, onClose }: SmartMailboxBuilderProps) {
@@ -233,7 +233,7 @@ export function SmartMailboxBuilder({ mailbox, onClose }: SmartMailboxBuilderPro
             <div className="flex items-center justify-between pb-6">
               <div>
                 <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 flex items-center gap-2">
-                  {isEditing ? <PencilIcon className="w-7 h-7" /> : <RocketLaunchIcon className="w-7 h-7" />}
+                  {isEditing ? <Pencil className="w-7 h-7" /> : <Rocket className="w-7 h-7" />}
                   {isEditing ? 'Edytuj Smart Mailbox' : 'Nowy Smart Mailbox'}
                 </h2>
                 <p className="text-gray-600 mt-2 text-base sm:text-lg">
@@ -265,7 +265,7 @@ export function SmartMailboxBuilder({ mailbox, onClose }: SmartMailboxBuilderPro
             >
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-                  <ClipboardDocumentListIcon className="w-4 h-4" /> Nazwa skrzynki *
+                  <ClipboardList className="w-4 h-4" /> Nazwa skrzynki *
                 </label>
                 <input
                   type="text"
@@ -283,7 +283,7 @@ export function SmartMailboxBuilder({ mailbox, onClose }: SmartMailboxBuilderPro
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-                  <FolderOpenIcon className="w-4 h-4" /> Opis (opcjonalny)
+                  <FolderOpen className="w-4 h-4" /> Opis (opcjonalny)
                 </label>
                 <textarea
                   value={description}
@@ -307,7 +307,7 @@ export function SmartMailboxBuilder({ mailbox, onClose }: SmartMailboxBuilderPro
               {/* Icon Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-                  <PaintBrushIcon className="w-4 h-4" /> Ikona
+                  <Paintbrush className="w-4 h-4" /> Ikona
                 </label>
                 <div className="flex items-center space-x-3 mb-3">
                   <div className="bg-gray-50 rounded-xl p-3 border border-gray-200 flex items-center justify-center">
@@ -344,7 +344,7 @@ export function SmartMailboxBuilder({ mailbox, onClose }: SmartMailboxBuilderPro
               {/* Color Selection */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-                  <SparklesIcon className="w-4 h-4" /> Kolor motywu
+                  <Sparkles className="w-4 h-4" /> Kolor motywu
                 </label>
                 <div className="grid grid-cols-4 gap-2">
                   {colorOptions.map((colorKey) => {
@@ -394,7 +394,7 @@ export function SmartMailboxBuilder({ mailbox, onClose }: SmartMailboxBuilderPro
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                {showPreview ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+                {showPreview ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 {showPreview ? 'Ukryj podgląd' : 'Pokaż podgląd'}
               </motion.button>
             </motion.div>
@@ -418,7 +418,7 @@ export function SmartMailboxBuilder({ mailbox, onClose }: SmartMailboxBuilderPro
               whileHover={{ scale: loading ? 1 : 1.05 }}
               whileTap={{ scale: loading ? 1 : 0.95 }}
             >
-              <XMarkIcon className="w-5 h-5" /> Anuluj
+              <X className="w-5 h-5" /> Anuluj
             </motion.button>
 
             <div className="flex items-center space-x-3">
@@ -436,17 +436,17 @@ export function SmartMailboxBuilder({ mailbox, onClose }: SmartMailboxBuilderPro
               >
                 {loading ? (
                   <>
-                    <ClockIcon className="w-5 h-5 animate-spin" />
+                    <Clock className="w-5 h-5 animate-spin" />
                     <span>Zapisywanie...</span>
                   </>
                 ) : isEditing ? (
                   <>
-                    <CheckCircleIcon className="w-5 h-5" />
+                    <CheckCircle className="w-5 h-5" />
                     <span>Zaktualizuj</span>
                   </>
                 ) : (
                   <>
-                    <PlusIcon className="w-5 h-5" />
+                    <Plus className="w-5 h-5" />
                     <span>Utwórz</span>
                   </>
                 )}

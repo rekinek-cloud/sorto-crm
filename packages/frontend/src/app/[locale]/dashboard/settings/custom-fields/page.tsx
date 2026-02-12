@@ -2,15 +2,18 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  Squares2X2Icon,
-  PlusIcon,
-  PencilIcon,
-  TrashIcon,
-  CheckIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/outline';
+  LayoutGrid,
+  Plus,
+  Pencil,
+  Trash2,
+  Check,
+  X,
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { customFieldsApi, type CustomFieldDefinition, type EntityType } from '@/lib/api/customFields';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
 
 type CustomField = CustomFieldDefinition;
 
@@ -62,7 +65,7 @@ export default function CustomFieldsPage() {
       setFields(definitions || []);
     } catch (error) {
       console.error('Failed to load fields:', error);
-      toast.error('Nie udało się pobrać pól');
+      toast.error('Nie udalo sie pobrac pol');
     } finally {
       setLoading(false);
     }
@@ -144,26 +147,23 @@ export default function CustomFieldsPage() {
   const needsOptions = ['SELECT', 'MULTISELECT'].includes(formData.fieldType);
 
   return (
-    <div className="p-6 max-w-4xl">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-orange-100 rounded-lg">
-            <Squares2X2Icon className="h-6 w-6 text-orange-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Pola niestandardowe</h1>
-            <p className="text-sm text-gray-600">Definiuj wlasne pola dla roznych encji</p>
-          </div>
-        </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-        >
-          <PlusIcon className="h-5 w-5" />
-          Nowe pole
-        </button>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Pola niestandardowe"
+        subtitle="Definiuj wlasne pola dla roznych encji"
+        icon={LayoutGrid}
+        iconColor="text-orange-600"
+        breadcrumbs={[{ label: 'Ustawienia', href: '/dashboard/settings' }, { label: 'Pola niestandardowe' }]}
+        actions={
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+          >
+            <Plus className="h-5 w-5" />
+            Nowe pole
+          </button>
+        }
+      />
 
       {/* Entity Tabs */}
       <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
@@ -174,7 +174,7 @@ export default function CustomFieldsPage() {
             className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
               selectedEntity === entity.value
                 ? 'bg-indigo-600 text-white'
-                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
             }`}
           >
             {entity.label}
@@ -185,30 +185,30 @@ export default function CustomFieldsPage() {
       {/* Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
                 {editingField ? 'Edytuj pole' : 'Nowe pole niestandardowe'}
               </h2>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Etykieta *</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Etykieta *</label>
                   <input
                     type="text"
                     value={formData.label}
                     onChange={(e) => setFormData({ ...formData, label: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100"
                     placeholder="np. Wartosc kontraktu"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Typ pola</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Typ pola</label>
                   <select
                     value={formData.fieldType}
                     onChange={(e) => setFormData({ ...formData, fieldType: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100"
                   >
                     {FIELD_TYPES.map((type) => (
                       <option key={type.value} value={type.value}>
@@ -220,26 +220,26 @@ export default function CustomFieldsPage() {
 
                 {needsOptions && (
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                       Opcje (oddzielone przecinkiem)
                     </label>
                     <input
                       type="text"
                       value={formData.options}
                       onChange={(e) => setFormData({ ...formData, options: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100"
                       placeholder="Opcja 1, Opcja 2, Opcja 3"
                     />
                   </div>
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Opis</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Opis</label>
                   <input
                     type="text"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100"
                     placeholder="Opcjonalny opis pola"
                   />
                 </div>
@@ -250,9 +250,9 @@ export default function CustomFieldsPage() {
                     id="isRequired"
                     checked={formData.isRequired}
                     onChange={(e) => setFormData({ ...formData, isRequired: e.target.checked })}
-                    className="rounded"
+                    className="rounded border-slate-300 dark:border-slate-600"
                   />
-                  <label htmlFor="isRequired" className="text-sm text-gray-700">
+                  <label htmlFor="isRequired" className="text-sm text-slate-700 dark:text-slate-300">
                     Pole wymagane
                   </label>
                 </div>
@@ -261,7 +261,7 @@ export default function CustomFieldsPage() {
               <div className="flex justify-end gap-3 mt-6">
                 <button
                   onClick={resetForm}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-900"
+                  className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
                 >
                   Anuluj
                 </button>
@@ -269,7 +269,7 @@ export default function CustomFieldsPage() {
                   onClick={handleSubmit}
                   className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
                 >
-                  <CheckIcon className="h-5 w-5" />
+                  <Check className="h-5 w-5" />
                   {editingField ? 'Zapisz' : 'Utworz'}
                 </button>
               </div>
@@ -280,65 +280,63 @@ export default function CustomFieldsPage() {
 
       {/* Fields List */}
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
-        </div>
+        <SkeletonPage />
       ) : fields.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-xl">
-          <Squares2X2Icon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">Brak pol niestandardowych dla tej encji</p>
+        <div className="text-center py-12 bg-slate-50 dark:bg-slate-900 rounded-2xl">
+          <LayoutGrid className="h-12 w-12 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
+          <p className="text-slate-500 dark:text-slate-400">Brak pol niestandardowych dla tej encji</p>
           <button
             onClick={() => setShowForm(true)}
-            className="mt-4 text-indigo-600 hover:text-indigo-700 font-medium"
+            className="mt-4 text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 font-medium"
           >
             Dodaj pierwsze pole
           </button>
         </div>
       ) : (
-        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm overflow-hidden">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
               <tr>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Etykieta</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Typ</th>
-                <th className="text-left px-4 py-3 text-sm font-medium text-gray-600">Wymagane</th>
-                <th className="text-right px-4 py-3 text-sm font-medium text-gray-600">Akcje</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-slate-600 dark:text-slate-400">Etykieta</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-slate-600 dark:text-slate-400">Typ</th>
+                <th className="text-left px-4 py-3 text-sm font-medium text-slate-600 dark:text-slate-400">Wymagane</th>
+                <th className="text-right px-4 py-3 text-sm font-medium text-slate-600 dark:text-slate-400">Akcje</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
               {fields.map((field) => (
-                <tr key={field.id} className="hover:bg-gray-50">
+                <tr key={field.id} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
                   <td className="px-4 py-3">
-                    <div className="font-medium text-gray-900">{field.label}</div>
+                    <div className="font-medium text-slate-900 dark:text-slate-100">{field.label}</div>
                     {field.description && (
-                      <div className="text-sm text-gray-500">{field.description}</div>
+                      <div className="text-sm text-slate-500 dark:text-slate-400">{field.description}</div>
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-full">
+                    <span className="px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs rounded-full">
                       {FIELD_TYPES.find((t) => t.value === field.fieldType)?.label || field.fieldType}
                     </span>
                   </td>
                   <td className="px-4 py-3">
                     {field.isRequired ? (
-                      <CheckIcon className="h-5 w-5 text-green-500" />
+                      <Check className="h-5 w-5 text-green-500" />
                     ) : (
-                      <XMarkIcon className="h-5 w-5 text-gray-300" />
+                      <X className="h-5 w-5 text-slate-300 dark:text-slate-600" />
                     )}
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex justify-end gap-2">
                       <button
                         onClick={() => handleEdit(field)}
-                        className="p-2 text-gray-500 hover:text-indigo-600 transition-colors"
+                        className="p-2 text-slate-500 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                       >
-                        <PencilIcon className="h-4 w-4" />
+                        <Pencil className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => handleDelete(field.id)}
-                        className="p-2 text-gray-500 hover:text-red-600 transition-colors"
+                        className="p-2 text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                       >
-                        <TrashIcon className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
                     </div>
                   </td>
@@ -348,6 +346,6 @@ export default function CustomFieldsPage() {
           </table>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

@@ -6,7 +6,7 @@ import { Stream } from '@/types/gtd';
 import { StreamRelation } from '@/lib/api/streamHierarchy';
 import StreamHierarchyTree from './StreamHierarchyTree';
 import CreateStreamRelationModal from './CreateStreamRelationModal';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { X } from 'lucide-react';
 
 interface StreamHierarchyModalProps {
   isOpen: boolean;
@@ -62,7 +62,7 @@ export default function StreamHierarchyModal({
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 p-2 rounded-lg hover:bg-gray-100"
             >
-              <XMarkIcon className="h-6 w-6" />
+              <X className="h-6 w-6" />
             </button>
           </div>
 

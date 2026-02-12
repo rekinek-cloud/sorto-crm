@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { useHelp } from '@/contexts/help/HelpContext';
-import { XMarkIcon, ChevronLeftIcon, ChevronRightIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { X, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { getHelpContent } from '@/lib/help/helpContent';
 import ReactMarkdown from 'react-markdown';
 
@@ -72,13 +72,13 @@ export function HelpModal() {
               disabled={!canGoBack}
               className={`p-1 rounded hover:bg-indigo-700 ${!canGoBack ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <ChevronLeftIcon className="w-5 h-5" />
+              <ChevronLeft className="w-5 h-5" />
             </button>
             <button
               disabled={!canGoForward}
               className={`p-1 rounded hover:bg-indigo-700 ${!canGoForward ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
-              <ChevronRightIcon className="w-5 h-5" />
+              <ChevronRight className="w-5 h-5" />
             </button>
             <h2 className="text-xl font-semibold">Pomoc</h2>
           </div>
@@ -88,13 +88,13 @@ export function HelpModal() {
               onClick={() => setIsSearchOpen(!isSearchOpen)}
               className="p-2 rounded hover:bg-indigo-700"
             >
-              <MagnifyingGlassIcon className="w-5 h-5" />
+              <Search className="w-5 h-5" />
             </button>
             <button
               onClick={closeHelp}
               className="p-2 rounded hover:bg-indigo-700"
             >
-              <XMarkIcon className="w-5 h-5" />
+              <X className="w-5 h-5" />
             </button>
           </div>
         </div>

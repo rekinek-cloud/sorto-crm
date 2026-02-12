@@ -351,6 +351,7 @@ export const streamsNavigation: NavItem[] = [
       { name: 'Infrastruktura', href: '/dashboard/infrastructure', icon: HardDrives, iconWeight: 'duotone' },
       { name: 'Klucze MCP', href: '/dashboard/admin/mcp-keys', icon: Key, iconWeight: 'duotone' },
       { name: 'Konfiguracja AI', href: '/dashboard/admin/ai-config', icon: Sliders, iconWeight: 'duotone' },
+      { name: 'Konfiguracja Pipeline', href: '/dashboard/admin/pipeline-config', icon: Sliders, iconWeight: 'duotone' },
       { name: 'Zgłoszenia błędów', href: '/dashboard/admin/bug-reports', icon: Bug, iconWeight: 'duotone' },
       { name: 'Informacje', href: '/dashboard/info', icon: Info, iconWeight: 'duotone' },
     ],

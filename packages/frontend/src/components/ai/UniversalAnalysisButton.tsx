@@ -2,13 +2,13 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  SparklesIcon, 
-  Cog6ToothIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  XCircleIcon
-} from '@heroicons/react/24/outline';
+import {
+  Sparkles,
+  Settings,
+  Clock,
+  CheckCircle,
+  XCircle
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import api from '@/lib/api/client';
 
@@ -105,9 +105,9 @@ export default function UniversalAnalysisButton({
           title="Uruchom analizę AI"
         >
           {isAnalyzing ? (
-            <Cog6ToothIcon className="w-5 h-5 animate-spin" />
+            <Settings className="w-5 h-5 animate-spin" />
           ) : (
-            <SparklesIcon className="w-5 h-5" />
+            <Sparkles className="w-5 h-5" />
           )}
         </button>
 
@@ -124,7 +124,7 @@ export default function UniversalAnalysisButton({
               <div className="p-6">
                 {loadingOptions ? (
                   <div className="text-center py-4">
-                    <Cog6ToothIcon className="w-8 h-8 animate-spin mx-auto text-gray-400" />
+                    <Settings className="w-8 h-8 animate-spin mx-auto text-gray-400" />
                     <p className="text-gray-500 mt-2">Ładowanie opcji...</p>
                   </div>
                 ) : (
@@ -141,13 +141,13 @@ export default function UniversalAnalysisButton({
                             <p className="text-sm text-gray-600 mt-1">{analysis.description}</p>
                             <div className="flex items-center space-x-4 mt-2 text-xs text-gray-500">
                               <span className="flex items-center">
-                                <ClockIcon className="w-3 h-3 mr-1" />
+                                <Clock className="w-3 h-3 mr-1" />
                                 {analysis.estimatedTime}
                               </span>
                               <span>{analysis.aiModel}</span>
                             </div>
                           </div>
-                          <SparklesIcon className="w-5 h-5 text-purple-500 flex-shrink-0" />
+                          <Sparkles className="w-5 h-5 text-purple-500 flex-shrink-0" />
                         </div>
                       </button>
                     ))}
@@ -179,9 +179,9 @@ export default function UniversalAnalysisButton({
           className="flex items-center space-x-2 px-3 py-2 text-sm text-purple-600 hover:text-purple-800 hover:bg-purple-50 rounded-lg transition-colors"
         >
           {isAnalyzing ? (
-            <Cog6ToothIcon className="w-4 h-4 animate-spin" />
+            <Settings className="w-4 h-4 animate-spin" />
           ) : (
-            <SparklesIcon className="w-4 h-4" />
+            <Sparkles className="w-4 h-4" />
           )}
           <span>Analizuj</span>
         </button>
@@ -191,7 +191,7 @@ export default function UniversalAnalysisButton({
           className="p-2 text-gray-400 hover:text-gray-600 rounded-lg"
           title="Opcje analizy"
         >
-          <Cog6ToothIcon className="w-4 h-4" />
+          <Settings className="w-4 h-4" />
         </button>
       </div>
     );
@@ -208,12 +208,12 @@ export default function UniversalAnalysisButton({
         >
           {isAnalyzing ? (
             <>
-              <Cog6ToothIcon className="w-5 h-5 animate-spin" />
+              <Settings className="w-5 h-5 animate-spin" />
               <span>Analizowanie...</span>
             </>
           ) : (
             <>
-              <SparklesIcon className="w-5 h-5" />
+              <Sparkles className="w-5 h-5" />
               <span>Analiza AI</span>
             </>
           )}
@@ -225,7 +225,7 @@ export default function UniversalAnalysisButton({
           className="px-3 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
           title="Opcje analizy"
         >
-          <Cog6ToothIcon className="w-5 h-5" />
+          <Settings className="w-5 h-5" />
         </button>
       </div>
 
@@ -240,7 +240,7 @@ export default function UniversalAnalysisButton({
             <div className="px-6 py-4 border-b border-gray-200">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-medium text-gray-900">
-                  <SparklesIcon className="w-6 h-6 inline mr-2 text-purple-500" />
+                  <Sparkles className="w-6 h-6 inline mr-2 text-purple-500" />
                   Analiza AI - {module.charAt(0).toUpperCase() + module.slice(1)}
                 </h3>
                 <button
@@ -255,7 +255,7 @@ export default function UniversalAnalysisButton({
             <div className="p-6">
               {loadingOptions ? (
                 <div className="text-center py-8">
-                  <Cog6ToothIcon className="w-12 h-12 animate-spin mx-auto text-gray-400" />
+                  <Settings className="w-12 h-12 animate-spin mx-auto text-gray-400" />
                   <p className="text-gray-500 mt-4">Ładowanie dostępnych analiz...</p>
                 </div>
               ) : (
@@ -277,17 +277,17 @@ export default function UniversalAnalysisButton({
                               <p className="text-sm text-gray-600 mb-3">{analysis.description}</p>
                               <div className="flex items-center space-x-6 text-xs text-gray-500">
                                 <span className="flex items-center">
-                                  <ClockIcon className="w-4 h-4 mr-1" />
+                                  <Clock className="w-4 h-4 mr-1" />
                                   {analysis.estimatedTime}
                                 </span>
                                 <span className="flex items-center">
-                                  <SparklesIcon className="w-4 h-4 mr-1" />
+                                  <Sparkles className="w-4 h-4 mr-1" />
                                   {analysis.aiModel}
                                 </span>
                               </div>
                             </div>
                             <div className="ml-4">
-                              <SparklesIcon className="w-8 h-8 text-purple-500" />
+                              <Sparkles className="w-8 h-8 text-purple-500" />
                             </div>
                           </div>
                         </motion.button>
@@ -301,7 +301,7 @@ export default function UniversalAnalysisButton({
                       onClick={() => runAnalysis()}
                       className="w-full flex items-center justify-center space-x-2 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:from-purple-600 hover:to-blue-600 transition-colors"
                     >
-                      <SparklesIcon className="w-5 h-5" />
+                      <Sparkles className="w-5 h-5" />
                       <span>Uruchom wszystkie dostępne analizy</span>
                     </button>
                   </div>

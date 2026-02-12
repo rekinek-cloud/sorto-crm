@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Project, Stream } from '@/types/gtd';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { X } from 'lucide-react';
 
 interface ProjectFormProps {
   project?: Project;
@@ -79,7 +79,7 @@ export default function ProjectForm({ project, streams, onSubmit, onCancel }: Pr
             onClick={onCancel}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <XMarkIcon className="w-6 h-6" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 

@@ -1,0 +1,492 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - link "STREAMS" [ref=e6] [cursor=pointer]:
+          - /url: /crm/dashboard
+          - generic [ref=e7]: STREAMS
+        - button "Zwiń menu (⌘B)" [ref=e8] [cursor=pointer]:
+          - img [ref=e9]
+      - generic [ref=e11]:
+        - navigation [ref=e12]:
+          - link "Pulpit" [ref=e14] [cursor=pointer]:
+            - /url: /crm/dashboard
+            - img [ref=e15]
+            - text: Pulpit
+          - link "Źródło" [ref=e20] [cursor=pointer]:
+            - /url: /crm/dashboard/source
+            - img [ref=e21]
+            - text: Źródło
+          - generic [ref=e30]:
+            - generic [ref=e31]:
+              - img [ref=e32]
+              - text: Strumienie
+            - link "Wszystkie strumienie" [ref=e37] [cursor=pointer]:
+              - /url: /crm/dashboard/streams
+              - img [ref=e38]
+              - text: Wszystkie strumienie
+            - link "Mapa strumieni" [ref=e43] [cursor=pointer]:
+              - /url: /crm/dashboard/streams-map
+              - img [ref=e44]
+              - text: Mapa strumieni
+            - link "Zamrożone" [ref=e53] [cursor=pointer]:
+              - /url: /crm/dashboard/streams/frozen
+              - img [ref=e54]
+              - text: Zamrożone
+          - link "Zadania" [ref=e65] [cursor=pointer]:
+            - /url: /crm/dashboard/tasks
+            - img [ref=e66]
+            - text: Zadania
+          - generic [ref=e72]:
+            - generic [ref=e73]:
+              - img [ref=e74]
+              - text: Projekty
+            - link "Wszystkie projekty" [ref=e79] [cursor=pointer]:
+              - /url: /crm/dashboard/projects
+              - img [ref=e80]
+              - text: Wszystkie projekty
+            - link "Zależności" [ref=e85] [cursor=pointer]:
+              - /url: /crm/dashboard/project-dependencies
+              - img [ref=e86]
+              - text: Zależności
+          - link "Kalendarz" [ref=e95] [cursor=pointer]:
+            - /url: /crm/dashboard/calendar
+            - img [ref=e96]
+            - text: Kalendarz
+          - generic [ref=e103]:
+            - generic [ref=e104]:
+              - img [ref=e105]
+              - text: Cele
+            - link "Cele" [ref=e111] [cursor=pointer]:
+              - /url: /crm/dashboard/goals
+              - img [ref=e112]
+              - text: Cele
+            - link "Szablony SMART" [ref=e118] [cursor=pointer]:
+              - /url: /crm/dashboard/smart-templates
+              - img [ref=e119]
+              - text: Szablony SMART
+            - link "Ulepszenia SMART" [ref=e121] [cursor=pointer]:
+              - /url: /crm/dashboard/smart-improvements
+              - img [ref=e122]
+              - text: Ulepszenia SMART
+            - link "Analiza SMART" [ref=e126] [cursor=pointer]:
+              - /url: /crm/dashboard/smart-analysis
+              - img [ref=e127]
+              - text: Analiza SMART
+          - generic [ref=e132]:
+            - generic [ref=e133]:
+              - img [ref=e134]
+              - text: CRM
+            - link "Firmy" [ref=e139] [cursor=pointer]:
+              - /url: /crm/dashboard/companies
+              - img [ref=e140]
+              - text: Firmy
+            - link "Kontakty" [ref=e145] [cursor=pointer]:
+              - /url: /crm/dashboard/contacts
+              - img [ref=e146]
+              - text: Kontakty
+            - link "Leady" [ref=e153] [cursor=pointer]:
+              - /url: /crm/dashboard/leads
+              - img [ref=e154]
+              - text: Leady
+            - link "Pipeline" [ref=e159] [cursor=pointer]:
+              - /url: /crm/dashboard/pipeline
+              - img [ref=e160]
+              - text: Pipeline
+            - link "Transakcje" [ref=e164] [cursor=pointer]:
+              - /url: /crm/dashboard/deals
+              - img [ref=e165]
+              - text: Transakcje
+            - link "Pipeline Analytics" [ref=e174] [cursor=pointer]:
+              - /url: /crm/dashboard/analytics/pipeline
+              - img [ref=e175]
+              - text: Pipeline Analytics
+          - generic [ref=e180]:
+            - generic [ref=e181]:
+              - img [ref=e182]
+              - text: Sprzedaż
+            - link "Produkty" [ref=e189] [cursor=pointer]:
+              - /url: /crm/dashboard/products
+              - img [ref=e190]
+              - text: Produkty
+            - link "Usługi" [ref=e197] [cursor=pointer]:
+              - /url: /crm/dashboard/services
+              - img [ref=e198]
+              - text: Usługi
+            - link "Oferty" [ref=e202] [cursor=pointer]:
+              - /url: /crm/dashboard/offers
+              - img [ref=e203]
+              - text: Oferty
+            - link "Zamówienia" [ref=e208] [cursor=pointer]:
+              - /url: /crm/dashboard/orders
+              - img [ref=e209]
+              - text: Zamówienia
+            - link "Faktury" [ref=e216] [cursor=pointer]:
+              - /url: /crm/dashboard/invoices
+              - img [ref=e217]
+              - text: Faktury
+            - link "Reklamacje" [ref=e221] [cursor=pointer]:
+              - /url: /crm/dashboard/complaints
+              - img [ref=e222]
+              - text: Reklamacje
+          - generic [ref=e228]:
+            - generic [ref=e229]:
+              - img [ref=e230]
+              - text: Komunikacja
+            - link "Skrzynki" [ref=e237] [cursor=pointer]:
+              - /url: /crm/dashboard/smart-mailboxes
+              - img [ref=e238]
+              - text: Skrzynki
+            - link "Kanały" [ref=e243] [cursor=pointer]:
+              - /url: /crm/dashboard/communication/channels
+              - img [ref=e244]
+              - text: Kanały
+            - link "Napisz email" [ref=e248] [cursor=pointer]:
+              - /url: /crm/dashboard/modern-email
+              - img [ref=e249]
+              - text: Napisz email
+            - link "Filtry email" [ref=e254] [cursor=pointer]:
+              - /url: /crm/dashboard/communication/email-filters
+              - img [ref=e255]
+              - text: Filtry email
+            - link "Reguły komunikacji" [ref=e257] [cursor=pointer]:
+              - /url: /crm/dashboard/communication/rules-manager
+              - img [ref=e258]
+              - text: Reguły komunikacji
+            - link "Auto-odpowiedzi" [ref=e263] [cursor=pointer]:
+              - /url: /crm/dashboard/auto-replies
+              - img [ref=e264]
+              - text: Auto-odpowiedzi
+            - link "Pipeline email" [ref=e269] [cursor=pointer]:
+              - /url: /crm/dashboard/email-pipeline
+              - img [ref=e270]
+              - text: Pipeline email
+            - link "Analiza email" [ref=e275] [cursor=pointer]:
+              - /url: /crm/dashboard/email-analysis
+              - img [ref=e276]
+              - text: Analiza email
+            - link "Spotkania" [ref=e282] [cursor=pointer]:
+              - /url: /crm/dashboard/meetings
+              - img [ref=e283]
+              - text: Spotkania
+          - generic [ref=e289]:
+            - generic [ref=e290]:
+              - img [ref=e291]
+              - text: Przeglądy
+            - link "Produktywność" [ref=e297] [cursor=pointer]:
+              - /url: /crm/dashboard/productivity
+              - img [ref=e298]
+              - text: Produktywność
+            - link "Tygodniowy" [ref=e302] [cursor=pointer]:
+              - /url: /crm/dashboard/reviews/weekly
+              - img [ref=e303]
+              - text: Tygodniowy
+            - link "Miesięczny" [ref=e307] [cursor=pointer]:
+              - /url: /crm/dashboard/reviews/monthly
+              - img [ref=e308]
+              - text: Miesięczny
+            - link "Kwartalny" [ref=e314] [cursor=pointer]:
+              - /url: /crm/dashboard/reviews/quarterly
+              - img [ref=e315]
+              - text: Kwartalny
+          - generic [ref=e321]:
+            - generic [ref=e322]:
+              - img [ref=e323]
+              - text: AI & Narzędzia
+            - link "AI Assistant" [ref=e330] [cursor=pointer]:
+              - /url: /crm/dashboard/ai-assistant
+              - img [ref=e331]
+              - text: AI Assistant
+            - link "AI Insights" [ref=e338] [cursor=pointer]:
+              - /url: /crm/dashboard/ai-insights
+              - img [ref=e339]
+              - text: AI Insights
+            - link "Prompty AI" [ref=e343] [cursor=pointer]:
+              - /url: /crm/dashboard/ai-prompts
+              - img [ref=e344]
+              - text: Prompty AI
+            - link "Zarządzanie AI" [ref=e348] [cursor=pointer]:
+              - /url: /crm/dashboard/ai-management
+              - img [ref=e349]
+              - text: Zarządzanie AI
+            - link "Reguły AI" [ref=e358] [cursor=pointer]:
+              - /url: /crm/dashboard/ai-rules
+              - img [ref=e359]
+              - text: Reguły AI
+            - link "Wyszukiwanie AI" [ref=e363] [cursor=pointer]:
+              - /url: /crm/dashboard/search
+              - img [ref=e364]
+              - text: Wyszukiwanie AI
+            - link "RAG Search" [ref=e369] [cursor=pointer]:
+              - /url: /crm/dashboard/rag-search
+              - img [ref=e370]
+              - text: RAG Search
+            - link "Rekomendacje" [ref=e375] [cursor=pointer]:
+              - /url: /crm/dashboard/recommendations
+              - img [ref=e376]
+              - text: Rekomendacje
+            - link "Voice TTS" [ref=e381] [cursor=pointer]:
+              - /url: /crm/dashboard/voice
+              - img [ref=e382]
+              - text: Voice TTS
+            - link "Graf relacji" [ref=e387] [cursor=pointer]:
+              - /url: /crm/dashboard/graph
+              - img [ref=e388]
+              - text: Graf relacji
+            - link "Reguły uniwersalne" [ref=e400] [cursor=pointer]:
+              - /url: /crm/dashboard/universal-rules
+              - img [ref=e401]
+              - text: Reguły uniwersalne
+            - link "AI Chat (Qwen)" [ref=e407] [cursor=pointer]:
+              - /url: /crm/dashboard/ai-chat
+              - img [ref=e408]
+              - text: AI Chat (Qwen)
+            - link "Gemini" [ref=e412] [cursor=pointer]:
+              - /url: /crm/dashboard/gemini
+              - img [ref=e413]
+              - text: Gemini
+            - link "RAG" [ref=e417] [cursor=pointer]:
+              - /url: /crm/dashboard/rag
+              - img [ref=e418]
+              - text: RAG
+            - link "Voice Assistant" [ref=e424] [cursor=pointer]:
+              - /url: /crm/dashboard/voice-assistant
+              - img [ref=e425]
+              - text: Voice Assistant
+            - link "Voice RAG" [ref=e430] [cursor=pointer]:
+              - /url: /crm/dashboard/voice-rag
+              - img [ref=e431]
+              - text: Voice RAG
+            - link "Universal Search" [ref=e436] [cursor=pointer]:
+              - /url: /crm/dashboard/universal-search
+              - img [ref=e437]
+              - text: Universal Search
+            - link "Flow Engine" [ref=e442] [cursor=pointer]:
+              - /url: /crm/dashboard/flow
+              - img [ref=e443]
+              - text: Flow Engine
+            - link "Flow Conversation" [ref=e449] [cursor=pointer]:
+              - /url: /crm/dashboard/flow/conversation
+              - img [ref=e450]
+              - text: Flow Conversation
+          - generic [ref=e455]:
+            - generic [ref=e456]:
+              - img [ref=e457]
+              - text: Organizacja
+            - link "Tagi" [ref=e462] [cursor=pointer]:
+              - /url: /crm/dashboard/tags
+              - img [ref=e463]
+              - text: Tagi
+            - link "Konteksty GTD" [ref=e468] [cursor=pointer]:
+              - /url: /crm/dashboard/contexts
+              - img [ref=e469]
+              - text: Konteksty GTD
+            - link "Nawyki" [ref=e474] [cursor=pointer]:
+              - /url: /crm/dashboard/habits
+              - img [ref=e475]
+              - text: Nawyki
+            - link "Zadania cykliczne" [ref=e479] [cursor=pointer]:
+              - /url: /crm/dashboard/recurring-tasks
+              - img [ref=e480]
+              - text: Zadania cykliczne
+            - link "Delegowane" [ref=e486] [cursor=pointer]:
+              - /url: /crm/dashboard/delegated
+              - img [ref=e487]
+              - text: Delegowane
+            - link "Obszary" [ref=e496] [cursor=pointer]:
+              - /url: /crm/dashboard/areas
+              - img [ref=e497]
+              - text: Obszary
+            - link "Szablony" [ref=e503] [cursor=pointer]:
+              - /url: /crm/dashboard/templates
+              - img [ref=e504]
+              - text: Szablony
+          - generic [ref=e509]:
+            - generic [ref=e510]:
+              - img [ref=e511]
+              - text: Wiedza
+            - link "Baza wiedzy" [ref=e516] [cursor=pointer]:
+              - /url: /crm/dashboard/knowledge-base
+              - img [ref=e517]
+              - text: Baza wiedzy
+            - link "Dokumenty" [ref=e522] [cursor=pointer]:
+              - /url: /crm/dashboard/knowledge
+              - img [ref=e523]
+              - text: Dokumenty
+            - link "Status wiedzy" [ref=e528] [cursor=pointer]:
+              - /url: /crm/dashboard/knowledge-status
+              - img [ref=e529]
+              - text: Status wiedzy
+            - link "Pliki" [ref=e535] [cursor=pointer]:
+              - /url: /crm/dashboard/files
+              - img [ref=e536]
+              - text: Pliki
+          - generic [ref=e542]:
+            - generic [ref=e543]:
+              - img [ref=e544]
+              - text: Analityka
+            - link "Dashboard" [ref=e549] [cursor=pointer]:
+              - /url: /crm/dashboard/analytics
+              - img [ref=e550]
+              - text: Dashboard
+            - link "Analiza" [ref=e556] [cursor=pointer]:
+              - /url: /crm/dashboard/analysis
+              - img [ref=e557]
+              - text: Analiza
+            - link "Raporty" [ref=e561] [cursor=pointer]:
+              - /url: /crm/dashboard/reports
+              - img [ref=e562]
+              - text: Raporty
+            - link "Timeline" [ref=e567] [cursor=pointer]:
+              - /url: /crm/dashboard/timeline
+              - img [ref=e568]
+              - text: Timeline
+            - link "Historia zadań" [ref=e573] [cursor=pointer]:
+              - /url: /crm/dashboard/task-history
+              - img [ref=e574]
+              - text: Historia zadań
+            - link "Relacje zadań" [ref=e580] [cursor=pointer]:
+              - /url: /crm/dashboard/task-relationships
+              - img [ref=e581]
+              - text: Relacje zadań
+          - generic [ref=e589]:
+            - generic [ref=e590]:
+              - img [ref=e591]
+              - text: Zespół
+            - link "Członkowie" [ref=e602] [cursor=pointer]:
+              - /url: /crm/dashboard/team
+              - img [ref=e603]
+              - text: Członkowie
+            - link "Użytkownicy" [ref=e614] [cursor=pointer]:
+              - /url: /crm/dashboard/users
+              - img [ref=e615]
+              - text: Użytkownicy
+            - link "Hierarchia" [ref=e622] [cursor=pointer]:
+              - /url: /crm/dashboard/team/hierarchy
+              - img [ref=e623]
+              - text: Hierarchia
+          - generic [ref=e633]:
+            - generic [ref=e634]:
+              - img [ref=e635]
+              - text: Ustawienia
+            - link "Profil" [ref=e640] [cursor=pointer]:
+              - /url: /crm/dashboard/settings/profile
+              - img [ref=e641]
+              - text: Profil
+            - link "Organizacja" [ref=e648] [cursor=pointer]:
+              - /url: /crm/dashboard/settings/organization
+              - img [ref=e649]
+              - text: Organizacja
+            - link "Branding" [ref=e654] [cursor=pointer]:
+              - /url: /crm/dashboard/settings/branding
+              - img [ref=e655]
+              - text: Branding
+            - link "Pola niestandardowe" [ref=e663] [cursor=pointer]:
+              - /url: /crm/dashboard/settings/custom-fields
+              - img [ref=e664]
+              - text: Pola niestandardowe
+            - link "Konta email" [ref=e670] [cursor=pointer]:
+              - /url: /crm/dashboard/email-accounts
+              - img [ref=e671]
+              - text: Konta email
+            - link "Integracje" [ref=e676] [cursor=pointer]:
+              - /url: /crm/dashboard/settings/integrations
+              - img [ref=e677]
+              - text: Integracje
+            - link "Płatności" [ref=e681] [cursor=pointer]:
+              - /url: /crm/dashboard/billing
+              - img [ref=e682]
+              - text: Płatności
+            - link "Moduły" [ref=e686] [cursor=pointer]:
+              - /url: /crm/dashboard/modules
+              - img [ref=e687]
+              - text: Moduły
+            - link "Metadane" [ref=e693] [cursor=pointer]:
+              - /url: /crm/dashboard/metadata
+              - img [ref=e694]
+              - text: Metadane
+          - generic [ref=e699]:
+            - generic [ref=e700]:
+              - img [ref=e701]
+              - text: Administracja
+            - link "Infrastruktura" [ref=e706] [cursor=pointer]:
+              - /url: /crm/dashboard/infrastructure
+              - img [ref=e707]
+              - text: Infrastruktura
+            - link "Klucze MCP" [ref=e715] [cursor=pointer]:
+              - /url: /crm/dashboard/admin/mcp-keys
+              - img [ref=e716]
+              - text: Klucze MCP
+            - link "Konfiguracja AI" [ref=e721] [cursor=pointer]:
+              - /url: /crm/dashboard/admin/ai-config
+              - img [ref=e722]
+              - text: Konfiguracja AI
+            - link "Zgłoszenia błędów" [ref=e728] [cursor=pointer]:
+              - /url: /crm/dashboard/admin/bug-reports
+              - img [ref=e729]
+              - text: Zgłoszenia błędów
+            - link "Informacje" [ref=e739] [cursor=pointer]:
+              - /url: /crm/dashboard/info
+              - img [ref=e740]
+              - text: Informacje
+          - generic [ref=e747]:
+            - generic [ref=e748]:
+              - img [ref=e749]
+              - text: SORTO
+            - link "Coding Center" [ref=e753] [cursor=pointer]:
+              - /url: /crm/dashboard/coding-center
+              - img [ref=e754]
+              - text: Coding Center
+            - link "AI Conversations" [ref=e757] [cursor=pointer]:
+              - /url: /crm/dashboard/ai-sync
+              - img [ref=e758]
+              - text: AI Conversations
+            - link "Dev Hub" [ref=e762] [cursor=pointer]:
+              - /url: /crm/dashboard/admin/dev-hub
+              - img [ref=e763]
+              - text: Dev Hub
+        - generic [ref=e772]:
+          - generic [ref=e775]: O
+          - generic [ref=e776]:
+            - paragraph [ref=e777]: Owner Demo
+            - paragraph [ref=e778]: owner@demo.com
+          - button "Wyloguj się" [ref=e779] [cursor=pointer]:
+            - img [ref=e780]
+    - generic [ref=e782]:
+      - generic [ref=e784]:
+        - button "Zwiń menu (⌘B)" [ref=e786] [cursor=pointer]:
+          - img [ref=e787]
+        - generic [ref=e789]:
+          - generic [ref=e790]:
+            - button "🇵🇱 PL" [ref=e791] [cursor=pointer]:
+              - generic [ref=e792]: 🇵🇱
+              - generic [ref=e793]: PL
+            - button "🇬🇧 EN" [ref=e794] [cursor=pointer]:
+              - generic [ref=e795]: 🇬🇧
+              - generic [ref=e796]: EN
+          - button "Search (⌘K)" [ref=e797] [cursor=pointer]:
+            - img [ref=e798]
+          - button "Wyloguj się" [ref=e800] [cursor=pointer]:
+            - img [ref=e801]
+      - main [ref=e803]:
+        - generic [ref=e806]:
+          - generic [ref=e807]:
+            - img [ref=e809]
+            - generic [ref=e811]:
+              - heading "Subskrypcja i rozliczenia" [level=1] [ref=e812]
+              - paragraph [ref=e813]: Zarzadzaj swoim planem i wykorzystaniem zasobow
+          - generic [ref=e815]:
+            - heading "Dostepne plany" [level=2] [ref=e816]
+            - generic [ref=e817]:
+              - button "Miesiecznie" [ref=e818] [cursor=pointer]
+              - button "Rocznie -17%" [ref=e819] [cursor=pointer]
+    - button "Otwórz paletę poleceń (⌘K)" [ref=e821] [cursor=pointer]:
+      - img [ref=e822]
+    - button "Otwórz RAG Chat" [ref=e824] [cursor=pointer]:
+      - img [ref=e825]
+  - status [ref=e832]: Nie udalo sie zaladowac danych subskrypcji
+  - alert [ref=e833]
+```

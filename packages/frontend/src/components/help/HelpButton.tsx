@@ -2,7 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { useHelp } from '@/contexts/help/HelpContext';
-import { QuestionMarkCircleIcon } from '@heroicons/react/24/outline';
+import { HelpCircle } from 'lucide-react';
 
 interface HelpButtonProps {
   pageId?: string;
@@ -50,7 +50,7 @@ export function HelpButton({
       `}
       aria-label="Pomoc kontekstowa"
     >
-      <QuestionMarkCircleIcon className="w-6 h-6" />
+      <HelpCircle className="w-6 h-6" />
       
       {/* Pulsująca animacja dla przyciągnięcia uwagi */}
       <span className="absolute top-0 right-0 -mt-1 -mr-1 flex h-3 w-3">

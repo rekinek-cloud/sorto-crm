@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { PreciseGoal, Stream, CreateGoalRequest, GoalStatus } from '@/types/streams';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { X } from 'lucide-react';
 
 interface GoalFormProps {
   goal?: PreciseGoal;
@@ -99,7 +99,7 @@ export default function GoalForm({ goal, streams, onSubmit, onCancel }: GoalForm
             onClick={onCancel}
             className="text-gray-400 hover:text-gray-600"
           >
-            <XMarkIcon className="w-6 h-6" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 

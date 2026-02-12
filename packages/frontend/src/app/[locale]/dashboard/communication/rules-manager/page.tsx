@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { Cog6ToothIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { Settings, ArrowRight } from 'lucide-react';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 export default function CommunicationRulesManagerRedirect() {
   // Auto redirect to new Rules Manager location
@@ -10,19 +12,19 @@ export default function CommunicationRulesManagerRedirect() {
   }, []);
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-12 text-center">
-        <Cog6ToothIcon className="w-16 h-16 mx-auto text-blue-500 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Rules Manager</h3>
-        <p className="text-gray-600 mb-6">
-          Strona została przeniesiona do nowej lokalizacji
+    <PageShell>
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-12 text-center">
+        <Settings className="w-16 h-16 mx-auto text-blue-500 mb-4" />
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Rules Manager</h3>
+        <p className="text-slate-600 dark:text-slate-400 mb-6">
+          Strona zostala przeniesiona do nowej lokalizacji
         </p>
-        <div className="flex items-center justify-center space-x-2 text-blue-600">
+        <div className="flex items-center justify-center space-x-2 text-blue-600 dark:text-blue-400">
           <span>Przekierowanie...</span>
-          <ArrowRightIcon className="w-5 h-5" />
+          <ArrowRight className="w-5 h-5" />
           <span>Rules Manager</span>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

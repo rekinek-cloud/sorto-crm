@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { XMarkIcon, EnvelopeIcon, PhoneIcon, CalendarIcon, UserIcon, BuildingOfficeIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
+import { X, Mail, Phone, Calendar, User, Building2, DollarSign } from 'lucide-react';
 import { ActivityItem } from './ActivityTimeline';
 
 interface ActivityDetailModalProps {
@@ -31,16 +31,16 @@ export function ActivityDetailModal({ activity, isOpen, onClose }: ActivityDetai
         return <CurrencyDollarIcon className="w-6 h-6 text-green-600" />;
       case 'contact_added':
       case 'contact_updated':
-        return <UserIcon className="w-6 h-6 text-blue-600" />;
+        return <User className="w-6 h-6 text-blue-600" />;
       case 'email_sent':
       case 'email_received':
       case 'EMAIL_SENT':
       case 'EMAIL_RECEIVED':
-        return <EnvelopeIcon className="w-6 h-6 text-indigo-600" />;
+        return <Mail className="w-6 h-6 text-indigo-600" />;
       case 'phone_call':
-        return <PhoneIcon className="w-6 h-6 text-yellow-600" />;
+        return <Phone className="w-6 h-6 text-yellow-600" />;
       case 'meeting_scheduled':
-        return <CalendarIcon className="w-6 h-6 text-orange-600" />;
+        return <Calendar className="w-6 h-6 text-orange-600" />;
       default:
         return <div className="w-6 h-6 bg-gray-400 rounded-full" />;
     }
@@ -84,7 +84,7 @@ export function ActivityDetailModal({ activity, isOpen, onClose }: ActivityDetai
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <XMarkIcon className="w-6 h-6" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
@@ -204,7 +204,7 @@ export function ActivityDetailModal({ activity, isOpen, onClose }: ActivityDetai
             {activity.contact && (
               <div className="bg-blue-50 rounded-lg p-4">
                 <h5 className="font-medium text-gray-900 mb-3 flex items-center">
-                  <UserIcon className="w-4 h-4 mr-1" />
+                  <User className="w-4 h-4 mr-1" />
                   Powiązany Kontakt
                 </h5>
                 <div className="space-y-2 text-sm">

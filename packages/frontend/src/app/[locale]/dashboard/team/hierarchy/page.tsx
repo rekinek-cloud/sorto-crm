@@ -1,21 +1,22 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Fragment } from 'react';
 import { toast } from 'react-hot-toast';
 import {
-  UsersIcon,
-  UserGroupIcon,
-  ArrowPathIcon,
-  PlusIcon,
-  TrashIcon,
-  ChevronRightIcon,
-  ChevronDownIcon,
-  MagnifyingGlassIcon,
-  UserPlusIcon,
-  ArrowsPointingOutIcon,
-  ChartBarIcon,
-} from '@heroicons/react/24/outline';
+  Users,
+  UserPlus,
+  RefreshCw,
+  Plus,
+  Trash2,
+  ChevronRight,
+  ChevronDown,
+  Search,
+  Maximize2,
+  BarChart3,
+} from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 interface User {
   id: string;
@@ -77,7 +78,6 @@ export default function UserHierarchyPage() {
   const [expandedUsers, setExpandedUsers] = useState<Set<string>>(new Set());
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, totalPages: 0 });
 
-  // Create relation form
   const [newRelation, setNewRelation] = useState({
     managerId: '',
     employeeId: '',
@@ -193,13 +193,13 @@ export default function UserHierarchyPage() {
   const getRoleColor = (role: string) => {
     switch (role) {
       case 'ADMIN':
-        return 'bg-red-100 text-red-700';
+        return 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
       case 'MANAGER':
-        return 'bg-blue-100 text-blue-700';
+        return 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400';
       case 'USER':
-        return 'bg-green-100 text-green-700';
+        return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
       default:
-        return 'bg-gray-100 text-gray-700';
+        return 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
     }
   };
 
@@ -210,63 +210,78 @@ export default function UserHierarchyPage() {
 
   if (loading && users.length === 0) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <ArrowPathIcon className="w-8 h-8 animate-spin text-indigo-600" />
-      </div>
+      <PageShell>
+        <div className="flex items-center justify-center h-64">
+          <RefreshCw className="w-8 h-8 animate-spin text-indigo-600" />
+        </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <UserGroupIcon className="w-8 h-8 text-indigo-600" />
-          Hierarchia użytkowników
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Zarządzaj relacjami i strukturą organizacyjną
-        </p>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Hierarchia użytkowników"
+        subtitle="Zarządzaj relacjami i strukturą organizacyjną"
+        icon={Users}
+        iconColor="text-indigo-600"
+        actions={
+          <div className="flex gap-2">
+            <button
+              onClick={loadUsers}
+              className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
+            >
+              <RefreshCw className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+              Nowa relacja
+            </button>
+          </div>
+        }
+      />
 
       {/* Stats */}
       {stats && (
-        <div className="grid grid-cols-4 gap-4 mb-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
             <div className="flex items-center gap-3">
-              <UsersIcon className="w-8 h-8 text-blue-600" />
+              <Users className="w-8 h-8 text-blue-600 dark:text-blue-400" />
               <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalUsers}</p>
-                <p className="text-sm text-gray-500">Użytkownicy</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalUsers}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Użytkownicy</p>
               </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
             <div className="flex items-center gap-3">
-              <ArrowsPointingOutIcon className="w-8 h-8 text-green-600" />
+              <Maximize2 className="w-8 h-8 text-green-600 dark:text-green-400" />
               <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.activeRelations}</p>
-                <p className="text-sm text-gray-500">Aktywne relacje</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.activeRelations}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Aktywne relacje</p>
               </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
             <div className="flex items-center gap-3">
-              <UserPlusIcon className="w-8 h-8 text-purple-600" />
+              <UserPlus className="w-8 h-8 text-purple-600 dark:text-purple-400" />
               <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.topManagers}</p>
-                <p className="text-sm text-gray-500">Top managerowie</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.topManagers}</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Top managerowie</p>
               </div>
             </div>
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
             <div className="flex items-center gap-3">
-              <ChartBarIcon className="w-8 h-8 text-amber-600" />
+              <BarChart3 className="w-8 h-8 text-amber-600 dark:text-amber-400" />
               <div>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
                   {stats.averageTeamSize?.toFixed(1) || '0'}
                 </p>
-                <p className="text-sm text-gray-500">Śr. wielkość zespołu</p>
+                <p className="text-sm text-slate-500 dark:text-slate-400">Śr. wielkość zespołu</p>
               </div>
             </div>
           </div>
@@ -276,78 +291,63 @@ export default function UserHierarchyPage() {
       {/* Actions */}
       <div className="flex items-center justify-between mb-4">
         <div className="relative flex-1 max-w-md">
-          <MagnifyingGlassIcon className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
           <input
             type="text"
             placeholder="Szukaj użytkowników..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700"
+            className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
           />
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={loadUsers}
-            className="p-2 text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
-          >
-            <ArrowPathIcon className="w-5 h-5" />
-          </button>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-          >
-            <PlusIcon className="w-5 h-5" />
-            Nowa relacja
-          </button>
         </div>
       </div>
 
       {/* Users List */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm overflow-hidden">
         <table className="w-full">
-          <thead className="bg-gray-50 dark:bg-gray-700">
+          <thead className="bg-slate-50 dark:bg-slate-800">
             <tr>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Użytkownik</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rola</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Managerowie</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Podwładni</th>
-              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Akcje</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Użytkownik</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Rola</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Managerowie</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Podwładni</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Status</th>
+              <th className="px-4 py-3 text-right text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Akcje</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
             {users.map((user) => {
               const managers = user.user_relations_user_relations_employeeIdTousers || [];
               const subordinates = user.user_relations_user_relations_managerIdTousers || [];
               const isExpanded = expandedUsers.has(user.id);
 
               return (
-                <>
-                  <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                <Fragment key={user.id}>
+                  <tr className="hover:bg-slate-50 dark:hover:bg-slate-800/50">
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <button
                           onClick={() => toggleExpanded(user.id)}
-                          className="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                          className="p-1 hover:bg-slate-200 dark:hover:bg-slate-600 rounded transition-colors"
                         >
                           {isExpanded ? (
-                            <ChevronDownIcon className="w-4 h-4" />
+                            <ChevronDown className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                           ) : (
-                            <ChevronRightIcon className="w-4 h-4" />
+                            <ChevronRight className="w-4 h-4 text-slate-600 dark:text-slate-400" />
                           )}
                         </button>
                         {user.avatar ? (
                           <img src={user.avatar} alt="" className="w-8 h-8 rounded-full" />
                         ) : (
-                          <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center">
-                            <span className="text-indigo-600 font-medium text-sm">
+                          <div className="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                            <span className="text-indigo-600 dark:text-indigo-400 font-medium text-sm">
                               {user.firstName?.[0] || user.email[0].toUpperCase()}
                             </span>
                           </div>
                         )}
                         <div>
-                          <p className="font-medium text-gray-900 dark:text-white">{getUserName(user)}</p>
-                          <p className="text-xs text-gray-500">{user.email}</p>
+                          <p className="font-medium text-slate-900 dark:text-slate-100">{getUserName(user)}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400">{user.email}</p>
                         </div>
                       </div>
                     </td>
@@ -356,16 +356,18 @@ export default function UserHierarchyPage() {
                         {user.role}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                    <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
                       {managers.length > 0 ? managers.length : '-'}
                     </td>
-                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+                    <td className="px-4 py-3 text-sm text-slate-600 dark:text-slate-400">
                       {subordinates.length > 0 ? subordinates.length : '-'}
                     </td>
                     <td className="px-4 py-3">
                       <span
                         className={`px-2 py-1 text-xs rounded-full ${
-                          user.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600'
+                          user.isActive
+                            ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                            : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
                         }`}
                       >
                         {user.isActive ? 'Aktywny' : 'Nieaktywny'}
@@ -378,43 +380,43 @@ export default function UserHierarchyPage() {
                           setNewRelation({ ...newRelation, managerId: user.id });
                           setShowCreateModal(true);
                         }}
-                        className="p-1 text-indigo-600 hover:bg-indigo-50 rounded"
+                        className="p-1 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded transition-colors"
                         title="Dodaj relację"
                       >
-                        <UserPlusIcon className="w-5 h-5" />
+                        <UserPlus className="w-5 h-5" />
                       </button>
                     </td>
                   </tr>
                   {/* Expanded relations */}
                   {isExpanded && (managers.length > 0 || subordinates.length > 0) && (
-                    <tr className="bg-gray-50 dark:bg-gray-700/30">
+                    <tr className="bg-slate-50 dark:bg-slate-800/30">
                       <td colSpan={6} className="px-8 py-3">
                         <div className="grid grid-cols-2 gap-4">
                           {/* Managers */}
                           {managers.length > 0 && (
                             <div>
-                              <p className="text-xs font-medium text-gray-500 mb-2">Raportuje do:</p>
+                              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Raportuje do:</p>
                               <div className="space-y-2">
                                 {managers.map((rel) => (
                                   <div
                                     key={rel.id}
-                                    className="flex items-center justify-between bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600"
+                                    className="flex items-center justify-between bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-600"
                                   >
                                     <div className="flex items-center gap-2">
-                                      <span className="text-sm">
+                                      <span className="text-sm text-slate-900 dark:text-slate-100">
                                         {rel.users_user_relations_managerIdTousers
                                           ? getUserName(rel.users_user_relations_managerIdTousers)
                                           : '-'}
                                       </span>
-                                      <span className="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 rounded">
+                                      <span className="px-1.5 py-0.5 text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded">
                                         {getRelationTypeLabel(rel.relationType)}
                                       </span>
                                     </div>
                                     <button
                                       onClick={() => deleteRelation(rel.id)}
-                                      className="p-1 text-red-500 hover:bg-red-50 rounded"
+                                      className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                                     >
-                                      <TrashIcon className="w-4 h-4" />
+                                      <Trash2 className="w-4 h-4" />
                                     </button>
                                   </div>
                                 ))}
@@ -424,28 +426,28 @@ export default function UserHierarchyPage() {
                           {/* Subordinates */}
                           {subordinates.length > 0 && (
                             <div>
-                              <p className="text-xs font-medium text-gray-500 mb-2">Zarządza:</p>
+                              <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Zarządza:</p>
                               <div className="space-y-2">
                                 {subordinates.map((rel) => (
                                   <div
                                     key={rel.id}
-                                    className="flex items-center justify-between bg-white dark:bg-gray-800 p-2 rounded border border-gray-200 dark:border-gray-600"
+                                    className="flex items-center justify-between bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-600"
                                   >
                                     <div className="flex items-center gap-2">
-                                      <span className="text-sm">
+                                      <span className="text-sm text-slate-900 dark:text-slate-100">
                                         {rel.users_user_relations_employeeIdTousers
                                           ? getUserName(rel.users_user_relations_employeeIdTousers)
                                           : '-'}
                                       </span>
-                                      <span className="px-1.5 py-0.5 text-xs bg-green-100 text-green-700 rounded">
+                                      <span className="px-1.5 py-0.5 text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 rounded">
                                         {getRelationTypeLabel(rel.relationType)}
                                       </span>
                                     </div>
                                     <button
                                       onClick={() => deleteRelation(rel.id)}
-                                      className="p-1 text-red-500 hover:bg-red-50 rounded"
+                                      className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                                     >
-                                      <TrashIcon className="w-4 h-4" />
+                                      <Trash2 className="w-4 h-4" />
                                     </button>
                                   </div>
                                 ))}
@@ -456,37 +458,37 @@ export default function UserHierarchyPage() {
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               );
             })}
           </tbody>
         </table>
 
         {users.length === 0 && (
-          <div className="text-center py-12 text-gray-500">
-            <UsersIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+          <div className="text-center py-12 text-slate-500 dark:text-slate-400">
+            <Users className="w-12 h-12 mx-auto mb-4 text-slate-300 dark:text-slate-600" />
             <p>Brak użytkowników</p>
           </div>
         )}
 
         {/* Pagination */}
         {pagination.totalPages > 1 && (
-          <div className="px-4 py-3 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
-            <p className="text-sm text-gray-500">
+          <div className="px-4 py-3 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+            <p className="text-sm text-slate-500 dark:text-slate-400">
               Strona {pagination.page} z {pagination.totalPages} ({pagination.total} użytkowników)
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setPagination({ ...pagination, page: pagination.page - 1 })}
                 disabled={pagination.page === 1}
-                className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 disabled:opacity-50"
+                className="px-3 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 text-slate-700 dark:text-slate-300 transition-colors"
               >
                 Poprzednia
               </button>
               <button
                 onClick={() => setPagination({ ...pagination, page: pagination.page + 1 })}
                 disabled={pagination.page >= pagination.totalPages}
-                className="px-3 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded hover:bg-gray-50 disabled:opacity-50"
+                className="px-3 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 text-slate-700 dark:text-slate-300 transition-colors"
               >
                 Następna
               </button>
@@ -497,18 +499,17 @@ export default function UserHierarchyPage() {
 
       {/* Create Relation Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-md p-6">
-            <h2 className="text-lg font-semibold mb-4">Nowa relacja hierarchiczna</h2>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl w-full max-w-md p-6 border border-slate-200 dark:border-slate-700">
+            <h2 className="text-lg font-semibold mb-4 text-slate-900 dark:text-slate-100">Nowa relacja hierarchiczna</h2>
 
             <div className="space-y-4">
-              {/* Manager */}
               <div>
-                <label className="block text-sm font-medium mb-1">Manager (przełożony)</label>
+                <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Manager (przełożony)</label>
                 <select
                   value={newRelation.managerId}
                   onChange={(e) => setNewRelation({ ...newRelation, managerId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                 >
                   <option value="">Wybierz managera...</option>
                   {users.map((u) => (
@@ -519,13 +520,12 @@ export default function UserHierarchyPage() {
                 </select>
               </div>
 
-              {/* Employee */}
               <div>
-                <label className="block text-sm font-medium mb-1">Pracownik (podwładny)</label>
+                <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Pracownik (podwładny)</label>
                 <select
                   value={newRelation.employeeId}
                   onChange={(e) => setNewRelation({ ...newRelation, employeeId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                 >
                   <option value="">Wybierz pracownika...</option>
                   {users.map((u) => (
@@ -536,15 +536,14 @@ export default function UserHierarchyPage() {
                 </select>
               </div>
 
-              {/* Relation Type */}
               <div>
-                <label className="block text-sm font-medium mb-1">Typ relacji</label>
+                <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Typ relacji</label>
                 <select
                   value={newRelation.relationType}
                   onChange={(e) =>
                     setNewRelation({ ...newRelation, relationType: e.target.value as RelationType })
                   }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                 >
                   {RELATION_TYPES.map((type) => (
                     <option key={type.value} value={type.value}>
@@ -554,37 +553,35 @@ export default function UserHierarchyPage() {
                 </select>
               </div>
 
-              {/* Description */}
               <div>
-                <label className="block text-sm font-medium mb-1">Opis (opcjonalnie)</label>
+                <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Opis (opcjonalnie)</label>
                 <textarea
                   value={newRelation.description}
                   onChange={(e) => setNewRelation({ ...newRelation, description: e.target.value })}
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg dark:bg-gray-700"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                   placeholder="Dodatkowy opis relacji..."
                 />
               </div>
 
-              {/* Permissions */}
               <div className="flex gap-4">
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     checked={newRelation.canDelegate}
                     onChange={(e) => setNewRelation({ ...newRelation, canDelegate: e.target.checked })}
-                    className="rounded border-gray-300"
+                    className="rounded border-slate-300 dark:border-slate-600"
                   />
-                  <span className="text-sm">Może delegować</span>
+                  <span className="text-sm text-slate-700 dark:text-slate-300">Może delegować</span>
                 </label>
                 <label className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     checked={newRelation.canApprove}
                     onChange={(e) => setNewRelation({ ...newRelation, canApprove: e.target.checked })}
-                    className="rounded border-gray-300"
+                    className="rounded border-slate-300 dark:border-slate-600"
                   />
-                  <span className="text-sm">Może zatwierdzać</span>
+                  <span className="text-sm text-slate-700 dark:text-slate-300">Może zatwierdzać</span>
                 </label>
               </div>
             </div>
@@ -595,14 +592,14 @@ export default function UserHierarchyPage() {
                   setShowCreateModal(false);
                   setSelectedUser(null);
                 }}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
               >
                 Anuluj
               </button>
               <button
                 onClick={createRelation}
                 disabled={creating}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50"
+                className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 transition-colors"
               >
                 {creating ? 'Tworzenie...' : 'Utwórz relację'}
               </button>
@@ -610,6 +607,6 @@ export default function UserHierarchyPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

@@ -1,37 +1,96 @@
 // @ts-nocheck
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { toast } from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Brain,
+  Search,
+  Plus,
+  Trash2,
+  Building2,
+  User,
+  ThumbsUp,
+  ThumbsDown,
+  Settings2,
+  FileText,
+  AlertTriangle,
+  Lightbulb,
+  CalendarDays,
+  GitBranch,
+  MessageCircle,
+  Trophy,
+  Star,
+  Eye,
+  EyeOff,
+  Lock,
+  Info,
+  ClipboardList,
+} from 'lucide-react';
 import { clientIntelligenceApi, CreateClientIntelligenceRequest, ClientBriefing } from '@/lib/api/clientIntelligence';
 import { ClientIntelligence } from '@/types/gtd';
 import { companiesApi } from '@/lib/api/companies';
 import { contactsApi } from '@/lib/api/contacts';
 
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ActionButton } from '@/components/ui/ActionButton';
+import { StatCard } from '@/components/ui/StatCard';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { FormModal } from '@/components/ui/FormModal';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
+
 const CATEGORIES = [
-  { value: 'LIKES', label: 'Lubi', color: 'bg-blue-100 text-blue-700' },
-  { value: 'DISLIKES', label: 'Nie lubi', color: 'bg-orange-100 text-orange-700' },
-  { value: 'PREFERENCE', label: 'Preferencja', color: 'bg-purple-100 text-purple-700' },
-  { value: 'FACT', label: 'Fakt', color: 'bg-gray-100 text-gray-700' },
-  { value: 'WARNING', label: 'Ostrzezenie', color: 'bg-red-100 text-red-700' },
-  { value: 'TIP', label: 'Wskazowka', color: 'bg-green-100 text-green-700' },
-  { value: 'IMPORTANT_DATE', label: 'Wazna data', color: 'bg-yellow-100 text-yellow-700' },
-  { value: 'DECISION_PROCESS', label: 'Proces decyzyjny', color: 'bg-indigo-100 text-indigo-700' },
-  { value: 'COMMUNICATION', label: 'Komunikacja', color: 'bg-teal-100 text-teal-700' },
-  { value: 'SUCCESS', label: 'Sukces', color: 'bg-emerald-100 text-emerald-700' },
+  { value: 'LIKES', label: 'Lubi', icon: ThumbsUp, color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400' },
+  { value: 'DISLIKES', label: 'Nie lubi', icon: ThumbsDown, color: 'text-orange-600 bg-orange-50 dark:bg-orange-900/30 dark:text-orange-400' },
+  { value: 'PREFERENCE', label: 'Preferencja', icon: Settings2, color: 'text-purple-600 bg-purple-50 dark:bg-purple-900/30 dark:text-purple-400' },
+  { value: 'FACT', label: 'Fakt', icon: FileText, color: 'text-slate-600 bg-slate-50 dark:bg-slate-700/30 dark:text-slate-400' },
+  { value: 'WARNING', label: 'Ostrzezenie', icon: AlertTriangle, color: 'text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400' },
+  { value: 'TIP', label: 'Wskazowka', icon: Lightbulb, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400' },
+  { value: 'IMPORTANT_DATE', label: 'Wazna data', icon: CalendarDays, color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-400' },
+  { value: 'DECISION_PROCESS', label: 'Proces decyzyjny', icon: GitBranch, color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400' },
+  { value: 'COMMUNICATION', label: 'Komunikacja', icon: MessageCircle, color: 'text-teal-600 bg-teal-50 dark:bg-teal-900/30 dark:text-teal-400' },
+  { value: 'SUCCESS', label: 'Sukces', icon: Trophy, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400' },
 ];
 
-const getCategoryColor = (category: string) => {
-  return CATEGORIES.find(c => c.value === category)?.color || 'bg-gray-100 text-gray-700';
+const getCategoryConfig = (category: string) => {
+  return CATEGORIES.find(c => c.value === category) || CATEGORIES[3];
 };
 
-const getCategoryLabel = (category: string) => {
-  return CATEGORIES.find(c => c.value === category)?.label || category;
+const getCategoryBadgeVariant = (category: string): 'default' | 'success' | 'warning' | 'error' | 'info' | 'neutral' => {
+  switch (category) {
+    case 'LIKES': return 'info';
+    case 'DISLIKES': return 'warning';
+    case 'PREFERENCE': return 'default';
+    case 'FACT': return 'neutral';
+    case 'WARNING': return 'error';
+    case 'TIP': return 'success';
+    case 'IMPORTANT_DATE': return 'warning';
+    case 'DECISION_PROCESS': return 'info';
+    case 'COMMUNICATION': return 'info';
+    case 'SUCCESS': return 'success';
+    default: return 'neutral';
+  }
 };
 
 const formatDate = (dateString?: string) => {
   if (!dateString) return '-';
   return new Date(dateString).toLocaleDateString('pl-PL');
+};
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: { staggerChildren: 0.05 },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  show: { opacity: 1, y: 0 },
 };
 
 export default function ClientIntelligencePage() {
@@ -46,6 +105,7 @@ export default function ClientIntelligencePage() {
   const [briefing, setBriefing] = useState<ClientBriefing | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     category: 'FACT' as string,
@@ -150,7 +210,7 @@ export default function ClientIntelligencePage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Usunac te informacje?')) return;
+    setDeletingId(id);
     try {
       await clientIntelligenceApi.deleteIntelligence(id);
       toast.success('Informacja usunieta');
@@ -158,6 +218,8 @@ export default function ClientIntelligencePage() {
     } catch (error) {
       console.error('Failed to delete:', error);
       toast.error('Blad usuwania');
+    } finally {
+      setDeletingId(null);
     }
   };
 
@@ -165,270 +227,411 @@ export default function ClientIntelligencePage() {
   const groupedItems = CATEGORIES.reduce((acc, cat) => {
     const catItems = items.filter(i => i.category === cat.value);
     if (catItems.length > 0) {
-      acc.push({ category: cat.value, label: cat.label, color: cat.color, items: catItems });
+      acc.push({ ...cat, items: catItems });
     }
     return acc;
-  }, [] as { category: string; label: string; color: string; items: ClientIntelligence[] }[]);
+  }, [] as (typeof CATEGORIES[number] & { items: ClientIntelligence[] })[]);
+
+  const importanceStars = (importance: number) => {
+    return Array.from({ length: 5 }, (_, i) => (
+      <Star
+        key={i}
+        className={`w-3 h-3 ${i < importance ? 'text-amber-400 fill-amber-400' : 'text-slate-300 dark:text-slate-600'}`}
+      />
+    ));
+  };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Wywiad klienta</h1>
-          <p className="text-gray-600">Zbieraj kluczowe informacje o klientach i kontaktach</p>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Wywiad klienta"
+        subtitle="Zbieraj kluczowe informacje o klientach i kontaktach"
+        icon={Brain}
+        iconColor="text-violet-600 bg-violet-50 dark:bg-violet-900/30 dark:text-violet-400"
+        breadcrumbs={[
+          { label: 'Pulpit', href: '/dashboard' },
+          { label: 'Wywiad klienta' },
+        ]}
+        actions={
+          entityId ? (
+            <ActionButton icon={Plus} onClick={() => setShowAddForm(true)}>
+              Dodaj informacje
+            </ActionButton>
+          ) : undefined
+        }
+      />
 
       {/* Entity Selector */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3 uppercase tracking-wider">Wybierz podmiot</h3>
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl p-5 shadow-sm mb-6"
+      >
+        <h3 className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wider">
+          Wybierz podmiot
+        </h3>
+        <div className="flex flex-col md:flex-row gap-3">
+          {/* Type toggle */}
+          <div className="flex rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden">
             <button
-              onClick={() => { setEntityType('COMPANY'); setEntityId(''); setEntitySearch(''); setSelectedEntityLabel(''); setItems([]); setBriefing(null); }}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${entityType === 'COMPANY' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+              onClick={() => {
+                setEntityType('COMPANY');
+                setEntityId('');
+                setEntitySearch('');
+                setSelectedEntityLabel('');
+                setItems([]);
+                setBriefing(null);
+              }}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                entityType === 'COMPANY'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
+              }`}
             >
+              <Building2 className="w-4 h-4" />
               Firma
             </button>
             <button
-              onClick={() => { setEntityType('CONTACT'); setEntityId(''); setEntitySearch(''); setSelectedEntityLabel(''); setItems([]); setBriefing(null); }}
-              className={`px-4 py-2 text-sm font-medium transition-colors ${entityType === 'CONTACT' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}
+              onClick={() => {
+                setEntityType('CONTACT');
+                setEntityId('');
+                setEntitySearch('');
+                setSelectedEntityLabel('');
+                setItems([]);
+                setBriefing(null);
+              }}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                entityType === 'CONTACT'
+                  ? 'bg-blue-600 text-white shadow-sm'
+                  : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
+              }`}
             >
+              <User className="w-4 h-4" />
               Kontakt
             </button>
           </div>
 
+          {/* Search input */}
           <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
             <input
               type="text"
               value={entitySearch}
-              onChange={(e) => { setEntitySearch(e.target.value); if (entityId) { setEntityId(''); setSelectedEntityLabel(''); } }}
+              onChange={(e) => {
+                setEntitySearch(e.target.value);
+                if (entityId) {
+                  setEntityId('');
+                  setSelectedEntityLabel('');
+                }
+              }}
               onFocus={() => entityOptions.length > 0 && setShowDropdown(true)}
               onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-9 pr-4 py-2 text-sm bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
               placeholder={entityType === 'COMPANY' ? 'Szukaj firmy...' : 'Szukaj kontaktu...'}
             />
-            {showDropdown && entityOptions.length > 0 && (
-              <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                {entityOptions.map((option) => (
-                  <button
-                    key={option.id}
-                    type="button"
-                    onClick={() => selectEntity(option)}
-                    className="w-full text-left px-4 py-2 hover:bg-blue-50 text-sm transition-colors"
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-            )}
+            <AnimatePresence>
+              {showDropdown && entityOptions.length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  className="absolute z-20 w-full mt-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg max-h-48 overflow-y-auto"
+                >
+                  {entityOptions.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => selectEntity(option)}
+                      className="w-full text-left px-4 py-2.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-blue-50 dark:hover:bg-slate-700 transition-colors first:rounded-t-xl last:rounded-b-xl"
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-
-          {entityId && (
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors whitespace-nowrap"
-            >
-              <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Dodaj info
-            </button>
-          )}
         </div>
-      </div>
+      </motion.div>
 
       {/* Content */}
       {!entityId ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-          <div className="text-gray-400 text-4xl mb-3">🔍</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">Wybierz firme lub kontakt</h3>
-          <p className="text-gray-600">Wyszukaj podmiot powyzej aby zobaczyc zebrane informacje</p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm"
+        >
+          <EmptyState
+            icon={Search}
+            title="Wybierz firme lub kontakt"
+            description="Wyszukaj podmiot powyzej aby zobaczyc zebrane informacje wywiadowcze"
+          />
+        </motion.div>
       ) : isLoading ? (
-        <div className="flex justify-center items-center h-48">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-        </div>
+        <SkeletonPage />
       ) : (
-        <>
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="show"
+          className="space-y-6"
+        >
           {/* Briefing Summary */}
           {briefing && (
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Briefing: {selectedEntityLabel}</h3>
-              {briefing.summary && (
-                <p className="text-gray-700 mb-4">{briefing.summary}</p>
-              )}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <div className="bg-white rounded-lg p-3 border border-blue-100">
-                  <p className="text-xs font-medium text-gray-500 mb-1">Kluczowe fakty</p>
-                  <p className="text-lg font-bold text-gray-900">{briefing.keyFacts?.length || 0}</p>
+            <motion.div
+              variants={itemVariants}
+              className="bg-gradient-to-r from-blue-50/80 to-indigo-50/80 dark:from-blue-900/20 dark:to-indigo-900/20 backdrop-blur-xl border border-blue-200/50 dark:border-blue-800/30 rounded-2xl p-6 shadow-sm"
+            >
+              <div className="flex items-center gap-2 mb-3">
+                <div className="p-2 rounded-xl bg-blue-100 dark:bg-blue-900/40">
+                  <Info className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 </div>
-                <div className="bg-white rounded-lg p-3 border border-red-100">
-                  <p className="text-xs font-medium text-gray-500 mb-1">Ostrzezenia</p>
-                  <p className="text-lg font-bold text-red-600">{briefing.warnings?.length || 0}</p>
-                </div>
-                <div className="bg-white rounded-lg p-3 border border-purple-100">
-                  <p className="text-xs font-medium text-gray-500 mb-1">Preferencje</p>
-                  <p className="text-lg font-bold text-purple-600">{briefing.preferences?.length || 0}</p>
-                </div>
-                <div className="bg-white rounded-lg p-3 border border-yellow-100">
-                  <p className="text-xs font-medium text-gray-500 mb-1">Nadchodzace daty</p>
-                  <p className="text-lg font-bold text-yellow-600">{briefing.upcomingDates?.length || 0}</p>
-                </div>
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  Briefing: {selectedEntityLabel}
+                </h3>
               </div>
-            </div>
+              {briefing.summary && (
+                <p className="text-sm text-slate-700 dark:text-slate-300 mb-4 leading-relaxed">{briefing.summary}</p>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <StatCard
+                  label="Kluczowe fakty"
+                  value={briefing.keyFacts?.length || 0}
+                  icon={FileText}
+                  iconColor="text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"
+                />
+                <StatCard
+                  label="Ostrzezenia"
+                  value={briefing.warnings?.length || 0}
+                  icon={AlertTriangle}
+                  iconColor="text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400"
+                />
+                <StatCard
+                  label="Preferencje"
+                  value={briefing.preferences?.length || 0}
+                  icon={Settings2}
+                  iconColor="text-purple-600 bg-purple-50 dark:bg-purple-900/30 dark:text-purple-400"
+                />
+                <StatCard
+                  label="Nadchodzace daty"
+                  value={briefing.upcomingDates?.length || 0}
+                  icon={CalendarDays}
+                  iconColor="text-amber-600 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-400"
+                />
+              </div>
+            </motion.div>
           )}
 
           {/* Grouped Intelligence Items */}
           {groupedItems.length === 0 ? (
-            <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-              <div className="text-gray-400 text-4xl mb-3">📋</div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-1">Brak informacji</h3>
-              <p className="text-gray-600 mb-4">Dodaj pierwsza informacje o tym podmiocie</p>
-              <button
-                onClick={() => setShowAddForm(true)}
-                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Dodaj informacje
-              </button>
-            </div>
+            <motion.div
+              variants={itemVariants}
+              className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm"
+            >
+              <EmptyState
+                icon={ClipboardList}
+                title="Brak informacji"
+                description="Dodaj pierwsza informacje o tym podmiocie"
+                action={
+                  <ActionButton icon={Plus} onClick={() => setShowAddForm(true)}>
+                    Dodaj informacje
+                  </ActionButton>
+                }
+              />
+            </motion.div>
           ) : (
             <div className="space-y-4">
-              {groupedItems.map((group) => (
-                <div key={group.category} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-                  <div className="px-6 py-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${group.color}`}>
-                        {group.label}
-                      </span>
-                      <span className="text-sm text-gray-500">{group.items.length} elementow</span>
-                    </div>
-                  </div>
-                  <div className="divide-y divide-gray-100">
-                    {group.items.map((item) => (
-                      <div key={item.id} className="px-6 py-4 hover:bg-gray-50 transition-colors">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <p className="text-sm text-gray-900">{item.content}</p>
-                            <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-                              <span>Waznosc: {item.importance}/5</span>
-                              {item.source && <span>Zrodlo: {item.source}</span>}
-                              <span>{formatDate(item.createdAt)}</span>
-                              {item.isPrivate && (
-                                <span className="text-amber-600 font-medium">Prywatne</span>
-                              )}
-                            </div>
-                          </div>
-                          <button
-                            onClick={() => handleDelete(item.id)}
-                            className="ml-4 text-gray-400 hover:text-red-600 transition-colors"
-                            title="Usun"
-                          >
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                          </button>
+              {groupedItems.map((group) => {
+                const CatIcon = group.icon;
+                return (
+                  <motion.div
+                    key={group.value}
+                    variants={itemVariants}
+                    className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm overflow-hidden"
+                  >
+                    {/* Category header */}
+                    <div className="px-5 py-3 bg-slate-50/80 dark:bg-slate-800/50 border-b border-slate-200/50 dark:border-slate-700/50 flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <div className={`p-1.5 rounded-lg ${group.color}`}>
+                          <CatIcon className="w-4 h-4" />
                         </div>
+                        <StatusBadge variant={getCategoryBadgeVariant(group.value)} size="md">
+                          {group.label}
+                        </StatusBadge>
+                        <span className="text-xs text-slate-500 dark:text-slate-400">
+                          {group.items.length} {group.items.length === 1 ? 'element' : 'elementow'}
+                        </span>
                       </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                    </div>
+
+                    {/* Items */}
+                    <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
+                      {group.items.map((item) => (
+                        <motion.div
+                          key={item.id}
+                          whileHover={{ backgroundColor: 'rgba(248, 250, 252, 0.5)' }}
+                          className="px-5 py-4 transition-colors"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-slate-900 dark:text-slate-100 leading-relaxed">
+                                {item.content}
+                              </p>
+                              <div className="flex flex-wrap items-center gap-3 mt-2">
+                                {/* Importance stars */}
+                                <div className="flex items-center gap-0.5">
+                                  {importanceStars(item.importance)}
+                                </div>
+                                {item.source && (
+                                  <span className="text-xs text-slate-500 dark:text-slate-400">
+                                    Zrodlo: {item.source}
+                                  </span>
+                                )}
+                                <span className="text-xs text-slate-400 dark:text-slate-500">
+                                  {formatDate(item.createdAt)}
+                                </span>
+                                {item.isPrivate && (
+                                  <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400 font-medium">
+                                    <Lock className="w-3 h-3" />
+                                    Prywatne
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            <ActionButton
+                              variant="ghost"
+                              size="sm"
+                              icon={Trash2}
+                              loading={deletingId === item.id}
+                              onClick={() => {
+                                toast((t) => (
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-sm">Usunac te informacje?</span>
+                                    <div className="flex gap-1">
+                                      <button
+                                        onClick={() => {
+                                          toast.dismiss(t.id);
+                                          handleDelete(item.id);
+                                        }}
+                                        className="px-2 py-1 text-xs bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                                      >
+                                        Usun
+                                      </button>
+                                      <button
+                                        onClick={() => toast.dismiss(t.id)}
+                                        className="px-2 py-1 text-xs bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors"
+                                      >
+                                        Anuluj
+                                      </button>
+                                    </div>
+                                  </div>
+                                ), { duration: 5000 });
+                              }}
+                              className="text-slate-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400"
+                              title="Usun"
+                            />
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
+                );
+              })}
             </div>
           )}
-        </>
+        </motion.div>
       )}
 
       {/* Add Form Modal */}
-      {showAddForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Nowa informacja</h3>
-                <button onClick={() => setShowAddForm(false)} className="text-gray-400 hover:text-gray-600">
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+      <FormModal
+        isOpen={showAddForm}
+        onClose={() => setShowAddForm(false)}
+        title="Nowa informacja"
+        subtitle={`Dodaj informacje dla: ${selectedEntityLabel}`}
+        position="center"
+        footer={
+          <>
+            <ActionButton variant="secondary" onClick={() => setShowAddForm(false)}>
+              Anuluj
+            </ActionButton>
+            <ActionButton
+              variant="primary"
+              icon={Plus}
+              onClick={handleAdd}
+              disabled={!formData.content.trim()}
+            >
+              Dodaj
+            </ActionButton>
+          </>
+        }
+      >
+        <div className="space-y-5">
+          {/* Category */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              Kategoria
+            </label>
+            <select
+              value={formData.category}
+              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+              className="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+            >
+              {CATEGORIES.map(c => (
+                <option key={c.value} value={c.value}>{c.label}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* Content */}
+          <div>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+              Tresc <span className="text-red-500">*</span>
+            </label>
+            <textarea
+              value={formData.content}
+              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+              className="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none"
+              rows={3}
+              placeholder="Np. Preferuje kontakt mailowy przed 10:00..."
+            />
+          </div>
+
+          {/* Importance + Source */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                Waznosc: <span className="font-bold text-amber-600 dark:text-amber-400">{formData.importance}/5</span>
+              </label>
+              <input
+                type="range"
+                min={1}
+                max={5}
+                value={formData.importance}
+                onChange={(e) => setFormData({ ...formData, importance: parseInt(e.target.value) })}
+                className="w-full accent-blue-600"
+              />
+              <div className="flex justify-between text-xs text-slate-400 dark:text-slate-500 mt-1">
+                <span>Niska</span>
+                <span>Wysoka</span>
               </div>
             </div>
-
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Kategoria</label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  {CATEGORIES.map(c => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Tresc *</label>
-                <textarea
-                  value={formData.content}
-                  onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={3}
-                  placeholder="Np. Preferuje kontakt mailowy przed 10:00..."
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Waznosc (1-5): {formData.importance}
-                  </label>
-                  <input
-                    type="range"
-                    min={1}
-                    max={5}
-                    value={formData.importance}
-                    onChange={(e) => setFormData({ ...formData, importance: parseInt(e.target.value) })}
-                    className="w-full"
-                  />
-                  <div className="flex justify-between text-xs text-gray-400">
-                    <span>Niska</span>
-                    <span>Wysoka</span>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Zrodlo</label>
-                  <input
-                    type="text"
-                    value={formData.source}
-                    onChange={(e) => setFormData({ ...formData, source: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Np. Spotkanie, email..."
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="px-6 py-4 border-t border-gray-200 flex space-x-3">
-              <button
-                onClick={() => setShowAddForm(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                Anuluj
-              </button>
-              <button
-                onClick={handleAdd}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                disabled={!formData.content.trim()}
-              >
-                Dodaj
-              </button>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                Zrodlo
+              </label>
+              <input
+                type="text"
+                value={formData.source}
+                onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+                className="w-full px-3 py-2.5 text-sm bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                placeholder="Np. Spotkanie, email..."
+              />
             </div>
           </div>
         </div>
-      )}
-    </div>
+      </FormModal>
+    </PageShell>
   );
 }

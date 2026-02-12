@@ -3,17 +3,20 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import {
-  CpuChipIcon,
-  ServerIcon,
-  PlusIcon,
-  TrashIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ArrowPathIcon,
-  Cog6ToothIcon,
-  ChartBarIcon,
-} from '@heroicons/react/24/outline';
+  Cpu,
+  Server,
+  Plus,
+  Trash2,
+  CheckCircle,
+  XCircle,
+  RefreshCw,
+  Settings,
+  BarChart3,
+} from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
 
 interface AIProvider {
   id: string;
@@ -167,35 +170,33 @@ export default function AIConfigPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <ArrowPathIcon className="w-8 h-8 animate-spin text-indigo-600" />
-      </div>
+      <PageShell>
+        <SkeletonPage />
+      </PageShell>
     );
   }
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-          <CpuChipIcon className="w-8 h-8 text-indigo-600" />
-          AI Configuration
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Manage AI providers, models and monitor usage
-        </p>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="AI Configuration"
+        subtitle="Manage AI providers, models and monitor usage"
+        icon={Cpu}
+        iconColor="text-indigo-600"
+        breadcrumbs={[{ label: 'Admin', href: '/dashboard/admin' }, { label: 'AI Config' }]}
+      />
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-gray-200 dark:border-gray-700">
+      <div className="flex gap-2 mb-6 border-b border-slate-200 dark:border-slate-700">
         <button
           onClick={() => setActiveTab('providers')}
           className={`px-4 py-2 font-medium ${
             activeTab === 'providers'
               ? 'text-indigo-600 border-b-2 border-indigo-600'
-              : 'text-gray-500 hover:text-gray-700'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
           }`}
         >
-          <ServerIcon className="w-5 h-5 inline mr-2" />
+          <Server className="w-5 h-5 inline mr-2" />
           Providers ({providers.length})
         </button>
         <button
@@ -203,10 +204,10 @@ export default function AIConfigPage() {
           className={`px-4 py-2 font-medium ${
             activeTab === 'models'
               ? 'text-indigo-600 border-b-2 border-indigo-600'
-              : 'text-gray-500 hover:text-gray-700'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
           }`}
         >
-          <Cog6ToothIcon className="w-5 h-5 inline mr-2" />
+          <Settings className="w-5 h-5 inline mr-2" />
           Models ({models.length})
         </button>
         <button
@@ -214,10 +215,10 @@ export default function AIConfigPage() {
           className={`px-4 py-2 font-medium ${
             activeTab === 'usage'
               ? 'text-indigo-600 border-b-2 border-indigo-600'
-              : 'text-gray-500 hover:text-gray-700'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
           }`}
         >
-          <ChartBarIcon className="w-5 h-5 inline mr-2" />
+          <BarChart3 className="w-5 h-5 inline mr-2" />
           Usage
         </button>
       </div>
@@ -226,31 +227,31 @@ export default function AIConfigPage() {
       {activeTab === 'providers' && (
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">AI Providers</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">AI Providers</h2>
             <button
               onClick={() => setShowProviderForm(true)}
               className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
             >
-              <PlusIcon className="w-5 h-5" />
+              <Plus className="w-5 h-5" />
               Add Provider
             </button>
           </div>
 
           {showProviderForm && (
-            <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <h3 className="font-medium mb-4">New Provider</h3>
+            <div className="mb-6 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl">
+              <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-4">New Provider</h3>
               <div className="grid grid-cols-2 gap-4">
                 <input
                   type="text"
                   placeholder="Provider Name"
                   value={newProvider.name}
                   onChange={(e) => setNewProvider({ ...newProvider, name: e.target.value })}
-                  className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100"
                 />
                 <select
                   value={newProvider.type}
                   onChange={(e) => setNewProvider({ ...newProvider, type: e.target.value })}
-                  className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100"
                 >
                   <option value="openai">OpenAI</option>
                   <option value="anthropic">Anthropic</option>
@@ -263,14 +264,14 @@ export default function AIConfigPage() {
                   placeholder="API Key"
                   value={newProvider.apiKey}
                   onChange={(e) => setNewProvider({ ...newProvider, apiKey: e.target.value })}
-                  className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100"
                 />
                 <input
                   type="text"
                   placeholder="Base URL (optional)"
                   value={newProvider.baseUrl}
                   onChange={(e) => setNewProvider({ ...newProvider, baseUrl: e.target.value })}
-                  className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100"
                 />
               </div>
               <div className="flex gap-2 mt-4">
@@ -282,7 +283,7 @@ export default function AIConfigPage() {
                 </button>
                 <button
                   onClick={() => setShowProviderForm(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+                  className="px-4 py-2 bg-slate-300 dark:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-400 dark:hover:bg-slate-500"
                 >
                   Cancel
                 </button>
@@ -294,53 +295,53 @@ export default function AIConfigPage() {
             {providers.map((provider) => (
               <div
                 key={provider.id}
-                className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                className="p-4 bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <ServerIcon className="w-8 h-8 text-indigo-600" />
+                    <Server className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
                     <div>
-                      <h3 className="font-medium text-gray-900 dark:text-white">{provider.name}</h3>
-                      <p className="text-sm text-gray-500">{provider.type}</p>
+                      <h3 className="font-medium text-slate-900 dark:text-slate-100">{provider.name}</h3>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">{provider.type}</p>
                     </div>
                     {provider.isActive ? (
-                      <span className="px-2 py-1 text-xs bg-green-100 text-green-700 rounded-full">Active</span>
+                      <span className="px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full">Active</span>
                     ) : (
-                      <span className="px-2 py-1 text-xs bg-gray-100 text-gray-700 rounded-full">Inactive</span>
+                      <span className="px-2 py-1 text-xs bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-full">Inactive</span>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => testProvider(provider.id)}
                       disabled={testingProvider === provider.id}
-                      className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"
+                      className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
                     >
                       {testingProvider === provider.id ? (
-                        <ArrowPathIcon className="w-5 h-5 animate-spin" />
+                        <RefreshCw className="w-5 h-5 animate-spin" />
                       ) : (
-                        <CheckCircleIcon className="w-5 h-5" />
+                        <CheckCircle className="w-5 h-5" />
                       )}
                     </button>
                     <button
                       onClick={() => toggleProviderActive(provider)}
                       className={`p-2 rounded-lg ${
-                        provider.isActive ? 'text-yellow-600 hover:bg-yellow-50' : 'text-green-600 hover:bg-green-50'
+                        provider.isActive ? 'text-yellow-600 dark:text-yellow-400 hover:bg-yellow-50 dark:hover:bg-yellow-900/20' : 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'
                       }`}
                     >
-                      {provider.isActive ? <XCircleIcon className="w-5 h-5" /> : <CheckCircleIcon className="w-5 h-5" />}
+                      {provider.isActive ? <XCircle className="w-5 h-5" /> : <CheckCircle className="w-5 h-5" />}
                     </button>
                     <button
                       onClick={() => deleteProvider(provider.id)}
-                      className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                      className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg"
                     >
-                      <TrashIcon className="w-5 h-5" />
+                      <Trash2 className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
               </div>
             ))}
             {providers.length === 0 && (
-              <p className="text-center text-gray-500 py-8">No providers configured. Add one to get started.</p>
+              <p className="text-center text-slate-500 dark:text-slate-400 py-8">No providers configured. Add one to get started.</p>
             )}
           </div>
         </div>
@@ -350,24 +351,24 @@ export default function AIConfigPage() {
       {activeTab === 'models' && (
         <div>
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold">AI Models</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">AI Models</h2>
             <button
               onClick={() => setShowModelForm(true)}
               className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
             >
-              <PlusIcon className="w-5 h-5" />
+              <Plus className="w-5 h-5" />
               Add Model
             </button>
           </div>
 
           {showModelForm && (
-            <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-              <h3 className="font-medium mb-4">New Model</h3>
+            <div className="mb-6 p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl">
+              <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-4">New Model</h3>
               <div className="grid grid-cols-2 gap-4">
                 <select
                   value={newModel.providerId}
                   onChange={(e) => setNewModel({ ...newModel, providerId: e.target.value })}
-                  className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100"
                 >
                   <option value="">Select Provider</option>
                   {providers.map((p) => (
@@ -379,28 +380,28 @@ export default function AIConfigPage() {
                   placeholder="Model ID (e.g., gpt-4)"
                   value={newModel.name}
                   onChange={(e) => setNewModel({ ...newModel, name: e.target.value })}
-                  className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100"
                 />
                 <input
                   type="text"
                   placeholder="Display Name"
                   value={newModel.displayName}
                   onChange={(e) => setNewModel({ ...newModel, displayName: e.target.value })}
-                  className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100"
                 />
                 <input
                   type="number"
                   placeholder="Max Tokens"
                   value={newModel.maxTokens}
                   onChange={(e) => setNewModel({ ...newModel, maxTokens: parseInt(e.target.value) })}
-                  className="px-3 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg dark:bg-slate-700 dark:text-slate-100"
                 />
               </div>
               <div className="flex gap-2 mt-4">
                 <button onClick={createModel} className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">
                   Create
                 </button>
-                <button onClick={() => setShowModelForm(false)} className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400">
+                <button onClick={() => setShowModelForm(false)} className="px-4 py-2 bg-slate-300 dark:bg-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-400 dark:hover:bg-slate-500">
                   Cancel
                 </button>
               </div>
@@ -411,26 +412,26 @@ export default function AIConfigPage() {
             {models.map((model) => (
               <div
                 key={model.id}
-                className="p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700"
+                className="p-4 bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm"
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-medium text-gray-900 dark:text-white">{model.displayName}</h3>
-                    <p className="text-sm text-gray-500">{model.name} • {model.type} • {model.maxTokens} tokens</p>
+                    <h3 className="font-medium text-slate-900 dark:text-slate-100">{model.displayName}</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{model.name} &bull; {model.type} &bull; {model.maxTokens} tokens</p>
                   </div>
                   <div className="flex items-center gap-2">
                     {model.isDefault && (
-                      <span className="px-2 py-1 text-xs bg-indigo-100 text-indigo-700 rounded-full">Default</span>
+                      <span className="px-2 py-1 text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">Default</span>
                     )}
-                    <button onClick={() => deleteModel(model.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg">
-                      <TrashIcon className="w-5 h-5" />
+                    <button onClick={() => deleteModel(model.id)} className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg">
+                      <Trash2 className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
               </div>
             ))}
             {models.length === 0 && (
-              <p className="text-center text-gray-500 py-8">No models configured.</p>
+              <p className="text-center text-slate-500 dark:text-slate-400 py-8">No models configured.</p>
             )}
           </div>
         </div>
@@ -439,27 +440,27 @@ export default function AIConfigPage() {
       {/* Usage Tab */}
       {activeTab === 'usage' && (
         <div>
-          <h2 className="text-lg font-semibold mb-4">Usage Statistics</h2>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Usage Statistics</h2>
           {usage ? (
             <div className="grid grid-cols-3 gap-4">
-              <div className="p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                <p className="text-sm text-gray-500">Total Requests</p>
-                <p className="text-3xl font-bold text-indigo-600">{usage.totalRequests.toLocaleString()}</p>
+              <div className="p-6 bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+                <p className="text-sm text-slate-500 dark:text-slate-400">Total Requests</p>
+                <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{usage.totalRequests.toLocaleString()}</p>
               </div>
-              <div className="p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                <p className="text-sm text-gray-500">Total Tokens</p>
-                <p className="text-3xl font-bold text-green-600">{usage.totalTokens.toLocaleString()}</p>
+              <div className="p-6 bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+                <p className="text-sm text-slate-500 dark:text-slate-400">Total Tokens</p>
+                <p className="text-3xl font-bold text-green-600 dark:text-green-400">{usage.totalTokens.toLocaleString()}</p>
               </div>
-              <div className="p-6 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-                <p className="text-sm text-gray-500">Total Cost</p>
-                <p className="text-3xl font-bold text-amber-600">${usage.totalCost.toFixed(2)}</p>
+              <div className="p-6 bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+                <p className="text-sm text-slate-500 dark:text-slate-400">Total Cost</p>
+                <p className="text-3xl font-bold text-amber-600 dark:text-amber-400">${usage.totalCost.toFixed(2)}</p>
               </div>
             </div>
           ) : (
-            <p className="text-center text-gray-500 py-8">No usage data available.</p>
+            <p className="text-center text-slate-500 dark:text-slate-400 py-8">No usage data available.</p>
           )}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

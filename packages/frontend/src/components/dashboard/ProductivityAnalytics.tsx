@@ -4,15 +4,15 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { apiClient } from '@/lib/api/client';
 import {
-  ChartBarIcon,
-  ClockIcon,
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
-  CalendarIcon,
-  ExclamationCircleIcon,
-  LightBulbIcon,
-  ArrowPathIcon
-} from '@heroicons/react/24/outline';
+  BarChart3,
+  Clock,
+  TrendingUp,
+  TrendingDown,
+  Calendar,
+  AlertCircle,
+  Lightbulb,
+  RefreshCw
+} from 'lucide-react';
 
 interface ProductivityMetrics {
   totalTasks: number;
@@ -135,7 +135,7 @@ export default function ProductivityAnalytics() {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg">
-              <ChartBarIcon className="w-5 h-5 text-white" />
+              <BarChart3 className="w-5 h-5 text-white" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-gray-900">Productivity Analytics</h3>
@@ -159,7 +159,7 @@ export default function ProductivityAnalytics() {
               disabled={loading}
               className="btn btn-outline btn-sm"
             >
-              <ArrowPathIcon className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
             </button>
           </div>
         </div>
@@ -183,9 +183,9 @@ export default function ProductivityAnalytics() {
                 </div>
                 <div className="text-blue-600">
                   {analysis.metrics.completionRate >= 70 ? (
-                    <ArrowTrendingUpIcon className="w-6 h-6" />
+                    <TrendingUp className="w-6 h-6" />
                   ) : (
-                    <ArrowTrendingDownIcon className="w-6 h-6" />
+                    <TrendingDown className="w-6 h-6" />
                   )}
                 </div>
               </div>
@@ -204,7 +204,7 @@ export default function ProductivityAnalytics() {
                   </p>
                 </div>
                 <div className="text-green-600">
-                  <ChartBarIcon className="w-6 h-6" />
+                  <BarChart3 className="w-6 h-6" />
                 </div>
               </div>
             </motion.div>
@@ -222,7 +222,7 @@ export default function ProductivityAnalytics() {
                   </p>
                 </div>
                 <div className="text-yellow-600">
-                  <ClockIcon className="w-6 h-6" />
+                  <Clock className="w-6 h-6" />
                 </div>
               </div>
             </motion.div>
@@ -248,7 +248,7 @@ export default function ProductivityAnalytics() {
                   </p>
                 </div>
                 <div className={analysis.metrics.overdueTasks > 0 ? 'text-red-600' : 'text-gray-600'}>
-                  <ExclamationCircleIcon className="w-6 h-6" />
+                  <AlertCircle className="w-6 h-6" />
                 </div>
               </div>
             </motion.div>
@@ -352,7 +352,7 @@ export default function ProductivityAnalytics() {
             {analysis.insights.length > 0 && (
               <div>
                 <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                  <LightBulbIcon className="w-5 h-5 mr-2 text-yellow-500" />
+                  <Lightbulb className="w-5 h-5 mr-2 text-yellow-500" />
                   Key Insights
                 </h4>
                 <div className="space-y-3">
@@ -375,7 +375,7 @@ export default function ProductivityAnalytics() {
             {analysis.recommendations.length > 0 && (
               <div>
                 <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                  <ChartBarIcon className="w-5 h-5 mr-2 text-blue-500" />
+                  <BarChart3 className="w-5 h-5 mr-2 text-blue-500" />
                   Recommendations
                 </h4>
                 <div className="space-y-3">

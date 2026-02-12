@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ClockIcon, XMarkIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { Clock, X, Sparkles } from 'lucide-react';
 import { billingApi, SubscriptionDetails } from '@/lib/api/billing';
 
 interface TrialBannerProps {
@@ -64,9 +64,9 @@ export default function TrialBanner({ onClose, className = '' }: TrialBannerProp
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3 text-white">
           {isUrgent ? (
-            <ClockIcon className="h-5 w-5 animate-pulse" />
+            <Clock className="h-5 w-5 animate-pulse" />
           ) : (
-            <SparklesIcon className="h-5 w-5" />
+            <Sparkles className="h-5 w-5" />
           )}
           <span className="text-sm font-medium">
             {isUrgent ? (
@@ -102,7 +102,7 @@ export default function TrialBanner({ onClose, className = '' }: TrialBannerProp
             className="p-1 rounded-full text-white/80 hover:text-white hover:bg-white/20 transition-colors"
             aria-label="Zamknij"
           >
-            <XMarkIcon className="h-5 w-5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
       </div>

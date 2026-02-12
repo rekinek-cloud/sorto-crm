@@ -5,14 +5,14 @@ import { SmartAnalysisResult } from '@/lib/api/smart';
 import { smartApi } from '@/lib/api/smart';
 import { toast } from 'react-hot-toast';
 import {
-  XMarkIcon,
-  ChartBarIcon,
-  CheckCircleIcon,
-  ExclamationCircleIcon,
-  LightBulbIcon,
-  TrophyIcon,
-  ArrowPathIcon
-} from '@heroicons/react/24/outline';
+  X,
+  BarChart3,
+  CheckCircle,
+  AlertCircle,
+  Lightbulb,
+  Trophy,
+  RefreshCw
+} from 'lucide-react';
 
 interface SmartAnalysisModalProps {
   isOpen: boolean;
@@ -91,7 +91,7 @@ export default function SmartAnalysisModal({
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div className="flex items-center space-x-3">
-            <ChartBarIcon className="h-6 w-6 text-blue-600" />
+            <BarChart3 className="h-6 w-6 text-blue-600" />
             <div>
               <h2 className="text-xl font-semibold text-gray-900">SMART Analysis</h2>
               <p className="text-sm text-gray-600">{itemTitle}</p>
@@ -101,7 +101,7 @@ export default function SmartAnalysisModal({
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
           >
-            <XMarkIcon className="h-6 w-6" />
+            <X className="h-6 w-6" />
           </button>
         </div>
 
@@ -110,7 +110,7 @@ export default function SmartAnalysisModal({
           {!analysis ? (
             // Initial state - no analysis yet
             <div className="text-center py-12">
-              <ChartBarIcon className="mx-auto h-16 w-16 text-gray-400" />
+              <BarChart3 className="mx-auto h-16 w-16 text-gray-400" />
               <h3 className="mt-4 text-lg font-medium text-gray-900">
                 Analyze SMART Goals
               </h3>
@@ -124,9 +124,9 @@ export default function SmartAnalysisModal({
                 className="mt-6 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 mx-auto"
               >
                 {isAnalyzing ? (
-                  <ArrowPathIcon className="h-5 w-5 animate-spin" />
+                  <RefreshCw className="h-5 w-5 animate-spin" />
                 ) : (
-                  <ChartBarIcon className="h-5 w-5" />
+                  <BarChart3 className="h-5 w-5" />
                 )}
                 <span>{isAnalyzing ? 'Analyzing...' : 'Start Analysis'}</span>
               </button>
@@ -172,7 +172,7 @@ export default function SmartAnalysisModal({
                           <div className="space-y-1">
                             {data.suggestions.slice(0, 2).map((suggestion, idx) => (
                               <p key={idx} className="text-xs text-gray-500 flex items-start space-x-1">
-                                <LightBulbIcon className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                <Lightbulb className="h-3 w-3 mt-0.5 flex-shrink-0" />
                                 <span>{suggestion}</span>
                               </p>
                             ))}
@@ -190,13 +190,13 @@ export default function SmartAnalysisModal({
                 {analysis.strengths.length > 0 && (
                   <div className="bg-green-50 rounded-lg p-6">
                     <div className="flex items-center space-x-2 mb-4">
-                      <TrophyIcon className="h-5 w-5 text-green-600" />
+                      <Trophy className="h-5 w-5 text-green-600" />
                       <h4 className="font-semibold text-green-900">Strengths</h4>
                     </div>
                     <ul className="space-y-2">
                       {analysis.strengths.map((strength, idx) => (
                         <li key={idx} className="flex items-center space-x-2 text-sm text-green-800">
-                          <CheckCircleIcon className="h-4 w-4 text-green-600" />
+                          <CheckCircle className="h-4 w-4 text-green-600" />
                           <span>{strength}</span>
                         </li>
                       ))}
@@ -208,13 +208,13 @@ export default function SmartAnalysisModal({
                 {analysis.weaknesses.length > 0 && (
                   <div className="bg-red-50 rounded-lg p-6">
                     <div className="flex items-center space-x-2 mb-4">
-                      <ExclamationCircleIcon className="h-5 w-5 text-red-600" />
+                      <AlertCircle className="h-5 w-5 text-red-600" />
                       <h4 className="font-semibold text-red-900">Areas for Improvement</h4>
                     </div>
                     <ul className="space-y-2">
                       {analysis.weaknesses.map((weakness, idx) => (
                         <li key={idx} className="flex items-center space-x-2 text-sm text-red-800">
-                          <ExclamationCircleIcon className="h-4 w-4 text-red-600" />
+                          <AlertCircle className="h-4 w-4 text-red-600" />
                           <span>{weakness}</span>
                         </li>
                       ))}
@@ -227,7 +227,7 @@ export default function SmartAnalysisModal({
               {analysis.recommendations.length > 0 && (
                 <div className="bg-blue-50 rounded-lg p-6">
                   <div className="flex items-center space-x-2 mb-4">
-                    <LightBulbIcon className="h-5 w-5 text-blue-600" />
+                    <Lightbulb className="h-5 w-5 text-blue-600" />
                     <h4 className="font-semibold text-blue-900">Recommendations</h4>
                   </div>
                   <ul className="space-y-3">
@@ -251,9 +251,9 @@ export default function SmartAnalysisModal({
                   className="bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
                 >
                   {isAnalyzing ? (
-                    <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                    <RefreshCw className="h-4 w-4 animate-spin" />
                   ) : (
-                    <ArrowPathIcon className="h-4 w-4" />
+                    <RefreshCw className="h-4 w-4" />
                   )}
                   <span>{isAnalyzing ? 'Re-analyzing...' : 'Re-analyze'}</span>
                 </button>

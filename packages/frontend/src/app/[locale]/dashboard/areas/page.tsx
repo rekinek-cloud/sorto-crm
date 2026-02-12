@@ -9,13 +9,23 @@ import AreaForm from '@/components/areas/AreaForm';
 import AreaFiltersComponent from '@/components/areas/AreaFilters';
 import { toast } from 'react-hot-toast';
 import {
-  PlusIcon,
-  FunnelIcon,
-  ViewColumnsIcon,
-  ListBulletIcon,
-  MagnifyingGlassIcon,
-  ChartBarIcon,
-} from '@heroicons/react/24/outline';
+  Plus,
+  Filter,
+  LayoutGrid,
+  List,
+  Search,
+  BarChart3,
+  Layers,
+  CheckCircle,
+  FolderOpen,
+  Clock,
+  Map,
+  Pencil,
+  Trash2,
+} from 'lucide-react';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { SkeletonPage } from '@/components/ui/SkeletonPage';
 
 type ViewMode = 'grid' | 'list';
 
@@ -68,7 +78,7 @@ export default function AreasPage() {
       setPagination(areasData.pagination);
       setStats(statsData);
     } catch (error: any) {
-      toast.error('Failed to load areas');
+      toast.error('Nie udalo sie zaladowac obszarow');
       console.error('Error loading areas:', error);
     } finally {
       setIsLoading(false);
@@ -81,7 +91,7 @@ export default function AreasPage() {
       setAreas(areasData.areas);
       setPagination(areasData.pagination);
     } catch (error: any) {
-      toast.error('Failed to load areas');
+      toast.error('Nie udalo sie zaladowac obszarow');
       console.error('Error loading areas:', error);
     }
   };
@@ -89,11 +99,11 @@ export default function AreasPage() {
   const handleCreate = async (data: any) => {
     try {
       await areasApi.createArea(data);
-      toast.success('Area created successfully');
+      toast.success('Obszar utworzony pomyslnie');
       setIsAreaFormOpen(false);
-      loadData(); // Reload both areas and stats
+      loadData();
     } catch (error: any) {
-      toast.error('Failed to create area');
+      toast.error('Nie udalo sie utworzyc obszaru');
       console.error('Error creating area:', error);
     }
   };
@@ -101,28 +111,28 @@ export default function AreasPage() {
   const handleEdit = async (id: string, data: any) => {
     try {
       await areasApi.updateArea(id, data);
-      toast.success('Area updated successfully');
+      toast.success('Obszar zaktualizowany pomyslnie');
       setEditingArea(undefined);
       setIsAreaFormOpen(false);
       loadData();
     } catch (error: any) {
-      toast.error('Failed to update area');
+      toast.error('Nie udalo sie zaktualizowac obszaru');
       console.error('Error updating area:', error);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this area?')) return;
-    
+    if (!confirm('Czy na pewno chcesz usunac ten obszar?')) return;
+
     try {
       await areasApi.deleteArea(id);
-      toast.success('Area deleted successfully');
+      toast.success('Obszar usuniety pomyslnie');
       loadData();
     } catch (error: any) {
       if (error.response?.data?.projectCount) {
-        toast.error(`Cannot delete area: ${error.response.data.projectCount} associated projects`);
+        toast.error(`Nie mozna usunac obszaru: ${error.response.data.projectCount} powiazanych projektow`);
       } else {
-        toast.error('Failed to delete area');
+        toast.error('Nie udalo sie usunac obszaru');
       }
       console.error('Error deleting area:', error);
     }
@@ -147,86 +157,87 @@ export default function AreasPage() {
     setFilters(prev => ({ ...prev, page }));
   };
 
+  if (isLoading) {
+    return (
+      <PageShell>
+        <SkeletonPage withStats={true} rows={6} />
+      </PageShell>
+    );
+  }
+
   return (
-    <motion.div
-      className="space-y-6"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Areas of Responsibility</h1>
-          <p className="text-gray-600">Define your roles and life areas to organize projects effectively</p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          {/* Search */}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search areas..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-            <MagnifyingGlassIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-          </div>
+    <PageShell>
+      <PageHeader
+        title="Obszary odpowiedzialnosci"
+        subtitle="Definiuj role i zyciowe obszary do efektywnej organizacji projektow"
+        icon={Layers}
+        iconColor="text-indigo-600"
+        actions={
+          <div className="flex items-center gap-3">
+            {/* Search */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Szukaj obszarow..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                className="pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white/80 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400 dark:text-slate-500" />
+            </div>
 
-          {/* View toggle */}
-          <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+            {/* View toggle */}
+            <div className="flex rounded-lg border border-slate-300 dark:border-slate-600 overflow-hidden">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 ${viewMode === 'grid'
+                  ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                <LayoutGrid className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 ${viewMode === 'list'
+                  ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                <List className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Filters */}
             <button
-              onClick={() => setViewMode('grid')}
-              className={`p-2 ${viewMode === 'grid' 
-                ? 'bg-primary-50 text-primary-700 border-primary-200' 
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
+              onClick={() => setShowFilters(!showFilters)}
+              className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center transition-colors"
             >
-              <ViewColumnsIcon className="w-5 h-5" />
+              <Filter className="w-5 h-5 mr-2" />
+              Filtry
             </button>
+
+            {/* Roadmap */}
             <button
-              onClick={() => setViewMode('list')}
-              className={`p-2 ${viewMode === 'list' 
-                ? 'bg-primary-50 text-primary-700 border-primary-200' 
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
+              onClick={() => window.location.href = '/dashboard/areas/roadmap'}
+              className="px-4 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center transition-colors"
             >
-              <ListBulletIcon className="w-5 h-5" />
+              <Map className="w-4 h-4 mr-2" />
+              Roadmapa
+            </button>
+
+            {/* New Area */}
+            <button
+              onClick={() => setIsAreaFormOpen(true)}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center transition-colors"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Nowy obszar
             </button>
           </div>
-
-          {/* Filters */}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="btn btn-outline"
-          >
-            <FunnelIcon className="w-5 h-5 mr-2" />
-            Filters
-          </button>
-
-          {/* Roadmap */}
-          <button
-            onClick={() => window.location.href = '/dashboard/areas/roadmap'}
-            className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center"
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-            </svg>
-            Roadmap
-          </button>
-
-          {/* New Area */}
-          <button
-            onClick={() => setIsAreaFormOpen(true)}
-            className="btn btn-primary"
-          >
-            <PlusIcon className="w-5 h-5 mr-2" />
-            New Area
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Filters Panel */}
       {showFilters && (
@@ -239,50 +250,50 @@ export default function AreasPage() {
       {/* Statistics */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <div className="w-6 h-6 text-blue-600">🏞️</div>
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                <Layers className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Areas</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.totalAreas}</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Wszystkie obszary</p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{stats.totalAreas}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <div className="w-6 h-6 text-green-600">✅</div>
+              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-xl">
+                <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Active Areas</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.activeAreas}</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Aktywne obszary</p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{stats.activeAreas}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <div className="w-6 h-6 text-purple-600">📁</div>
+              <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
+                <FolderOpen className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">With Projects</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.areasWithProjects}</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Z projektami</p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{stats.areasWithProjects}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <div className="w-6 h-6 text-yellow-600">🕒</div>
+              <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl">
+                <Clock className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Recently Updated</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.recentlyUpdated}</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Ostatnio zmienione</p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{stats.recentlyUpdated}</p>
               </div>
             </div>
           </div>
@@ -290,23 +301,19 @@ export default function AreasPage() {
       )}
 
       {/* Areas List */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        </div>
-      ) : filteredAreas.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-12 text-center">
-          <div className="text-6xl mb-4">🏞️</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Areas Found</h3>
-          <p className="text-gray-600 mb-6">
-            {searchQuery ? 'No areas match your search criteria.' : 'Start organizing your life by defining your first area of responsibility.'}
+      {filteredAreas.length === 0 ? (
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-12 text-center">
+          <Layers className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Nie znaleziono obszarow</h3>
+          <p className="text-slate-600 dark:text-slate-400 mb-6">
+            {searchQuery ? 'Zaden obszar nie pasuje do kryteriow wyszukiwania.' : 'Zacznij organizowac swoje zycie definiujac pierwszy obszar odpowiedzialnosci.'}
           </p>
           <button
             onClick={() => setIsAreaFormOpen(true)}
-            className="btn btn-primary"
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg flex items-center mx-auto transition-colors"
           >
-            <PlusIcon className="w-5 h-5 mr-2" />
-            Create First Area
+            <Plus className="w-5 h-5 mr-2" />
+            Utworz pierwszy obszar
           </button>
         </div>
       ) : (
@@ -332,46 +339,46 @@ export default function AreasPage() {
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">Areas List</h3>
+            <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">Lista obszarow</h3>
               </div>
-              <div className="divide-y divide-gray-200">
+              <div className="divide-y divide-slate-200 dark:divide-slate-700">
                 {filteredAreas.map((area) => (
-                  <div key={area.id} className="p-6 hover:bg-gray-50">
+                  <div key={area.id} className="p-6 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3">
-                          <div 
+                          <div
                             className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-semibold"
                             style={{ backgroundColor: area.color }}
                           >
                             {area.icon || area.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <h4 className="text-lg font-medium text-gray-900">{area.name}</h4>
+                            <h4 className="text-lg font-medium text-slate-900 dark:text-slate-100">{area.name}</h4>
                             {area.description && (
-                              <p className="text-sm text-gray-600">{area.description}</p>
+                              <p className="text-sm text-slate-600 dark:text-slate-400">{area.description}</p>
                             )}
                           </div>
                           <span
                             className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              area.isActive 
-                                ? 'bg-green-100 text-green-700' 
-                                : 'bg-gray-100 text-gray-700'
+                              area.isActive
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-400'
                             }`}
                           >
-                            {area.isActive ? 'Active' : 'Inactive'}
+                            {area.isActive ? 'Aktywny' : 'Nieaktywny'}
                           </span>
                         </div>
-                        <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
+                        <div className="mt-2 flex items-center space-x-4 text-sm text-slate-500 dark:text-slate-400">
                           <span className="flex items-center">
-                            <ChartBarIcon className="w-4 h-4 mr-1" />
-                            {area._count?.projects || 0} projects
+                            <BarChart3 className="w-4 h-4 mr-1" />
+                            {area._count?.projects || 0} projektow
                           </span>
-                          <span>Review: {area.reviewFrequency.toLowerCase()}</span>
+                          <span>Przeglad: {area.reviewFrequency.toLowerCase()}</span>
                           {area.currentFocus && (
-                            <span>Focus: {area.currentFocus}</span>
+                            <span>Fokus: {area.currentFocus}</span>
                           )}
                         </div>
                       </div>
@@ -381,19 +388,15 @@ export default function AreasPage() {
                             setEditingArea(area);
                             setIsAreaFormOpen(true);
                           }}
-                          className="text-gray-400 hover:text-gray-600"
+                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                         >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
+                          <Pencil className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => handleDelete(area.id)}
-                          className="text-gray-400 hover:text-red-600"
+                          className="text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                         >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
+                          <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
                     </div>
@@ -406,18 +409,18 @@ export default function AreasPage() {
           {/* Pagination */}
           {pagination.pages > 1 && (
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-700">
-                Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
-                {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-                {pagination.total} results
+              <div className="text-sm text-slate-700 dark:text-slate-300">
+                Wyswietlanie {(pagination.page - 1) * pagination.limit + 1} do{' '}
+                {Math.min(pagination.page * pagination.limit, pagination.total)} z{' '}
+                {pagination.total} wynikow
               </div>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => handlePageChange(pagination.page - 1)}
                   disabled={!pagination.hasPrev}
-                  className="btn btn-outline btn-sm"
+                  className="px-3 py-1 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
                 >
-                  Previous
+                  Poprzednia
                 </button>
                 {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
                   const page = i + 1;
@@ -425,9 +428,11 @@ export default function AreasPage() {
                     <button
                       key={page}
                       onClick={() => handlePageChange(page)}
-                      className={`btn btn-sm ${
-                        page === pagination.page ? 'btn-primary' : 'btn-outline'
-                      }`}
+                      className={`px-3 py-1 rounded-lg text-sm ${
+                        page === pagination.page
+                          ? 'bg-indigo-600 text-white'
+                          : 'border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                      } transition-colors`}
                     >
                       {page}
                     </button>
@@ -436,9 +441,9 @@ export default function AreasPage() {
                 <button
                   onClick={() => handlePageChange(pagination.page + 1)}
                   disabled={!pagination.hasNext}
-                  className="btn btn-outline btn-sm"
+                  className="px-3 py-1 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
                 >
-                  Next
+                  Nastepna
                 </button>
               </div>
             </div>
@@ -450,8 +455,8 @@ export default function AreasPage() {
       {isAreaFormOpen && (
         <AreaForm
           area={editingArea}
-          onSubmit={editingArea ? 
-            (data) => handleEdit(editingArea.id, data) : 
+          onSubmit={editingArea ?
+            (data) => handleEdit(editingArea.id, data) :
             handleCreate
           }
           onCancel={() => {
@@ -460,6 +465,6 @@ export default function AreasPage() {
           }}
         />
       )}
-    </motion.div>
+    </PageShell>
   );
 }

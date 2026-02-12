@@ -1,52 +1,87 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import { Project, ProjectFilters, Stream } from '@/types/gtd';
 import { projectsApi, gtdHelpers } from '@/lib/api/gtd';
 import { streamsApi } from '@/lib/api/streams';
-import ProjectCard from '@/components/projects/ProjectCard';
 import ProjectForm from '@/components/projects/ProjectForm';
-import ProjectFiltersComponent from '@/components/projects/ProjectFilters';
 import { toast } from 'react-hot-toast';
 import {
-  PlusIcon,
-  FunnelIcon,
-  ViewColumnsIcon,
-  ListBulletIcon,
-  MagnifyingGlassIcon,
-} from '@heroicons/react/24/outline';
+  FolderKanban,
+  Plus,
+  LayoutGrid,
+  List,
+  BarChart3,
+  Map,
+  FolderTree,
+  Link2,
+  Pencil,
+  Trash2,
+  Calendar,
+  User,
+  Activity,
+  CheckCircle2,
+  AlertTriangle,
+  PauseCircle,
+} from 'lucide-react';
+
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { FilterBar } from '@/components/ui/FilterBar';
+import { DataTable, Column } from '@/components/ui/DataTable';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ActionButton } from '@/components/ui/ActionButton';
+import { StatCard } from '@/components/ui/StatCard';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
 
 type ViewMode = 'grid' | 'list';
 
+const STATUS_MAP: Record<string, { label: string; variant: 'default' | 'success' | 'warning' | 'error' | 'info' | 'neutral' }> = {
+  PLANNING: { label: 'Planowanie', variant: 'info' },
+  IN_PROGRESS: { label: 'W trakcie', variant: 'warning' },
+  ON_HOLD: { label: 'Wstrzymany', variant: 'neutral' },
+  COMPLETED: { label: 'Ukończony', variant: 'success' },
+  CANCELED: { label: 'Anulowany', variant: 'error' },
+};
+
+const PRIORITY_MAP: Record<string, { label: string; variant: 'default' | 'success' | 'warning' | 'error' | 'info' | 'neutral' }> = {
+  LOW: { label: 'Niski', variant: 'neutral' },
+  MEDIUM: { label: 'Średni', variant: 'info' },
+  HIGH: { label: 'Wysoki', variant: 'warning' },
+  URGENT: { label: 'Pilny', variant: 'error' },
+};
+
 export default function ProjectsPage() {
+  const router = useRouter();
   const [projects, setProjects] = useState<Project[]>([]);
   const [streams, setStreams] = useState<Stream[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isProjectFormOpen, setIsProjectFormOpen] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | undefined>();
-  const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+  const [sortValue, setSortValue] = useState('name-asc');
   const [filters, setFilters] = useState<ProjectFilters>({
     page: 1,
-    limit: 20,
+    limit: 100,
     sortBy: 'name',
     sortOrder: 'asc'
   });
   const [pagination, setPagination] = useState({
     page: 1,
-    limit: 20,
+    limit: 100,
     total: 0,
     pages: 0
   });
 
-  // Load initial data
   useEffect(() => {
     loadData();
   }, []);
 
-  // Load projects when filters change
   useEffect(() => {
     if (!isLoading) {
       loadProjects();
@@ -65,7 +100,7 @@ export default function ProjectsPage() {
       setPagination(projectsData.pagination);
       setStreams(streamsData.streams);
     } catch (error: any) {
-      toast.error('Failed to load projects');
+      toast.error('Nie udalo sie zaladowac projektow');
       console.error('Error loading projects:', error);
     } finally {
       setIsLoading(false);
@@ -78,7 +113,7 @@ export default function ProjectsPage() {
       setProjects(projectsData.projects);
       setPagination(projectsData.pagination);
     } catch (error: any) {
-      toast.error('Failed to load projects');
+      toast.error('Nie udalo sie zaladowac projektow');
       console.error('Error loading projects:', error);
     }
   };
@@ -86,11 +121,11 @@ export default function ProjectsPage() {
   const handleCreate = async (data: any) => {
     try {
       await projectsApi.createProject(data);
-      toast.success('Project created successfully');
+      toast.success('Projekt utworzony pomyslnie');
       setIsProjectFormOpen(false);
       loadProjects();
     } catch (error: any) {
-      toast.error('Failed to create project');
+      toast.error('Nie udalo sie utworzyc projektu');
       console.error('Error creating project:', error);
     }
   };
@@ -98,400 +133,558 @@ export default function ProjectsPage() {
   const handleEdit = async (id: string, data: any) => {
     try {
       await projectsApi.updateProject(id, data);
-      toast.success('Project updated successfully');
+      toast.success('Projekt zaktualizowany pomyslnie');
       setEditingProject(undefined);
       setIsProjectFormOpen(false);
       loadProjects();
     } catch (error: any) {
-      toast.error('Failed to update project');
+      toast.error('Nie udalo sie zaktualizowac projektu');
       console.error('Error updating project:', error);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this project?')) return;
-    
+    if (!confirm('Czy na pewno chcesz usunac ten projekt?')) return;
+
     try {
       await projectsApi.deleteProject(id);
-      toast.success('Project deleted successfully');
+      toast.success('Projekt usuniety pomyslnie');
       loadProjects();
     } catch (error: any) {
-      toast.error('Failed to delete project');
+      toast.error('Nie udalo sie usunac projektu');
       console.error('Error deleting project:', error);
     }
   };
 
-  const handleSearch = () => {
+  const handleFilterChange = (key: string, value: string) => {
+    setFilterValues(prev => ({ ...prev, [key]: value }));
+    if (key === 'status') {
+      setFilters(prev => ({
+        ...prev,
+        status: value === 'all' ? undefined : value,
+        page: 1,
+      }));
+    } else if (key === 'priority') {
+      setFilters(prev => ({
+        ...prev,
+        priority: value === 'all' ? undefined : value,
+        page: 1,
+      }));
+    } else if (key === 'stream') {
+      setFilters(prev => ({
+        ...prev,
+        streamId: value === 'all' ? undefined : value,
+        page: 1,
+      }));
+    }
+  };
+
+  const handleSortChange = (value: string) => {
+    setSortValue(value);
+    const [sortBy, sortOrder] = value.split('-');
     setFilters(prev => ({
       ...prev,
-      search: searchQuery,
-      page: 1
+      sortBy,
+      sortOrder: sortOrder as 'asc' | 'desc',
+      page: 1,
     }));
   };
 
-  const filteredProjects = projects.filter(project => {
-    if (!searchQuery) return true;
-    return project.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-           project.description?.toLowerCase().includes(searchQuery.toLowerCase());
-  });
-
-  const handlePageChange = (page: number) => {
-    setFilters(prev => ({ ...prev, page }));
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setFilters(prev => ({
+      ...prev,
+      search: value || undefined,
+      page: 1,
+    }));
   };
 
-  return (
-    <motion.div
-      className="space-y-6"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+  const filteredProjects = useMemo(() => {
+    return projects;
+  }, [projects]);
+
+  const activeCount = useMemo(() => projects.filter(p => p.status === 'IN_PROGRESS').length, [projects]);
+  const completedCount = useMemo(() => projects.filter(p => p.status === 'COMPLETED').length, [projects]);
+  const onHoldCount = useMemo(() => projects.filter(p => p.status === 'ON_HOLD').length, [projects]);
+
+  const navigateToProject = (id: string) => {
+    router.push(`/dashboard/projects/${id}`);
+  };
+
+  const tableColumns: Column<Project>[] = [
+    {
+      key: 'name',
+      label: 'Nazwa',
+      sortable: true,
+      render: (_val: any, row: Project) => (
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Projects</h1>
-          <p className="text-gray-600">Organizuj pracę w znaczące projekty</p>
+          <div className="font-medium text-slate-900 dark:text-slate-100">{row.name}</div>
+          {row.description && (
+            <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-1">{row.description}</div>
+          )}
         </div>
-        
-        <div className="flex items-center gap-3">
-          {/* Search */}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search projects..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-            <MagnifyingGlassIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_val: any, row: Project) => {
+        const s = STATUS_MAP[row.status] || { label: row.status, variant: 'default' as const };
+        return <StatusBadge variant={s.variant} dot>{s.label}</StatusBadge>;
+      },
+    },
+    {
+      key: 'priority',
+      label: 'Priorytet',
+      sortable: true,
+      render: (_val: any, row: Project) => {
+        const p = PRIORITY_MAP[row.priority] || { label: row.priority, variant: 'default' as const };
+        return <StatusBadge variant={p.variant}>{p.label}</StatusBadge>;
+      },
+    },
+    {
+      key: 'stream',
+      label: 'Strumien',
+      sortable: false,
+      render: (_val: any, row: Project) => (
+        <span className="text-slate-600 dark:text-slate-400">
+          {row.stream?.name || '-'}
+        </span>
+      ),
+    },
+    {
+      key: 'progress',
+      label: 'Postep',
+      sortable: true,
+      getValue: (row: Project) => row.stats?.progress || 0,
+      render: (_val: any, row: Project) => {
+        const progress = row.stats?.progress || 0;
+        return (
+          <div className="flex items-center gap-2 min-w-[120px]">
+            <div className="flex-1 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+            <span className="text-xs font-medium text-slate-600 dark:text-slate-400 w-9 text-right">
+              {Math.round(progress)}%
+            </span>
           </div>
-
-          {/* View toggle */}
-          <div className="flex rounded-lg border border-gray-300 overflow-hidden">
-            <button
-              onClick={() => setViewMode('grid')}
-              className={`p-2 ${viewMode === 'grid' 
-                ? 'bg-primary-50 text-primary-700 border-primary-200' 
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <ViewColumnsIcon className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`p-2 ${viewMode === 'list' 
-                ? 'bg-primary-50 text-primary-700 border-primary-200' 
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <ListBulletIcon className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Filters */}
+        );
+      },
+    },
+    {
+      key: 'tasks',
+      label: 'Zadania',
+      sortable: false,
+      render: (_val: any, row: Project) => {
+        const total = row.stats?.totalTasks || 0;
+        const done = row.stats?.completedTasks || 0;
+        return (
+          <span className="text-slate-600 dark:text-slate-400 text-sm">
+            {done}/{total}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'endDate',
+      label: 'Termin',
+      sortable: true,
+      render: (_val: any, row: Project) => {
+        if (!row.endDate) return <span className="text-slate-400 dark:text-slate-500">-</span>;
+        const isOverdue = new Date(row.endDate) < new Date() && row.status !== 'COMPLETED';
+        return (
+          <span className={isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-slate-600 dark:text-slate-400'}>
+            {gtdHelpers.formatDate(row.endDate)}
+          </span>
+        );
+      },
+    },
+    {
+      key: 'actions',
+      label: '',
+      sortable: false,
+      width: 'w-20',
+      render: (_val: any, row: Project) => (
+        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
           <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="btn btn-outline"
+            onClick={() => {
+              setEditingProject(row);
+              setIsProjectFormOpen(true);
+            }}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors"
+            title="Edytuj"
           >
-            <FunnelIcon className="w-5 h-5 mr-2" />
-            Filters
+            <Pencil className="w-4 h-4" />
           </button>
-
-          {/* Burndown Chart */}
           <button
-            onClick={() => window.location.href = '/dashboard/projects/burndown'}
-            className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center"
+            onClick={() => handleDelete(row.id)}
+            className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+            title="Usun"
           >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            Burndown Charts
-          </button>
-
-          {/* Roadmap */}
-          <button
-            onClick={() => window.location.href = '/dashboard/projects/roadmap'}
-            className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center"
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
-            </svg>
-            Roadmap
-          </button>
-
-          {/* WBS Templates */}
-          <button
-            onClick={() => window.location.href = '/dashboard/projects/wbs-templates'}
-            className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center"
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-5l-2-2H5a2 2 0 00-2 2z" />
-            </svg>
-            WBS Templates
-          </button>
-
-          {/* WBS Dependencies */}
-          <button
-            onClick={() => window.location.href = '/dashboard/projects/wbs-dependencies'}
-            className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center"
-          >
-            <svg className="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-            </svg>
-            WBS Dependencies
-          </button>
-
-          {/* New Project */}
-          <button
-            onClick={() => setIsProjectFormOpen(true)}
-            className="btn btn-primary"
-          >
-            <PlusIcon className="w-5 h-5 mr-2" />
-            New Project
+            <Trash2 className="w-4 h-4" />
           </button>
         </div>
-      </div>
+      ),
+    },
+  ];
 
-      {/* Filters Panel */}
-      {showFilters && (
-        <ProjectFiltersComponent
-          filters={filters}
-          onFiltersChange={setFilters}
-          streams={streams}
+  const streamFilterOptions = useMemo(
+    () => streams.map(s => ({ value: s.id, label: s.name })),
+    [streams]
+  );
+
+  if (isLoading) {
+    return (
+      <PageShell>
+        <SkeletonPage />
+      </PageShell>
+    );
+  }
+
+  return (
+    <PageShell>
+      <PageHeader
+        title="Projekty"
+        subtitle="Organizuj prace w znaczace projekty"
+        icon={FolderKanban}
+        iconColor="text-blue-600"
+        breadcrumbs={[{ label: 'Projekty' }]}
+        actions={
+          <div className="flex items-center gap-2">
+            <ActionButton
+              variant="ghost"
+              size="sm"
+              icon={BarChart3}
+              onClick={() => router.push('/dashboard/projects/burndown')}
+            >
+              Wykresy
+            </ActionButton>
+            <ActionButton
+              variant="ghost"
+              size="sm"
+              icon={Map}
+              onClick={() => router.push('/dashboard/projects/roadmap')}
+            >
+              Mapa drogowa
+            </ActionButton>
+            <ActionButton
+              variant="ghost"
+              size="sm"
+              icon={FolderTree}
+              onClick={() => router.push('/dashboard/projects/wbs-templates')}
+            >
+              Szablony WBS
+            </ActionButton>
+            <ActionButton
+              variant="ghost"
+              size="sm"
+              icon={Link2}
+              onClick={() => router.push('/dashboard/projects/wbs-dependencies')}
+            >
+              Zaleznosci
+            </ActionButton>
+            <ActionButton
+              variant="primary"
+              icon={Plus}
+              onClick={() => setIsProjectFormOpen(true)}
+            >
+              Nowy projekt
+            </ActionButton>
+          </div>
+        }
+      />
+
+      {/* Statystyki */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+      >
+        <StatCard
+          label="Wszystkie projekty"
+          value={pagination.total}
+          icon={FolderKanban}
+          iconColor="text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"
         />
-      )}
+        <StatCard
+          label="W trakcie"
+          value={activeCount}
+          icon={Activity}
+          iconColor="text-amber-600 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-400"
+        />
+        <StatCard
+          label="Ukonczone"
+          value={completedCount}
+          icon={CheckCircle2}
+          iconColor="text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400"
+        />
+        <StatCard
+          label="Wstrzymane"
+          value={onHoldCount}
+          icon={PauseCircle}
+          iconColor="text-slate-600 bg-slate-100 dark:bg-slate-800 dark:text-slate-400"
+        />
+      </motion.div>
 
-      {/* Projects Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <div className="w-6 h-6 text-blue-600">📁</div>
+      {/* Filtrowanie */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="mb-6"
+      >
+        <FilterBar
+          search={searchQuery}
+          onSearchChange={handleSearchChange}
+          searchPlaceholder="Szukaj projektow..."
+          filters={[
+            {
+              key: 'status',
+              label: 'Status',
+              options: [
+                { value: 'PLANNING', label: 'Planowanie' },
+                { value: 'IN_PROGRESS', label: 'W trakcie' },
+                { value: 'ON_HOLD', label: 'Wstrzymany' },
+                { value: 'COMPLETED', label: 'Ukończony' },
+                { value: 'CANCELED', label: 'Anulowany' },
+              ],
+            },
+            {
+              key: 'priority',
+              label: 'Priorytet',
+              options: [
+                { value: 'LOW', label: 'Niski' },
+                { value: 'MEDIUM', label: 'Sredni' },
+                { value: 'HIGH', label: 'Wysoki' },
+                { value: 'URGENT', label: 'Pilny' },
+              ],
+            },
+            {
+              key: 'stream',
+              label: 'Strumien',
+              options: streamFilterOptions,
+            },
+          ]}
+          filterValues={filterValues}
+          onFilterChange={handleFilterChange}
+          sortOptions={[
+            { value: 'name-asc', label: 'Nazwa A-Z' },
+            { value: 'name-desc', label: 'Nazwa Z-A' },
+            { value: 'createdAt-desc', label: 'Najnowsze' },
+            { value: 'createdAt-asc', label: 'Najstarsze' },
+            { value: 'updatedAt-desc', label: 'Ostatnio zmienione' },
+          ]}
+          sortValue={sortValue}
+          onSortChange={handleSortChange}
+          actions={
+            <div className="flex items-center rounded-lg border border-slate-200 dark:border-slate-700 overflow-hidden">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 transition-colors ${
+                  viewMode === 'grid'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+                title="Widok siatki"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-blue-600 text-white'
+                    : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+                title="Widok listy"
+              >
+                <List className="w-4 h-4" />
+              </button>
             </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Projects</p>
-              <p className="text-2xl font-semibold text-gray-900">{pagination.total}</p>
-            </div>
-          </div>
-        </div>
+          }
+        />
+      </motion.div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <div className="w-6 h-6 text-yellow-600">⚡</div>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">In Progress</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {projects.filter(p => p.status === 'IN_PROGRESS').length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <div className="w-6 h-6 text-green-600">✅</div>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Completed</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {projects.filter(p => p.status === 'COMPLETED').length}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <div className="w-6 h-6 text-red-600">🔥</div>
-            </div>
-            <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">High Priority</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {projects.filter(p => p.priority === 'HIGH' || p.priority === 'URGENT').length}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Projects List */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        </div>
-      ) : filteredProjects.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-12 text-center">
-          <div className="text-6xl mb-4">📁</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Projects Found</h3>
-          <p className="text-gray-600 mb-6">
-            {searchQuery ? 'No projects match your search criteria.' : 'Start organizing your work by creating your first project.'}
-          </p>
-          <button
-            onClick={() => setIsProjectFormOpen(true)}
-            className="btn btn-primary"
-          >
-            <PlusIcon className="w-5 h-5 mr-2" />
-            Create First Project
-          </button>
-        </div>
+      {/* Zawartosc */}
+      {filteredProjects.length === 0 ? (
+        <EmptyState
+          icon={FolderKanban}
+          title="Brak projektow"
+          description={
+            searchQuery
+              ? 'Nie znaleziono projektow pasujacych do kryteriow wyszukiwania.'
+              : 'Zacznij organizowac swoja prace tworzac pierwszy projekt.'
+          }
+          action={
+            !searchQuery ? (
+              <ActionButton variant="primary" icon={Plus} onClick={() => setIsProjectFormOpen(true)}>
+                Utworz pierwszy projekt
+              </ActionButton>
+            ) : undefined
+          }
+        />
+      ) : viewMode === 'list' ? (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <DataTable<Project>
+            columns={tableColumns}
+            data={filteredProjects}
+            onRowClick={(row) => navigateToProject(row.id)}
+            storageKey="projects-table"
+            pageSize={20}
+            emptyMessage="Brak projektow"
+          />
+        </motion.div>
       ) : (
-        <>
-          {viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredProjects.map((project, index) => (
-                <motion.div
-                  key={project.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.1 }}
-                >
-                  <ProjectCard
-                    project={project}
-                    onEdit={(project) => {
-                      setEditingProject(project);
-                      setIsProjectFormOpen(true);
-                    }}
-                    onDelete={handleDelete}
-                    onOpen={(id) => window.location.href = `/crm/dashboard/projects/${id}`}
-                  />
-                </motion.div>
-              ))}
-            </div>
-          ) : (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">Projects List</h3>
-              </div>
-              <div className="divide-y divide-gray-200">
-                {filteredProjects.map((project) => (
-                  <div
-                    key={project.id}
-                    className="p-6 hover:bg-gray-50 cursor-pointer"
-                    onClick={() => window.location.href = `/crm/dashboard/projects/${project.id}`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3">
-                          <h4 className="text-lg font-medium text-gray-900">{project.name}</h4>
-                          <span
-                            className="px-2 py-1 text-xs font-medium rounded-full"
-                            style={{
-                              backgroundColor: gtdHelpers.getProjectStatusColor(project.status) + '20',
-                              color: gtdHelpers.getProjectStatusColor(project.status)
-                            }}
-                          >
-                            {project.status}
-                          </span>
-                          <span
-                            className="px-2 py-1 text-xs font-medium rounded-full"
-                            style={{
-                              backgroundColor: gtdHelpers.getPriorityColor(project.priority) + '20',
-                              color: gtdHelpers.getPriorityColor(project.priority)
-                            }}
-                          >
-                            {project.priority}
-                          </span>
-                        </div>
-                        {project.description && (
-                          <p className="mt-1 text-sm text-gray-600">{project.description}</p>
-                        )}
-                        <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
-                          {project.stream && (
-                            <span>Stream: {project.stream.name}</span>
-                          )}
-                          {project.endDate && (
-                            <span>Due: {gtdHelpers.formatDate(project.endDate)}</span>
-                          )}
-                          {project.stats && (
-                            <span>Progress: {Math.round(project.stats.progress)}%</span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setEditingProject(project);
-                            setIsProjectFormOpen(true);
-                          }}
-                          className="text-gray-400 hover:text-gray-600"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleDelete(project.id); }}
-                          className="text-gray-400 hover:text-red-600"
-                        >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
-                        </button>
-                      </div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"
+        >
+          {filteredProjects.map((project, index) => (
+            <motion.div
+              key={project.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
+              onClick={() => navigateToProject(project.id)}
+              className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-200 cursor-pointer group"
+            >
+              <div className="p-5">
+                {/* Naglowek karty */}
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      {project.name}
+                    </h3>
+                    <div className="flex items-center gap-2 mt-2">
+                      <StatusBadge variant={STATUS_MAP[project.status]?.variant || 'default'} dot>
+                        {STATUS_MAP[project.status]?.label || project.status}
+                      </StatusBadge>
+                      <StatusBadge variant={PRIORITY_MAP[project.priority]?.variant || 'default'}>
+                        {PRIORITY_MAP[project.priority]?.label || project.priority}
+                      </StatusBadge>
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
 
-          {/* Pagination */}
-          {pagination.pages > 1 && (
-            <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-700">
-                Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
-                {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-                {pagination.total} results
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => handlePageChange(pagination.page - 1)}
-                  disabled={pagination.page === 1}
-                  className="btn btn-outline btn-sm"
-                >
-                  Previous
-                </button>
-                {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
-                  const page = i + 1;
-                  return (
+                  <div className="flex items-center gap-1 ml-2" onClick={(e) => e.stopPropagation()}>
                     <button
-                      key={page}
-                      onClick={() => handlePageChange(page)}
-                      className={`btn btn-sm ${
-                        page === pagination.page ? 'btn-primary' : 'btn-outline'
-                      }`}
+                      onClick={() => {
+                        setEditingProject(project);
+                        setIsProjectFormOpen(true);
+                      }}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 transition-colors opacity-0 group-hover:opacity-100"
+                      title="Edytuj"
                     >
-                      {page}
+                      <Pencil className="w-4 h-4" />
                     </button>
-                  );
-                })}
-                <button
-                  onClick={() => handlePageChange(pagination.page + 1)}
-                  disabled={pagination.page === pagination.pages}
-                  className="btn btn-outline btn-sm"
-                >
-                  Next
-                </button>
+                    <button
+                      onClick={() => handleDelete(project.id)}
+                      className="p-1.5 rounded-lg text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors opacity-0 group-hover:opacity-100"
+                      title="Usun"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Opis */}
+                {project.description && (
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mb-4 line-clamp-2">
+                    {project.description}
+                  </p>
+                )}
+
+                {/* Pasek postepu */}
+                <div className="mb-4">
+                  <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-1.5">
+                    <span>Postep</span>
+                    <span className="font-medium">{Math.round(project.stats?.progress || 0)}%</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-blue-500 rounded-full transition-all duration-300"
+                      style={{ width: `${project.stats?.progress || 0}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Statystyki zadań */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="text-center bg-slate-50 dark:bg-slate-800/50 rounded-xl py-2">
+                    <div className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                      {project.stats?.totalTasks || 0}
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">Zadania</div>
+                  </div>
+                  <div className="text-center bg-slate-50 dark:bg-slate-800/50 rounded-xl py-2">
+                    <div className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">
+                      {project.stats?.completedTasks || 0}
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">Ukonczone</div>
+                  </div>
+                </div>
+
+                {/* Stopka */}
+                <div className="space-y-1.5 text-sm">
+                  {project.stream && (
+                    <div className="flex items-center text-slate-500 dark:text-slate-400">
+                      <Activity className="w-3.5 h-3.5 mr-2 flex-shrink-0" />
+                      <span className="truncate">{project.stream.name}</span>
+                    </div>
+                  )}
+                  {project.assignedTo && (
+                    <div className="flex items-center text-slate-500 dark:text-slate-400">
+                      <User className="w-3.5 h-3.5 mr-2 flex-shrink-0" />
+                      <span className="truncate">
+                        {project.assignedTo.firstName} {project.assignedTo.lastName}
+                      </span>
+                    </div>
+                  )}
+                  {project.endDate && (
+                    <div className="flex items-center">
+                      <Calendar className="w-3.5 h-3.5 mr-2 flex-shrink-0 text-slate-500 dark:text-slate-400" />
+                      <span
+                        className={
+                          new Date(project.endDate) < new Date() && project.status !== 'COMPLETED'
+                            ? 'text-red-600 dark:text-red-400 font-medium'
+                            : 'text-slate-500 dark:text-slate-400'
+                        }
+                      >
+                        {gtdHelpers.formatDate(project.endDate)}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          )}
-        </>
+
+              {/* Dolna krawedz z kolorem priorytetu */}
+              <div
+                className="h-1 rounded-b-2xl"
+                style={{ backgroundColor: gtdHelpers.getPriorityColor(project.priority) }}
+              />
+            </motion.div>
+          ))}
+        </motion.div>
       )}
 
-      {/* Project Form Modal */}
+      {/* Formularz projektu */}
       {isProjectFormOpen && (
         <ProjectForm
           project={editingProject}
           streams={streams}
-          onSubmit={editingProject ? 
-            (data) => handleEdit(editingProject.id, data) : 
-            handleCreate
+          onSubmit={editingProject
+            ? (data: any) => handleEdit(editingProject.id, data)
+            : handleCreate
           }
           onCancel={() => {
             setIsProjectFormOpen(false);
@@ -499,6 +692,6 @@ export default function ProjectsPage() {
           }}
         />
       )}
-    </motion.div>
+    </PageShell>
   );
 }

@@ -9,20 +9,33 @@ import { CSS } from '@dnd-kit/utilities';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/lib/auth/context';
 import {
-  ChevronLeftIcon,
-  PlusIcon,
-  ClockIcon,
-  PlayIcon,
-  CheckCircleIcon,
-  XMarkIcon,
-  AdjustmentsHorizontalIcon,
-  FireIcon,
-  LightBulbIcon,
-  ChartBarIcon,
-  EyeIcon,
-  CalendarDaysIcon,
-  BeakerIcon,
-} from '@heroicons/react/24/outline';
+  ChevronLeft,
+  Plus,
+  Clock,
+  Play,
+  CheckCircle2,
+  X,
+  SlidersHorizontal,
+  Flame,
+  Lightbulb,
+  BarChart3,
+  Eye,
+  CalendarDays,
+  FlaskConical,
+  Inbox,
+  Target,
+  Zap,
+  Search,
+  FolderOpen,
+  Mountain,
+  BookOpen,
+  Palette,
+  CircleDot,
+  CheckSquare,
+  SkipForward,
+} from 'lucide-react';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 interface WeeklyReviewSprintItem {
   id: string;
@@ -57,7 +70,7 @@ interface ReviewColumn {
   description: string;
   color: string;
   bgColor: string;
-  icon: string;
+  icon: React.ReactNode;
   gtdPhase?: string;
   maxItems?: number;
 }
@@ -69,7 +82,7 @@ const REVIEW_COLUMNS: ReviewColumn[] = [
     description: 'Items collected for this week',
     color: '#6B7280',
     bgColor: '#F9FAFB',
-    icon: '📥',
+    icon: <Inbox className="w-4 h-4" />,
     gtdPhase: 'COLLECT',
   },
   {
@@ -78,7 +91,7 @@ const REVIEW_COLUMNS: ReviewColumn[] = [
     description: 'This week\'s committed items',
     color: '#3B82F6',
     bgColor: '#EFF6FF',
-    icon: '🎯',
+    icon: <Target className="w-4 h-4" />,
     gtdPhase: 'ORGANIZE',
   },
   {
@@ -87,7 +100,7 @@ const REVIEW_COLUMNS: ReviewColumn[] = [
     description: 'Currently being worked on',
     color: '#F59E0B',
     bgColor: '#FFFBEB',
-    icon: '⚡',
+    icon: <Zap className="w-4 h-4" />,
     gtdPhase: 'ENGAGE',
     maxItems: 3, // STREAMS principle: focus on few items
   },
@@ -97,7 +110,7 @@ const REVIEW_COLUMNS: ReviewColumn[] = [
     description: 'Items under weekly review',
     color: '#8B5CF6',
     bgColor: '#F3F4F6',
-    icon: '🔍',
+    icon: <Search className="w-4 h-4" />,
     gtdPhase: 'REFLECT',
   },
   {
@@ -106,7 +119,7 @@ const REVIEW_COLUMNS: ReviewColumn[] = [
     description: 'Finished this week',
     color: '#10B981',
     bgColor: '#ECFDF5',
-    icon: '✅',
+    icon: <CheckCircle2 className="w-4 h-4" />,
     gtdPhase: 'REFLECT',
   },
   {
@@ -115,7 +128,7 @@ const REVIEW_COLUMNS: ReviewColumn[] = [
     description: 'Deferred to next sprint',
     color: '#EF4444',
     bgColor: '#FEF2F2',
-    icon: '⏭️',
+    icon: <SkipForward className="w-4 h-4" />,
     gtdPhase: 'ORGANIZE',
   },
   {
@@ -124,33 +137,33 @@ const REVIEW_COLUMNS: ReviewColumn[] = [
     description: 'Future considerations',
     color: '#6366F1',
     bgColor: '#EEF2FF',
-    icon: '💡',
+    icon: <Lightbulb className="w-4 h-4" />,
     gtdPhase: 'ORGANIZE',
   },
 ];
 
 const GTD_CATEGORIES = [
-  { id: 'COLLECT', name: 'Collect', icon: '📥', color: '#6B7280', description: 'Capture everything' },
-  { id: 'PROCESS', name: 'Process', icon: '⚙️', color: '#F59E0B', description: 'Clarify what it means' },
-  { id: 'ORGANIZE', name: 'Organize', icon: '📋', color: '#3B82F6', description: 'Put it where it belongs' },
-  { id: 'REFLECT', name: 'Reflect', icon: '🔍', color: '#8B5CF6', description: 'Review and update' },
-  { id: 'ENGAGE', name: 'Engage', icon: '🎯', color: '#10B981', description: 'Simply do' },
+  { id: 'COLLECT', name: 'Collect', icon: <Inbox className="w-4 h-4" />, color: '#6B7280', description: 'Capture everything' },
+  { id: 'PROCESS', name: 'Process', icon: <SlidersHorizontal className="w-4 h-4" />, color: '#F59E0B', description: 'Clarify what it means' },
+  { id: 'ORGANIZE', name: 'Organize', icon: <CheckSquare className="w-4 h-4" />, color: '#3B82F6', description: 'Put it where it belongs' },
+  { id: 'REFLECT', name: 'Reflect', icon: <Search className="w-4 h-4" />, color: '#8B5CF6', description: 'Review and update' },
+  { id: 'ENGAGE', name: 'Engage', icon: <Target className="w-4 h-4" />, color: '#10B981', description: 'Simply do' },
 ];
 
 const ITEM_TYPES = [
-  { id: 'TASK', name: 'Task', icon: '✅', color: '#10B981' },
-  { id: 'PROJECT', name: 'Project', icon: '📁', color: '#3B82F6' },
-  { id: 'AREA', name: 'Area', icon: '🏞️', color: '#059669' },
-  { id: 'CONTEXT', name: 'Context', icon: '🎯', color: '#6366F1' },
-  { id: 'REFERENCE', name: 'Reference', icon: '📚', color: '#8B5CF6' },
-  { id: 'SOMEDAY_MAYBE', name: 'Someday/Maybe', icon: '💡', color: '#6B7280' },
+  { id: 'TASK', name: 'Task', icon: <CheckCircle2 className="w-3 h-3" />, color: '#10B981' },
+  { id: 'PROJECT', name: 'Project', icon: <FolderOpen className="w-3 h-3" />, color: '#3B82F6' },
+  { id: 'AREA', name: 'Area', icon: <Mountain className="w-3 h-3" />, color: '#059669' },
+  { id: 'CONTEXT', name: 'Context', icon: <Target className="w-3 h-3" />, color: '#6366F1' },
+  { id: 'REFERENCE', name: 'Reference', icon: <BookOpen className="w-3 h-3" />, color: '#8B5CF6' },
+  { id: 'SOMEDAY_MAYBE', name: 'Someday/Maybe', icon: <Lightbulb className="w-3 h-3" />, color: '#6B7280' },
 ];
 
 const ENERGY_LEVELS = [
-  { id: 'LOW', name: 'Low Energy', icon: '🟢', color: '#6B7280', points: 1 },
-  { id: 'MEDIUM', name: 'Medium Energy', icon: '🟡', color: '#F59E0B', points: 2 },
-  { id: 'HIGH', name: 'High Energy', icon: '🔴', color: '#EF4444', points: 3 },
-  { id: 'CREATIVE', name: 'Creative Energy', icon: '🎨', color: '#8B5CF6', points: 4 },
+  { id: 'LOW', name: 'Low Energy', icon: <CircleDot className="w-3 h-3 text-green-500" />, color: '#6B7280', points: 1 },
+  { id: 'MEDIUM', name: 'Medium Energy', icon: <CircleDot className="w-3 h-3 text-yellow-500" />, color: '#F59E0B', points: 2 },
+  { id: 'HIGH', name: 'High Energy', icon: <CircleDot className="w-3 h-3 text-red-500" />, color: '#EF4444', points: 3 },
+  { id: 'CREATIVE', name: 'Creative Energy', icon: <Palette className="w-3 h-3 text-purple-500" />, color: '#8B5CF6', points: 4 },
 ];
 
 const COMPLEXITY_CONFIG = {
@@ -187,8 +200,8 @@ function SortableReviewItem({ item, onEdit, onDelete, onComplete }: SortableRevi
   const energyLevel = ENERGY_LEVELS.find(energy => energy.id === item.energy);
   const complexityConfig = COMPLEXITY_CONFIG[item.complexity];
 
-  const progressPercentage = item.actualTime && item.estimatedTime > 0 
-    ? Math.min((item.actualTime / item.estimatedTime) * 100, 100) 
+  const progressPercentage = item.actualTime && item.estimatedTime > 0
+    ? Math.min((item.actualTime / item.estimatedTime) * 100, 100)
     : 0;
 
   return (
@@ -197,33 +210,33 @@ function SortableReviewItem({ item, onEdit, onDelete, onComplete }: SortableRevi
       style={style}
       {...attributes}
       {...listeners}
-      className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-all cursor-move"
+      className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 shadow-sm hover:shadow-md transition-all cursor-move"
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center space-x-2">
           <div
-            className="w-6 h-6 rounded-full flex items-center justify-center text-xs"
+            className="w-6 h-6 rounded-full flex items-center justify-center text-white"
             style={{ backgroundColor: gtdCategory?.color }}
             title={gtdCategory?.name}
           >
             {gtdCategory?.icon}
           </div>
           <div
-            className="w-6 h-6 rounded flex items-center justify-center text-xs"
+            className="w-6 h-6 rounded flex items-center justify-center text-white"
             style={{ backgroundColor: itemType?.color }}
             title={itemType?.name}
           >
             {itemType?.icon}
           </div>
           <div>
-            <h4 className="font-semibold text-gray-900 text-sm">{item.title}</h4>
-            <p className="text-xs text-gray-500">Week {item.weekNumber} • {item.context}</p>
+            <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-sm">{item.title}</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Week {item.weekNumber} - {item.context}</p>
           </div>
         </div>
         <div className="flex items-center space-x-1">
           <span className="text-xs" title={energyLevel?.name}>{energyLevel?.icon}</span>
-          <span className="text-xs font-medium text-gray-600">
+          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
             {complexityConfig.points}pt
           </span>
         </div>
@@ -231,29 +244,29 @@ function SortableReviewItem({ item, onEdit, onDelete, onComplete }: SortableRevi
 
       {/* Description */}
       {item.description && (
-        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.description}</p>
+        <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">{item.description}</p>
       )}
 
       {/* Weekly Goal */}
       {item.weeklyGoal && (
-        <div className="mb-3 p-2 bg-blue-50 rounded-md">
-          <p className="text-xs font-medium text-blue-700">Weekly Goal:</p>
-          <p className="text-sm text-blue-600">{item.weeklyGoal}</p>
+        <div className="mb-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded-md">
+          <p className="text-xs font-medium text-blue-700 dark:text-blue-300">Weekly Goal:</p>
+          <p className="text-sm text-blue-600 dark:text-blue-400">{item.weeklyGoal}</p>
         </div>
       )}
 
       {/* Time Progress */}
       <div className="mb-3">
         <div className="flex items-center justify-between mb-1">
-          <span className="text-xs text-gray-500">Time Progress</span>
-          <span className="text-xs font-medium text-gray-900">
+          <span className="text-xs text-slate-500 dark:text-slate-400">Time Progress</span>
+          <span className="text-xs font-medium text-slate-900 dark:text-slate-100">
             {item.actualTime || 0}min / {item.estimatedTime}min
           </span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
           <div
             className="h-2 rounded-full transition-all"
-            style={{ 
+            style={{
               backgroundColor: complexityConfig.color,
               width: `${Math.min(progressPercentage, 100)}%`
             }}
@@ -262,17 +275,17 @@ function SortableReviewItem({ item, onEdit, onDelete, onComplete }: SortableRevi
       </div>
 
       {/* Due Date & Completion */}
-      <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-3">
         <div className="flex items-center space-x-3">
           {item.dueDate && (
             <div className="flex items-center">
-              <CalendarDaysIcon className="w-3 h-3 mr-1" />
+              <CalendarDays className="w-3 h-3 mr-1" />
               {new Date(item.dueDate).toLocaleDateString()}
             </div>
           )}
           {item.completedDate && (
-            <div className="flex items-center text-green-600">
-              <CheckCircleIcon className="w-3 h-3 mr-1" />
+            <div className="flex items-center text-green-600 dark:text-green-400">
+              <CheckCircle2 className="w-3 h-3 mr-1" />
               {new Date(item.completedDate).toLocaleDateString()}
             </div>
           )}
@@ -281,9 +294,9 @@ function SortableReviewItem({ item, onEdit, onDelete, onComplete }: SortableRevi
 
       {/* Review Notes */}
       {item.reviewNotes && (
-        <div className="mb-3 p-2 bg-purple-50 rounded-md">
-          <p className="text-xs font-medium text-purple-700">Review Notes:</p>
-          <p className="text-sm text-purple-600 line-clamp-2">{item.reviewNotes}</p>
+        <div className="mb-3 p-2 bg-purple-50 dark:bg-purple-900/20 rounded-md">
+          <p className="text-xs font-medium text-purple-700 dark:text-purple-300">Review Notes:</p>
+          <p className="text-sm text-purple-600 dark:text-purple-400 line-clamp-2">{item.reviewNotes}</p>
         </div>
       )}
 
@@ -291,11 +304,11 @@ function SortableReviewItem({ item, onEdit, onDelete, onComplete }: SortableRevi
       {item.blockers && item.blockers.length > 0 && (
         <div className="mb-3">
           <div className="flex items-center space-x-1 mb-1">
-            <XMarkIcon className="w-3 h-3 text-red-500" />
-            <span className="text-xs font-medium text-red-600">Blockers:</span>
+            <X className="w-3 h-3 text-red-500" />
+            <span className="text-xs font-medium text-red-600 dark:text-red-400">Blockers:</span>
           </div>
           {item.blockers.slice(0, 2).map((blocker, index) => (
-            <div key={index} className="text-xs text-red-600 bg-red-50 rounded px-2 py-1 mb-1">
+            <div key={index} className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded px-2 py-1 mb-1">
               {blocker}
             </div>
           ))}
@@ -306,11 +319,11 @@ function SortableReviewItem({ item, onEdit, onDelete, onComplete }: SortableRevi
       {item.outcomes && item.outcomes.length > 0 && (
         <div className="mb-3">
           <div className="flex items-center space-x-1 mb-1">
-            <CheckCircleIcon className="w-3 h-3 text-green-500" />
-            <span className="text-xs font-medium text-green-600">Outcomes:</span>
+            <CheckCircle2 className="w-3 h-3 text-green-500" />
+            <span className="text-xs font-medium text-green-600 dark:text-green-400">Outcomes:</span>
           </div>
           {item.outcomes.slice(0, 2).map((outcome, index) => (
-            <div key={index} className="text-xs text-green-600 bg-green-50 rounded px-2 py-1 mb-1">
+            <div key={index} className="text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 rounded px-2 py-1 mb-1">
               {outcome}
             </div>
           ))}
@@ -323,19 +336,19 @@ function SortableReviewItem({ item, onEdit, onDelete, onComplete }: SortableRevi
           {item.tags.slice(0, 3).map((tag, index) => (
             <span
               key={index}
-              className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
+              className="px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 text-xs rounded-full"
             >
               {tag}
             </span>
           ))}
           {item.tags.length > 3 && (
-            <span className="text-xs text-gray-400">+{item.tags.length - 3}</span>
+            <span className="text-xs text-slate-400">+{item.tags.length - 3}</span>
           )}
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
         <div className="flex items-center space-x-1">
           {item.status !== 'DONE' && (
             <button
@@ -343,10 +356,10 @@ function SortableReviewItem({ item, onEdit, onDelete, onComplete }: SortableRevi
                 e.stopPropagation();
                 onComplete(item);
               }}
-              className="p-1 text-green-600 hover:bg-green-50 rounded"
+              className="p-1 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 rounded"
               title="Mark complete"
             >
-              <CheckCircleIcon className="w-4 h-4" />
+              <CheckCircle2 className="w-4 h-4" />
             </button>
           )}
           <button
@@ -354,10 +367,10 @@ function SortableReviewItem({ item, onEdit, onDelete, onComplete }: SortableRevi
               e.stopPropagation();
               onEdit(item);
             }}
-            className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+            className="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded"
             title="Edit item"
           >
-            <AdjustmentsHorizontalIcon className="w-4 h-4" />
+            <SlidersHorizontal className="w-4 h-4" />
           </button>
         </div>
         <button
@@ -365,10 +378,10 @@ function SortableReviewItem({ item, onEdit, onDelete, onComplete }: SortableRevi
             e.stopPropagation();
             onDelete(item.id);
           }}
-          className="p-1 text-red-600 hover:bg-red-50 rounded"
+          className="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
           title="Delete item"
         >
-          <XMarkIcon className="w-4 h-4" />
+          <X className="w-4 h-4" />
         </button>
       </div>
     </div>
@@ -442,11 +455,11 @@ export default function WeeklyReviewScrumPage() {
   const loadReviewData = async () => {
     try {
       setLoading(true);
-      
+
       // Mock data for demo - representing GTD weekly review as sprint
       setTimeout(() => {
         const weekNumber = getWeekNumber(currentWeek);
-        
+
         const mockItems: WeeklyReviewSprintItem[] = [
           {
             id: '1',
@@ -614,7 +627,7 @@ export default function WeeklyReviewScrumPage() {
 
     const newStatus = over.id as WeeklyReviewSprintItem['status'];
     const targetColumn = REVIEW_COLUMNS.find(col => col.id === newStatus);
-    
+
     // Check constraints for focused work (STREAMS principle)
     if (targetColumn?.maxItems) {
       const itemsInColumn = reviewItems.filter(item => item.status === newStatus);
@@ -628,7 +641,7 @@ export default function WeeklyReviewScrumPage() {
       const updatedItems = reviewItems.map(item => {
         if (item.id === active.id) {
           const updates: Partial<WeeklyReviewSprintItem> = { status: newStatus };
-          
+
           if (newStatus === 'DONE' && !item.completedDate) {
             updates.completedDate = new Date().toISOString();
             updates.actualTime = item.estimatedTime; // Default completion time
@@ -652,7 +665,7 @@ export default function WeeklyReviewScrumPage() {
 
     const complexityConfig = COMPLEXITY_CONFIG[newItem.complexity];
     const weekNumber = getWeekNumber(currentWeek);
-    
+
     const item: WeeklyReviewSprintItem = {
       id: Date.now().toString(),
       title: newItem.title.trim(),
@@ -819,9 +832,9 @@ export default function WeeklyReviewScrumPage() {
     const completedPoints = reviewItems
       .filter(item => item.status === 'DONE')
       .reduce((sum, item) => sum + item.sprintPoints, 0);
-    
+
     const currentSprintItems = reviewItems.filter(item => item.status === 'CURRENT_SPRINT').length;
-    
+
     return {
       totalItems,
       completedItems,
@@ -847,156 +860,93 @@ export default function WeeklyReviewScrumPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <PageShell>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <PageHeader
+        title="Weekly Review Sprint"
+        subtitle={`Przeglad tygodniowy jako sprint (Tydzien ${weekNumber})`}
+        icon={BarChart3}
+        iconColor="text-indigo-600"
+        actions={
           <div className="flex items-center space-x-3">
             <button
               onClick={() => router.push('/dashboard/reviews/weekly')}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
             >
-              <ChevronLeftIcon className="w-5 h-5 text-gray-600" />
+              <ChevronLeft className="w-4 h-4 inline mr-1" />
+              Powrot
             </button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Weekly Review Sprint</h1>
-              <p className="text-gray-600">Przegląd tygodniowy jako sprint (Tydzień {weekNumber})</p>
-            </div>
+            <button
+              onClick={() => setCurrentWeek(new Date(currentWeek.getTime() - 7 * 24 * 60 * 60 * 1000))}
+              className="px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
+            >
+              Poprzedni tydzien
+            </button>
+            <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+              {currentWeek.toLocaleDateString('pl-PL', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+              })}
+            </span>
+            <button
+              onClick={() => setCurrentWeek(new Date(currentWeek.getTime() + 7 * 24 * 60 * 60 * 1000))}
+              className="px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
+            >
+              Nastepny tydzien
+            </button>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="btn btn-primary"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              Dodaj element
+            </button>
           </div>
-        </div>
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => setCurrentWeek(new Date(currentWeek.getTime() - 7 * 24 * 60 * 60 * 1000))}
-            className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
-          >
-            ← Previous Week
-          </button>
-          <span className="text-sm font-medium text-gray-700">
-            {currentWeek.toLocaleDateString('pl-PL', { 
-              year: 'numeric', 
-              month: 'long', 
-              day: 'numeric' 
-            })}
-          </span>
-          <button
-            onClick={() => setCurrentWeek(new Date(currentWeek.getTime() + 7 * 24 * 60 * 60 * 1000))}
-            className="px-3 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
-          >
-            Next Week →
-          </button>
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="btn btn-primary"
-          >
-            <PlusIcon className="w-5 h-5 mr-2" />
-            Add Review Item
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Sprint Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <ChartBarIcon className="w-5 h-5 text-blue-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Total Items</p>
-              <p className="text-xl font-semibold text-gray-900">{stats.totalItems}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <div className="p-2 bg-indigo-100 rounded-lg">
-              <BeakerIcon className="w-5 h-5 text-indigo-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Sprint Items</p>
-              <p className="text-xl font-semibold text-gray-900">{stats.currentSprintItems}</p>
+        {[
+          { label: 'Total Items', value: stats.totalItems, icon: BarChart3, bgColor: 'bg-blue-100 dark:bg-blue-900/30', iconColor: 'text-blue-600 dark:text-blue-400' },
+          { label: 'Sprint Items', value: stats.currentSprintItems, icon: FlaskConical, bgColor: 'bg-indigo-100 dark:bg-indigo-900/30', iconColor: 'text-indigo-600 dark:text-indigo-400' },
+          { label: 'In Progress', value: stats.inProgressItems, icon: Play, bgColor: 'bg-yellow-100 dark:bg-yellow-900/30', iconColor: 'text-yellow-600 dark:text-yellow-400' },
+          { label: 'Completed', value: stats.completedItems, icon: CheckCircle2, bgColor: 'bg-green-100 dark:bg-green-900/30', iconColor: 'text-green-600 dark:text-green-400' },
+          { label: 'Deferred', value: stats.deferredItems, icon: Clock, bgColor: 'bg-red-100 dark:bg-red-900/30', iconColor: 'text-red-600 dark:text-red-400' },
+          { label: 'Points', value: `${stats.completedPoints}/${stats.totalPoints}`, icon: Flame, bgColor: 'bg-purple-100 dark:bg-purple-900/30', iconColor: 'text-purple-600 dark:text-purple-400' },
+          { label: 'Progress', value: `${stats.completionRate}%`, icon: Lightbulb, bgColor: 'bg-orange-100 dark:bg-orange-900/30', iconColor: 'text-orange-600 dark:text-orange-400' },
+        ].map((metric) => (
+          <div key={metric.label} className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <div className="flex items-center">
+              <div className={`p-2 ${metric.bgColor} rounded-lg`}>
+                <metric.icon className={`w-5 h-5 ${metric.iconColor}`} />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">{metric.label}</p>
+                <p className="text-xl font-semibold text-slate-900 dark:text-slate-100">{metric.value}</p>
+              </div>
             </div>
           </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <PlayIcon className="w-5 h-5 text-yellow-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">In Progress</p>
-              <p className="text-xl font-semibold text-gray-900">{stats.inProgressItems}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <CheckCircleIcon className="w-5 h-5 text-green-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Completed</p>
-              <p className="text-xl font-semibold text-gray-900">{stats.completedItems}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <ClockIcon className="w-5 h-5 text-red-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Deferred</p>
-              <p className="text-xl font-semibold text-gray-900">{stats.deferredItems}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <FireIcon className="w-5 h-5 text-purple-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Points</p>
-              <p className="text-xl font-semibold text-gray-900">{stats.completedPoints}/{stats.totalPoints}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <LightBulbIcon className="w-5 h-5 text-orange-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Progress</p>
-              <p className="text-xl font-semibold text-gray-900">{stats.completionRate}%</p>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Workflow Phases Overview */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Fazy Workflow</h3>
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4 mt-6">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Fazy Workflow</h3>
         <div className="grid grid-cols-5 gap-4">
           {GTD_CATEGORIES.map((category) => {
             const itemsInPhase = reviewItems.filter(item => item.gtdCategory === category.id).length;
             return (
               <div key={category.id} className="text-center">
-                <div 
-                  className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2"
-                  style={{ backgroundColor: category.color + '20' }}
+                <div
+                  className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2 text-white"
+                  style={{ backgroundColor: category.color + '40' }}
                 >
-                  <span className="text-lg">{category.icon}</span>
+                  {category.icon}
                 </div>
-                <h4 className="font-medium text-gray-900 text-sm">{category.name}</h4>
-                <p className="text-xs text-gray-600 mb-1">{category.description}</p>
+                <h4 className="font-medium text-slate-900 dark:text-slate-100 text-sm">{category.name}</h4>
+                <p className="text-xs text-slate-600 dark:text-slate-400 mb-1">{category.description}</p>
                 <span className="text-lg font-bold" style={{ color: category.color }}>
                   {itemsInPhase}
                 </span>
@@ -1008,27 +958,27 @@ export default function WeeklyReviewScrumPage() {
 
       {/* Sprint Board */}
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-1 lg:grid-cols-7 gap-4 min-h-[600px]">
+        <div className="grid grid-cols-1 lg:grid-cols-7 gap-4 min-h-[600px] mt-6">
           {REVIEW_COLUMNS.map((column) => {
             const columnItems = getColumnItems(column.id);
-            
+
             return (
               <div key={column.id} className="flex flex-col">
-                <div 
+                <div
                   className="rounded-lg p-4 mb-4 border-l-4"
-                  style={{ 
+                  style={{
                     backgroundColor: column.bgColor,
                     borderLeftColor: column.color
                   }}
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center space-x-2">
-                      <span className="text-lg">{column.icon}</span>
-                      <h3 className="font-semibold text-gray-900 text-sm">{column.title}</h3>
+                      <span style={{ color: column.color }}>{column.icon}</span>
+                      <h3 className="font-semibold text-slate-900 text-sm">{column.title}</h3>
                     </div>
-                    <span 
+                    <span
                       className="text-sm font-medium px-2 py-1 rounded-full"
-                      style={{ 
+                      style={{
                         backgroundColor: column.color + '20',
                         color: column.color
                       }}
@@ -1036,21 +986,21 @@ export default function WeeklyReviewScrumPage() {
                       {columnItems.length}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-600">{column.description}</p>
+                  <p className="text-xs text-slate-600">{column.description}</p>
                   {column.gtdPhase && (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-slate-500 mt-1">
                       Faza: {column.gtdPhase}
                     </p>
                   )}
                   {column.maxItems && (
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-slate-500 mt-1">
                       Focus: max {column.maxItems}
                     </p>
                   )}
                 </div>
 
                 <SortableContext items={columnItems.map(item => item.id)} strategy={verticalListSortingStrategy}>
-                  <div className="flex-1 space-y-3 min-h-[400px] bg-gray-50 rounded-lg p-3">
+                  <div className="flex-1 space-y-3 min-h-[400px] bg-slate-50 dark:bg-slate-900/50 rounded-lg p-3">
                     {columnItems.map((item) => (
                       <SortableReviewItem
                         key={item.id}
@@ -1061,7 +1011,7 @@ export default function WeeklyReviewScrumPage() {
                       />
                     ))}
                     {columnItems.length === 0 && (
-                      <div className="flex items-center justify-center h-32 text-gray-400 text-sm">
+                      <div className="flex items-center justify-center h-32 text-slate-400 dark:text-slate-500 text-sm">
                         Drop review items here
                       </div>
                     )}
@@ -1074,8 +1024,8 @@ export default function WeeklyReviewScrumPage() {
 
         <DragOverlay>
           {activeId ? (
-            <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-lg transform rotate-3">
-              <div className="font-semibold text-gray-900">
+            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-4 shadow-lg transform rotate-3">
+              <div className="font-semibold text-slate-900 dark:text-slate-100">
                 {reviewItems.find(item => item.id === activeId)?.title}
               </div>
             </div>
@@ -1086,81 +1036,81 @@ export default function WeeklyReviewScrumPage() {
       {/* Create/Edit Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b border-gray-200">
+          <div className="bg-white dark:bg-slate-800 rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {editingItem ? 'Edit Review Item' : 'Create Review Item'}
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  {editingItem ? 'Edytuj element' : 'Utworz element'}
                 </h3>
                 <button
                   onClick={() => {
                     setShowCreateModal(false);
                     setEditingItem(null);
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                 >
-                  <XMarkIcon className="w-6 h-6" />
+                  <X className="w-6 h-6" />
                 </button>
               </div>
             </div>
 
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Review Item Title *
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Tytul *
                 </label>
                 <input
                   type="text"
                   value={newItem.title}
                   onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="e.g., Process inbox to zero"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="np. Process inbox to zero"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Opis
                 </label>
                 <textarea
                   value={newItem.description}
                   onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Detailed description of the review activity"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Szczegolowy opis aktywnosci"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Kategoria
                   </label>
                   <select
                     value={newItem.gtdCategory}
                     onChange={(e) => setNewItem({ ...newItem, gtdCategory: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   >
                     {GTD_CATEGORIES.map((category) => (
                       <option key={category.id} value={category.id}>
-                        {category.icon} {category.name}
+                        {category.name}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Item Type
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Typ elementu
                   </label>
                   <select
                     value={newItem.itemType}
                     onChange={(e) => setNewItem({ ...newItem, itemType: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   >
                     {ITEM_TYPES.map((type) => (
                       <option key={type.id} value={type.id}>
-                        {type.icon} {type.name}
+                        {type.name}
                       </option>
                     ))}
                   </select>
@@ -1169,31 +1119,31 @@ export default function WeeklyReviewScrumPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Energy Level
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Poziom energii
                   </label>
                   <select
                     value={newItem.energy}
                     onChange={(e) => setNewItem({ ...newItem, energy: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   >
                     {ENERGY_LEVELS.map((energy) => (
                       <option key={energy.id} value={energy.id}>
-                        {energy.icon} {energy.name}
+                        {energy.name}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Context
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Kontekst
                   </label>
                   <input
                     type="text"
                     value={newItem.context}
                     onChange={(e) => setNewItem({ ...newItem, context: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                     placeholder="@computer, @calls, @anywhere"
                   />
                 </div>
@@ -1201,8 +1151,8 @@ export default function WeeklyReviewScrumPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Estimated Time (minutes)
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Szacowany czas (minuty)
                   </label>
                   <input
                     type="number"
@@ -1210,18 +1160,18 @@ export default function WeeklyReviewScrumPage() {
                     onChange={(e) => setNewItem({ ...newItem, estimatedTime: parseInt(e.target.value) || 1 })}
                     min="1"
                     max="240"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Complexity
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Zlozonosc
                   </label>
                   <select
                     value={newItem.complexity}
                     onChange={(e) => setNewItem({ ...newItem, complexity: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   >
                     {Object.entries(COMPLEXITY_CONFIG).map(([key, config]) => (
                       <option key={key} value={key}>
@@ -1233,77 +1183,77 @@ export default function WeeklyReviewScrumPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Weekly Goal (optional)
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Cel tygodniowy (opcjonalnie)
                 </label>
                 <input
                   type="text"
                   value={newItem.weeklyGoal}
                   onChange={(e) => setNewItem({ ...newItem, weeklyGoal: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="What you want to achieve this week"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Co chcesz osiagnac w tym tygodniu"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Due Date (optional)
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Termin (opcjonalnie)
                 </label>
                 <input
                   type="date"
                   value={newItem.dueDate}
                   onChange={(e) => setNewItem({ ...newItem, dueDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tags (comma separated)
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Tagi (oddzielone przecinkiem)
                 </label>
                 <input
                   type="text"
                   value={newItem.tags.join(', ')}
-                  onChange={(e) => setNewItem({ 
-                    ...newItem, 
+                  onChange={(e) => setNewItem({
+                    ...newItem,
                     tags: e.target.value.split(',').map(tag => tag.trim()).filter(Boolean)
                   })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   placeholder="gtd, weekly, review, planning"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Review Notes (optional)
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Notatki z przegladu (opcjonalnie)
                 </label>
                 <textarea
                   value={newItem.reviewNotes}
                   onChange={(e) => setNewItem({ ...newItem, reviewNotes: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Notes from review sessions..."
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Notatki z sesji przegladu..."
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Blockers (one per line)
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Blokery (jedna na linie)
                 </label>
                 <textarea
                   value={newItem.blockers.join('\n')}
-                  onChange={(e) => setNewItem({ 
-                    ...newItem, 
+                  onChange={(e) => setNewItem({
+                    ...newItem,
                     blockers: e.target.value.split('\n').map(blocker => blocker.trim()).filter(Boolean)
                   })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="List any obstacles preventing completion..."
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Lista przeszkod uniemozliwiajacych ukonczenie..."
                 />
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-gray-200 flex space-x-3">
+            <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex space-x-3">
               <button
                 onClick={() => {
                   setShowCreateModal(false);
@@ -1311,19 +1261,19 @@ export default function WeeklyReviewScrumPage() {
                 }}
                 className="btn btn-outline flex-1"
               >
-                Cancel
+                Anuluj
               </button>
               <button
                 onClick={editingItem ? handleSaveEdit : handleCreateItem}
                 className="btn btn-primary flex-1"
                 disabled={!newItem.title.trim()}
               >
-                {editingItem ? 'Update' : 'Create'} Item
+                {editingItem ? 'Zaktualizuj' : 'Utworz'} element
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

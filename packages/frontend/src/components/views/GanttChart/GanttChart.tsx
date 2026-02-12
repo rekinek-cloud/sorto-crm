@@ -2,15 +2,14 @@
 
 import React, { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  CalendarIcon, 
-  UserIcon, 
-  ClockIcon,
-  FlagIcon,
-  ArrowRightIcon,
-  ChevronLeftIcon,
-  ChevronRightIcon
-} from '@heroicons/react/24/outline';
+import {
+  User,
+  Clock,
+  Flag,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight
+} from 'lucide-react';
 import { GanttProject, GanttTask, Milestone, Dependency } from '@/types/views';
 import GanttTimeline from './GanttTimeline';
 
@@ -186,13 +185,13 @@ export default function GanttChart({
                 onClick={() => navigateTimeline('prev')}
                 className="p-2 rounded-md hover:bg-gray-100"
               >
-                <ChevronLeftIcon className="w-4 h-4" />
+                <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={() => navigateTimeline('next')}
                 className="p-2 rounded-md hover:bg-gray-100"
               >
-                <ChevronRightIcon className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -249,11 +248,11 @@ export default function GanttChart({
                     </h5>
                     <div className="flex items-center mt-1 space-x-2">
                       <div className="flex items-center text-xs text-gray-500">
-                        <UserIcon className="w-3 h-3 mr-1" />
+                        <User className="w-3 h-3 mr-1" />
                         {task.assignee.name.split(' ').map(n => n[0]).join('')}
                       </div>
                       <div className="flex items-center text-xs text-gray-500">
-                        <ClockIcon className="w-3 h-3 mr-1" />
+                        <Clock className="w-3 h-3 mr-1" />
                         {task.duration}d
                       </div>
                     </div>
@@ -291,7 +290,7 @@ export default function GanttChart({
                 <div className="flex items-center mt-2 space-x-2">
                   {task.priority === 'urgent' && (
                     <span className="flex items-center text-xs text-red-600">
-                      <FlagIcon className="w-3 h-3 mr-1" />
+                      <Flag className="w-3 h-3 mr-1" />
                       Pilne
                     </span>
                   )}
@@ -342,13 +341,13 @@ export default function GanttChart({
               <span className="text-sm text-gray-700">Ścieżka krytyczna</span>
             </div>
             <div className="flex items-center">
-              <FlagIcon className="w-4 h-4 text-orange-500 mr-2" />
+              <Flag className="w-4 h-4 text-orange-500 mr-2" />
               <span className="text-sm text-gray-700">Kamień milowy</span>
             </div>
           </div>
 
           <div className="flex items-center space-x-2">
-            <ArrowRightIcon className="w-4 h-4 text-gray-400" />
+            <ArrowRight className="w-4 h-4 text-gray-400" />
             <span className="text-sm text-gray-600">Zależności</span>
           </div>
         </div>

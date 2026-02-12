@@ -2,43 +2,47 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  SparklesIcon,
-  ClipboardDocumentListIcon,
-  LightBulbIcon,
-  DocumentTextIcon,
-  EnvelopeIcon,
-  MicrophoneIcon,
-  PhoneIcon,
-  CameraIcon,
-  DocumentIcon,
-  ArchiveBoxIcon,
-  ExclamationTriangleIcon,
-  BoltIcon,
-  ArrowTopRightOnSquareIcon,
-} from '@heroicons/react/24/outline';
+  Sparkles,
+  Clipboard,
+  Lightbulb,
+  FileText,
+  Mail,
+  Mic,
+  Phone,
+  Camera,
+  File,
+  Archive,
+  AlertTriangle,
+  Zap,
+  ExternalLink,
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import apiClient from '@/lib/api/client';
 import Link from 'next/link';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
+import { LucideIcon } from 'lucide-react';
 
 // Source type definitions matching InboxSourceType enum
-const SOURCE_TYPES = [
-  { key: 'QUICK_CAPTURE', label: 'Szybkie dodanie', description: 'Ręcznie wpisane elementy', icon: ArchiveBoxIcon },
-  { key: 'MEETING_NOTES', label: 'Notatki ze spotkań', description: 'Notatki z rozmów, spotkań', icon: ClipboardDocumentListIcon },
-  { key: 'PHONE_CALL', label: 'Rozmowy telefoniczne', description: 'Notatki z rozmów telefonicznych', icon: PhoneIcon },
-  { key: 'EMAIL', label: 'E-maile', description: 'E-maile wymagające akcji', icon: EnvelopeIcon },
-  { key: 'IDEA', label: 'Pomysły', description: 'Pomysły do analizy', icon: LightBulbIcon },
-  { key: 'DOCUMENT', label: 'Dokumenty', description: 'Dokumenty, pliki', icon: DocumentTextIcon },
-  { key: 'BILL_INVOICE', label: 'Faktury', description: 'Faktury i rachunki', icon: DocumentIcon },
-  { key: 'ARTICLE', label: 'Artykuły', description: 'Artykuły, linki', icon: DocumentTextIcon },
-  { key: 'VOICE_MEMO', label: 'Nagrania głosowe', description: 'Nagrania głosowe i dyktafon', icon: MicrophoneIcon },
-  { key: 'PHOTO', label: 'Zdjęcia', description: 'Zdjęcia dokumentów, wizytówek', icon: CameraIcon },
-  { key: 'OTHER', label: 'Inne', description: 'Wszystko inne', icon: ArchiveBoxIcon },
+const SOURCE_TYPES: { key: string; label: string; description: string; icon: LucideIcon }[] = [
+  { key: 'QUICK_CAPTURE', label: 'Szybkie dodanie', description: 'Recznie wpisane elementy', icon: Archive },
+  { key: 'MEETING_NOTES', label: 'Notatki ze spotkan', description: 'Notatki z rozmow, spotkan', icon: Clipboard },
+  { key: 'PHONE_CALL', label: 'Rozmowy telefoniczne', description: 'Notatki z rozmow telefonicznych', icon: Phone },
+  { key: 'EMAIL', label: 'E-maile', description: 'E-maile wymagajace akcji', icon: Mail },
+  { key: 'IDEA', label: 'Pomysly', description: 'Pomysly do analizy', icon: Lightbulb },
+  { key: 'DOCUMENT', label: 'Dokumenty', description: 'Dokumenty, pliki', icon: FileText },
+  { key: 'BILL_INVOICE', label: 'Faktury', description: 'Faktury i rachunki', icon: File },
+  { key: 'ARTICLE', label: 'Artykuly', description: 'Artykuly, linki', icon: FileText },
+  { key: 'VOICE_MEMO', label: 'Nagrania glosowe', description: 'Nagrania glosowe i dyktafon', icon: Mic },
+  { key: 'PHOTO', label: 'Zdjecia', description: 'Zdjecia dokumentow, wizytowek', icon: Camera },
+  { key: 'OTHER', label: 'Inne', description: 'Wszystko inne', icon: Archive },
 ];
 
 const CONFIDENCE_THRESHOLDS = [
-  { value: 0.95, label: 'Ostrożny (95%)', description: 'Tylko najbardziej oczywiste elementy' },
-  { value: 0.90, label: 'Standardowy (90%)', description: 'Dobra równowaga między automatyzacją a kontrolą' },
-  { value: 0.85, label: 'Umiarkowany (85%)', description: 'Więcej automatyzacji, czasem niepewne decyzje' },
+  { value: 0.95, label: 'Ostrozny (95%)', description: 'Tylko najbardziej oczywiste elementy' },
+  { value: 0.90, label: 'Standardowy (90%)', description: 'Dobra rownowaga miedzy automatyzacja a kontrola' },
+  { value: 0.85, label: 'Umiarkowany (85%)', description: 'Wiecej automatyzacji, czasem niepewne decyzje' },
   { value: 0.80, label: 'Agresywny (80%)', description: 'Maksymalna automatyzacja, wymaga monitorowania' },
 ];
 
@@ -106,10 +110,10 @@ export default function FlowSettingsPage() {
         ...settings,
         autoExecuteHighConfidence: settings.autopilot.enabled,
       });
-      toast.success('Ustawienia automatycznej analizy zostały zapisane');
+      toast.success('Ustawienia automatycznej analizy zostaly zapisane');
     } catch (error: any) {
       console.error('Failed to save flow settings:', error);
-      toast.error(error?.response?.data?.error || 'Nie udało się zapisać ustawień');
+      toast.error(error?.response?.data?.error || 'Nie udalo sie zapisac ustawien');
     } finally {
       setLoading(false);
     }
@@ -150,38 +154,35 @@ export default function FlowSettingsPage() {
 
   if (initialLoading) {
     return (
-      <div className="flex justify-center items-center h-48">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-      </div>
+      <PageShell>
+        <SkeletonPage />
+      </PageShell>
     );
   }
 
   return (
-    <div className="p-6 max-w-4xl">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-indigo-100 rounded-lg">
-          <SparklesIcon className="h-6 w-6 text-indigo-600" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Automatyczna analiza AI</h1>
-          <p className="text-sm text-gray-600">Konfiguruj automatyczną analizę elementów źródła przez AI</p>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Automatyczna analiza AI"
+        subtitle="Konfiguruj automatyczna analize elementow zrodla przez AI"
+        icon={Sparkles}
+        iconColor="text-indigo-600"
+        breadcrumbs={[{ label: 'Ustawienia', href: '/dashboard/settings' }, { label: 'Flow AI' }]}
+      />
 
       {/* Master toggle */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6 mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Włącz automatyczną analizę</h2>
-            <p className="text-sm text-gray-500 mt-1">
-              Nowe elementy dodane do Źródła będą automatycznie analizowane przez AI Flow Engine
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Wlacz automatyczna analize</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              Nowe elementy dodane do Zrodla beda automatycznie analizowane przez AI Flow Engine
             </p>
           </div>
           <button
             onClick={() => setSettings(prev => ({ ...prev, enabled: !prev.enabled }))}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              settings.enabled ? 'bg-indigo-600' : 'bg-gray-300'
+              settings.enabled ? 'bg-indigo-600' : 'bg-slate-300 dark:bg-slate-600'
             }`}
           >
             <span
@@ -194,18 +195,18 @@ export default function FlowSettingsPage() {
       </div>
 
       {/* Source types */}
-      <div className={`bg-white rounded-xl border border-gray-200 p-6 mb-6 transition-opacity ${!settings.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+      <div className={`bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6 mb-6 transition-opacity ${!settings.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Typy źródeł do analizy</h2>
-            <p className="text-sm text-gray-500 mt-1">
-              Wybierz które typy elementów mają być automatycznie analizowane ({enabledCount}/{SOURCE_TYPES.length})
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Typy zrodel do analizy</h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+              Wybierz ktore typy elementow maja byc automatycznie analizowane ({enabledCount}/{SOURCE_TYPES.length})
             </p>
           </div>
           <div className="flex gap-2 text-sm">
-            <button onClick={selectAll} className="text-indigo-600 hover:text-indigo-800">Zaznacz wszystkie</button>
-            <span className="text-gray-300">|</span>
-            <button onClick={deselectAll} className="text-gray-500 hover:text-gray-700">Odznacz wszystkie</button>
+            <button onClick={selectAll} className="text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300">Zaznacz wszystkie</button>
+            <span className="text-slate-300 dark:text-slate-600">|</span>
+            <button onClick={deselectAll} className="text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300">Odznacz wszystkie</button>
           </div>
         </div>
 
@@ -215,20 +216,20 @@ export default function FlowSettingsPage() {
               key={key}
               className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                 settings.sourceTypes[key]
-                  ? 'border-indigo-200 bg-indigo-50'
-                  : 'border-gray-200 bg-white hover:bg-gray-50'
+                  ? 'border-indigo-200 dark:border-indigo-800/30 bg-indigo-50 dark:bg-indigo-900/20'
+                  : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50'
               }`}
             >
               <input
                 type="checkbox"
                 checked={settings.sourceTypes[key] ?? true}
                 onChange={() => toggleSourceType(key)}
-                className="h-4 w-4 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500"
+                className="h-4 w-4 text-indigo-600 rounded border-slate-300 dark:border-slate-600 focus:ring-indigo-500"
               />
-              <Icon className={`h-5 w-5 shrink-0 ${settings.sourceTypes[key] ? 'text-indigo-600' : 'text-gray-400'}`} />
+              <Icon className={`h-5 w-5 shrink-0 ${settings.sourceTypes[key] ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 dark:text-slate-500'}`} />
               <div className="min-w-0">
-                <div className="text-sm font-medium text-gray-900">{label}</div>
-                <div className="text-xs text-gray-500">{description}</div>
+                <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{label}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400">{description}</div>
               </div>
             </label>
           ))}
@@ -236,17 +237,17 @@ export default function FlowSettingsPage() {
       </div>
 
       {/* Advanced settings */}
-      <div className={`bg-white rounded-xl border border-gray-200 p-6 mb-6 transition-opacity ${!settings.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Zaawansowane</h2>
+      <div className={`bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6 mb-6 transition-opacity ${!settings.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Zaawansowane</h2>
 
         <div className="space-y-6">
           {/* Min content length */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Minimalna długość treści (znaki)
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+              Minimalna dlugosc tresci (znaki)
             </label>
-            <p className="text-xs text-gray-500 mb-2">
-              Elementy krótsze niż ta wartość nie będą analizowane automatycznie
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">
+              Elementy krotsze niz ta wartosc nie beda analizowane automatycznie
             </p>
             <input
               type="number"
@@ -254,30 +255,30 @@ export default function FlowSettingsPage() {
               max={1000}
               value={settings.minContentLength}
               onChange={(e) => setSettings(prev => ({ ...prev, minContentLength: parseInt(e.target.value) || 10 }))}
-              className="w-32 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-32 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:text-slate-100"
             />
           </div>
         </div>
       </div>
 
       {/* Autopilot section */}
-      <div className={`bg-white rounded-xl border-2 ${settings.autopilot.enabled ? 'border-amber-300' : 'border-gray-200'} p-6 mb-6 transition-opacity ${!settings.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
+      <div className={`bg-white/80 backdrop-blur-xl border-2 ${settings.autopilot.enabled ? 'border-amber-300 dark:border-amber-700' : 'border-white/20 dark:border-slate-700/30'} rounded-2xl shadow-sm p-6 mb-6 transition-opacity ${!settings.enabled ? 'opacity-50 pointer-events-none' : ''}`}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className={`p-2 rounded-lg ${settings.autopilot.enabled ? 'bg-amber-100' : 'bg-gray-100'}`}>
-              <BoltIcon className={`h-5 w-5 ${settings.autopilot.enabled ? 'text-amber-600' : 'text-gray-400'}`} />
+            <div className={`p-2 rounded-lg ${settings.autopilot.enabled ? 'bg-amber-100 dark:bg-amber-900/30' : 'bg-slate-100 dark:bg-slate-700'}`}>
+              <Zap className={`h-5 w-5 ${settings.autopilot.enabled ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400 dark:text-slate-500'}`} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Autopilot</h2>
-              <p className="text-sm text-gray-500 mt-0.5">
-                AI automatycznie wykonuje akcje gdy pewność przekracza próg
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Autopilot</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                AI automatycznie wykonuje akcje gdy pewnosc przekracza prog
               </p>
             </div>
           </div>
           <button
             onClick={() => updateAutopilot({ enabled: !settings.autopilot.enabled })}
             className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-              settings.autopilot.enabled ? 'bg-amber-500' : 'bg-gray-300'
+              settings.autopilot.enabled ? 'bg-amber-500' : 'bg-slate-300 dark:bg-slate-600'
             }`}
           >
             <span
@@ -291,17 +292,17 @@ export default function FlowSettingsPage() {
         {settings.autopilot.enabled && (
           <div className="space-y-5 mt-4">
             {/* Warning */}
-            <div className="flex items-center gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-              <ExclamationTriangleIcon className="h-5 w-5 text-amber-600 shrink-0" />
-              <span className="text-sm text-amber-700">
-                Autopilot automatycznie tworzy zadania, projekty i przypisuje do strumieni bez potwierdzenia. Możesz cofnąć każdą akcję w historii.
+            <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800/30 rounded-lg">
+              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
+              <span className="text-sm text-amber-700 dark:text-amber-300">
+                Autopilot automatycznie tworzy zadania, projekty i przypisuje do strumieni bez potwierdzenia. Mozesz cofnac kazda akcje w historii.
               </span>
             </div>
 
             {/* Confidence threshold */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Próg pewności AI
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Prog pewnosci AI
               </label>
               <div className="space-y-2">
                 {CONFIDENCE_THRESHOLDS.map(({ value, label, description }) => (
@@ -309,8 +310,8 @@ export default function FlowSettingsPage() {
                     key={value}
                     className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
                       settings.autopilot.confidenceThreshold === value
-                        ? 'border-amber-300 bg-amber-50'
-                        : 'border-gray-200 bg-white hover:bg-gray-50'
+                        ? 'border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-900/20'
+                        : 'border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50'
                     }`}
                   >
                     <input
@@ -318,11 +319,11 @@ export default function FlowSettingsPage() {
                       name="confidenceThreshold"
                       checked={settings.autopilot.confidenceThreshold === value}
                       onChange={() => updateAutopilot({ confidenceThreshold: value })}
-                      className="h-4 w-4 text-amber-500 border-gray-300 focus:ring-amber-500"
+                      className="h-4 w-4 text-amber-500 border-slate-300 dark:border-slate-600 focus:ring-amber-500"
                     />
                     <div>
-                      <div className="text-sm font-medium text-gray-900">{label}</div>
-                      <div className="text-xs text-gray-500">{description}</div>
+                      <div className="text-sm font-medium text-slate-900 dark:text-slate-100">{label}</div>
+                      <div className="text-xs text-slate-500 dark:text-slate-400">{description}</div>
                     </div>
                   </label>
                 ))}
@@ -331,22 +332,22 @@ export default function FlowSettingsPage() {
 
             {/* Exceptions */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Wyjątki
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                Wyjatki
               </label>
-              <label className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 cursor-pointer hover:bg-gray-50">
+              <label className="flex items-center gap-3 p-3 rounded-lg border border-slate-200 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50">
                 <input
                   type="checkbox"
                   checked={settings.autopilot.exceptions.neverDeleteAuto}
                   onChange={(e) => updateAutopilot({
                     exceptions: { ...settings.autopilot.exceptions, neverDeleteAuto: e.target.checked }
                   })}
-                  className="h-4 w-4 text-amber-500 rounded border-gray-300 focus:ring-amber-500"
+                  className="h-4 w-4 text-amber-500 rounded border-slate-300 dark:border-slate-600 focus:ring-amber-500"
                 />
                 <div>
-                  <div className="text-sm font-medium text-gray-900">Nigdy nie usuwaj automatycznie</div>
-                  <div className="text-xs text-gray-500">
-                    Elementy sugerowane do usunięcia zawsze wymagają ręcznego potwierdzenia
+                  <div className="text-sm font-medium text-slate-900 dark:text-slate-100">Nigdy nie usuwaj automatycznie</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">
+                    Elementy sugerowane do usuniecia zawsze wymagaja recznego potwierdzenia
                   </div>
                 </div>
               </label>
@@ -356,10 +357,10 @@ export default function FlowSettingsPage() {
             <div className="pt-2">
               <Link
                 href="/dashboard/flow/autopilot"
-                className="inline-flex items-center gap-1.5 text-sm text-amber-600 hover:text-amber-800 font-medium"
+                className="inline-flex items-center gap-1.5 text-sm text-amber-600 dark:text-amber-400 hover:text-amber-800 dark:hover:text-amber-300 font-medium"
               >
-                Zobacz historię autopilota
-                <ArrowTopRightOnSquareIcon className="h-4 w-4" />
+                Zobacz historie autopilota
+                <ExternalLink className="h-4 w-4" />
               </Link>
             </div>
           </div>
@@ -383,6 +384,6 @@ export default function FlowSettingsPage() {
           )}
         </button>
       </div>
-    </div>
+    </PageShell>
   );
 }

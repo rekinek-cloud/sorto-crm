@@ -9,16 +9,22 @@ import HabitForm from '@/components/habits/HabitForm';
 import HabitFiltersComponent from '@/components/habits/HabitFilters';
 import { toast } from 'react-hot-toast';
 import {
-  PlusIcon,
-  FunnelIcon,
-  ViewColumnsIcon,
-  ListBulletIcon,
-  MagnifyingGlassIcon,
-  FireIcon,
-  TrophyIcon,
-  CheckCircleIcon,
-  ChartBarIcon,
-} from '@heroicons/react/24/outline';
+  Plus,
+  Filter,
+  LayoutGrid,
+  List,
+  Search,
+  Flame,
+  Trophy,
+  CheckCircle,
+  BarChart3,
+  Sprout,
+  Pencil,
+  Trash2,
+} from 'lucide-react';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { SkeletonPage } from '@/components/ui/SkeletonPage';
 
 type ViewMode = 'grid' | 'list';
 
@@ -71,7 +77,7 @@ export default function HabitsPage() {
       setPagination(habitsData.pagination);
       setStats(statsData);
     } catch (error: any) {
-      toast.error('Failed to load habits');
+      toast.error('Nie udalo sie zaladowac nawykow');
       console.error('Error loading habits:', error);
     } finally {
       setIsLoading(false);
@@ -84,7 +90,7 @@ export default function HabitsPage() {
       setHabits(habitsData.habits);
       setPagination(habitsData.pagination);
     } catch (error: any) {
-      toast.error('Failed to load habits');
+      toast.error('Nie udalo sie zaladowac nawykow');
       console.error('Error loading habits:', error);
     }
   };
@@ -92,11 +98,11 @@ export default function HabitsPage() {
   const handleCreate = async (data: any) => {
     try {
       await habitsApi.createHabit(data);
-      toast.success('Habit created successfully');
+      toast.success('Nawyk utworzony pomyslnie');
       setIsHabitFormOpen(false);
-      loadData(); // Reload both habits and stats
+      loadData();
     } catch (error: any) {
-      toast.error('Failed to create habit');
+      toast.error('Nie udalo sie utworzyc nawyku');
       console.error('Error creating habit:', error);
     }
   };
@@ -104,28 +110,28 @@ export default function HabitsPage() {
   const handleEdit = async (id: string, data: any) => {
     try {
       await habitsApi.updateHabit(id, data);
-      toast.success('Habit updated successfully');
+      toast.success('Nawyk zaktualizowany pomyslnie');
       setEditingHabit(undefined);
       setIsHabitFormOpen(false);
       loadData();
     } catch (error: any) {
-      toast.error('Failed to update habit');
+      toast.error('Nie udalo sie zaktualizowac nawyku');
       console.error('Error updating habit:', error);
     }
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this habit?')) return;
-    
+    if (!confirm('Czy na pewno chcesz usunac ten nawyk?')) return;
+
     try {
       await habitsApi.deleteHabit(id);
-      toast.success('Habit deleted successfully');
+      toast.success('Nawyk usuniety pomyslnie');
       loadData();
     } catch (error: any) {
       if (error.response?.data?.entryCount) {
-        toast.error(`Cannot delete habit: ${error.response.data.entryCount} entries exist`);
+        toast.error(`Nie mozna usunac nawyku: ${error.response.data.entryCount} wpisow istnieje`);
       } else {
-        toast.error('Failed to delete habit');
+        toast.error('Nie udalo sie usunac nawyku');
       }
       console.error('Error deleting habit:', error);
     }
@@ -150,79 +156,81 @@ export default function HabitsPage() {
   };
 
   const handleEntryUpdate = () => {
-    // Reload habits to get updated entry data and streaks
     loadData();
   };
 
+  if (isLoading) {
+    return (
+      <PageShell>
+        <SkeletonPage withStats={true} rows={6} />
+      </PageShell>
+    );
+  }
+
   return (
-    <motion.div
-      className="space-y-6"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Habits Tracker</h1>
-          <p className="text-gray-600">Build and maintain positive habits with streak tracking</p>
-        </div>
-        
-        <div className="flex items-center gap-3">
-          {/* Search */}
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search habits..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-            />
-            <MagnifyingGlassIcon className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-          </div>
+    <PageShell>
+      <PageHeader
+        title="Tracker nawykow"
+        subtitle="Buduj i utrzymuj pozytywne nawyki ze sledzeniem serii"
+        icon={Sprout}
+        iconColor="text-green-600"
+        actions={
+          <div className="flex items-center gap-3">
+            {/* Search */}
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Szukaj nawykow..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                className="pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white/80 dark:bg-slate-800/80 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-green-500 focus:border-green-500"
+              />
+              <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400 dark:text-slate-500" />
+            </div>
 
-          {/* View toggle */}
-          <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+            {/* View toggle */}
+            <div className="flex rounded-lg border border-slate-300 dark:border-slate-600 overflow-hidden">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 ${viewMode === 'grid'
+                  ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                <LayoutGrid className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 ${viewMode === 'list'
+                  ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                <List className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Filters */}
             <button
-              onClick={() => setViewMode('grid')}
-              className={`p-2 ${viewMode === 'grid' 
-                ? 'bg-primary-50 text-primary-700 border-primary-200' 
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
+              onClick={() => setShowFilters(!showFilters)}
+              className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 flex items-center transition-colors"
             >
-              <ViewColumnsIcon className="w-5 h-5" />
+              <Filter className="w-5 h-5 mr-2" />
+              Filtry
             </button>
+
+            {/* New Habit */}
             <button
-              onClick={() => setViewMode('list')}
-              className={`p-2 ${viewMode === 'list' 
-                ? 'bg-primary-50 text-primary-700 border-primary-200' 
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
+              onClick={() => setIsHabitFormOpen(true)}
+              className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center transition-colors"
             >
-              <ListBulletIcon className="w-5 h-5" />
+              <Plus className="w-5 h-5 mr-2" />
+              Nowy nawyk
             </button>
           </div>
-
-          {/* Filters */}
-          <button
-            onClick={() => setShowFilters(!showFilters)}
-            className="btn btn-outline"
-          >
-            <FunnelIcon className="w-5 h-5 mr-2" />
-            Filters
-          </button>
-
-          {/* New Habit */}
-          <button
-            onClick={() => setIsHabitFormOpen(true)}
-            className="btn btn-primary"
-          >
-            <PlusIcon className="w-5 h-5 mr-2" />
-            New Habit
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Filters Panel */}
       {showFilters && (
@@ -235,50 +243,50 @@ export default function HabitsPage() {
       {/* Statistics */}
       {stats && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <div className="w-6 h-6 text-blue-600">🌱</div>
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+                <Sprout className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Habits</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.totalHabits}</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Wszystkie nawyki</p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{stats.totalHabits}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircleIcon className="w-6 h-6 text-green-600" />
+              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-xl">
+                <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Today Completed</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.todayCompleted}</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Dzis ukonczone</p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{stats.todayCompleted}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <FireIcon className="w-6 h-6 text-orange-600" />
+              <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
+                <Flame className="w-6 h-6 text-orange-600 dark:text-orange-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Longest Streak</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.longestStreak}</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Najdluzsza seria</p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{stats.longestStreak}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
             <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <ChartBarIcon className="w-6 h-6 text-purple-600" />
+              <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
+                <BarChart3 className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Weekly Rate</p>
-                <p className="text-2xl font-semibold text-gray-900">{stats.weeklyCompletionRate}%</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Tygodniowy wynik</p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{stats.weeklyCompletionRate}%</p>
               </div>
             </div>
           </div>
@@ -286,23 +294,19 @@ export default function HabitsPage() {
       )}
 
       {/* Habits List */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        </div>
-      ) : filteredHabits.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-12 text-center">
-          <div className="text-6xl mb-4">🌱</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Habits Found</h3>
-          <p className="text-gray-600 mb-6">
-            {searchQuery ? 'No habits match your search criteria.' : 'Start building positive habits by creating your first habit tracker.'}
+      {filteredHabits.length === 0 ? (
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-12 text-center">
+          <Sprout className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Nie znaleziono nawykow</h3>
+          <p className="text-slate-600 dark:text-slate-400 mb-6">
+            {searchQuery ? 'Zaden nawyk nie pasuje do kryteriow wyszukiwania.' : 'Zacznij budowac pozytywne nawyki tworzac pierwszy tracker.'}
           </p>
           <button
             onClick={() => setIsHabitFormOpen(true)}
-            className="btn btn-primary"
+            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg flex items-center mx-auto transition-colors"
           >
-            <PlusIcon className="w-5 h-5 mr-2" />
-            Create First Habit
+            <Plus className="w-5 h-5 mr-2" />
+            Utworz pierwszy nawyk
           </button>
         </div>
       ) : (
@@ -329,39 +333,39 @@ export default function HabitsPage() {
               ))}
             </div>
           ) : (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">Habits List</h3>
+            <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">Lista nawykow</h3>
               </div>
-              <div className="divide-y divide-gray-200">
+              <div className="divide-y divide-slate-200 dark:divide-slate-700">
                 {filteredHabits.map((habit) => (
-                  <div key={habit.id} className="p-6 hover:bg-gray-50">
+                  <div key={habit.id} className="p-6 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3">
                           <div>
-                            <h4 className="text-lg font-medium text-gray-900">{habit.name}</h4>
+                            <h4 className="text-lg font-medium text-slate-900 dark:text-slate-100">{habit.name}</h4>
                             {habit.description && (
-                              <p className="text-sm text-gray-600">{habit.description}</p>
+                              <p className="text-sm text-slate-600 dark:text-slate-400">{habit.description}</p>
                             )}
                           </div>
                           <span
                             className={`px-2 py-1 text-xs font-medium rounded-full ${
-                              habit.isActive 
-                                ? 'bg-green-100 text-green-700' 
-                                : 'bg-gray-100 text-gray-700'
+                              habit.isActive
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                                : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-400'
                             }`}
                           >
-                            {habit.isActive ? 'Active' : 'Inactive'}
+                            {habit.isActive ? 'Aktywny' : 'Nieaktywny'}
                           </span>
                         </div>
-                        <div className="mt-2 flex items-center space-x-4 text-sm text-gray-500">
+                        <div className="mt-2 flex items-center space-x-4 text-sm text-slate-500 dark:text-slate-400">
                           <span className="flex items-center">
-                            <FireIcon className="w-4 h-4 mr-1" />
+                            <Flame className="w-4 h-4 mr-1" />
                             {habitsApi.formatStreak(habit.currentStreak)}
                           </span>
-                          <span>Frequency: {habit.frequency.toLowerCase()}</span>
-                          <span>Best: {habit.bestStreak} days</span>
+                          <span>Czestotliwosc: {habit.frequency.toLowerCase()}</span>
+                          <span>Najlepszy: {habit.bestStreak} dni</span>
                         </div>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -370,19 +374,15 @@ export default function HabitsPage() {
                             setEditingHabit(habit);
                             setIsHabitFormOpen(true);
                           }}
-                          className="text-gray-400 hover:text-gray-600"
+                          className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                         >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
+                          <Pencil className="w-5 h-5" />
                         </button>
                         <button
                           onClick={() => handleDelete(habit.id)}
-                          className="text-gray-400 hover:text-red-600"
+                          className="text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                         >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                          </svg>
+                          <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
                     </div>
@@ -395,18 +395,18 @@ export default function HabitsPage() {
           {/* Pagination */}
           {pagination.pages > 1 && (
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-700">
-                Showing {(pagination.page - 1) * pagination.limit + 1} to{' '}
-                {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-                {pagination.total} results
+              <div className="text-sm text-slate-700 dark:text-slate-300">
+                Wyswietlanie {(pagination.page - 1) * pagination.limit + 1} do{' '}
+                {Math.min(pagination.page * pagination.limit, pagination.total)} z{' '}
+                {pagination.total} wynikow
               </div>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={() => handlePageChange(pagination.page - 1)}
                   disabled={!pagination.hasPrev}
-                  className="btn btn-outline btn-sm"
+                  className="px-3 py-1 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
                 >
-                  Previous
+                  Poprzednia
                 </button>
                 {Array.from({ length: Math.min(5, pagination.pages) }, (_, i) => {
                   const page = i + 1;
@@ -414,9 +414,11 @@ export default function HabitsPage() {
                     <button
                       key={page}
                       onClick={() => handlePageChange(page)}
-                      className={`btn btn-sm ${
-                        page === pagination.page ? 'btn-primary' : 'btn-outline'
-                      }`}
+                      className={`px-3 py-1 rounded-lg text-sm ${
+                        page === pagination.page
+                          ? 'bg-green-600 text-white'
+                          : 'border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                      } transition-colors`}
                     >
                       {page}
                     </button>
@@ -425,9 +427,9 @@ export default function HabitsPage() {
                 <button
                   onClick={() => handlePageChange(pagination.page + 1)}
                   disabled={!pagination.hasNext}
-                  className="btn btn-outline btn-sm"
+                  className="px-3 py-1 border border-slate-300 dark:border-slate-600 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-50 transition-colors"
                 >
-                  Next
+                  Nastepna
                 </button>
               </div>
             </div>
@@ -439,8 +441,8 @@ export default function HabitsPage() {
       {isHabitFormOpen && (
         <HabitForm
           habit={editingHabit}
-          onSubmit={editingHabit ? 
-            (data) => handleEdit(editingHabit.id, data) : 
+          onSubmit={editingHabit ?
+            (data) => handleEdit(editingHabit.id, data) :
             handleCreate
           }
           onCancel={() => {
@@ -449,6 +451,6 @@ export default function HabitsPage() {
           }}
         />
       )}
-    </motion.div>
+    </PageShell>
   );
 }

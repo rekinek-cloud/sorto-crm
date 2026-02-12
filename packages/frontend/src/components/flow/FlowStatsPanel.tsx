@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  ChartBarIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  ArrowTrendingUpIcon,
-  ArrowPathIcon,
-} from '@heroicons/react/24/outline';
+  BarChart3,
+  Clock,
+  CheckCircle,
+  TrendingUp,
+  RefreshCw,
+} from 'lucide-react';
 import { flowApi, FlowStats, FLOW_ACTION_LABELS, FlowAction } from '@/lib/api/flow';
 
 export default function FlowStatsPanel() {
@@ -51,7 +51,7 @@ export default function FlowStatsPanel() {
     return (
       <div className="bg-white rounded-lg shadow-sm border p-6">
         <div className="text-center text-gray-500">
-          <ChartBarIcon className="w-12 h-12 mx-auto mb-2 opacity-50" />
+          <BarChart3 className="w-12 h-12 mx-auto mb-2 opacity-50" />
           <p>{error || 'Brak danych'}</p>
         </div>
       </div>
@@ -63,7 +63,7 @@ export default function FlowStatsPanel() {
       {/* Header */}
       <div className="px-6 py-4 border-b bg-gradient-to-r from-indigo-50 to-purple-50">
         <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-          <ChartBarIcon className="w-5 h-5 text-indigo-600" />
+          <BarChart3 className="w-5 h-5 text-indigo-600" />
           Statystyki Flow Engine
         </h3>
       </div>
@@ -73,7 +73,7 @@ export default function FlowStatsPanel() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div className="bg-yellow-50 rounded-lg p-4 border border-yellow-100">
             <div className="flex items-center gap-2 text-yellow-600 mb-2">
-              <ArrowPathIcon className="w-5 h-5" />
+              <RefreshCw className="w-5 h-5" />
               <span className="text-sm font-medium">Do przetworzenia</span>
             </div>
             <p className="text-3xl font-bold text-yellow-900">{stats.pending}</p>
@@ -81,7 +81,7 @@ export default function FlowStatsPanel() {
 
           <div className="bg-green-50 rounded-lg p-4 border border-green-100">
             <div className="flex items-center gap-2 text-green-600 mb-2">
-              <CheckCircleIcon className="w-5 h-5" />
+              <CheckCircle className="w-5 h-5" />
               <span className="text-sm font-medium">Dziś</span>
             </div>
             <p className="text-3xl font-bold text-green-900">{stats.processedToday}</p>
@@ -89,7 +89,7 @@ export default function FlowStatsPanel() {
 
           <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
             <div className="flex items-center gap-2 text-blue-600 mb-2">
-              <ArrowTrendingUpIcon className="w-5 h-5" />
+              <TrendingUp className="w-5 h-5" />
               <span className="text-sm font-medium">Ten tydzień</span>
             </div>
             <p className="text-3xl font-bold text-blue-900">{stats.processedThisWeek}</p>
@@ -97,7 +97,7 @@ export default function FlowStatsPanel() {
 
           <div className="bg-purple-50 rounded-lg p-4 border border-purple-100">
             <div className="flex items-center gap-2 text-purple-600 mb-2">
-              <ClockIcon className="w-5 h-5" />
+              <Clock className="w-5 h-5" />
               <span className="text-sm font-medium">Śr. czas</span>
             </div>
             <p className="text-3xl font-bold text-purple-900">

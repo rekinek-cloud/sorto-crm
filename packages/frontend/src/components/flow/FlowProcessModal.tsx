@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  SparklesIcon,
-  XMarkIcon,
-  CheckIcon,
-  ArrowPathIcon,
-} from '@heroicons/react/24/outline';
+  Sparkles,
+  X,
+  Check,
+  RefreshCw,
+} from 'lucide-react';
 import { flowApi, FlowAction, FlowPendingItem, FLOW_ACTION_LABELS } from '@/lib/api/flow';
 import { toast } from 'react-hot-toast';
 
@@ -190,14 +190,14 @@ export default function FlowProcessModal({ item, streams, onClose, onProcessed, 
         {/* Header */}
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
           <h2 className="text-xl font-bold flex items-center gap-2">
-            <SparklesIcon className="w-6 h-6 text-indigo-600" />
+            <Sparkles className="w-6 h-6 text-indigo-600" />
             Flow Engine - Przetwórz Element
           </h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <XMarkIcon className="w-5 h-5" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -214,11 +214,11 @@ export default function FlowProcessModal({ item, streams, onClose, onProcessed, 
           <div className="bg-gradient-to-r from-indigo-50 to-purple-50 p-4 rounded-lg border border-indigo-100">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
-                <SparklesIcon className="w-5 h-5 text-indigo-600" />
+                <Sparkles className="w-5 h-5 text-indigo-600" />
                 <h4 className="font-semibold text-indigo-900">Sugestia AI</h4>
               </div>
               {loadingAi && (
-                <ArrowPathIcon className="w-5 h-5 text-indigo-500 animate-spin" />
+                <RefreshCw className="w-5 h-5 text-indigo-500 animate-spin" />
               )}
             </div>
 
@@ -312,7 +312,7 @@ export default function FlowProcessModal({ item, streams, onClose, onProcessed, 
                   onClick={handleAcceptSuggestion}
                   className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors"
                 >
-                  <CheckIcon className="w-4 h-4" />
+                  <Check className="w-4 h-4" />
                   Zaakceptuj sugestię
                 </button>
               </div>
@@ -488,12 +488,12 @@ export default function FlowProcessModal({ item, streams, onClose, onProcessed, 
           >
             {processing ? (
               <>
-                <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                <RefreshCw className="w-4 h-4 animate-spin" />
                 Przetwarzanie...
               </>
             ) : (
               <>
-                <CheckIcon className="w-4 h-4" />
+                <Check className="w-4 h-4" />
                 Przetwórz
               </>
             )}

@@ -3,11 +3,11 @@
 import React from 'react';
 import { ErrorBoundary as BaseErrorBoundary } from '@/lib/errorTracker';
 import { motion } from 'framer-motion';
-import { 
-  ExclamationTriangleIcon, 
-  ArrowPathIcon,
-  DocumentTextIcon
-} from '@heroicons/react/24/outline';
+import {
+  AlertTriangle,
+  RefreshCw,
+  FileText
+} from 'lucide-react';
 
 interface FormErrorFallbackProps {
   error: Error;
@@ -25,7 +25,7 @@ function FormErrorFallback({ error, resetError, formName = 'Form' }: FormErrorFa
     >
       <div className="flex items-start">
         <div className="flex-shrink-0">
-          <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />
+          <AlertTriangle className="h-5 w-5 text-red-400" />
         </div>
         <div className="ml-3 flex-1">
           <h3 className="text-sm font-medium text-red-800">
@@ -51,7 +51,7 @@ function FormErrorFallback({ error, resetError, formName = 'Form' }: FormErrorFa
               onClick={resetError}
               className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-red-800 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
             >
-              <ArrowPathIcon className="w-4 h-4 mr-2" />
+              <RefreshCw className="w-4 h-4 mr-2" />
               Retry Form
             </button>
           </div>

@@ -2,14 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
-import { 
-  EnvelopeIcon, 
-  PhoneIcon, 
-  ChatBubbleLeftIcon,
-  PaperAirplaneIcon,
-  UserIcon,
-  ClockIcon
-} from '@heroicons/react/24/outline';
+import {
+  Mail,
+  Phone,
+  MessageCircle,
+  Send,
+  User,
+  Clock
+} from 'lucide-react';
 import { communicationApi } from '@/lib/api/communication';
 import { CommunicationHistory as CommunicationHistoryComponent } from './CommunicationHistory';
 import { apiClient } from '@/lib/api/client';
@@ -225,15 +225,15 @@ export function CommunicationPanel({ companyId, contactId, contacts, onCommunica
   const getCommunicationIcon = (type: string) => {
     switch (type.toLowerCase()) {
       case 'email':
-        return <EnvelopeIcon className="w-4 h-4" />;
+        return <Mail className="w-4 h-4" />;
       case 'phone':
       case 'call':
-        return <PhoneIcon className="w-4 h-4" />;
+        return <Phone className="w-4 h-4" />;
       case 'sms':
       case 'chat':
-        return <ChatBubbleLeftIcon className="w-4 h-4" />;
+        return <MessageCircle className="w-4 h-4" />;
       default:
-        return <EnvelopeIcon className="w-4 h-4" />;
+        return <Mail className="w-4 h-4" />;
     }
   };
 
@@ -251,7 +251,7 @@ export function CommunicationPanel({ companyId, contactId, contacts, onCommunica
             }`}
           >
             <div className="flex items-center space-x-2">
-              <PaperAirplaneIcon className="w-4 h-4" />
+              <Send className="w-4 h-4" />
               <span>Wyślij komunikację</span>
             </div>
           </button>
@@ -289,7 +289,7 @@ export function CommunicationPanel({ companyId, contactId, contacts, onCommunica
                       : 'border-gray-300 hover:bg-gray-50'
                   }`}
                 >
-                  <EnvelopeIcon className="w-4 h-4" />
+                  <Mail className="w-4 h-4" />
                   <span>Email</span>
                 </button>
                 <button
@@ -300,7 +300,7 @@ export function CommunicationPanel({ companyId, contactId, contacts, onCommunica
                       : 'border-gray-300 hover:bg-gray-50'
                   }`}
                 >
-                  <ChatBubbleLeftIcon className="w-4 h-4" />
+                  <MessageCircle className="w-4 h-4" />
                   <span>SMS</span>
                 </button>
                 <button
@@ -311,7 +311,7 @@ export function CommunicationPanel({ companyId, contactId, contacts, onCommunica
                       : 'border-gray-300 hover:bg-gray-50'
                   }`}
                 >
-                  <PhoneIcon className="w-4 h-4" />
+                  <Phone className="w-4 h-4" />
                   <span>Połączenie</span>
                 </button>
               </div>
@@ -387,7 +387,7 @@ export function CommunicationPanel({ companyId, contactId, contacts, onCommunica
                   </div>
                 ) : (
                   <div className="flex items-center space-x-2">
-                    <PaperAirplaneIcon className="w-4 h-4" />
+                    <Send className="w-4 h-4" />
                     <span>
                       {communicationType === 'email' ? 'Wyślij email' :
                        communicationType === 'sms' ? 'Wyślij SMS' :

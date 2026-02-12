@@ -7,16 +7,16 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  XMarkIcon,
-  CogIcon,
-  ClockIcon,
-  BoltIcon,
-  ChartBarIcon,
-  CheckIcon,
-  ArrowPathIcon,
-  InformationCircleIcon,
-  CheckCircleIcon
-} from '@heroicons/react/24/outline';
+  X,
+  Settings as CogIcon,
+  Clock,
+  Zap,
+  BarChart3,
+  Check,
+  RefreshCw,
+  Info,
+  CheckCircle
+} from 'lucide-react';
 import Button from '../ui/Button';
 import LoadingSpinner from '../ui/LoadingSpinner';
 
@@ -165,7 +165,7 @@ const GTDConfigModal: React.FC<GTDConfigModalProps> = ({
             onClick={onClose}
             className="text-gray-400 hover:text-gray-500"
           >
-            <XMarkIcon className="w-5 h-5" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -174,9 +174,9 @@ const GTDConfigModal: React.FC<GTDConfigModalProps> = ({
           <nav className="flex space-x-8 px-6">
             {[
               { id: 'inbox', label: 'Inbox', icon: <CogIcon className="w-4 h-4" /> },
-              { id: 'contexts', label: 'Konteksty', icon: <BoltIcon className="w-4 h-4" /> },
-              { id: 'automation', label: 'Automatyzacja', icon: <ClockIcon className="w-4 h-4" /> },
-              { id: 'analytics', label: 'Analityka', icon: <ChartBarIcon className="w-4 h-4" /> }
+              { id: 'contexts', label: 'Konteksty', icon: <Zap className="w-4 h-4" /> },
+              { id: 'automation', label: 'Automatyzacja', icon: <Clock className="w-4 h-4" /> },
+              { id: 'analytics', label: 'Analityka', icon: <BarChart3 className="w-4 h-4" /> }
             ].map(tab => (
               <button
                 key={tab.id}
@@ -408,7 +408,7 @@ const GTDConfigModal: React.FC<GTDConfigModalProps> = ({
                             <div className="text-sm text-gray-600 mt-1">{context.description}</div>
                           </div>
                           {isSelected && (
-                            <CheckCircleIcon className="w-5 h-5 text-green-600" />
+                            <CheckCircle className="w-5 h-5 text-green-600" />
                           )}
                         </div>
                       </button>
@@ -450,7 +450,7 @@ const GTDConfigModal: React.FC<GTDConfigModalProps> = ({
                             <div className="text-sm text-gray-600 mt-1">{level.description}</div>
                           </div>
                           {isSelected && (
-                            <CheckCircleIcon className="w-5 h-5 text-green-600" />
+                            <CheckCircle className="w-5 h-5 text-green-600" />
                           )}
                         </div>
                       </button>
@@ -687,7 +687,7 @@ const GTDConfigModal: React.FC<GTDConfigModalProps> = ({
 
               <div className="bg-blue-50 rounded-lg p-4">
                 <div className="flex items-start space-x-2">
-                  <InformationCircleIcon className="w-5 h-5 text-blue-500 mt-0.5" />
+                  <Info className="w-5 h-5 text-blue-500 mt-0.5" />
                   <div className="text-sm">
                     <div className="font-medium text-blue-900 mb-1">Informacja o analityce</div>
                     <p className="text-blue-700">
@@ -709,7 +709,7 @@ const GTDConfigModal: React.FC<GTDConfigModalProps> = ({
             onClick={resetToDefault}
             disabled={saving}
           >
-            <ArrowPathIcon className="w-4 h-4 mr-2" />
+            <RefreshCw className="w-4 h-4 mr-2" />
             Reset do domyślnych
           </Button>
           
@@ -733,7 +733,7 @@ const GTDConfigModal: React.FC<GTDConfigModalProps> = ({
                 </>
               ) : (
                 <>
-                  <CheckIcon className="w-4 h-4 mr-2" />
+                  <Check className="w-4 h-4 mr-2" />
                   Zapisz konfigurację
                 </>
               )}

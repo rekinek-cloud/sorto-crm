@@ -5,14 +5,14 @@ import { motion } from 'framer-motion';
 import { Habit, HabitEntry } from '@/lib/api/habits';
 import { habitsApi } from '@/lib/api/habits';
 import {
-  FireIcon,
-  CalendarIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  EllipsisHorizontalIcon,
-  ChartBarIcon,
-} from '@heroicons/react/24/outline';
-import { CheckCircleIcon as CheckCircleIconSolid } from '@heroicons/react/24/solid';
+  Flame,
+  Calendar,
+  CheckCircle,
+  XCircle,
+  MoreHorizontal,
+  BarChart3,
+  CheckCircle2,
+} from 'lucide-react';
 
 interface HabitCardProps {
   habit: Habit;
@@ -95,7 +95,7 @@ export default function HabitCard({ habit, onEdit, onDelete, onEntryUpdate, onCl
           
           <div className="relative group">
             <button className="p-1 text-gray-400 hover:text-gray-600 rounded-md">
-              <EllipsisHorizontalIcon className="w-5 h-5" />
+              <MoreHorizontal className="w-5 h-5" />
             </button>
             <div className="absolute right-0 top-8 bg-white rounded-md shadow-lg border border-gray-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
               <button
@@ -117,7 +117,7 @@ export default function HabitCard({ habit, onEdit, onDelete, onEntryUpdate, onCl
         {/* Current Streak */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-2">
-            <FireIcon className={`w-5 h-5 ${streakStyle.color}`} />
+            <Flame className={`w-5 h-5 ${streakStyle.color}`} />
             <span className="text-sm font-medium text-gray-700">
               {habitsApi.formatStreak(habit.currentStreak)}
             </span>
@@ -151,7 +151,7 @@ export default function HabitCard({ habit, onEdit, onDelete, onEntryUpdate, onCl
                   title={date.toLocaleDateString()}
                 >
                   {isCompleted ? (
-                    <CheckCircleIconSolid className="w-4 h-4" />
+                    <CheckCircle2 className="w-4 h-4" />
                   ) : (
                     date.getDate()
                   )}
@@ -177,12 +177,12 @@ export default function HabitCard({ habit, onEdit, onDelete, onEntryUpdate, onCl
               <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
             ) : isCompletedToday ? (
               <>
-                <CheckCircleIcon className="w-4 h-4" />
+                <CheckCircle className="w-4 h-4" />
                 <span>Completed</span>
               </>
             ) : (
               <>
-                <XCircleIcon className="w-4 h-4" />
+                <XCircle className="w-4 h-4" />
                 <span>Mark Done</span>
               </>
             )}
@@ -206,7 +206,7 @@ export default function HabitCard({ habit, onEdit, onDelete, onEntryUpdate, onCl
         {/* Footer */}
         <div className="flex items-center justify-between text-sm text-gray-500 mt-4 pt-4 border-t border-gray-200">
           <div className="flex items-center space-x-1">
-            <CalendarIcon className="w-4 h-4" />
+            <Calendar className="w-4 h-4" />
             <span>
               Started {new Date(habit.startDate).toLocaleDateString('en-US', {
                 month: 'short',
@@ -216,7 +216,7 @@ export default function HabitCard({ habit, onEdit, onDelete, onEntryUpdate, onCl
           </div>
           
           <div className="flex items-center space-x-1">
-            <ChartBarIcon className="w-4 h-4" />
+            <BarChart3 className="w-4 h-4" />
             <span>
               {habit.entries && habit.entries.length > 0
                 ? `${habitsApi.calculateCompletionRate(

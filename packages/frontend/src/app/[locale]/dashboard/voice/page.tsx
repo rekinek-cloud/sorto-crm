@@ -2,18 +2,20 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  MicrophoneIcon,
-  PlayIcon,
-  PauseIcon,
-  ArrowDownTrayIcon,
-  ArrowPathIcon,
-  SpeakerWaveIcon,
-  LanguageIcon,
-  AdjustmentsHorizontalIcon,
-  ClockIcon,
-} from '@heroicons/react/24/outline';
+  Mic,
+  Play,
+  Pause,
+  Download,
+  RefreshCw,
+  Volume2,
+  Languages,
+  SlidersHorizontal,
+  Clock,
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { voiceSimpleApi, type TTSModel } from '@/lib/api/voiceSimple';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 interface SynthesisHistory {
   id: string;
@@ -46,7 +48,6 @@ export default function VoicePage() {
   }, []);
 
   useEffect(() => {
-    // Cleanup audio URL on unmount
     return () => {
       if (audioUrl) {
         URL.revokeObjectURL(audioUrl);
@@ -96,7 +97,6 @@ export default function VoicePage() {
 
       const url = URL.createObjectURL(blob);
 
-      // Cleanup previous URL
       if (audioUrl) {
         URL.revokeObjectURL(audioUrl);
       }
@@ -104,7 +104,6 @@ export default function VoicePage() {
       setAudioBlob(blob);
       setAudioUrl(url);
 
-      // Add to history
       setHistory((prev) => [
         {
           id: Date.now().toString(),
@@ -152,26 +151,20 @@ export default function VoicePage() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-violet-100 rounded-lg">
-            <MicrophoneIcon className="h-6 w-6 text-violet-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Voice TTS</h1>
-            <p className="text-sm text-gray-600">Synteza tekstu na mowe</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
+    <PageShell>
+      <PageHeader
+        title="Voice TTS"
+        subtitle="Synteza tekstu na mowe"
+        icon={Mic}
+        iconColor="text-violet-600"
+        actions={
           <span
             className={`px-3 py-1 rounded-full text-sm ${
               healthStatus === 'healthy'
-                ? 'bg-green-100 text-green-700'
+                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
                 : healthStatus === 'unhealthy'
-                ? 'bg-red-100 text-red-700'
-                : 'bg-gray-100 text-gray-600'
+                ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
             }`}
           >
             {healthStatus === 'healthy'
@@ -180,30 +173,30 @@ export default function VoicePage() {
               ? 'TTS Offline'
               : 'Sprawdzam...'}
           </span>
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Main Panel */}
         <div className="lg:col-span-2 space-y-6">
           {/* Text Input */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
               Tekst do syntezy
             </label>
             <textarea
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="Wprowadz tekst, ktory chcesz zamienic na mowe..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none"
+              className="w-full px-4 py-3 border border-slate-300 dark:border-slate-600 rounded-lg resize-none bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
               rows={6}
               maxLength={2000}
             />
-            <div className="flex justify-between mt-2 text-sm text-gray-500">
+            <div className="flex justify-between mt-2 text-sm text-slate-500 dark:text-slate-400">
               <span>{text.length} / 2000 znakow</span>
               <button
                 onClick={() => setText('')}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
               >
                 Wyczysc
               </button>
@@ -211,22 +204,22 @@ export default function VoicePage() {
           </div>
 
           {/* Controls */}
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
-              <AdjustmentsHorizontalIcon className="h-5 w-5" />
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+            <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+              <SlidersHorizontal className="h-5 w-5" />
               Ustawienia
             </h3>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm text-gray-600 mb-1">
-                  <LanguageIcon className="h-4 w-4 inline mr-1" />
+                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-1">
+                  <Languages className="h-4 w-4 inline mr-1" />
                   Jezyk
                 </label>
                 <select
                   value={language}
                   onChange={(e) => setLanguage(e.target.value as 'pl' | 'en')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                 >
                   <option value="pl">Polski</option>
                   <option value="en">Angielski</option>
@@ -234,11 +227,11 @@ export default function VoicePage() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-600 mb-1">Emocja</label>
+                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-1">Emocja</label>
                 <select
                   value={emotion}
                   onChange={(e) => setEmotion(e.target.value as typeof emotion)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100"
                 >
                   <option value="neutral">Neutralna</option>
                   <option value="happy">Wesola</option>
@@ -249,7 +242,7 @@ export default function VoicePage() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-600 mb-1">
+                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-1">
                   Predkosc: {speed.toFixed(1)}x
                 </label>
                 <input
@@ -264,7 +257,7 @@ export default function VoicePage() {
               </div>
 
               <div>
-                <label className="block text-sm text-gray-600 mb-1">
+                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-1">
                   Osobowosc: {personalityLevel}
                 </label>
                 <input
@@ -286,12 +279,12 @@ export default function VoicePage() {
             >
               {loading ? (
                 <>
-                  <ArrowPathIcon className="h-5 w-5 animate-spin" />
+                  <RefreshCw className="h-5 w-5 animate-spin" />
                   Generuje...
                 </>
               ) : (
                 <>
-                  <SpeakerWaveIcon className="h-5 w-5" />
+                  <Volume2 className="h-5 w-5" />
                   Generuj mowe
                 </>
               )}
@@ -300,9 +293,9 @@ export default function VoicePage() {
 
           {/* Audio Player */}
           {audioUrl && (
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="font-medium text-gray-900 mb-4 flex items-center gap-2">
-                <SpeakerWaveIcon className="h-5 w-5" />
+            <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+              <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+                <Volume2 className="h-5 w-5" />
                 Odtwarzacz
               </h3>
 
@@ -319,13 +312,13 @@ export default function VoicePage() {
                   className="p-4 bg-violet-600 text-white rounded-full hover:bg-violet-700 transition-colors"
                 >
                   {isPlaying ? (
-                    <PauseIcon className="h-6 w-6" />
+                    <Pause className="h-6 w-6" />
                   ) : (
-                    <PlayIcon className="h-6 w-6" />
+                    <Play className="h-6 w-6" />
                   )}
                 </button>
 
-                <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                <div className="flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
                   <div
                     className={`h-full bg-violet-600 transition-all ${
                       isPlaying ? 'animate-pulse' : ''
@@ -336,10 +329,10 @@ export default function VoicePage() {
 
                 <button
                   onClick={handleDownload}
-                  className="p-2 text-gray-500 hover:text-violet-600 transition-colors"
+                  className="p-2 text-slate-500 dark:text-slate-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors"
                   title="Pobierz WAV"
                 >
-                  <ArrowDownTrayIcon className="h-6 w-6" />
+                  <Download className="h-6 w-6" />
                 </button>
               </div>
             </div>
@@ -349,22 +342,22 @@ export default function VoicePage() {
         {/* Sidebar */}
         <div className="space-y-6">
           {/* Models */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-              <MicrophoneIcon className="h-5 w-5" />
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2">
+              <Mic className="h-5 w-5" />
               Dostepne modele
             </h3>
             {models.length === 0 ? (
-              <p className="text-sm text-gray-500">Brak dostepnych modeli</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Brak dostepnych modeli</p>
             ) : (
               <div className="space-y-2">
                 {models.map((model) => (
                   <div
                     key={model.id}
-                    className="p-2 border border-gray-100 rounded-lg text-sm"
+                    className="p-2 border border-slate-100 dark:border-slate-700 rounded-lg text-sm"
                   >
-                    <p className="font-medium text-gray-900">{model.name}</p>
-                    <p className="text-gray-500">{model.language}</p>
+                    <p className="font-medium text-slate-900 dark:text-slate-100">{model.name}</p>
+                    <p className="text-slate-500 dark:text-slate-400">{model.language}</p>
                   </div>
                 ))}
               </div>
@@ -372,13 +365,13 @@ export default function VoicePage() {
           </div>
 
           {/* History */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-              <ClockIcon className="h-5 w-5" />
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-3 flex items-center gap-2">
+              <Clock className="h-5 w-5" />
               Historia
             </h3>
             {history.length === 0 ? (
-              <p className="text-sm text-gray-500 text-center py-4">
+              <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">
                 Brak historii syntez
               </p>
             ) : (
@@ -386,15 +379,15 @@ export default function VoicePage() {
                 {history.map((item) => (
                   <div
                     key={item.id}
-                    className="p-2 border border-gray-100 rounded-lg hover:bg-gray-50 cursor-pointer"
+                    className="p-2 border border-slate-100 dark:border-slate-700 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/40 cursor-pointer"
                     onClick={() => {
                       if (item.audioUrl) {
                         setAudioUrl(item.audioUrl);
                       }
                     }}
                   >
-                    <p className="text-sm text-gray-900 line-clamp-2">{item.text}</p>
-                    <div className="flex items-center gap-2 mt-1 text-xs text-gray-500">
+                    <p className="text-sm text-slate-900 dark:text-slate-100 line-clamp-2">{item.text}</p>
+                    <div className="flex items-center gap-2 mt-1 text-xs text-slate-500 dark:text-slate-400">
                       <span className="uppercase">{item.language}</span>
                       <span>
                         {item.timestamp.toLocaleTimeString('pl-PL', {
@@ -410,8 +403,8 @@ export default function VoicePage() {
           </div>
 
           {/* Quick Phrases */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <h3 className="font-medium text-gray-900 mb-3">Szybkie frazy</h3>
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-3">Szybkie frazy</h3>
             <div className="space-y-2">
               {[
                 'Dzien dobry, w czym moge pomoc?',
@@ -422,7 +415,7 @@ export default function VoicePage() {
                 <button
                   key={index}
                   onClick={() => setText(phrase)}
-                  className="w-full text-left px-3 py-2 text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-lg transition-colors"
+                  className="w-full text-left px-3 py-2 text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700/40 rounded-lg transition-colors"
                 >
                   {phrase}
                 </button>
@@ -431,6 +424,6 @@ export default function VoicePage() {
           </div>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

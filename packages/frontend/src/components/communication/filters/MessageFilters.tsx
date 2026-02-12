@@ -3,17 +3,17 @@
 import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
-  FunnelIcon,
-  MagnifyingGlassIcon,
-  XMarkIcon,
-  CalendarDaysIcon,
-  UserIcon,
-  PaperClipIcon,
-  ExclamationTriangleIcon,
-  EyeIcon,
-  CheckCircleIcon,
-  ClockIcon
-} from '@heroicons/react/24/outline'
+  Filter,
+  Search,
+  X,
+  CalendarDays,
+  User,
+  Paperclip,
+  AlertTriangle,
+  Eye,
+  CheckCircle,
+  Clock
+} from 'lucide-react'
 
 export interface MessageFilters {
   search: string
@@ -97,7 +97,7 @@ export function MessageFilters({
             onClick={onToggle}
             className="flex items-center space-x-2 text-gray-700 hover:text-indigo-600 transition-colors"
           >
-            <FunnelIcon className="h-5 w-5" />
+            <Filter className="h-5 w-5" />
             <span className="font-medium">Filtry</span>
             {hasActiveFilters() && (
               <span className="bg-indigo-100 text-indigo-800 text-xs px-2 py-1 rounded-full">
@@ -135,7 +135,7 @@ export function MessageFilters({
               {/* Search */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <MagnifyingGlassIcon className="h-4 w-4 inline mr-2" />
+                  <Search className="h-4 w-4 inline mr-2" />
                   Wyszukaj
                 </label>
                 <div className="relative">
@@ -151,7 +151,7 @@ export function MessageFilters({
                       onClick={() => updateFilter('search', '')}
                       className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
                     >
-                      <XMarkIcon className="h-4 w-4" />
+                      <X className="h-4 w-4" />
                     </button>
                   )}
                 </div>
@@ -160,7 +160,7 @@ export function MessageFilters({
               {/* Channels */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <UserIcon className="h-4 w-4 inline mr-2" />
+                  <User className="h-4 w-4 inline mr-2" />
                   Kanały ({filters.channels.length} wybranych)
                 </label>
                 <div className="max-h-40 overflow-y-auto border border-gray-300 rounded-md p-2">
@@ -190,7 +190,7 @@ export function MessageFilters({
               {/* Date Range */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <CalendarDaysIcon className="h-4 w-4 inline mr-2" />
+                  <CalendarDays className="h-4 w-4 inline mr-2" />
                   Zakres dat
                 </label>
                 <select
@@ -234,7 +234,7 @@ export function MessageFilters({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <ExclamationTriangleIcon className="h-4 w-4 inline mr-2" />
+                    <AlertTriangle className="h-4 w-4 inline mr-2" />
                     Priorytet
                   </label>
                   <select
@@ -252,7 +252,7 @@ export function MessageFilters({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <CheckCircleIcon className="h-4 w-4 inline mr-2" />
+                    <CheckCircle className="h-4 w-4 inline mr-2" />
                     Status
                   </label>
                   <select
@@ -273,7 +273,7 @@ export function MessageFilters({
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <PaperClipIcon className="h-4 w-4 inline mr-2" />
+                    <Paperclip className="h-4 w-4 inline mr-2" />
                     Załączniki
                   </label>
                   <select
@@ -289,7 +289,7 @@ export function MessageFilters({
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    <EyeIcon className="h-4 w-4 inline mr-2" />
+                    <Eye className="h-4 w-4 inline mr-2" />
                     Przeczytane
                   </label>
                   <select
@@ -307,7 +307,7 @@ export function MessageFilters({
               {/* Urgency Range */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <ClockIcon className="h-4 w-4 inline mr-2" />
+                  <Clock className="h-4 w-4 inline mr-2" />
                   Pilność ({filters.urgencyMin}-{filters.urgencyMax}%)
                 </label>
                 <div className="space-y-2">
@@ -339,7 +339,7 @@ export function MessageFilters({
               {/* Sender */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <UserIcon className="h-4 w-4 inline mr-2" />
+                  <User className="h-4 w-4 inline mr-2" />
                   Nadawca
                 </label>
                 <input

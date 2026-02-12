@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Stream } from '@/types/gtd';
-import { XMarkIcon, SparklesIcon } from '@heroicons/react/24/outline';
+import { X, Sparkles } from 'lucide-react';
 import { streamsApi } from '@/lib/api/streams';
 import { toast } from 'react-hot-toast';
 
@@ -189,7 +189,7 @@ export default function StreamForm({ stream, onSubmit, onCancel }: StreamFormPro
               onClick={onCancel}
               className="text-gray-400 hover:text-gray-600 transition-colors"
             >
-              <XMarkIcon className="h-6 w-6" />
+              <X className="h-6 w-6" />
             </button>
           </div>
 
@@ -199,7 +199,7 @@ export default function StreamForm({ stream, onSubmit, onCancel }: StreamFormPro
             {!stream && (
               <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-4 rounded-xl border border-purple-100">
                 <div className="flex items-center gap-2 mb-3">
-                  <SparklesIcon className="h-5 w-5 text-purple-600" />
+                  <Sparkles className="h-5 w-5 text-purple-600" />
                   <span className="font-medium text-purple-900">Asystent AI</span>
                 </div>
                 <p className="text-sm text-purple-700 mb-3">
@@ -226,7 +226,7 @@ export default function StreamForm({ stream, onSubmit, onCancel }: StreamFormPro
                       </>
                     ) : (
                       <>
-                        <SparklesIcon className="h-4 w-4" />
+                        <Sparkles className="h-4 w-4" />
                         <span>Sugeruj</span>
                       </>
                     )}

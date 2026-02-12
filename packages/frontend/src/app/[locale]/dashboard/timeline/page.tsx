@@ -4,13 +4,23 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import {
-  CalendarIcon,
-  ClockIcon,
-  ChartBarIcon,
-  FunnelIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
-} from '@heroicons/react/24/outline';
+  Calendar,
+  Clock,
+  BarChart3,
+  Filter,
+  ArrowUp,
+  ArrowDown,
+  ClipboardList,
+  Rocket,
+  Users,
+  AlarmClock,
+  Target,
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 interface TimelineEvent {
   id: string;
@@ -25,6 +35,17 @@ interface TimelineEvent {
 
 type ViewMode = 'timeline' | 'calendar' | 'list';
 type TimeRange = 'week' | 'month' | 'quarter' | 'year';
+
+const EventTypeIcon = ({ type }: { type: string }) => {
+  switch (type) {
+    case 'TASK': return <ClipboardList className="h-4 w-4" />;
+    case 'PROJECT': return <Rocket className="h-4 w-4" />;
+    case 'MEETING': return <Users className="h-4 w-4" />;
+    case 'DEADLINE': return <AlarmClock className="h-4 w-4" />;
+    case 'MILESTONE': return <Target className="h-4 w-4" />;
+    default: return <CalendarDays className="h-4 w-4" />;
+  }
+};
 
 export default function TimelinePage() {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
@@ -41,7 +62,7 @@ export default function TimelinePage() {
         id: '1',
         eventId: 'task-1',
         eventType: 'TASK',
-        title: 'Complete Q4 Report',
+        title: 'Raport Q4',
         startDate: new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000).toISOString(),
         endDate: new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000).toISOString(),
         createdAt: new Date().toISOString(),
@@ -51,7 +72,7 @@ export default function TimelinePage() {
         id: '2',
         eventId: 'project-1',
         eventType: 'PROJECT',
-        title: 'Website Redesign Project',
+        title: 'Redesign strony',
         startDate: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(),
         endDate: new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000).toISOString(),
         createdAt: new Date().toISOString(),
@@ -61,7 +82,7 @@ export default function TimelinePage() {
         id: '3',
         eventId: 'meeting-1',
         eventType: 'MEETING',
-        title: 'Client Strategy Meeting',
+        title: 'Spotkanie strategiczne z klientem',
         startDate: new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000).toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -70,7 +91,7 @@ export default function TimelinePage() {
         id: '4',
         eventId: 'deadline-1',
         eventType: 'DEADLINE',
-        title: 'Project Alpha Deadline',
+        title: 'Deadline projektu Alpha',
         startDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
@@ -79,13 +100,13 @@ export default function TimelinePage() {
         id: '5',
         eventId: 'milestone-1',
         eventType: 'MILESTONE',
-        title: 'Beta Release',
+        title: 'Wydanie Beta',
         startDate: new Date(now.getTime() + 10 * 24 * 60 * 60 * 1000).toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }
     ];
-    
+
     setTimeout(() => {
       setEvents(mockEvents);
       setIsLoading(false);
@@ -99,23 +120,12 @@ export default function TimelinePage() {
       case 'MEETING': return 'bg-purple-500';
       case 'DEADLINE': return 'bg-red-500';
       case 'MILESTONE': return 'bg-yellow-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getEventTypeIcon = (type: string) => {
-    switch (type) {
-      case 'TASK': return '📋';
-      case 'PROJECT': return '🚀';
-      case 'MEETING': return '👥';
-      case 'DEADLINE': return '⏰';
-      case 'MILESTONE': return '🎯';
-      default: return '📅';
+      default: return 'bg-slate-500';
     }
   };
 
   const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', {
+    return new Date(date).toLocaleDateString('pl-PL', {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
@@ -123,7 +133,7 @@ export default function TimelinePage() {
   };
 
   const formatTime = (date: string) => {
-    return new Date(date).toLocaleTimeString('en-US', {
+    return new Date(date).toLocaleTimeString('pl-PL', {
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -134,126 +144,131 @@ export default function TimelinePage() {
     const eventDate = new Date(date);
     const diffTime = eventDate.getTime() - now.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 0) return `${Math.abs(diffDays)} days ago`;
-    if (diffDays === 0) return 'Today';
-    if (diffDays === 1) return 'Tomorrow';
-    return `In ${diffDays} days`;
+
+    if (diffDays < 0) return `${Math.abs(diffDays)} dni temu`;
+    if (diffDays === 0) return 'Dzisiaj';
+    if (diffDays === 1) return 'Jutro';
+    return `Za ${diffDays} dni`;
   };
 
-  const sortedEvents = [...events].sort((a, b) => 
+  const sortedEvents = [...events].sort((a, b) =>
     new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
   );
 
-  const upcomingEvents = events.filter(event => 
+  const upcomingEvents = events.filter(event =>
     new Date(event.startDate) > new Date()
   );
 
-  const pastEvents = events.filter(event => 
+  const pastEvents = events.filter(event =>
     new Date(event.startDate) <= new Date()
   );
 
+  if (isLoading) {
+    return (
+      <PageShell>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 dark:border-blue-400"></div>
+        </div>
+      </PageShell>
+    );
+  }
+
   return (
-    <motion.div
-      className="space-y-6"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Timeline</h1>
-          <p className="text-gray-600">Visualize your tasks, projects, and events over time</p>
-        </div>
-        
-        <div className="flex items-center space-x-3">
-          <div className="flex items-center bg-white rounded-lg border border-gray-200">
-            <button
-              onClick={() => setViewMode('timeline')}
-              className={`px-3 py-2 text-sm font-medium rounded-l-lg transition-colors ${
-                viewMode === 'timeline' ? 'bg-primary-600 text-white' : 'text-gray-700 hover:bg-gray-50'
-              }`}
+    <PageShell>
+      <PageHeader
+        title="Os czasu"
+        subtitle="Wizualizacja zadan, projektow i wydarzen w czasie"
+        icon={Calendar}
+        iconColor="text-blue-600"
+        actions={
+          <div className="flex items-center gap-3">
+            <div className="flex items-center bg-white/80 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700/30 rounded-xl overflow-hidden">
+              <button
+                onClick={() => setViewMode('timeline')}
+                className={`px-3 py-2 text-sm font-medium transition-colors ${
+                  viewMode === 'timeline' ? 'bg-blue-600 text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                }`}
+              >
+                Os czasu
+              </button>
+              <button
+                onClick={() => setViewMode('calendar')}
+                className={`px-3 py-2 text-sm font-medium transition-colors ${
+                  viewMode === 'calendar' ? 'bg-blue-600 text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                }`}
+              >
+                Kalendarz
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-2 text-sm font-medium transition-colors ${
+                  viewMode === 'list' ? 'bg-blue-600 text-white' : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                }`}
+              >
+                Lista
+              </button>
+            </div>
+
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value as TimeRange)}
+              className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-slate-700/50 text-slate-900 dark:text-slate-100"
             >
-              Timeline
-            </button>
-            <button
-              onClick={() => setViewMode('calendar')}
-              className={`px-3 py-2 text-sm font-medium transition-colors ${
-                viewMode === 'calendar' ? 'bg-primary-600 text-white' : 'text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              Calendar
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`px-3 py-2 text-sm font-medium rounded-r-lg transition-colors ${
-                viewMode === 'list' ? 'bg-primary-600 text-white' : 'text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              List
-            </button>
+              <option value="week">Tydzien</option>
+              <option value="month">Miesiac</option>
+              <option value="quarter">Kwartal</option>
+              <option value="year">Rok</option>
+            </select>
           </div>
-          
-          <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value as TimeRange)}
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-          >
-            <option value="week">Week</option>
-            <option value="month">Month</option>
-            <option value="quarter">Quarter</option>
-            <option value="year">Year</option>
-          </select>
-        </div>
-      </div>
+        }
+      />
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
           <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <CalendarIcon className="w-6 h-6 text-blue-600" />
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+              <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Total Events</p>
-              <p className="text-2xl font-semibold text-gray-900">{events.length}</p>
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Lacznie wydarzen</p>
+              <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{events.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
           <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <ArrowUpIcon className="w-6 h-6 text-green-600" />
+            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-xl">
+              <ArrowUp className="w-6 h-6 text-green-600 dark:text-green-400" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Upcoming</p>
-              <p className="text-2xl font-semibold text-gray-900">{upcomingEvents.length}</p>
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Nadchodzace</p>
+              <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{upcomingEvents.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
           <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <ArrowDownIcon className="w-6 h-6 text-purple-600" />
+            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
+              <ArrowDown className="w-6 h-6 text-purple-600 dark:text-purple-400" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Completed</p>
-              <p className="text-2xl font-semibold text-gray-900">{pastEvents.length}</p>
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Zakonczone</p>
+              <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{pastEvents.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
           <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <ChartBarIcon className="w-6 h-6 text-yellow-600" />
+            <div className="p-2 bg-yellow-100 dark:bg-yellow-900/30 rounded-xl">
+              <BarChart3 className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">This Week</p>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Ten tydzien</p>
+              <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
                 {events.filter(e => {
                   const eventDate = new Date(e.startDate);
                   const now = new Date();
@@ -268,26 +283,22 @@ export default function TimelinePage() {
       </div>
 
       {/* Content */}
-      {isLoading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-        </div>
-      ) : events.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-12 text-center">
-          <div className="text-6xl mb-4">📅</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Timeline Events</h3>
-          <p className="text-gray-600 mb-6">
-            Your timeline will automatically populate as you create tasks, projects, and meetings.
+      {events.length === 0 ? (
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-12 text-center">
+          <CalendarDays className="h-16 w-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Brak wydarzen na osi czasu</h3>
+          <p className="text-slate-600 dark:text-slate-400 mb-6">
+            Os czasu uzupelni sie automatycznie w miare tworzenia zadan, projektow i spotkan.
           </p>
         </div>
       ) : (
         <div className="space-y-6">
           {viewMode === 'timeline' && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
               <div className="relative">
                 {/* Timeline line */}
-                <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-gray-200"></div>
-                
+                <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-700"></div>
+
                 <div className="space-y-8">
                   {sortedEvents.map((event, index) => (
                     <motion.div
@@ -299,42 +310,42 @@ export default function TimelinePage() {
                     >
                       {/* Timeline dot */}
                       <div className={`relative z-10 flex items-center justify-center w-8 h-8 rounded-full ${getEventTypeColor(event.eventType)} text-white text-sm font-medium`}>
-                        {getEventTypeIcon(event.eventType)}
+                        <EventTypeIcon type={event.eventType} />
                       </div>
-                      
+
                       {/* Event content */}
                       <div className="flex-1 min-w-0">
-                        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                        <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4 border border-slate-200 dark:border-slate-600/50">
                           <div className="flex items-center justify-between mb-2">
-                            <h3 className="text-lg font-semibold text-gray-900">{event.title}</h3>
+                            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{event.title}</h3>
                             <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                              event.eventType === 'TASK' ? 'bg-blue-100 text-blue-700' :
-                              event.eventType === 'PROJECT' ? 'bg-green-100 text-green-700' :
-                              event.eventType === 'MEETING' ? 'bg-purple-100 text-purple-700' :
-                              event.eventType === 'DEADLINE' ? 'bg-red-100 text-red-700' :
-                              'bg-yellow-100 text-yellow-700'
+                              event.eventType === 'TASK' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                              event.eventType === 'PROJECT' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                              event.eventType === 'MEETING' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
+                              event.eventType === 'DEADLINE' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                              'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
                             }`}>
                               {event.eventType}
                             </span>
                           </div>
-                          
-                          <div className="flex items-center space-x-4 text-sm text-gray-600">
+
+                          <div className="flex items-center space-x-4 text-sm text-slate-600 dark:text-slate-400">
                             <div className="flex items-center space-x-1">
-                              <CalendarIcon className="w-4 h-4" />
+                              <Calendar className="w-4 h-4" />
                               <span>{formatDate(event.startDate)}</span>
                             </div>
                             <div className="flex items-center space-x-1">
-                              <ClockIcon className="w-4 h-4" />
+                              <Clock className="w-4 h-4" />
                               <span>{formatTime(event.startDate)}</span>
                             </div>
-                            <span className="text-gray-500">
+                            <span className="text-slate-500 dark:text-slate-500">
                               {getDaysFromNow(event.startDate)}
                             </span>
                           </div>
-                          
+
                           {event.endDate && (
-                            <div className="mt-2 text-sm text-gray-600">
-                              <span>Ends: {formatDate(event.endDate)} at {formatTime(event.endDate)}</span>
+                            <div className="mt-2 text-sm text-slate-600 dark:text-slate-400">
+                              <span>Konczy sie: {formatDate(event.endDate)} o {formatTime(event.endDate)}</span>
                             </div>
                           )}
                         </div>
@@ -347,15 +358,15 @@ export default function TimelinePage() {
           )}
 
           {viewMode === 'list' && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">All Events ({events.length})</h3>
+            <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700/50">
+                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">Wszystkie wydarzenia ({events.length})</h3>
               </div>
-              <div className="divide-y divide-gray-200">
+              <div className="divide-y divide-slate-200 dark:divide-slate-700/50">
                 {sortedEvents.map((event, index) => (
                   <motion.div
                     key={event.id}
-                    className="p-6 hover:bg-gray-50 transition-colors"
+                    className="p-6 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.2, delay: index * 0.05 }}
@@ -364,20 +375,20 @@ export default function TimelinePage() {
                       <div className="flex items-center space-x-3">
                         <div className={`w-3 h-3 rounded-full ${getEventTypeColor(event.eventType)}`}></div>
                         <div>
-                          <h4 className="text-lg font-medium text-gray-900">{event.title}</h4>
-                          <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
+                          <h4 className="text-lg font-medium text-slate-900 dark:text-slate-100">{event.title}</h4>
+                          <div className="flex items-center space-x-4 text-sm text-slate-600 dark:text-slate-400 mt-1">
                             <span>{formatDate(event.startDate)}</span>
                             <span>{formatTime(event.startDate)}</span>
-                            <span className="text-gray-500">{getDaysFromNow(event.startDate)}</span>
+                            <span className="text-slate-500 dark:text-slate-500">{getDaysFromNow(event.startDate)}</span>
                           </div>
                         </div>
                       </div>
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        event.eventType === 'TASK' ? 'bg-blue-100 text-blue-700' :
-                        event.eventType === 'PROJECT' ? 'bg-green-100 text-green-700' :
-                        event.eventType === 'MEETING' ? 'bg-purple-100 text-purple-700' :
-                        event.eventType === 'DEADLINE' ? 'bg-red-100 text-red-700' :
-                        'bg-yellow-100 text-yellow-700'
+                        event.eventType === 'TASK' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                        event.eventType === 'PROJECT' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                        event.eventType === 'MEETING' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
+                        event.eventType === 'DEADLINE' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                        'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
                       }`}>
                         {event.eventType}
                       </span>
@@ -389,45 +400,41 @@ export default function TimelinePage() {
           )}
 
           {viewMode === 'calendar' && (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-medium text-gray-900">
-                  {selectedDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">
+                  {selectedDate.toLocaleDateString('pl-PL', { month: 'long', year: 'numeric' })}
                 </h3>
                 <div className="flex items-center space-x-2">
                   <button
                     onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() - 1, 1))}
-                    className="p-2 hover:bg-gray-100 rounded-md"
+                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-xl"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
+                    <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                   </button>
                   <button
                     onClick={() => setSelectedDate(new Date())}
-                    className="px-3 py-1 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-md"
+                    className="px-3 py-1 text-sm font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl"
                   >
-                    Today
+                    Dzisiaj
                   </button>
                   <button
                     onClick={() => setSelectedDate(new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 1))}
-                    className="p-2 hover:bg-gray-100 rounded-md"
+                    className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-xl"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
+                    <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                   </button>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-7 gap-1 mb-4">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                  <div key={day} className="p-2 text-center text-sm font-medium text-gray-500">
+                {['Nie', 'Pon', 'Wt', 'Sr', 'Czw', 'Pt', 'Sob'].map(day => (
+                  <div key={day} className="p-2 text-center text-sm font-medium text-slate-500 dark:text-slate-400">
                     {day}
                   </div>
                 ))}
               </div>
-              
+
               <div className="grid grid-cols-7 gap-1">
                 {(() => {
                   const year = selectedDate.getFullYear();
@@ -438,15 +445,15 @@ export default function TimelinePage() {
                   startDate.setDate(startDate.getDate() - firstDay.getDay());
                   const endDate = new Date(lastDay);
                   endDate.setDate(endDate.getDate() + (6 - lastDay.getDay()));
-                  
+
                   const dates = [];
                   const current = new Date(startDate);
-                  
+
                   while (current <= endDate) {
                     dates.push(new Date(current));
                     current.setDate(current.getDate() + 1);
                   }
-                  
+
                   return dates.map(date => {
                     const isCurrentMonth = date.getMonth() === month;
                     const isToday = date.toDateString() === new Date().toDateString();
@@ -454,17 +461,17 @@ export default function TimelinePage() {
                       const eventDate = new Date(event.startDate);
                       return eventDate.toDateString() === date.toDateString();
                     });
-                    
+
                     return (
                       <div
                         key={date.toISOString()}
-                        className={`min-h-24 p-1 border border-gray-100 ${
-                          isCurrentMonth ? 'bg-white' : 'bg-gray-50'
-                        } ${isToday ? 'bg-blue-50 border-blue-200' : ''}`}
+                        className={`min-h-24 p-1 border border-slate-100 dark:border-slate-700/50 rounded-lg ${
+                          isCurrentMonth ? 'bg-white dark:bg-slate-800/50' : 'bg-slate-50 dark:bg-slate-900/30'
+                        } ${isToday ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800/50' : ''}`}
                       >
                         <div className={`text-sm font-medium mb-1 ${
-                          isCurrentMonth ? 'text-gray-900' : 'text-gray-400'
-                        } ${isToday ? 'text-blue-600' : ''}`}>
+                          isCurrentMonth ? 'text-slate-900 dark:text-slate-100' : 'text-slate-400 dark:text-slate-600'
+                        } ${isToday ? 'text-blue-600 dark:text-blue-400' : ''}`}>
                           {date.getDate()}
                         </div>
                         <div className="space-y-1">
@@ -472,11 +479,11 @@ export default function TimelinePage() {
                             <div
                               key={event.id}
                               className={`px-1 py-0.5 text-xs rounded ${
-                                event.eventType === 'TASK' ? 'bg-blue-100 text-blue-700' :
-                                event.eventType === 'PROJECT' ? 'bg-green-100 text-green-700' :
-                                event.eventType === 'MEETING' ? 'bg-purple-100 text-purple-700' :
-                                event.eventType === 'DEADLINE' ? 'bg-red-100 text-red-700' :
-                                'bg-yellow-100 text-yellow-700'
+                                event.eventType === 'TASK' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                                event.eventType === 'PROJECT' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                                event.eventType === 'MEETING' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
+                                event.eventType === 'DEADLINE' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                                'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
                               }`}
                               title={event.title}
                             >
@@ -484,8 +491,8 @@ export default function TimelinePage() {
                             </div>
                           ))}
                           {dayEvents.length > 2 && (
-                            <div className="text-xs text-gray-500">
-                              +{dayEvents.length - 2} more
+                            <div className="text-xs text-slate-500 dark:text-slate-400">
+                              +{dayEvents.length - 2} wiecej
                             </div>
                           )}
                         </div>
@@ -498,6 +505,6 @@ export default function TimelinePage() {
           )}
         </div>
       )}
-    </motion.div>
+    </PageShell>
   );
 }

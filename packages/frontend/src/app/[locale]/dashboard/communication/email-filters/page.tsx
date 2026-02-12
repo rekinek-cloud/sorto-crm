@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { EnvelopeIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { Mail, ArrowRight } from 'lucide-react';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 export default function EmailFiltersPage() {
   // Auto redirect to Rules Manager with EMAIL_FILTER tab
@@ -10,31 +12,28 @@ export default function EmailFiltersPage() {
   }, []);
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Filtry Email</h1>
-          <p className="text-gray-600">
-            Zarządzanie filtrami email zostało przeniesione do zunifikowanego Rules Manager
-          </p>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Filtry Email"
+        subtitle="Zarzadzanie filtrami email zostalo przeniesione do zunifikowanego Rules Manager"
+        icon={Mail}
+        iconColor="text-green-600"
+      />
 
       {/* Redirect Info */}
-      <div className="bg-white rounded-lg shadow p-12 text-center">
-        <EnvelopeIcon className="w-16 h-16 mx-auto text-green-500 mb-4" />
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">Filtry Email</h3>
-        <p className="text-gray-600 mb-6">
-          Filtry email zostały zintegrowane z zunifikowanym systemem reguł.<br/>
-          Przekierowujemy Cię do Rules Manager → zakładka "Filtry Email"
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-12 text-center">
+        <Mail className="w-16 h-16 mx-auto text-green-500 mb-4" />
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Filtry Email</h3>
+        <p className="text-slate-600 dark:text-slate-400 mb-6">
+          Filtry email zostaly zintegrowane z zunifikowanym systemem regul.<br/>
+          Przekierowujemy Cie do Rules Manager - zakladka &quot;Filtry Email&quot;
         </p>
-        <div className="flex items-center justify-center space-x-2 text-blue-600">
+        <div className="flex items-center justify-center space-x-2 text-blue-600 dark:text-blue-400">
           <span>Przekierowanie...</span>
-          <ArrowRightIcon className="w-5 h-5" />
+          <ArrowRight className="w-5 h-5" />
           <span>Rules Manager</span>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

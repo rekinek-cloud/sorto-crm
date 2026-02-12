@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { SparklesIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
+import { Sparkles, RefreshCw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEnrichment } from '@/hooks/useEnrichment';
 
@@ -52,7 +52,7 @@ export function EnrichmentUsage({ className, compact = false }: EnrichmentUsageP
         )}
         title={`Wzbogacanie danych: ${isUnlimited ? 'bez limitu' : `${remaining}/${limit}`}`}
       >
-        <SparklesIcon className="h-4 w-4" />
+        <Sparkles className="h-4 w-4" />
         <span>
           {isUnlimited ? '∞' : remaining}/{isUnlimited ? '∞' : limit}
         </span>
@@ -69,7 +69,7 @@ export function EnrichmentUsage({ className, compact = false }: EnrichmentUsageP
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <SparklesIcon className="h-5 w-5 text-violet-500" />
+          <Sparkles className="h-5 w-5 text-violet-500" />
           <h3 className="font-medium text-gray-900 dark:text-white">
             Wzbogacanie AI
           </h3>
@@ -79,7 +79,7 @@ export function EnrichmentUsage({ className, compact = false }: EnrichmentUsageP
           className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 rounded"
           title="Odśwież"
         >
-          <ArrowPathIcon className="h-4 w-4" />
+          <RefreshCw className="h-4 w-4" />
         </button>
       </div>
 

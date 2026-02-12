@@ -2,18 +2,18 @@
 
 import React, { useState } from 'react';
 import {
-  ClockIcon,
-  UserIcon,
-  CurrencyDollarIcon,
-  BuildingOfficeIcon,
-  CheckCircleIcon,
-  PencilIcon,
-  PlusIcon,
-  ArrowRightIcon,
-  PhoneIcon,
-  EnvelopeIcon,
-  CalendarIcon
-} from '@heroicons/react/24/outline';
+  Clock,
+  User,
+  DollarSign,
+  Building2,
+  CheckCircle,
+  Pencil,
+  Plus,
+  ArrowRight,
+  Phone,
+  Mail,
+  Calendar
+} from 'lucide-react';
 import { ActivityDetailModal } from './ActivityDetailModal';
 
 export interface ActivityItem {
@@ -93,30 +93,30 @@ export function ActivityTimeline({
     switch (type) {
       case 'deal_created':
       case 'deal_updated':
-        return <CurrencyDollarIcon className="w-4 h-4 text-green-600" />;
+        return <DollarSign className="w-4 h-4 text-green-600" />;
       case 'contact_added':
       case 'contact_updated':
-        return <UserIcon className="w-4 h-4 text-blue-600" />;
+        return <User className="w-4 h-4 text-blue-600" />;
       case 'task_completed':
-        return <CheckCircleIcon className="w-4 h-4 text-purple-600" />;
+        return <CheckCircle className="w-4 h-4 text-purple-600" />;
       case 'meeting_scheduled':
-        return <CalendarIcon className="w-4 h-4 text-orange-600" />;
+        return <Calendar className="w-4 h-4 text-orange-600" />;
       case 'email_sent':
       case 'email_received':
       case 'EMAIL_SENT':
       case 'EMAIL_RECEIVED':
-        return <EnvelopeIcon className="w-4 h-4 text-indigo-600" />;
+        return <Mail className="w-4 h-4 text-indigo-600" />;
       case 'phone_call':
-        return <PhoneIcon className="w-4 h-4 text-yellow-600" />;
+        return <Phone className="w-4 h-4 text-yellow-600" />;
       case 'sms_sent':
-        return <PhoneIcon className="w-4 h-4 text-green-600" />;
+        return <Phone className="w-4 h-4 text-green-600" />;
       case 'chat_message':
       case 'CHAT_MESSAGE':
-        return <EnvelopeIcon className="w-4 h-4 text-purple-600" />;
+        return <Mail className="w-4 h-4 text-purple-600" />;
       case 'note_added':
-        return <PencilIcon className="w-4 h-4 text-gray-600" />;
+        return <Pencil className="w-4 h-4 text-gray-600" />;
       default:
-        return <ClockIcon className="w-4 h-4 text-gray-600" />;
+        return <Clock className="w-4 h-4 text-gray-600" />;
     }
   };
 
@@ -202,7 +202,7 @@ export function ActivityTimeline({
                 <span className="px-2 py-1 bg-gray-100 rounded text-xs">
                   {metadata.previousStage.toLowerCase()}
                 </span>
-                <ArrowRightIcon className="w-3 h-3 mx-2" />
+                <ArrowRight className="w-3 h-3 mx-2" />
                 <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
                   {metadata.dealStage.toLowerCase()}
                 </span>
@@ -385,7 +385,7 @@ export function ActivityTimeline({
   if (displayActivities.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
-        <ClockIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+        <Clock className="w-12 h-12 mx-auto mb-4 text-gray-300" />
         <p>{emptyMessage}</p>
         <p className="text-sm">Activity will appear here as interactions occur</p>
       </div>
@@ -413,7 +413,7 @@ export function ActivityTimeline({
             <div className="flex items-center space-x-2 mt-2 text-xs text-gray-500">
               {activity.user && (
                 <>
-                  <UserIcon className="w-3 h-3" />
+                  <User className="w-3 h-3" />
                   <span>{activity.user.firstName} {activity.user.lastName}</span>
                   <span>•</span>
                 </>

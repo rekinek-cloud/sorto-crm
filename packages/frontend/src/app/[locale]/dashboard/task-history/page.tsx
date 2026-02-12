@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
-import { ClockIcon, FunnelIcon, MagnifyingGlassIcon, ArrowPathIcon, CheckCircleIcon, PencilIcon, TrashIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { Clock, Filter, Search, RefreshCw, CheckCircle2, Pencil, Trash2, ArrowRight, Plus, MoveRight, UserPlus } from 'lucide-react';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 interface HistoryEntry {
   id: string;
@@ -77,24 +79,24 @@ const mockHistory: HistoryEntry[] = [
 ];
 
 const actionIcons = {
-  created: PencilIcon,
-  updated: ArrowPathIcon,
-  completed: CheckCircleIcon,
-  deleted: TrashIcon,
-  moved: ArrowRightIcon,
-  assigned: ArrowRightIcon
+  created: Plus,
+  updated: RefreshCw,
+  completed: CheckCircle2,
+  deleted: Trash2,
+  moved: MoveRight,
+  assigned: UserPlus
 };
 
-const actionColors = {
-  created: 'bg-blue-100 text-blue-700',
-  updated: 'bg-yellow-100 text-yellow-700',
-  completed: 'bg-green-100 text-green-700',
-  deleted: 'bg-red-100 text-red-700',
-  moved: 'bg-purple-100 text-purple-700',
-  assigned: 'bg-cyan-100 text-cyan-700'
+const actionColors: Record<string, string> = {
+  created: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+  updated: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400',
+  completed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+  deleted: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
+  moved: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+  assigned: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400'
 };
 
-const actionLabels = {
+const actionLabels: Record<string, string> = {
   created: 'Utworzono',
   updated: 'Zaktualizowano',
   completed: 'Ukończono',
@@ -116,36 +118,30 @@ export default function TaskHistoryPage() {
   });
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-cyan-100 rounded-lg">
-            <ClockIcon className="h-6 w-6 text-cyan-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Historia zadań</h1>
-            <p className="text-sm text-gray-600">Śledzenie zmian i postępów w zadaniach</p>
-          </div>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Historia zadań"
+        subtitle="Śledzenie zmian i postępów w zadaniach"
+        icon={Clock}
+        iconColor="text-cyan-600"
+      />
 
       {/* Filters */}
       <div className="flex gap-4 mb-6">
         <div className="flex-1 relative">
-          <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
           <input
             type="text"
             placeholder="Szukaj po zadaniu lub użytkowniku..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+            className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500"
           />
         </div>
         <select
           value={filterAction}
           onChange={(e) => setFilterAction(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500"
+          className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
         >
           <option value="all">Wszystkie akcje</option>
           <option value="created">Utworzone</option>
@@ -155,54 +151,54 @@ export default function TaskHistoryPage() {
           <option value="assigned">Przypisane</option>
           <option value="deleted">Usunięte</option>
         </select>
-        <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-          <FunnelIcon className="h-4 w-4" />
+        <button className="flex items-center gap-2 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 transition-colors">
+          <Filter className="h-4 w-4" />
           Więcej filtrów
         </button>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-6 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="text-2xl font-bold text-gray-900">{history.length}</div>
-          <div className="text-sm text-gray-600">Wszystkie</div>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+          <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{history.length}</div>
+          <div className="text-sm text-slate-600 dark:text-slate-400">Wszystkie</div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="text-2xl font-bold text-green-600">{history.filter(h => h.action === 'completed').length}</div>
-          <div className="text-sm text-gray-600">Ukończone</div>
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+          <div className="text-2xl font-bold text-green-600 dark:text-green-400">{history.filter(h => h.action === 'completed').length}</div>
+          <div className="text-sm text-slate-600 dark:text-slate-400">Ukończone</div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="text-2xl font-bold text-blue-600">{history.filter(h => h.action === 'created').length}</div>
-          <div className="text-sm text-gray-600">Utworzone</div>
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+          <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{history.filter(h => h.action === 'created').length}</div>
+          <div className="text-sm text-slate-600 dark:text-slate-400">Utworzone</div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="text-2xl font-bold text-yellow-600">{history.filter(h => h.action === 'updated').length}</div>
-          <div className="text-sm text-gray-600">Zmiany</div>
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+          <div className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{history.filter(h => h.action === 'updated').length}</div>
+          <div className="text-sm text-slate-600 dark:text-slate-400">Zmiany</div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="text-2xl font-bold text-purple-600">{history.filter(h => h.action === 'moved').length}</div>
-          <div className="text-sm text-gray-600">Przeniesione</div>
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+          <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{history.filter(h => h.action === 'moved').length}</div>
+          <div className="text-sm text-slate-600 dark:text-slate-400">Przeniesione</div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
-          <div className="text-2xl font-bold text-red-600">{history.filter(h => h.action === 'deleted').length}</div>
-          <div className="text-sm text-gray-600">Usunięte</div>
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+          <div className="text-2xl font-bold text-red-600 dark:text-red-400">{history.filter(h => h.action === 'deleted').length}</div>
+          <div className="text-sm text-slate-600 dark:text-slate-400">Usunięte</div>
         </div>
       </div>
 
       {/* Timeline */}
-      <div className="bg-white rounded-xl border border-gray-200">
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
         {filteredHistory.length === 0 ? (
           <div className="p-12 text-center">
-            <ClockIcon className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Brak historii</h3>
-            <p className="text-gray-500">Nie znaleziono wpisów pasujących do kryteriów</p>
+            <Clock className="h-12 w-12 mx-auto text-slate-300 dark:text-slate-600 mb-4" />
+            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">Brak historii</h3>
+            <p className="text-slate-500 dark:text-slate-400">Nie znaleziono wpisów pasujących do kryteriów</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-slate-200 dark:divide-slate-700">
             {filteredHistory.map((entry) => {
               const Icon = actionIcons[entry.action];
               return (
-                <div key={entry.id} className="flex items-start gap-4 p-4 hover:bg-gray-50">
+                <div key={entry.id} className="flex items-start gap-4 p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                   <div className={`p-2 rounded-lg ${actionColors[entry.action]}`}>
                     <Icon className="h-4 w-4" />
                   </div>
@@ -211,13 +207,13 @@ export default function TaskHistoryPage() {
                       <span className={`px-2 py-0.5 rounded text-xs font-medium ${actionColors[entry.action]}`}>
                         {actionLabels[entry.action]}
                       </span>
-                      <span className="font-medium text-gray-900">{entry.taskTitle}</span>
+                      <span className="font-medium text-slate-900 dark:text-slate-100">{entry.taskTitle}</span>
                     </div>
-                    <div className="text-sm text-gray-600">
+                    <div className="text-sm text-slate-600 dark:text-slate-400">
                       {entry.action === 'updated' && entry.field && (
                         <span>
-                          {entry.field}: <span className="line-through text-gray-400">{entry.oldValue}</span>
-                          {' → '}<span className="text-gray-900">{entry.newValue}</span>
+                          {entry.field}: <span className="line-through text-slate-400 dark:text-slate-500">{entry.oldValue}</span>
+                          {' → '}<span className="text-slate-900 dark:text-slate-100">{entry.newValue}</span>
                         </span>
                       )}
                       {entry.action === 'moved' && (
@@ -231,8 +227,8 @@ export default function TaskHistoryPage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm text-gray-500">{entry.timestamp}</div>
-                    <div className="text-xs text-gray-400">{entry.user}</div>
+                    <div className="text-sm text-slate-500 dark:text-slate-400">{entry.timestamp}</div>
+                    <div className="text-xs text-slate-400 dark:text-slate-500">{entry.user}</div>
                   </div>
                 </div>
               );
@@ -240,6 +236,6 @@ export default function TaskHistoryPage() {
           </div>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }

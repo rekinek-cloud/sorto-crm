@@ -1,11 +1,47 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { Building2, Plus, Users, UserCheck, Handshake, AlertCircle } from 'lucide-react';
+import { toast } from 'react-hot-toast';
+
 import { Company, CompanyFilters } from '@/types/crm';
 import { companiesApi } from '@/lib/api/companies';
-import CompanyItem from './CompanyItem';
 import CompanyForm from './CompanyForm';
+
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { FilterBar } from '@/components/ui/FilterBar';
+import { DataTable, Column } from '@/components/ui/DataTable';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ActionButton } from '@/components/ui/ActionButton';
+import { StatCard } from '@/components/ui/StatCard';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
+
+// --- Status mapping ---
+const STATUS_BADGE_MAP: Record<string, { variant: 'info' | 'success' | 'warning' | 'neutral'; label: string }> = {
+  PROSPECT: { variant: 'info', label: 'Prospekt' },
+  CUSTOMER: { variant: 'success', label: 'Klient' },
+  PARTNER: { variant: 'warning', label: 'Partner' },
+  INACTIVE: { variant: 'neutral', label: 'Nieaktywna' },
+  ARCHIVED: { variant: 'neutral', label: 'Archiwum' },
+};
+
+// --- Date formatter ---
+function formatDate(dateStr: string): string {
+  if (!dateStr) return '-';
+  try {
+    return new Intl.DateTimeFormat('pl-PL', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    }).format(new Date(dateStr));
+  } catch {
+    return '-';
+  }
+}
 
 export default function CompaniesList() {
   const router = useRouter();
@@ -18,17 +54,17 @@ export default function CompaniesList() {
     page: 1,
     limit: 20,
     sortBy: 'name',
-    sortOrder: 'asc'
+    sortOrder: 'asc',
   });
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 20,
     total: 0,
-    pages: 0
+    pages: 0,
   });
 
-  // Load companies
-  const loadCompanies = async () => {
+  // ---- Data loading ----
+  const loadCompanies = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -37,266 +73,351 @@ export default function CompaniesList() {
       setPagination(response.pagination);
     } catch (err) {
       console.error('Error loading companies:', err);
-      setError('Failed to load companies');
+      setError('Nie udalo sie zaladowac firm');
     } finally {
       setLoading(false);
     }
-  };
-
-  // Load companies on mount and filter changes
-  useEffect(() => {
-    loadCompanies();
   }, [filters]);
 
-  // Handle create company
+  useEffect(() => {
+    loadCompanies();
+  }, [loadCompanies]);
+
+  // ---- CRUD handlers ----
   const handleCreate = async (data: any) => {
     try {
       await companiesApi.createCompany(data);
       setShowForm(false);
-      loadCompanies(); // Reload the list
+      toast.success('Firma zostala utworzona');
+      loadCompanies();
     } catch (err) {
       console.error('Error creating company:', err);
-      throw err; // Let the form handle the error
+      throw err;
     }
   };
 
-  // Handle update company
   const handleUpdate = async (data: any) => {
     if (!editingCompany) return;
-    
     try {
       await companiesApi.updateCompany(editingCompany.id, data);
       setEditingCompany(undefined);
       setShowForm(false);
-      loadCompanies(); // Reload the list
+      toast.success('Firma zostala zaktualizowana');
+      loadCompanies();
     } catch (err) {
       console.error('Error updating company:', err);
-      throw err; // Let the form handle the error
+      throw err;
     }
   };
 
-  // Handle delete company
   const handleDelete = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this company?')) return;
-    
     try {
       await companiesApi.deleteCompany(id);
-      loadCompanies(); // Reload the list
+      toast.success('Firma zostala usunieta');
+      loadCompanies();
     } catch (err) {
       console.error('Error deleting company:', err);
-      setError('Failed to delete company');
+      setError('Nie udalo sie usunac firmy');
     }
   };
 
-  // Handle edit company
   const handleEdit = (company: Company) => {
     setEditingCompany(company);
     setShowForm(true);
   };
 
-  // Handle filter changes
+  // ---- Filter handlers ----
   const handleFilterChange = (newFilters: Partial<CompanyFilters>) => {
     setFilters(prev => ({
       ...prev,
       ...newFilters,
-      page: 1 // Reset to first page when filtering
+      page: 1,
     }));
   };
 
-  // Handle page change
   const handlePageChange = (page: number) => {
     setFilters(prev => ({ ...prev, page }));
   };
 
+  // ---- Stat counters ----
+  const stats = useMemo(() => {
+    const total = pagination.total;
+    const customers = companies.filter(c => c.status === 'CUSTOMER').length;
+    const prospects = companies.filter(c => c.status === 'PROSPECT').length;
+    const partners = companies.filter(c => c.status === 'PARTNER').length;
+    return { total, customers, prospects, partners };
+  }, [companies, pagination.total]);
+
+  // ---- FilterBar config ----
+  const filterConfigs = useMemo(() => [
+    {
+      key: 'status',
+      label: 'Status',
+      options: [
+        { value: 'PROSPECT', label: 'Prospekt' },
+        { value: 'CUSTOMER', label: 'Klient' },
+        { value: 'PARTNER', label: 'Partner' },
+        { value: 'INACTIVE', label: 'Nieaktywna' },
+        { value: 'ARCHIVED', label: 'Archiwum' },
+      ],
+    },
+    {
+      key: 'size',
+      label: 'Wielkosc',
+      options: [
+        { value: 'STARTUP', label: 'Startup' },
+        { value: 'SMALL', label: 'Mala' },
+        { value: 'MEDIUM', label: 'Srednia' },
+        { value: 'LARGE', label: 'Duza' },
+        { value: 'ENTERPRISE', label: 'Korporacja' },
+      ],
+    },
+  ], []);
+
+  const sortOptions = useMemo(() => [
+    { value: 'name:asc', label: 'Nazwa A-Z' },
+    { value: 'name:desc', label: 'Nazwa Z-A' },
+    { value: 'createdAt:desc', label: 'Najnowsze' },
+    { value: 'createdAt:asc', label: 'Najstarsze' },
+    { value: 'updatedAt:desc', label: 'Ostatnio zmienione' },
+  ], []);
+
+  const filterValues = useMemo(() => ({
+    status: filters.status || 'all',
+    size: filters.size || 'all',
+  }), [filters.status, filters.size]);
+
+  const handleFilterBarChange = useCallback((key: string, value: string) => {
+    const actualValue = value === 'all' ? undefined : value;
+    handleFilterChange({ [key]: actualValue });
+  }, []);
+
+  const handleSortChange = useCallback((value: string) => {
+    const [sortBy, sortOrder] = value.split(':') as [string, 'asc' | 'desc'];
+    handleFilterChange({ sortBy, sortOrder });
+  }, []);
+
+  const currentSortValue = `${filters.sortBy || 'name'}:${filters.sortOrder || 'asc'}`;
+
+  // ---- DataTable columns ----
+  const columns: Column<Company>[] = useMemo(() => [
+    {
+      key: 'name',
+      label: 'Nazwa',
+      sortable: true,
+      render: (value: any) => (
+        <span className="font-semibold text-slate-900 dark:text-slate-100">{value}</span>
+      ),
+    },
+    {
+      key: 'nip',
+      label: 'NIP',
+      sortable: false,
+      render: (value: any) => value || '-',
+    },
+    {
+      key: 'address',
+      label: 'Miasto',
+      sortable: false,
+      render: (value: any) => {
+        if (!value) return '-';
+        // Extract city from address - typically the last meaningful part
+        const parts = value.split(',').map((p: string) => p.trim());
+        return parts.length > 1 ? parts[parts.length - 1] : parts[0];
+      },
+    },
+    {
+      key: 'industry',
+      label: 'Branza',
+      sortable: true,
+      render: (value: any) => value || '-',
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (value: any) => {
+        const mapping = STATUS_BADGE_MAP[value] || { variant: 'neutral' as const, label: value };
+        return <StatusBadge variant={mapping.variant} dot>{mapping.label}</StatusBadge>;
+      },
+    },
+    {
+      key: 'createdAt',
+      label: 'Dodano',
+      sortable: true,
+      render: (value: any) => (
+        <span className="text-slate-500 dark:text-slate-400 text-xs">{formatDate(value)}</span>
+      ),
+    },
+  ], []);
+
+  // ---- Row click ----
+  const handleRowClick = useCallback((company: Company) => {
+    router.push(`/dashboard/companies/${company.id}`);
+  }, [router]);
+
+  // ---- Loading state ----
+  if (loading && companies.length === 0) {
+    return (
+      <PageShell>
+        <SkeletonPage />
+      </PageShell>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Companies</h1>
-          <p className="text-gray-600">Manage your company contacts and relationships</p>
-        </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="btn btn-primary"
-        >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Add Company
-        </button>
-      </div>
+    <PageShell>
+      {/* Page header */}
+      <PageHeader
+        title="Firmy"
+        subtitle={`Zarzadzaj firmami i relacjami biznesowymi`}
+        icon={Building2}
+        iconColor="text-blue-600"
+        breadcrumbs={[{ label: 'Firmy' }]}
+        actions={
+          <ActionButton
+            variant="primary"
+            icon={Plus}
+            onClick={() => {
+              setEditingCompany(undefined);
+              setShowForm(true);
+            }}
+          >
+            Dodaj firme
+          </ActionButton>
+        }
+      />
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Search */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Search
-            </label>
-            <input
-              type="text"
-              value={filters.search || ''}
-              onChange={(e) => handleFilterChange({ search: e.target.value })}
-              placeholder="Search companies..."
-              className="input"
-            />
-          </div>
+      {/* Stat cards row */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6"
+      >
+        <StatCard
+          label="Total"
+          value={stats.total}
+          icon={Building2}
+          iconColor="text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"
+        />
+        <StatCard
+          label="Klienci"
+          value={stats.customers}
+          icon={UserCheck}
+          iconColor="text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400"
+        />
+        <StatCard
+          label="Prospekty"
+          value={stats.prospects}
+          icon={Users}
+          iconColor="text-sky-600 bg-sky-50 dark:bg-sky-900/30 dark:text-sky-400"
+        />
+        <StatCard
+          label="Partnerzy"
+          value={stats.partners}
+          icon={Handshake}
+          iconColor="text-amber-600 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-400"
+        />
+      </motion.div>
 
-          {/* Status Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Status
-            </label>
-            <select
-              value={filters.status || ''}
-              onChange={(e) => handleFilterChange({ status: e.target.value || undefined })}
-              className="input"
-            >
-              <option value="">All Statuses</option>
-              <option value="PROSPECT">Prospect</option>
-              <option value="CUSTOMER">Customer</option>
-              <option value="PARTNER">Partner</option>
-              <option value="INACTIVE">Inactive</option>
-              <option value="ARCHIVED">Archived</option>
-            </select>
-          </div>
+      {/* Filter bar */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="mb-6"
+      >
+        <FilterBar
+          search={filters.search || ''}
+          onSearchChange={(value) => handleFilterChange({ search: value || undefined })}
+          searchPlaceholder="Szukaj firm..."
+          filters={filterConfigs}
+          filterValues={filterValues}
+          onFilterChange={handleFilterBarChange}
+          sortOptions={sortOptions}
+          sortValue={currentSortValue}
+          onSortChange={handleSortChange}
+        />
+      </motion.div>
 
-          {/* Industry Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Industry
-            </label>
-            <input
-              type="text"
-              value={filters.industry || ''}
-              onChange={(e) => handleFilterChange({ industry: e.target.value })}
-              placeholder="Filter by industry..."
-              className="input"
-            />
-          </div>
-
-          {/* Size Filter */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Company Size
-            </label>
-            <select
-              value={filters.size || ''}
-              onChange={(e) => handleFilterChange({ size: e.target.value || undefined })}
-              className="input"
-            >
-              <option value="">All Sizes</option>
-              <option value="STARTUP">Startup</option>
-              <option value="SMALL">Small</option>
-              <option value="MEDIUM">Medium</option>
-              <option value="LARGE">Large</option>
-              <option value="ENTERPRISE">Enterprise</option>
-            </select>
-          </div>
-        </div>
-
-        {/* Sort Options */}
-        <div className="flex items-center space-x-4 mt-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Sort By
-            </label>
-            <select
-              value={filters.sortBy || 'name'}
-              onChange={(e) => handleFilterChange({ sortBy: e.target.value })}
-              className="input"
-            >
-              <option value="name">Name</option>
-              <option value="createdAt">Created Date</option>
-              <option value="updatedAt">Updated Date</option>
-            </select>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Order
-            </label>
-            <select
-              value={filters.sortOrder || 'asc'}
-              onChange={(e) => handleFilterChange({ sortOrder: e.target.value as 'asc' | 'desc' })}
-              className="input"
-            >
-              <option value="asc">Ascending</option>
-              <option value="desc">Descending</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Error Message */}
+      {/* Error message */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex">
-            <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-            </svg>
-            <div className="ml-3">
-              <p className="text-sm text-red-800">{error}</p>
-            </div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-xl p-4"
+        >
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-5 h-5 text-red-500 dark:text-red-400 flex-shrink-0" />
+            <p className="text-sm text-red-800 dark:text-red-300">{error}</p>
           </div>
-        </div>
+        </motion.div>
       )}
 
-      {/* Companies List */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-500 mx-auto"></div>
-            <p className="text-gray-500 mt-2">Loading companies...</p>
-          </div>
-        ) : companies.length === 0 ? (
-          <div className="p-8 text-center">
-            <svg className="w-12 h-12 text-gray-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-            </svg>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No companies found</h3>
-            <p className="text-gray-500 mb-4">Get started by adding your first company.</p>
-            <button
-              onClick={() => setShowForm(true)}
-              className="btn btn-primary"
-            >
-              Add Your First Company
-            </button>
-          </div>
+      {/* Companies table or empty state */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        {!loading && companies.length === 0 ? (
+          <EmptyState
+            icon={Building2}
+            title="Brak firm"
+            description="Zacznij od dodania pierwszej firmy do systemu."
+            action={
+              <ActionButton
+                variant="primary"
+                icon={Plus}
+                onClick={() => {
+                  setEditingCompany(undefined);
+                  setShowForm(true);
+                }}
+              >
+                Dodaj pierwsza firme
+              </ActionButton>
+            }
+          />
         ) : (
-          <div className="divide-y divide-gray-200">
-            {companies.map((company) => (
-              <CompanyItem
-                key={company.id}
-                company={company}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onOpen={(id) => router.push(`/dashboard/companies/${id}`)}
-              />
-            ))}
-          </div>
+          <DataTable<Company>
+            columns={columns}
+            data={companies}
+            onRowClick={handleRowClick}
+            storageKey="companies-list"
+            pageSize={filters.limit || 20}
+            emptyMessage="Brak firm do wyswietlenia"
+            loading={loading}
+          />
         )}
-      </div>
+      </motion.div>
 
-      {/* Pagination */}
-      {pagination.pages > 1 && (
-        <div className="flex items-center justify-between bg-white rounded-lg shadow p-4">
-          <div className="text-sm text-gray-700">
-            Showing {((pagination.page - 1) * pagination.limit) + 1} to{' '}
-            {Math.min(pagination.page * pagination.limit, pagination.total)} of{' '}
-            {pagination.total} companies
-          </div>
-          <div className="flex space-x-2">
-            <button
+      {/* Server-side pagination (when using API pagination, not DataTable internal) */}
+      {!loading && pagination.pages > 1 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.25 }}
+          className="flex items-center justify-between mt-4 text-sm"
+        >
+          <span className="text-slate-500 dark:text-slate-400">
+            {((pagination.page - 1) * pagination.limit) + 1}
+            {' - '}
+            {Math.min(pagination.page * pagination.limit, pagination.total)}
+            {' z '}
+            {pagination.total}
+          </span>
+          <div className="flex items-center gap-1">
+            <ActionButton
+              variant="ghost"
+              size="sm"
               onClick={() => handlePageChange(pagination.page - 1)}
               disabled={pagination.page === 1}
-              className="btn btn-outline btn-sm"
             >
-              Previous
-            </button>
+              Poprzednia
+            </ActionButton>
             {Array.from({ length: pagination.pages }, (_, i) => i + 1)
-              .filter(page => 
+              .filter(page =>
                 page === 1 ||
                 page === pagination.pages ||
                 Math.abs(page - pagination.page) <= 2
@@ -304,31 +425,34 @@ export default function CompaniesList() {
               .map((page, index, array) => (
                 <React.Fragment key={page}>
                   {index > 0 && array[index - 1] !== page - 1 && (
-                    <span className="px-2 py-1 text-gray-500">...</span>
+                    <span className="px-2 py-1 text-slate-400 dark:text-slate-500">...</span>
                   )}
                   <button
                     onClick={() => handlePageChange(page)}
-                    className={`btn btn-sm ${
-                      page === pagination.page ? 'btn-primary' : 'btn-outline'
-                    }`}
+                    className={
+                      page === pagination.page
+                        ? 'w-8 h-8 rounded-lg text-sm font-medium bg-blue-600 text-white'
+                        : 'w-8 h-8 rounded-lg text-sm font-medium text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors'
+                    }
                   >
                     {page}
                   </button>
                 </React.Fragment>
               ))
             }
-            <button
+            <ActionButton
+              variant="ghost"
+              size="sm"
               onClick={() => handlePageChange(pagination.page + 1)}
               disabled={pagination.page === pagination.pages}
-              className="btn btn-outline btn-sm"
             >
-              Next
-            </button>
+              Nastepna
+            </ActionButton>
           </div>
-        </div>
+        </motion.div>
       )}
 
-      {/* Company Form Modal */}
+      {/* Company form modal */}
       {showForm && (
         <CompanyForm
           company={editingCompany}
@@ -339,6 +463,6 @@ export default function CompaniesList() {
           }}
         />
       )}
-    </div>
+    </PageShell>
   );
 }

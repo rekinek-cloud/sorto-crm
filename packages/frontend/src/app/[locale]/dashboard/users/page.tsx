@@ -6,15 +6,9 @@ import UserCard from '@/components/users/UserCard';
 import UserHierarchyModal from '@/components/users/UserHierarchyModal';
 import UserFormModal from '@/components/users/UserFormModal';
 import { toast } from 'react-hot-toast';
-import { 
-  UserGroupIcon,
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  ChartBarIcon,
-  PlusIcon,
-  ShareIcon,
-  UsersIcon
-} from '@heroicons/react/24/outline';
+import { Users, Search, Filter, BarChart3, Plus, Share2 } from 'lucide-react';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 type ViewMode = 'cards' | 'hierarchy' | 'list';
 
@@ -99,68 +93,71 @@ export default function UsersPage() {
 
   if (loading && currentPage === 1) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-      </div>
+      <PageShell>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Zarządzanie użytkownikami</h1>
-          <p className="text-gray-600">Zarządzaj użytkownikami i hierarchią organizacyjną</p>
-        </div>
-        <button
-          onClick={handleCreateUser}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-2 transition-colors"
-        >
-          <PlusIcon className="h-5 w-5" />
-          Dodaj użytkownika
-        </button>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Zarządzanie użytkownikami"
+        subtitle="Zarządzaj użytkownikami i hierarchią organizacyjną"
+        icon={Users}
+        iconColor="text-indigo-600"
+        actions={
+          <button
+            onClick={handleCreateUser}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-2 transition-colors"
+          >
+            <Plus className="h-5 w-5" />
+            Dodaj użytkownika
+          </button>
+        }
+      />
 
       {/* Statistics */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-lg shadow border">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
             <div className="flex items-center">
-              <UsersIcon className="h-8 w-8 text-blue-500" />
+              <Users className="h-8 w-8 text-blue-500 dark:text-blue-400" />
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500">Użytkownicy z hierarchią</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.usersWithHierarchy}</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Użytkownicy z hierarchią</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.usersWithHierarchy}</p>
               </div>
             </div>
           </div>
-          
-          <div className="bg-white p-4 rounded-lg shadow border">
+
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
             <div className="flex items-center">
-              <ShareIcon className="h-8 w-8 text-green-500" />
+              <Share2 className="h-8 w-8 text-green-500 dark:text-green-400" />
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500">Aktywne relacje</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.activeRelations}</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Aktywne relacje</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.activeRelations}</p>
               </div>
             </div>
           </div>
-          
-          <div className="bg-white p-4 rounded-lg shadow border">
+
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
             <div className="flex items-center">
-              <ChartBarIcon className="h-8 w-8 text-purple-500" />
+              <BarChart3 className="h-8 w-8 text-purple-500 dark:text-purple-400" />
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500">Penetracja hierarchii</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.hierarchyPenetration.toFixed(1)}%</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Penetracja hierarchii</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.hierarchyPenetration.toFixed(1)}%</p>
               </div>
             </div>
           </div>
-          
-          <div className="bg-white p-4 rounded-lg shadow border">
+
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
             <div className="flex items-center">
-              <UserGroupIcon className="h-8 w-8 text-orange-500" />
+              <Users className="h-8 w-8 text-orange-500 dark:text-orange-400" />
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500">Średni rozmiar zespołu</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.averageTeamSize.toFixed(1)}</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Średni rozmiar zespołu</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.averageTeamSize.toFixed(1)}</p>
               </div>
             </div>
           </div>
@@ -168,29 +165,26 @@ export default function UsersPage() {
       )}
 
       {/* Filters and View Mode */}
-      <div className="bg-white p-4 rounded-lg shadow border">
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4 mb-6">
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
-          {/* Search and Filters */}
           <div className="flex flex-col sm:flex-row gap-4 flex-1">
-            {/* Search */}
             <div className="relative flex-1">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 dark:text-slate-500" />
               <input
                 type="text"
                 placeholder="Szukaj użytkowników..."
                 value={searchTerm}
                 onChange={(e) => handleSearch(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
               />
             </div>
 
-            {/* Role Filter */}
             <div className="flex items-center gap-2">
-              <FunnelIcon className="h-5 w-5 text-gray-400" />
+              <Filter className="h-5 w-5 text-slate-400 dark:text-slate-500" />
               <select
                 value={roleFilter}
                 onChange={(e) => handleRoleFilter(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className="border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
               >
                 <option value="ALL">Wszystkie role</option>
                 <option value="OWNER">Właściciel</option>
@@ -201,26 +195,24 @@ export default function UsersPage() {
               </select>
             </div>
 
-            {/* Include Inactive */}
             <label className="flex items-center gap-2 whitespace-nowrap">
               <input
                 type="checkbox"
                 checked={includeInactive}
                 onChange={(e) => setIncludeInactive(e.target.checked)}
-                className="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                className="rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500"
               />
-              <span className="text-sm text-gray-700">Nieaktywni</span>
+              <span className="text-sm text-slate-700 dark:text-slate-300">Nieaktywni</span>
             </label>
           </div>
 
-          {/* View Mode Toggle */}
-          <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-700 p-1 rounded-lg">
             <button
               onClick={() => setViewMode('cards')}
               className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'cards' 
-                  ? 'bg-white text-indigo-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
+                viewMode === 'cards'
+                  ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               Karty
@@ -228,9 +220,9 @@ export default function UsersPage() {
             <button
               onClick={() => setViewMode('list')}
               className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'list' 
-                  ? 'bg-white text-indigo-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
+                viewMode === 'list'
+                  ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               Lista
@@ -238,9 +230,9 @@ export default function UsersPage() {
             <button
               onClick={() => setViewMode('hierarchy')}
               className={`px-3 py-1 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'hierarchy' 
-                  ? 'bg-white text-indigo-600 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
+                viewMode === 'hierarchy'
+                  ? 'bg-white dark:bg-slate-600 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
               Hierarchia
@@ -250,12 +242,12 @@ export default function UsersPage() {
       </div>
 
       {/* Users Display */}
-      <div className="bg-white rounded-lg shadow border">
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
         {users.length === 0 ? (
           <div className="p-8 text-center">
-            <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Nie znaleziono użytkowników</h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <Users className="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" />
+            <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">Nie znaleziono użytkowników</h3>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               {searchTerm || roleFilter !== 'ALL'
                 ? 'Spróbuj dostosować filtry wyszukiwania.'
                 : 'Rozpocznij dodawanie pierwszych użytkowników do organizacji.'}
@@ -264,7 +256,7 @@ export default function UsersPage() {
               <div className="mt-6">
                 <button
                   onClick={handleCreateUser}
-                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700"
+                  className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
                 >
                   Dodaj pierwszego użytkownika
                 </button>
@@ -289,55 +281,55 @@ export default function UsersPage() {
 
             {viewMode === 'list' && (
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+                  <thead className="bg-slate-50 dark:bg-slate-800">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                         Użytkownik
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                         Rola
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                         Hierarchia
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                         Ostatnie logowanie
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                         Akcje
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white dark:bg-slate-800/50 divide-y divide-slate-200 dark:divide-slate-700">
                     {users.map((user) => (
-                      <tr key={user.id} className="hover:bg-gray-50">
+                      <tr key={user.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/80">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
                             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-semibold mr-3">
                               {userHierarchyApi.formatUserName(user).split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                             </div>
                             <div>
-                              <div className="text-sm font-medium text-gray-900">
+                              <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
                                 {userHierarchyApi.formatUserName(user)}
                               </div>
-                              <div className="text-sm text-gray-500">{user.email}</div>
+                              <div className="text-sm text-slate-500 dark:text-slate-400">{user.email}</div>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900/30 dark:text-indigo-400">
                             {userHierarchyApi.formatUserRole(user.role)}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-100">
                           <div className="flex items-center gap-4">
-                            <span>↓ {user.managerRelations?.filter(r => r.isActive).length || 0}</span>
-                            <span>↑ {user.employeeRelations?.filter(r => r.isActive).length || 0}</span>
+                            <span>&#8595; {user.managerRelations?.filter(r => r.isActive).length || 0}</span>
+                            <span>&#8593; {user.employeeRelations?.filter(r => r.isActive).length || 0}</span>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {user.lastLoginAt 
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
+                          {user.lastLoginAt
                             ? new Date(user.lastLoginAt).toLocaleDateString()
                             : 'Nigdy'
                           }
@@ -345,13 +337,13 @@ export default function UsersPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                           <button
                             onClick={() => handleViewHierarchy(user)}
-                            className="text-indigo-600 hover:text-indigo-900"
+                            className="text-indigo-600 hover:text-indigo-900 dark:text-indigo-400 dark:hover:text-indigo-300"
                           >
                             Hierarchia
                           </button>
                           <button
                             onClick={() => handleEditUser(user)}
-                            className="text-gray-600 hover:text-gray-900"
+                            className="text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
                           >
                             Edytuj
                           </button>
@@ -365,7 +357,7 @@ export default function UsersPage() {
 
             {viewMode === 'hierarchy' && users.length > 0 && (
               <div className="p-6">
-                <p className="text-center text-gray-500 mb-4">
+                <p className="text-center text-slate-500 dark:text-slate-400 mb-4">
                   Wybierz użytkownika z listy powyżej aby zobaczyć jego hierarchię
                 </p>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -373,15 +365,15 @@ export default function UsersPage() {
                     <button
                       key={user.id}
                       onClick={() => handleViewHierarchy(user)}
-                      className="p-4 border border-gray-200 rounded-lg hover:border-indigo-300 hover:bg-indigo-50 transition-colors text-left"
+                      className="p-4 border border-slate-200 dark:border-slate-700 rounded-xl hover:border-indigo-300 dark:hover:border-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors text-left"
                     >
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-semibold text-sm">
                           {userHierarchyApi.formatUserName(user).split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-medium text-gray-900">{userHierarchyApi.formatUserName(user)}</p>
-                          <p className="text-sm text-gray-500">{userHierarchyApi.formatUserRole(user.role)}</p>
+                          <p className="font-medium text-slate-900 dark:text-slate-100">{userHierarchyApi.formatUserName(user)}</p>
+                          <p className="text-sm text-slate-500 dark:text-slate-400">{userHierarchyApi.formatUserRole(user.role)}</p>
                         </div>
                       </div>
                     </button>
@@ -394,22 +386,22 @@ export default function UsersPage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
-            <div className="text-sm text-gray-500">
+          <div className="px-6 py-3 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+            <div className="text-sm text-slate-500 dark:text-slate-400">
               Strona {currentPage} z {totalPages}
             </div>
             <div className="flex gap-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                className="px-3 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
               >
                 Poprzednia
               </button>
               <button
                 onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                 disabled={currentPage === totalPages}
-                className="px-3 py-1 text-sm border border-gray-300 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                className="px-3 py-1 text-sm border border-slate-300 dark:border-slate-600 rounded disabled:opacity-50 disabled:cursor-not-allowed hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
               >
                 Następna
               </button>
@@ -444,6 +436,6 @@ export default function UsersPage() {
           isActive: editingUser.isActive,
         } : undefined}
       />
-    </div>
+    </PageShell>
   );
 }

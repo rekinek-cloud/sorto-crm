@@ -8,20 +8,36 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/lib/auth/context';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 import {
-  ChevronLeftIcon,
-  PlusIcon,
-  ClockIcon,
-  PlayIcon,
-  CheckCircleIcon,
-  XMarkIcon,
-  AdjustmentsHorizontalIcon,
-  FireIcon,
-  LightBulbIcon,
-  CogIcon,
-  UsersIcon,
-  FlagIcon,
-} from '@heroicons/react/24/outline';
+  ChevronLeft,
+  Plus,
+  Clock,
+  Play,
+  CheckCircle,
+  X,
+  SlidersHorizontal,
+  Flame,
+  Lightbulb,
+  Settings,
+  Users,
+  Flag,
+  ClipboardList,
+  Rocket,
+  Zap,
+  Eye,
+  FlaskConical,
+  CircleCheck,
+  Ban,
+  Inbox,
+  Hourglass,
+  FolderOpen,
+  Target,
+  Mountain,
+  CalendarDays,
+  LayoutDashboard,
+} from 'lucide-react';
 
 interface StreamSprintItem {
   id: string;
@@ -54,7 +70,7 @@ interface ScrumColumn {
   description: string;
   color: string;
   bgColor: string;
-  icon: string;
+  icon: React.ReactNode;
   maxItems?: number;
   wipLimit?: number;
 }
@@ -66,7 +82,7 @@ const SCRUM_COLUMNS: ScrumColumn[] = [
     description: 'All user stories and requirements',
     color: '#6B7280',
     bgColor: '#F9FAFB',
-    icon: '📋',
+    icon: <ClipboardList className="w-4 h-4" />,
   },
   {
     id: 'SPRINT_READY',
@@ -74,7 +90,7 @@ const SCRUM_COLUMNS: ScrumColumn[] = [
     description: 'Items ready for sprint planning',
     color: '#3B82F6',
     bgColor: '#EFF6FF',
-    icon: '🚀',
+    icon: <Rocket className="w-4 h-4" />,
   },
   {
     id: 'IN_PROGRESS',
@@ -82,8 +98,8 @@ const SCRUM_COLUMNS: ScrumColumn[] = [
     description: 'Actively being worked on',
     color: '#F59E0B',
     bgColor: '#FFFBEB',
-    icon: '⚡',
-    wipLimit: 3, // WIP limit for agile teams
+    icon: <Zap className="w-4 h-4" />,
+    wipLimit: 3,
   },
   {
     id: 'REVIEW',
@@ -91,7 +107,7 @@ const SCRUM_COLUMNS: ScrumColumn[] = [
     description: 'Awaiting peer review',
     color: '#8B5CF6',
     bgColor: '#F3F4F6',
-    icon: '👁️',
+    icon: <Eye className="w-4 h-4" />,
     wipLimit: 2,
   },
   {
@@ -100,7 +116,7 @@ const SCRUM_COLUMNS: ScrumColumn[] = [
     description: 'QA and testing phase',
     color: '#EF4444',
     bgColor: '#FEF2F2',
-    icon: '🧪',
+    icon: <FlaskConical className="w-4 h-4" />,
   },
   {
     id: 'DONE',
@@ -108,7 +124,7 @@ const SCRUM_COLUMNS: ScrumColumn[] = [
     description: 'Completed and deployed',
     color: '#10B981',
     bgColor: '#ECFDF5',
-    icon: '✅',
+    icon: <CircleCheck className="w-4 h-4" />,
   },
   {
     id: 'BLOCKED',
@@ -116,25 +132,25 @@ const SCRUM_COLUMNS: ScrumColumn[] = [
     description: 'Impediments preventing progress',
     color: '#DC2626',
     bgColor: '#FEE2E2',
-    icon: '🚫',
+    icon: <Ban className="w-4 h-4" />,
   },
 ];
 
 const GTD_ROLES = [
-  { id: 'INBOX', name: 'Inbox', icon: '📥', color: '#EF4444' },
-  { id: 'NEXT_ACTIONS', name: 'Next Actions', icon: '✅', color: '#10B981' },
-  { id: 'WAITING_FOR', name: 'Waiting For', icon: '⏳', color: '#F59E0B' },
-  { id: 'PROJECTS', name: 'Projects', icon: '📁', color: '#3B82F6' },
-  { id: 'SOMEDAY_MAYBE', name: 'Someday/Maybe', icon: '💡', color: '#8B5CF6' },
-  { id: 'CONTEXTS', name: 'Contexts', icon: '🎯', color: '#6366F1' },
-  { id: 'AREAS', name: 'Areas', icon: '🏞️', color: '#059669' },
+  { id: 'INBOX', name: 'Inbox', icon: <Inbox className="w-3 h-3" />, color: '#EF4444' },
+  { id: 'NEXT_ACTIONS', name: 'Next Actions', icon: <CircleCheck className="w-3 h-3" />, color: '#10B981' },
+  { id: 'WAITING_FOR', name: 'Waiting For', icon: <Hourglass className="w-3 h-3" />, color: '#F59E0B' },
+  { id: 'PROJECTS', name: 'Projects', icon: <FolderOpen className="w-3 h-3" />, color: '#3B82F6' },
+  { id: 'SOMEDAY_MAYBE', name: 'Someday/Maybe', icon: <Lightbulb className="w-3 h-3" />, color: '#8B5CF6' },
+  { id: 'CONTEXTS', name: 'Contexts', icon: <Target className="w-3 h-3" />, color: '#6366F1' },
+  { id: 'AREAS', name: 'Areas', icon: <Mountain className="w-3 h-3" />, color: '#059669' },
 ];
 
 const PRIORITY_CONFIG = {
-  LOW: { color: '#6B7280', bg: '#F9FAFB', label: 'Low', icon: '🟢' },
-  MEDIUM: { color: '#F59E0B', bg: '#FFFBEB', label: 'Medium', icon: '🟡' },
-  HIGH: { color: '#EF4444', bg: '#FEF2F2', label: 'High', icon: '🟠' },
-  URGENT: { color: '#DC2626', bg: '#FEE2E2', label: 'Urgent', icon: '🔴' },
+  LOW: { color: '#6B7280', bg: '#F9FAFB', label: 'Low', dotColor: 'bg-green-500' },
+  MEDIUM: { color: '#F59E0B', bg: '#FFFBEB', label: 'Medium', dotColor: 'bg-yellow-500' },
+  HIGH: { color: '#EF4444', bg: '#FEF2F2', label: 'High', dotColor: 'bg-orange-500' },
+  URGENT: { color: '#DC2626', bg: '#FEE2E2', label: 'Urgent', dotColor: 'bg-red-500' },
 };
 
 const COMPLEXITY_CONFIG = {
@@ -177,26 +193,26 @@ function SortableSprintItem({ item, onEdit, onDelete, onStart }: SortableSprintI
       style={style}
       {...attributes}
       {...listeners}
-      className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-all cursor-move"
+      className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl p-4 shadow-sm hover:shadow-md transition-all cursor-move"
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center space-x-2">
           <div
-            className="w-6 h-6 rounded-full flex items-center justify-center text-xs"
+            className="w-6 h-6 rounded-full flex items-center justify-center text-white text-xs"
             style={{ backgroundColor: gtdRole?.color }}
             title={gtdRole?.name}
           >
             {gtdRole?.icon}
           </div>
           <div>
-            <h4 className="font-semibold text-gray-900 text-sm">{item.title}</h4>
-            <p className="text-xs text-gray-500">{item.streamName}</p>
+            <h4 className="font-semibold text-slate-900 dark:text-slate-100 text-sm">{item.title}</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{item.streamName}</p>
           </div>
         </div>
         <div className="flex items-center space-x-1">
-          <span className="text-xs">{priorityConfig.icon}</span>
-          <span className="text-xs font-medium text-gray-600">
+          <span className={`w-2 h-2 rounded-full ${priorityConfig.dotColor}`}></span>
+          <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
             {complexityConfig.points}pt
           </span>
         </div>
@@ -204,27 +220,28 @@ function SortableSprintItem({ item, onEdit, onDelete, onStart }: SortableSprintI
 
       {/* Description */}
       {item.description && (
-        <p className="text-sm text-gray-600 mb-3 line-clamp-2">{item.description}</p>
+        <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 line-clamp-2">{item.description}</p>
       )}
 
       {/* Assignee */}
       {item.assignedToName && (
         <div className="flex items-center space-x-2 mb-2">
-          <UsersIcon className="w-4 h-4 text-gray-400" />
-          <span className="text-sm text-gray-600">{item.assignedToName}</span>
+          <Users className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+          <span className="text-sm text-slate-600 dark:text-slate-400">{item.assignedToName}</span>
         </div>
       )}
 
       {/* Progress & Time */}
-      <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+      <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 mb-3">
         <div className="flex items-center space-x-3">
           <div className="flex items-center">
-            <ClockIcon className="w-3 h-3 mr-1" />
+            <Clock className="w-3 h-3 mr-1" />
             {item.actualHours ? `${item.actualHours}h / ${item.estimatedHours}h` : `${item.estimatedHours}h`}
           </div>
           {item.dueDate && (
             <div className="flex items-center">
-              📅 {new Date(item.dueDate).toLocaleDateString()}
+              <CalendarDays className="w-3 h-3 mr-1" />
+              {new Date(item.dueDate).toLocaleDateString()}
             </div>
           )}
         </div>
@@ -234,11 +251,11 @@ function SortableSprintItem({ item, onEdit, onDelete, onStart }: SortableSprintI
       {item.blockers && item.blockers.length > 0 && (
         <div className="mb-3">
           <div className="flex items-center space-x-1 mb-1">
-            <XMarkIcon className="w-3 h-3 text-red-500" />
-            <span className="text-xs font-medium text-red-600">Blockers:</span>
+            <X className="w-3 h-3 text-red-500" />
+            <span className="text-xs font-medium text-red-600 dark:text-red-400">Blokery:</span>
           </div>
           {item.blockers.slice(0, 2).map((blocker, index) => (
-            <div key={index} className="text-xs text-red-600 bg-red-50 rounded px-2 py-1 mb-1">
+            <div key={index} className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded px-2 py-1 mb-1">
               {blocker}
             </div>
           ))}
@@ -251,19 +268,19 @@ function SortableSprintItem({ item, onEdit, onDelete, onStart }: SortableSprintI
           {item.tags.slice(0, 3).map((tag, index) => (
             <span
               key={index}
-              className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
+              className="px-2 py-1 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 text-xs rounded-full"
             >
               {tag}
             </span>
           ))}
           {item.tags.length > 3 && (
-            <span className="text-xs text-gray-400">+{item.tags.length - 3}</span>
+            <span className="text-xs text-slate-400 dark:text-slate-500">+{item.tags.length - 3}</span>
           )}
         </div>
       )}
 
       {/* Actions */}
-      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
         <div className="flex items-center space-x-1">
           {item.status === 'SPRINT_READY' && (
             <button
@@ -271,10 +288,10 @@ function SortableSprintItem({ item, onEdit, onDelete, onStart }: SortableSprintI
                 e.stopPropagation();
                 onStart(item);
               }}
-              className="p-1 text-green-600 hover:bg-green-50 rounded"
+              className="p-1 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
               title="Start working"
             >
-              <PlayIcon className="w-4 h-4" />
+              <Play className="w-4 h-4" />
             </button>
           )}
           <button
@@ -282,10 +299,10 @@ function SortableSprintItem({ item, onEdit, onDelete, onStart }: SortableSprintI
               e.stopPropagation();
               onEdit(item);
             }}
-            className="p-1 text-blue-600 hover:bg-blue-50 rounded"
+            className="p-1 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
             title="Edit item"
           >
-            <AdjustmentsHorizontalIcon className="w-4 h-4" />
+            <SlidersHorizontal className="w-4 h-4" />
           </button>
         </div>
         <button
@@ -293,10 +310,10 @@ function SortableSprintItem({ item, onEdit, onDelete, onStart }: SortableSprintI
             e.stopPropagation();
             onDelete(item.id);
           }}
-          className="p-1 text-red-600 hover:bg-red-50 rounded"
+          className="p-1 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
           title="Delete item"
         >
-          <XMarkIcon className="w-4 h-4" />
+          <X className="w-4 h-4" />
         </button>
       </div>
     </div>
@@ -346,8 +363,7 @@ export default function StreamsScrumPage() {
   const loadSprintData = async () => {
     try {
       setLoading(true);
-      
-      // Mock data for demo - representing different streams as agile teams
+
       setTimeout(() => {
         const mockItems: StreamSprintItem[] = [
           {
@@ -490,12 +506,12 @@ export default function StreamsScrumPage() {
 
     const newStatus = over.id as StreamSprintItem['status'];
     const targetColumn = SCRUM_COLUMNS.find(col => col.id === newStatus);
-    
+
     // Check WIP limits
     if (targetColumn?.wipLimit) {
       const itemsInColumn = sprintItems.filter(item => item.status === newStatus);
       if (itemsInColumn.length >= targetColumn.wipLimit && activeItem.status !== newStatus) {
-        toast.error(`WIP limit reached for ${targetColumn.title} (max ${targetColumn.wipLimit})`);
+        toast.error(`Limit WIP osiągnięty dla ${targetColumn.title} (max ${targetColumn.wipLimit})`);
         return;
       }
     }
@@ -504,14 +520,14 @@ export default function StreamsScrumPage() {
       const updatedItems = sprintItems.map(item => {
         if (item.id === active.id) {
           const updates: Partial<StreamSprintItem> = { status: newStatus };
-          
+
           if (newStatus === 'IN_PROGRESS' && !item.startedAt) {
             updates.startedAt = new Date().toISOString();
           }
-          
+
           if (newStatus === 'DONE' && !item.completedAt) {
             updates.completedAt = new Date().toISOString();
-            updates.actualHours = item.estimatedHours; // Default to estimated if not tracked
+            updates.actualHours = item.estimatedHours;
           }
 
           return { ...item, ...updates };
@@ -520,18 +536,18 @@ export default function StreamsScrumPage() {
       });
 
       setSprintItems(updatedItems);
-      toast.success(`Moved "${activeItem.title}" to ${targetColumn?.title || newStatus}`);
+      toast.success(`Przeniesiono "${activeItem.title}" do ${targetColumn?.title || newStatus}`);
     }
   };
 
   const handleCreateItem = () => {
     if (!newItem.title.trim()) {
-      toast.error('Title is required');
+      toast.error('Tytuł jest wymagany');
       return;
     }
 
     const complexityConfig = COMPLEXITY_CONFIG[newItem.complexity];
-    
+
     const item: StreamSprintItem = {
       id: Date.now().toString(),
       title: newItem.title.trim(),
@@ -574,7 +590,7 @@ export default function StreamsScrumPage() {
       notes: '',
     });
     setShowCreateModal(false);
-    toast.success('Sprint item created!');
+    toast.success('Element sprintu utworzony!');
   };
 
   const handleEditItem = (item: StreamSprintItem) => {
@@ -602,7 +618,7 @@ export default function StreamsScrumPage() {
 
   const handleSaveEdit = () => {
     if (!editingItem || !newItem.title.trim()) {
-      toast.error('Title is required');
+      toast.error('Tytuł jest wymagany');
       return;
     }
 
@@ -654,14 +670,14 @@ export default function StreamsScrumPage() {
       notes: '',
     });
     setShowCreateModal(false);
-    toast.success('Sprint item updated!');
+    toast.success('Element sprintu zaktualizowany!');
   };
 
   const handleDeleteItem = (id: string) => {
     const item = sprintItems.find(item => item.id === id);
-    if (window.confirm(`Are you sure you want to delete "${item?.title}"?`)) {
+    if (window.confirm(`Czy na pewno chcesz usunąć "${item?.title}"?`)) {
       setSprintItems(prev => prev.filter(item => item.id !== id));
-      toast.success('Sprint item deleted');
+      toast.success('Element sprintu usunięty');
     }
   };
 
@@ -678,7 +694,7 @@ export default function StreamsScrumPage() {
     });
 
     setSprintItems(updatedItems);
-    toast.success(`Started working on: ${item.title}`);
+    toast.success(`Rozpoczęto pracę nad: ${item.title}`);
   };
 
   const getColumnItems = (status: string) => {
@@ -694,7 +710,7 @@ export default function StreamsScrumPage() {
     const completedPoints = sprintItems
       .filter(item => item.status === 'DONE')
       .reduce((sum, item) => sum + item.sprintPoints, 0);
-    
+
     return {
       totalItems,
       completedItems,
@@ -710,260 +726,259 @@ export default function StreamsScrumPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
+      <PageShell>
+        <div className="flex justify-center items-center h-96">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center space-x-3">
-            <button
-              onClick={() => router.push('/dashboard/gtd-streams')}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ChevronLeftIcon className="w-5 h-5 text-gray-600" />
-            </button>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Streams Scrum Board</h1>
-              <p className="text-gray-600">Agile development workflow for streams</p>
+    <PageShell>
+      <PageHeader
+        title="Streams Scrum Board"
+        subtitle="Agile workflow dla strumieni pracy"
+        icon={LayoutDashboard}
+        iconColor="text-indigo-600"
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Strumienie', href: '/dashboard/gtd-streams' },
+          { label: 'Scrum Board' },
+        ]}
+        actions={
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="btn btn-primary"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Dodaj User Story
+          </button>
+        }
+      />
+
+      <div className="space-y-6">
+        {/* Sprint Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+                <Settings className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Wszystkie</p>
+                <p className="text-xl font-semibold text-slate-900 dark:text-slate-100">{stats.totalItems}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <div className="flex items-center">
+              <div className="p-2 bg-yellow-100 dark:bg-yellow-900/40 rounded-lg">
+                <Play className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">W toku</p>
+                <p className="text-xl font-semibold text-slate-900 dark:text-slate-100">{stats.inProgressItems}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Ukończone</p>
+                <p className="text-xl font-semibold text-slate-900 dark:text-slate-100">{stats.completedItems}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <div className="flex items-center">
+              <div className="p-2 bg-red-100 dark:bg-red-900/40 rounded-lg">
+                <X className="w-5 h-5 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Zablokowane</p>
+                <p className="text-xl font-semibold text-slate-900 dark:text-slate-100">{stats.blockedItems}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <div className="flex items-center">
+              <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
+                <Flame className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Story Points</p>
+                <p className="text-xl font-semibold text-slate-900 dark:text-slate-100">{stats.completedPoints}/{stats.totalPoints}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <div className="flex items-center">
+              <div className="p-2 bg-indigo-100 dark:bg-indigo-900/40 rounded-lg">
+                <Lightbulb className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Velocity</p>
+                <p className="text-xl font-semibold text-slate-900 dark:text-slate-100">{stats.velocity}%</p>
+              </div>
             </div>
           </div>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="btn btn-primary"
-        >
-          <PlusIcon className="w-5 h-5 mr-2" />
-          Add User Story
-        </button>
-      </div>
 
-      {/* Sprint Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <CogIcon className="w-5 h-5 text-blue-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Total Stories</p>
-              <p className="text-xl font-semibold text-gray-900">{stats.totalItems}</p>
-            </div>
-          </div>
-        </div>
+        {/* Scrum Board */}
+        <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+          <div className="grid grid-cols-1 lg:grid-cols-7 gap-4 min-h-[600px]">
+            {SCRUM_COLUMNS.map((column) => {
+              const columnItems = getColumnItems(column.id);
 
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <PlayIcon className="w-5 h-5 text-yellow-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">In Progress</p>
-              <p className="text-xl font-semibold text-gray-900">{stats.inProgressItems}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <CheckCircleIcon className="w-5 h-5 text-green-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Completed</p>
-              <p className="text-xl font-semibold text-gray-900">{stats.completedItems}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <XMarkIcon className="w-5 h-5 text-red-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Blocked</p>
-              <p className="text-xl font-semibold text-gray-900">{stats.blockedItems}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <FireIcon className="w-5 h-5 text-purple-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Story Points</p>
-              <p className="text-xl font-semibold text-gray-900">{stats.completedPoints}/{stats.totalPoints}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <div className="p-2 bg-indigo-100 rounded-lg">
-              <LightBulbIcon className="w-5 h-5 text-indigo-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Velocity</p>
-              <p className="text-xl font-semibold text-gray-900">{stats.velocity}%</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Scrum Board */}
-      <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
-        <div className="grid grid-cols-1 lg:grid-cols-7 gap-4 min-h-[600px]">
-          {SCRUM_COLUMNS.map((column) => {
-            const columnItems = getColumnItems(column.id);
-            
-            return (
-              <div key={column.id} className="flex flex-col">
-                <div 
-                  className="rounded-lg p-4 mb-4 border-l-4"
-                  style={{ 
-                    backgroundColor: column.bgColor,
-                    borderLeftColor: column.color
-                  }}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-lg">{column.icon}</span>
-                      <h3 className="font-semibold text-gray-900 text-sm">{column.title}</h3>
-                    </div>
-                    <span 
-                      className="text-sm font-medium px-2 py-1 rounded-full"
-                      style={{ 
-                        backgroundColor: column.color + '20',
-                        color: column.color
-                      }}
-                    >
-                      {columnItems.length}
-                    </span>
-                  </div>
-                  <p className="text-xs text-gray-600">{column.description}</p>
-                  {column.wipLimit && (
-                    <p className="text-xs text-gray-500 mt-1">
-                      WIP: {columnItems.length}/{column.wipLimit}
-                    </p>
-                  )}
-                </div>
-
-                <SortableContext items={columnItems.map(item => item.id)} strategy={verticalListSortingStrategy}>
-                  <div className="flex-1 space-y-3 min-h-[400px] bg-gray-50 rounded-lg p-3">
-                    {columnItems.map((item) => (
-                      <SortableSprintItem
-                        key={item.id}
-                        item={item}
-                        onEdit={handleEditItem}
-                        onDelete={handleDeleteItem}
-                        onStart={handleStartWork}
-                      />
-                    ))}
-                    {columnItems.length === 0 && (
-                      <div className="flex items-center justify-center h-32 text-gray-400 text-sm">
-                        Drop stories here
+              return (
+                <div key={column.id} className="flex flex-col">
+                  <div
+                    className="bg-white/80 backdrop-blur-xl dark:bg-slate-800/80 rounded-2xl p-4 mb-4 border-l-4"
+                    style={{
+                      borderLeftColor: column.color
+                    }}
+                  >
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center space-x-2">
+                        <span style={{ color: column.color }}>{column.icon}</span>
+                        <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm">{column.title}</h3>
                       </div>
+                      <span
+                        className="text-sm font-medium px-2 py-1 rounded-full"
+                        style={{
+                          backgroundColor: column.color + '20',
+                          color: column.color
+                        }}
+                      >
+                        {columnItems.length}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 dark:text-slate-400">{column.description}</p>
+                    {column.wipLimit && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        WIP: {columnItems.length}/{column.wipLimit}
+                      </p>
                     )}
                   </div>
-                </SortableContext>
-              </div>
-            );
-          })}
-        </div>
 
-        <DragOverlay>
-          {activeId ? (
-            <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-lg transform rotate-3">
-              <div className="font-semibold text-gray-900">
-                {sprintItems.find(item => item.id === activeId)?.title}
+                  <SortableContext items={columnItems.map(item => item.id)} strategy={verticalListSortingStrategy}>
+                    <div className="flex-1 space-y-3 min-h-[400px] bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-3">
+                      {columnItems.map((item) => (
+                        <SortableSprintItem
+                          key={item.id}
+                          item={item}
+                          onEdit={handleEditItem}
+                          onDelete={handleDeleteItem}
+                          onStart={handleStartWork}
+                        />
+                      ))}
+                      {columnItems.length === 0 && (
+                        <div className="flex items-center justify-center h-32 text-slate-400 dark:text-slate-500 text-sm">
+                          Przeciągnij stories tutaj
+                        </div>
+                      )}
+                    </div>
+                  </SortableContext>
+                </div>
+              );
+            })}
+          </div>
+
+          <DragOverlay>
+            {activeId ? (
+              <div className="bg-white/90 dark:bg-slate-800/90 border border-slate-200 dark:border-slate-700 rounded-2xl p-4 shadow-lg transform rotate-3">
+                <div className="font-semibold text-slate-900 dark:text-slate-100">
+                  {sprintItems.find(item => item.id === activeId)?.title}
+                </div>
               </div>
-            </div>
-          ) : null}
-        </DragOverlay>
-      </DndContext>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      </div>
 
       {/* Create/Edit Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b border-gray-200">
+        <div className="fixed inset-0 bg-black/50 dark:bg-black/70 flex items-center justify-center z-50">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {editingItem ? 'Edit User Story' : 'Create User Story'}
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  {editingItem ? 'Edytuj User Story' : 'Utwórz User Story'}
                 </h3>
                 <button
                   onClick={() => {
                     setShowCreateModal(false);
                     setEditingItem(null);
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                 >
-                  <XMarkIcon className="w-6 h-6" />
+                  <X className="w-6 h-6" />
                 </button>
               </div>
             </div>
 
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  User Story Title *
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Tytuł User Story *
                 </label>
                 <input
                   type="text"
                   value={newItem.title}
                   onChange={(e) => setNewItem({ ...newItem, title: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="As a user, I want to..."
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Jako użytkownik chcę..."
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Opis
                 </label>
                 <textarea
                   value={newItem.description}
                   onChange={(e) => setNewItem({ ...newItem, description: e.target.value })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="Detailed description of the user story and acceptance criteria"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Szczegółowy opis user story i kryteria akceptacji"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Stream/Team
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Strumień/Zespół
                   </label>
                   <input
                     type="text"
                     value={newItem.streamName}
                     onChange={(e) => setNewItem({ ...newItem, streamName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    placeholder="e.g., Frontend Team"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="np. Frontend Team"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    GTD Role
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Rola GTD
                   </label>
                   <select
                     value={newItem.gtdRole}
                     onChange={(e) => setNewItem({ ...newItem, gtdRole: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   >
                     {GTD_ROLES.map((role) => (
                       <option key={role.id} value={role.id}>
-                        {role.icon} {role.name}
+                        {role.name}
                       </option>
                     ))}
                   </select>
@@ -972,30 +987,30 @@ export default function StreamsScrumPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Priority
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Priorytet
                   </label>
                   <select
                     value={newItem.priority}
                     onChange={(e) => setNewItem({ ...newItem, priority: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   >
                     {Object.entries(PRIORITY_CONFIG).map(([key, config]) => (
                       <option key={key} value={key}>
-                        {config.icon} {config.label}
+                        {config.label}
                       </option>
                     ))}
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Complexity
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Złożoność
                   </label>
                   <select
                     value={newItem.complexity}
                     onChange={(e) => setNewItem({ ...newItem, complexity: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   >
                     {Object.entries(COMPLEXITY_CONFIG).map(([key, config]) => (
                       <option key={key} value={key}>
@@ -1008,8 +1023,8 @@ export default function StreamsScrumPage() {
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Estimated Hours
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Szacowane godziny
                   </label>
                   <input
                     type="number"
@@ -1017,70 +1032,70 @@ export default function StreamsScrumPage() {
                     onChange={(e) => setNewItem({ ...newItem, estimatedHours: parseInt(e.target.value) || 1 })}
                     min="1"
                     max="40"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Assigned To
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Przypisany do
                   </label>
                   <input
                     type="text"
                     value={newItem.assignedToName}
                     onChange={(e) => setNewItem({ ...newItem, assignedToName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                    placeholder="Developer name"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="Imię developera"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Due Date (optional)
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Termin (opcjonalnie)
                 </label>
                 <input
                   type="date"
                   value={newItem.dueDate}
                   onChange={(e) => setNewItem({ ...newItem, dueDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tags (comma separated)
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Tagi (rozdzielone przecinkami)
                 </label>
                 <input
                   type="text"
                   value={newItem.tags.join(', ')}
-                  onChange={(e) => setNewItem({ 
-                    ...newItem, 
+                  onChange={(e) => setNewItem({
+                    ...newItem,
                     tags: e.target.value.split(',').map(tag => tag.trim()).filter(Boolean)
                   })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   placeholder="frontend, api, testing"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Blockers (one per line)
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                  Blokery (jeden na linię)
                 </label>
                 <textarea
                   value={newItem.blockers.join('\n')}
-                  onChange={(e) => setNewItem({ 
-                    ...newItem, 
+                  onChange={(e) => setNewItem({
+                    ...newItem,
                     blockers: e.target.value.split('\n').map(blocker => blocker.trim()).filter(Boolean)
                   })}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
-                  placeholder="List any blockers preventing progress..."
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Wymień blokery uniemożliwiające postęp..."
                 />
               </div>
             </div>
 
-            <div className="px-6 py-4 border-t border-gray-200 flex space-x-3">
+            <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex space-x-3">
               <button
                 onClick={() => {
                   setShowCreateModal(false);
@@ -1088,19 +1103,19 @@ export default function StreamsScrumPage() {
                 }}
                 className="btn btn-outline flex-1"
               >
-                Cancel
+                Anuluj
               </button>
               <button
                 onClick={editingItem ? handleSaveEdit : handleCreateItem}
                 className="btn btn-primary flex-1"
                 disabled={!newItem.title.trim()}
               >
-                {editingItem ? 'Update' : 'Create'} Story
+                {editingItem ? 'Zaktualizuj' : 'Utwórz'} Story
               </button>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

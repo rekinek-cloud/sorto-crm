@@ -6,12 +6,12 @@ import StreamItem from './StreamItem';
 import StreamForm from './StreamForm';
 import { streamsApi } from '@/lib/api/streams';
 import { toast } from 'react-hot-toast';
-import { 
-  PlusIcon, 
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  ChartBarIcon
-} from '@heroicons/react/24/outline';
+import {
+  Plus,
+  Search,
+  Filter,
+  BarChart3
+} from 'lucide-react';
 
 interface StreamsListProps {
   showCreateForm?: boolean;
@@ -176,7 +176,7 @@ export default function StreamsList({ showCreateForm = true, onStreamSelect }: S
             onClick={() => setShowForm(true)}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
           >
-            <PlusIcon className="h-5 w-5" />
+            <Plus className="h-5 w-5" />
             Nowy strumień
           </button>
         )}
@@ -187,7 +187,7 @@ export default function StreamsList({ showCreateForm = true, onStreamSelect }: S
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white p-4 rounded-lg shadow border">
             <div className="flex items-center">
-              <ChartBarIcon className="h-8 w-8 text-blue-500" />
+              <BarChart3 className="h-8 w-8 text-blue-500" />
               <div className="ml-3">
                 <p className="text-sm font-medium text-gray-500">Wszystkie strumienie</p>
                 <p className="text-2xl font-bold text-gray-900">{stats.totalStreams}</p>
@@ -241,7 +241,7 @@ export default function StreamsList({ showCreateForm = true, onStreamSelect }: S
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
-              <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search streams..."
@@ -252,7 +252,7 @@ export default function StreamsList({ showCreateForm = true, onStreamSelect }: S
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <FunnelIcon className="h-5 w-5 text-gray-400" />
+            <Filter className="h-5 w-5 text-gray-400" />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
@@ -271,7 +271,7 @@ export default function StreamsList({ showCreateForm = true, onStreamSelect }: S
       <div className="bg-white rounded-lg shadow border">
         {streams.length === 0 ? (
           <div className="p-8 text-center">
-            <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <BarChart3 className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">Nie znaleziono strumieni</h3>
             <p className="mt-1 text-sm text-gray-500">
               {searchTerm || statusFilter !== 'ALL'

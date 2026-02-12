@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ChartBarIcon } from '@heroicons/react/24/outline';
+import { BarChart3 } from 'lucide-react';
 
 interface FlowScoreBadgeProps {
   score: number | null;
@@ -61,7 +61,7 @@ export default function FlowScoreBadge({
         }`}
         title="Kliknij, aby przeanalizować kryteria RZUT"
       >
-        {showIcon && <ChartBarIcon className={`mr-1 ${getIconSize()}`} />}
+        {showIcon && <BarChart3 className={`mr-1 ${getIconSize()}`} />}
         <span>Analizuj</span>
       </button>
     );
@@ -75,7 +75,7 @@ export default function FlowScoreBadge({
       }`}
       title={`Flow Score: ${score}/100 (${getScoreLabel(score)}) - Kliknij po szczegóły`}
     >
-      {showIcon && <ChartBarIcon className={`mr-1 ${getIconSize()}`} />}
+      {showIcon && <BarChart3 className={`mr-1 ${getIconSize()}`} />}
       <span>{score}</span>
       {size === 'lg' && (
         <span className="ml-1 opacity-75">/ 100</span>

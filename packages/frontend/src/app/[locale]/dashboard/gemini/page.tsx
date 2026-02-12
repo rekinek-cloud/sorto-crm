@@ -2,16 +2,18 @@
 
 import { useState, useRef } from 'react';
 import {
-  PhotoIcon,
-  DocumentTextIcon,
-  ChatBubbleLeftRightIcon,
-  SparklesIcon,
-  ArchiveBoxIcon,
-  TrashIcon,
-  ArrowUpTrayIcon,
-} from '@heroicons/react/24/outline';
+  Image,
+  FileText,
+  MessageSquare,
+  Sparkles,
+  Archive,
+  Trash2,
+  Upload,
+} from 'lucide-react';
 import toast from 'react-hot-toast';
 import gemini, { CacheInfo, ImageTags } from '@/lib/api/gemini';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 type TabType = 'vision' | 'ocr' | 'cache' | 'chat';
 
@@ -65,7 +67,7 @@ export default function GeminiPage() {
       const result = await gemini.analyzeImage(selectedImage, visionPrompt || undefined);
       setVisionResult(result);
     } catch (error) {
-      toast.error('Błąd podczas analizy obrazu');
+      toast.error('Blad podczas analizy obrazu');
     } finally {
       setIsLoading(false);
     }
@@ -78,7 +80,7 @@ export default function GeminiPage() {
       const tags = await gemini.autoTagImage(selectedImage);
       setImageTags(tags);
     } catch (error) {
-      toast.error('Błąd podczas tagowania');
+      toast.error('Blad podczas tagowania');
     } finally {
       setIsLoading(false);
     }
@@ -101,7 +103,7 @@ export default function GeminiPage() {
       const text = await gemini.ocr(ocrImage, ocrLanguage);
       setOcrResult(text);
     } catch (error) {
-      toast.error('Błąd podczas OCR');
+      toast.error('Blad podczas OCR');
     } finally {
       setIsLoading(false);
     }
@@ -119,7 +121,7 @@ export default function GeminiPage() {
 
   const handleCreateCache = async () => {
     if (!cacheName || !cacheDocuments) {
-      toast.error('Podaj nazwę i dokumenty');
+      toast.error('Podaj nazwe i dokumenty');
       return;
     }
     setIsLoading(true);
@@ -136,7 +138,7 @@ export default function GeminiPage() {
       setCacheDocuments('');
       loadCaches();
     } catch (error) {
-      toast.error('Błąd podczas tworzenia cache');
+      toast.error('Blad podczas tworzenia cache');
     } finally {
       setIsLoading(false);
     }
@@ -152,20 +154,20 @@ export default function GeminiPage() {
       const answer = await gemini.queryWithCache(selectedCache, cacheQuestion);
       setCacheAnswer(answer);
     } catch (error) {
-      toast.error('Błąd podczas zapytania');
+      toast.error('Blad podczas zapytania');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDeleteCache = async (name: string) => {
-    if (!confirm('Usunąć cache?')) return;
+    if (!confirm('Usunac cache?')) return;
     try {
       await gemini.deleteCache(name);
-      toast.success('Cache usunięty');
+      toast.success('Cache usuniety');
       loadCaches();
     } catch (error) {
-      toast.error('Błąd podczas usuwania');
+      toast.error('Blad podczas usuwania');
     }
   };
 
@@ -177,63 +179,70 @@ export default function GeminiPage() {
       const response = await gemini.chat(chatPrompt);
       setChatResponse(response);
     } catch (error) {
-      toast.error('Błąd podczas czatu');
+      toast.error('Blad podczas czatu');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const tabItems: { id: TabType; name: string; icon: typeof Image }[] = [
+    { id: 'vision', name: 'Vision', icon: Image },
+    { id: 'ocr', name: 'OCR', icon: FileText },
+    { id: 'cache', name: 'Cache (90% taniej)', icon: Archive },
+    { id: 'chat', name: 'Chat', icon: MessageSquare },
+  ];
+
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Gemini AI</h1>
-        <span className="text-sm text-gray-500">Vision, Cache 90% taniej, 1M kontekst</span>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Gemini AI"
+        subtitle="Vision, Cache 90% taniej, 1M kontekst"
+        icon={Sparkles}
+        iconColor="text-purple-600"
+      />
 
       {/* Tabs */}
-      <div className="border-b border-gray-200">
+      <div className="border-b border-slate-200 dark:border-slate-700">
         <nav className="-mb-px flex space-x-8">
-          {[
-            { id: 'vision', name: 'Vision', icon: PhotoIcon },
-            { id: 'ocr', name: 'OCR', icon: DocumentTextIcon },
-            { id: 'cache', name: 'Cache (90% taniej)', icon: ArchiveBoxIcon },
-            { id: 'chat', name: 'Chat', icon: ChatBubbleLeftRightIcon },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => {
-                setActiveTab(tab.id as TabType);
-                if (tab.id === 'cache') loadCaches();
-              }}
-              className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                activeTab === tab.id
-                  ? 'border-purple-500 text-purple-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              }`}
-            >
-              <tab.icon className="w-5 h-5" />
-              {tab.name}
-            </button>
-          ))}
+          {tabItems.map((tab) => {
+            const TabIcon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => {
+                  setActiveTab(tab.id);
+                  if (tab.id === 'cache') loadCaches();
+                }}
+                className={`flex items-center gap-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-purple-500 text-purple-600 dark:text-purple-400'
+                    : 'border-transparent text-slate-500 hover:text-slate-700 hover:border-slate-300 dark:text-slate-400 dark:hover:text-slate-300'
+                }`}
+              >
+                <TabIcon className="w-5 h-5" />
+                {tab.name}
+              </button>
+            );
+          })}
         </nav>
       </div>
 
       {/* Vision Tab */}
       {activeTab === 'vision' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-medium mb-4">Analiza obrazu</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+            <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-4">Analiza obrazu</h2>
 
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-purple-400 transition-colors"
+              className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center cursor-pointer hover:border-purple-400 dark:hover:border-purple-500 transition-colors"
             >
               {imagePreview ? (
                 <img src={imagePreview} alt="Preview" className="max-h-64 mx-auto rounded" />
               ) : (
                 <>
-                  <ArrowUpTrayIcon className="w-12 h-12 mx-auto text-gray-400" />
-                  <p className="mt-2 text-gray-500">Kliknij aby wybrać obraz</p>
+                  <Upload className="w-12 h-12 mx-auto text-slate-400 dark:text-slate-500" />
+                  <p className="mt-2 text-slate-500 dark:text-slate-400">Kliknij aby wybrac obraz</p>
                 </>
               )}
             </div>
@@ -250,8 +259,8 @@ export default function GeminiPage() {
                 type="text"
                 value={visionPrompt}
                 onChange={(e) => setVisionPrompt(e.target.value)}
-                placeholder="Opcjonalnie: Co chcesz wiedzieć o obrazie?"
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                placeholder="Opcjonalnie: Co chcesz wiedziec o obrazie?"
+                className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-4 py-2"
               />
             </div>
 
@@ -261,7 +270,7 @@ export default function GeminiPage() {
                 disabled={!selectedImage || isLoading}
                 className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
               >
-                {isLoading ? 'Analizuję...' : 'Analizuj'}
+                {isLoading ? 'Analizuje...' : 'Analizuj'}
               </button>
               <button
                 onClick={handleAutoTag}
@@ -273,11 +282,11 @@ export default function GeminiPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-medium mb-4">Wynik</h2>
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+            <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-4">Wynik</h2>
 
             {visionResult && (
-              <div className="prose prose-sm max-w-none">
+              <div className="prose prose-sm max-w-none dark:prose-invert">
                 <p className="whitespace-pre-wrap">{visionResult}</p>
               </div>
             )}
@@ -285,38 +294,38 @@ export default function GeminiPage() {
             {imageTags && (
               <div className="space-y-3">
                 <div>
-                  <span className="text-sm font-medium text-gray-500">Tagi:</span>
+                  <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Tagi:</span>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {imageTags.tags.map((tag, i) => (
-                      <span key={i} className="px-2 py-1 bg-purple-100 text-purple-700 rounded text-sm">
+                      <span key={i} className="px-2 py-1 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 rounded text-sm">
                         {tag}
                       </span>
                     ))}
                   </div>
                 </div>
                 <div>
-                  <span className="text-sm font-medium text-gray-500">Kategoria:</span>
-                  <span className="ml-2">{imageTags.category}</span>
+                  <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Kategoria:</span>
+                  <span className="ml-2 text-slate-900 dark:text-slate-100">{imageTags.category}</span>
                 </div>
                 <div>
-                  <span className="text-sm font-medium text-gray-500">Opis:</span>
-                  <p className="text-gray-700">{imageTags.description}</p>
+                  <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Opis:</span>
+                  <p className="text-slate-700 dark:text-slate-300">{imageTags.description}</p>
                 </div>
                 <div>
-                  <span className="text-sm font-medium text-gray-500">Nastrój:</span>
-                  <span className="ml-2">{imageTags.mood}</span>
+                  <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Nastroj:</span>
+                  <span className="ml-2 text-slate-900 dark:text-slate-100">{imageTags.mood}</span>
                 </div>
                 {imageTags.people && (
                   <div>
-                    <span className="text-sm font-medium text-gray-500">Osoby:</span>
-                    <span className="ml-2">{imageTags.facesCount} twarzy</span>
+                    <span className="text-sm font-medium text-slate-500 dark:text-slate-400">Osoby:</span>
+                    <span className="ml-2 text-slate-900 dark:text-slate-100">{imageTags.facesCount} twarzy</span>
                   </div>
                 )}
               </div>
             )}
 
             {!visionResult && !imageTags && (
-              <p className="text-gray-500 text-center py-8">Wyślij obraz do analizy</p>
+              <p className="text-slate-500 dark:text-slate-400 text-center py-8">Wyslij obraz do analizy</p>
             )}
           </div>
         </div>
@@ -324,20 +333,20 @@ export default function GeminiPage() {
 
       {/* OCR Tab */}
       {activeTab === 'ocr' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-medium mb-4">OCR - Rozpoznawanie tekstu</h2>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+            <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-4">OCR - Rozpoznawanie tekstu</h2>
 
             <div
               onClick={() => ocrFileInputRef.current?.click()}
-              className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-purple-400 transition-colors"
+              className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg p-8 text-center cursor-pointer hover:border-purple-400 dark:hover:border-purple-500 transition-colors"
             >
               {ocrPreview ? (
                 <img src={ocrPreview} alt="OCR Preview" className="max-h-64 mx-auto rounded" />
               ) : (
                 <>
-                  <DocumentTextIcon className="w-12 h-12 mx-auto text-gray-400" />
-                  <p className="mt-2 text-gray-500">Kliknij aby wybrać dokument/zdjęcie</p>
+                  <FileText className="w-12 h-12 mx-auto text-slate-400 dark:text-slate-500" />
+                  <p className="mt-2 text-slate-500 dark:text-slate-400">Kliknij aby wybrac dokument/zdjecie</p>
                 </>
               )}
             </div>
@@ -353,7 +362,7 @@ export default function GeminiPage() {
               <select
                 value={ocrLanguage}
                 onChange={(e) => setOcrLanguage(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-4 py-2"
               >
                 <option value="polski">Polski</option>
                 <option value="angielski">Angielski</option>
@@ -366,19 +375,19 @@ export default function GeminiPage() {
               disabled={!ocrImage || isLoading}
               className="mt-4 w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
             >
-              {isLoading ? 'Rozpoznaję...' : 'Rozpoznaj tekst'}
+              {isLoading ? 'Rozpoznaje...' : 'Rozpoznaj tekst'}
             </button>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-medium mb-4">Rozpoznany tekst</h2>
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+            <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-4">Rozpoznany tekst</h2>
 
             {ocrResult ? (
-              <div className="bg-gray-50 rounded-lg p-4">
-                <pre className="whitespace-pre-wrap text-sm">{ocrResult}</pre>
+              <div className="bg-slate-50 dark:bg-slate-900/50 rounded-lg p-4">
+                <pre className="whitespace-pre-wrap text-sm text-slate-900 dark:text-slate-100">{ocrResult}</pre>
               </div>
             ) : (
-              <p className="text-gray-500 text-center py-8">Wyślij obraz do rozpoznania</p>
+              <p className="text-slate-500 dark:text-slate-400 text-center py-8">Wyslij obraz do rozpoznania</p>
             )}
           </div>
         </div>
@@ -386,12 +395,12 @@ export default function GeminiPage() {
 
       {/* Cache Tab */}
       {activeTab === 'cache' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
           <div className="space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-medium mb-4">Utwórz cache RAG</h2>
-              <p className="text-sm text-gray-500 mb-4">
-                Załaduj dokumenty raz, pytaj wiele razy - 90% taniej!
+            <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+              <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-4">Utworz cache RAG</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
+                Zaladuj dokumenty raz, pytaj wiele razy - 90% taniej!
               </p>
 
               <div className="space-y-4">
@@ -400,7 +409,7 @@ export default function GeminiPage() {
                   value={cacheName}
                   onChange={(e) => setCacheName(e.target.value)}
                   placeholder="Nazwa cache (np. dokumentacja-api)"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                  className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-4 py-2"
                 />
 
                 <textarea
@@ -408,7 +417,7 @@ export default function GeminiPage() {
                   onChange={(e) => setCacheDocuments(e.target.value)}
                   placeholder="Wklej dokumenty (oddziel ---)"
                   rows={8}
-                  className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                  className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-4 py-2"
                 />
 
                 <button
@@ -416,16 +425,16 @@ export default function GeminiPage() {
                   disabled={isLoading}
                   className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
                 >
-                  {isLoading ? 'Tworzę...' : 'Utwórz cache (1h)'}
+                  {isLoading ? 'Tworze...' : 'Utworz cache (1h)'}
                 </button>
               </div>
             </div>
 
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-lg font-medium mb-4">Aktywne cache ({caches.length})</h2>
+            <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+              <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-4">Aktywne cache ({caches.length})</h2>
 
               {caches.length === 0 ? (
-                <p className="text-gray-500 text-center py-4">Brak aktywnych cache</p>
+                <p className="text-slate-500 dark:text-slate-400 text-center py-4">Brak aktywnych cache</p>
               ) : (
                 <div className="space-y-2">
                   {caches.map((cache) => (
@@ -433,14 +442,14 @@ export default function GeminiPage() {
                       key={cache.cacheName}
                       className={`flex items-center justify-between p-3 rounded-lg border cursor-pointer ${
                         selectedCache === cache.displayName
-                          ? 'border-purple-500 bg-purple-50'
-                          : 'border-gray-200 hover:bg-gray-50'
+                          ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                          : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/50'
                       }`}
                       onClick={() => setSelectedCache(cache.displayName)}
                     >
                       <div>
-                        <span className="font-medium">{cache.displayName}</span>
-                        <span className="text-xs text-gray-500 ml-2">
+                        <span className="font-medium text-slate-900 dark:text-slate-100">{cache.displayName}</span>
+                        <span className="text-xs text-slate-500 dark:text-slate-400 ml-2">
                           wygasa: {new Date(cache.expireTime).toLocaleTimeString()}
                         </span>
                       </div>
@@ -449,9 +458,9 @@ export default function GeminiPage() {
                           e.stopPropagation();
                           handleDeleteCache(cache.cacheName);
                         }}
-                        className="p-1 text-red-500 hover:bg-red-50 rounded"
+                        className="p-1 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
                       >
-                        <TrashIcon className="w-4 h-4" />
+                        <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
                   ))}
@@ -460,13 +469,13 @@ export default function GeminiPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-lg font-medium mb-4">Zapytaj cache (90% taniej!)</h2>
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+            <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-4">Zapytaj cache (90% taniej!)</h2>
 
             <div className="space-y-4">
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-slate-500 dark:text-slate-400">
                 Wybrany cache:{' '}
-                <span className="font-medium text-purple-600">{selectedCache || 'brak'}</span>
+                <span className="font-medium text-purple-600 dark:text-purple-400">{selectedCache || 'brak'}</span>
               </div>
 
               <input
@@ -475,7 +484,7 @@ export default function GeminiPage() {
                 onChange={(e) => setCacheQuestion(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleQueryCache()}
                 placeholder="Zadaj pytanie..."
-                className="w-full border border-gray-300 rounded-lg px-4 py-2"
+                className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-4 py-2"
               />
 
               <button
@@ -487,9 +496,9 @@ export default function GeminiPage() {
               </button>
 
               {cacheAnswer && (
-                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                  <h4 className="font-medium mb-2">Odpowiedź:</h4>
-                  <p className="whitespace-pre-wrap">{cacheAnswer}</p>
+                <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                  <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">Odpowiedz:</h4>
+                  <p className="whitespace-pre-wrap text-slate-700 dark:text-slate-300">{cacheAnswer}</p>
                 </div>
               )}
             </div>
@@ -499,16 +508,16 @@ export default function GeminiPage() {
 
       {/* Chat Tab */}
       {activeTab === 'chat' && (
-        <div className="bg-white rounded-lg shadow p-6 max-w-2xl mx-auto">
-          <h2 className="text-lg font-medium mb-4">Chat z Gemini</h2>
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6 mt-6">
+          <h2 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-4">Chat z Gemini</h2>
 
           <div className="space-y-4">
             <textarea
               value={chatPrompt}
               onChange={(e) => setChatPrompt(e.target.value)}
-              placeholder="Napisz wiadomość..."
+              placeholder="Napisz wiadomosc..."
               rows={4}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
+              className="w-full border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg px-4 py-2"
             />
 
             <button
@@ -516,18 +525,18 @@ export default function GeminiPage() {
               disabled={!chatPrompt.trim() || isLoading}
               className="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
             >
-              {isLoading ? 'Generuję...' : 'Wyślij'}
+              {isLoading ? 'Generuje...' : 'Wyslij'}
             </button>
 
             {chatResponse && (
-              <div className="p-4 bg-gray-50 rounded-lg">
-                <h4 className="font-medium mb-2">Odpowiedź:</h4>
-                <p className="whitespace-pre-wrap">{chatResponse}</p>
+              <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">Odpowiedz:</h4>
+                <p className="whitespace-pre-wrap text-slate-700 dark:text-slate-300">{chatResponse}</p>
               </div>
             )}
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

@@ -1,9 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { BuildingOfficeIcon, UsersIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { Building2, Users, Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import apiClient from '@/lib/api/client';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
 
 export default function OrganizationSettingsPage() {
   const [loading, setLoading] = useState(false);
@@ -68,56 +71,53 @@ export default function OrganizationSettingsPage() {
 
   if (initialLoading) {
     return (
-      <div className="flex justify-center items-center h-48">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-      </div>
+      <PageShell>
+        <SkeletonPage />
+      </PageShell>
     );
   }
 
   return (
-    <div className="p-6 max-w-4xl">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-indigo-100 rounded-lg">
-          <BuildingOfficeIcon className="h-6 w-6 text-indigo-600" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Organizacja</h1>
-          <p className="text-sm text-gray-600">Zarządzaj ustawieniami organizacji</p>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Organizacja"
+        subtitle="Zarządzaj ustawieniami organizacji"
+        icon={Building2}
+        iconColor="text-indigo-600"
+        breadcrumbs={[{ label: 'Ustawienia', href: '/dashboard/settings' }, { label: 'Organizacja' }]}
+      />
 
       {/* Organization Form */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Dane organizacji</h2>
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6 mb-6">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Dane organizacji</h2>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nazwa firmy</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nazwa firmy</label>
             <input
               type="text"
               value={organization.name}
               onChange={(e) => setOrganization({ ...organization, name: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:text-slate-100"
               placeholder="Moja Firma Sp. z o.o."
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Domena</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Domena</label>
             <input
               type="text"
               value={organization.domain}
               onChange={(e) => setOrganization({ ...organization, domain: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:text-slate-100"
               placeholder="mojafirma.pl"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Branża</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Branża</label>
             <select
               value={organization.industry}
               onChange={(e) => setOrganization({ ...organization, industry: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:text-slate-100"
             >
               <option value="">Wybierz branżę</option>
               <option value="technology">Technologia</option>
@@ -130,11 +130,11 @@ export default function OrganizationSettingsPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Wielkość firmy</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Wielkość firmy</label>
             <select
               value={organization.size}
               onChange={(e) => setOrganization({ ...organization, size: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:text-slate-100"
             >
               <option value="">Wybierz</option>
               <option value="1-10">1-10 pracowników</option>
@@ -145,22 +145,22 @@ export default function OrganizationSettingsPage() {
             </select>
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Adres</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Adres</label>
             <input
               type="text"
               value={organization.address}
               onChange={(e) => setOrganization({ ...organization, address: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:text-slate-100"
               placeholder="ul. Przykładowa 1, 00-001 Warszawa"
             />
           </div>
           <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Strona internetowa</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Strona internetowa</label>
             <input
               type="url"
               value={organization.website}
               onChange={(e) => setOrganization({ ...organization, website: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:bg-slate-700 dark:text-slate-100"
               placeholder="https://mojafirma.pl"
             />
           </div>
@@ -178,20 +178,20 @@ export default function OrganizationSettingsPage() {
       </div>
 
       {/* Team Members */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900">Członkowie zespołu</h2>
-          <button className="flex items-center gap-2 px-3 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors">
-            <PlusIcon className="h-4 w-4" />
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Członkowie zespołu</h2>
+          <button className="flex items-center gap-2 px-3 py-2 text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 rounded-lg transition-colors">
+            <Plus className="h-4 w-4" />
             Zaproś osobę
           </button>
         </div>
 
-        <div className="text-center py-8 text-gray-500">
-          <UsersIcon className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+        <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+          <Users className="h-12 w-12 mx-auto mb-3 text-slate-300 dark:text-slate-600" />
           <p>Zarządzanie zespołem wymaga planu Enterprise</p>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

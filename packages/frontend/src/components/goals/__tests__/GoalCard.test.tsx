@@ -2,16 +2,16 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import GoalCard from '../GoalCard';
 import { PreciseGoal } from '@/types/streams';
 
-// Mock @heroicons/react
-jest.mock('@heroicons/react/24/outline', () => ({
-  PencilIcon: () => <span data-testid="pencil-icon">Edit</span>,
-  TrashIcon: () => <span data-testid="trash-icon">Delete</span>,
-  CheckCircleIcon: () => <span data-testid="check-icon">Check</span>,
-  ClockIcon: () => <span data-testid="clock-icon">Clock</span>,
-  XCircleIcon: () => <span data-testid="x-icon">X</span>,
-  PauseCircleIcon: () => <span data-testid="pause-icon">Pause</span>,
-  CalendarIcon: () => <span data-testid="calendar-icon">Calendar</span>,
-  ChartBarIcon: () => <span data-testid="chart-icon">Chart</span>,
+// Mock lucide-react
+jest.mock('lucide-react', () => ({
+  Pencil: () => <span data-testid="pencil-icon">Edit</span>,
+  Trash2: () => <span data-testid="trash-icon">Delete</span>,
+  CheckCircle: () => <span data-testid="check-icon">Check</span>,
+  Clock: () => <span data-testid="clock-icon">Clock</span>,
+  XCircle: () => <span data-testid="x-icon">X</span>,
+  PauseCircle: () => <span data-testid="pause-icon">Pause</span>,
+  Calendar: () => <span data-testid="calendar-icon">Calendar</span>,
+  BarChart3: () => <span data-testid="chart-icon">Chart</span>,
 }));
 
 const mockGoal: PreciseGoal = {

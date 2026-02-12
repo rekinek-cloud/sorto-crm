@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Habit } from '@/lib/api/habits';
 import { habitsApi } from '@/lib/api/habits';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { X } from 'lucide-react';
 
 interface HabitFormProps {
   habit?: Habit;
@@ -80,7 +80,7 @@ export default function HabitForm({ habit, onSubmit, onCancel }: HabitFormProps)
             onClick={onCancel}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <XMarkIcon className="w-6 h-6" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 

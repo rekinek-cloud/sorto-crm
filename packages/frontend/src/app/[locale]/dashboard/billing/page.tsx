@@ -2,19 +2,22 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  CreditCardIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ArrowUpIcon,
-  SparklesIcon,
-  UserGroupIcon,
-  FolderIcon,
-  BuildingOffice2Icon,
-  ChartBarIcon,
-  ClockIcon,
-} from '@heroicons/react/24/outline';
+  CreditCard,
+  CheckCircle,
+  XCircle,
+  ArrowUp,
+  Sparkles,
+  Users,
+  Folder,
+  Building2,
+  BarChart3,
+  Clock,
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { billingApi, SubscriptionDetails, Plan, UsageDetails } from '@/lib/api/billing';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { SkeletonPage } from '@/components/ui/SkeletonPage';
 
 export default function BillingPage() {
   const [subscription, setSubscription] = useState<SubscriptionDetails | null>(null);
@@ -68,15 +71,15 @@ export default function BillingPage() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'ACTIVE':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">Aktywna</span>;
+        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Aktywna</span>;
       case 'TRIAL':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">Trial</span>;
+        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Trial</span>;
       case 'PAST_DUE':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">Zalegla platnosc</span>;
+        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">Zalegla platnosc</span>;
       case 'CANCELED':
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">Anulowana</span>;
+        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">Anulowana</span>;
       default:
-        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">{status}</span>;
+        return <span className="px-2 py-1 text-xs font-medium rounded-full bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300">{status}</span>;
     }
   };
 
@@ -84,33 +87,29 @@ export default function BillingPage() {
 
   if (loading) {
     return (
-      <div className="p-6 flex items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600" />
-      </div>
+      <PageShell>
+        <SkeletonPage withStats={true} rows={3} />
+      </PageShell>
     );
   }
 
   return (
-    <div className="p-6 max-w-6xl">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-indigo-100 rounded-lg">
-          <CreditCardIcon className="h-6 w-6 text-indigo-600" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Subskrypcja i rozliczenia</h1>
-          <p className="text-sm text-gray-600">Zarzadzaj swoim planem i wykorzystaniem zasobow</p>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Subskrypcja i rozliczenia"
+        subtitle="Zarzadzaj swoim planem i wykorzystaniem zasobow"
+        icon={CreditCard}
+        iconColor="text-indigo-600"
+      />
 
       {/* Trial Banner */}
       {subscription?.status === 'TRIAL' && subscription.trialDaysRemaining > 0 && (
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between">
+        <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <ClockIcon className="h-6 w-6 text-blue-600" />
+            <Clock className="h-6 w-6 text-blue-600 dark:text-blue-400" />
             <div>
-              <p className="font-medium text-blue-900">Okres probny</p>
-              <p className="text-sm text-blue-700">
+              <p className="font-medium text-blue-900 dark:text-blue-200">Okres probny</p>
+              <p className="text-sm text-blue-700 dark:text-blue-300">
                 Pozostalo {subscription.trialDaysRemaining} dni. Wybierz plan, aby kontynuowac korzystanie.
               </p>
             </div>
@@ -126,16 +125,16 @@ export default function BillingPage() {
 
       {/* Current Subscription */}
       {subscription && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6 mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Aktualny plan</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Aktualny plan</h2>
             {getStatusBadge(subscription.status)}
           </div>
 
           <div className="flex items-center gap-4 mb-4">
-            <div className="text-3xl font-bold text-indigo-600">{subscription.plan}</div>
+            <div className="text-3xl font-bold text-indigo-600 dark:text-indigo-400">{subscription.plan}</div>
             {subscription.status === 'ACTIVE' && subscription.currentPeriodEnd && (
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-slate-500 dark:text-slate-400">
                 Odnawia sie: {new Date(subscription.currentPeriodEnd).toLocaleDateString('pl-PL')}
               </div>
             )}
@@ -144,7 +143,7 @@ export default function BillingPage() {
           {subscription.status === 'ACTIVE' && (
             <button
               onClick={handleManageBilling}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
             >
               Zarzadzaj subskrypcja
             </button>
@@ -154,17 +153,17 @@ export default function BillingPage() {
 
       {/* Usage */}
       {usage && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Wykorzystanie zasobow</h2>
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6 mb-6">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Wykorzystanie zasobow</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Object.entries(usage.usage).map(([key, data]) => {
               const icons: Record<string, React.ReactNode> = {
-                users: <UserGroupIcon className="h-5 w-5" />,
-                streams: <FolderIcon className="h-5 w-5" />,
-                projects: <BuildingOffice2Icon className="h-5 w-5" />,
-                contacts: <UserGroupIcon className="h-5 w-5" />,
-                deals: <ChartBarIcon className="h-5 w-5" />,
+                users: <Users className="h-5 w-5" />,
+                streams: <Folder className="h-5 w-5" />,
+                projects: <Building2 className="h-5 w-5" />,
+                contacts: <Users className="h-5 w-5" />,
+                deals: <BarChart3 className="h-5 w-5" />,
               };
               const labels: Record<string, string> = {
                 users: 'Uzytkownicy',
@@ -175,17 +174,17 @@ export default function BillingPage() {
               };
 
               return (
-                <div key={key} className="p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-2 mb-2 text-gray-600">
+                <div key={key} className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2 text-slate-600 dark:text-slate-400">
                     {icons[key]}
                     <span className="font-medium">{labels[key]}</span>
                   </div>
                   <div className="flex items-end justify-between mb-2">
-                    <span className="text-2xl font-bold text-gray-900">{data.current}</span>
-                    <span className="text-sm text-gray-500">/ {formatLimit(data.limit)}</span>
+                    <span className="text-2xl font-bold text-slate-900 dark:text-slate-100">{data.current}</span>
+                    <span className="text-sm text-slate-500 dark:text-slate-400">/ {formatLimit(data.limit)}</span>
                   </div>
                   {data.limit !== -1 && (
-                    <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div className="w-full bg-slate-200 dark:bg-slate-600 rounded-full h-2">
                       <div
                         className={`h-2 rounded-full transition-all ${
                           data.percentage > 90 ? 'bg-red-500' : data.percentage > 70 ? 'bg-yellow-500' : 'bg-green-500'
@@ -203,8 +202,8 @@ export default function BillingPage() {
 
       {/* Features */}
       {usage && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Funkcje w Twoim planie</h2>
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6 mb-6">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Funkcje w Twoim planie</h2>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             {Object.entries(usage.features).map(([feature, enabled]) => {
@@ -223,10 +222,10 @@ export default function BillingPage() {
                 <div
                   key={feature}
                   className={`flex items-center gap-2 p-3 rounded-lg ${
-                    enabled ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-400'
+                    enabled ? 'bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-400' : 'bg-slate-50 text-slate-400 dark:bg-slate-700/50 dark:text-slate-500'
                   }`}
                 >
-                  {enabled ? <CheckCircleIcon className="h-5 w-5" /> : <XCircleIcon className="h-5 w-5" />}
+                  {enabled ? <CheckCircle className="h-5 w-5" /> : <XCircle className="h-5 w-5" />}
                   <span className="text-sm font-medium">{labels[feature] || feature}</span>
                 </div>
               );
@@ -236,16 +235,16 @@ export default function BillingPage() {
       )}
 
       {/* Plans */}
-      <div id="plans" className="bg-white rounded-xl border border-gray-200 p-6">
+      <div id="plans" className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-lg font-semibold text-gray-900">Dostepne plany</h2>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Dostepne plany</h2>
 
           {/* Billing Period Toggle */}
-          <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+          <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
             <button
               onClick={() => setBillingPeriod('monthly')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                billingPeriod === 'monthly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
+                billingPeriod === 'monthly' ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-600 dark:text-slate-400'
               }`}
             >
               Miesiecznie
@@ -253,10 +252,10 @@ export default function BillingPage() {
             <button
               onClick={() => setBillingPeriod('yearly')}
               className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                billingPeriod === 'yearly' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-600'
+                billingPeriod === 'yearly' ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm' : 'text-slate-600 dark:text-slate-400'
               }`}
             >
-              Rocznie <span className="text-green-600 text-xs">-17%</span>
+              Rocznie <span className="text-green-600 dark:text-green-400 text-xs">-17%</span>
             </button>
           </div>
         </div>
@@ -270,7 +269,7 @@ export default function BillingPage() {
               <div
                 key={plan.name}
                 className={`relative p-6 rounded-xl border-2 ${
-                  isCurrentPlan ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200'
+                  isCurrentPlan ? 'border-indigo-500 bg-indigo-50 dark:bg-indigo-900/20' : 'border-slate-200 dark:border-slate-600'
                 }`}
               >
                 {plan.name === 'PROFESSIONAL' && !isCurrentPlan && (
@@ -281,47 +280,47 @@ export default function BillingPage() {
                   </div>
                 )}
 
-                <div className="text-xl font-bold text-gray-900 mb-2">{plan.name}</div>
+                <div className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-2">{plan.name}</div>
 
                 <div className="flex items-baseline gap-1 mb-4">
-                  <span className="text-3xl font-bold text-gray-900">{price} PLN</span>
-                  <span className="text-gray-500">/mies.</span>
+                  <span className="text-3xl font-bold text-slate-900 dark:text-slate-100">{price} PLN</span>
+                  <span className="text-slate-500 dark:text-slate-400">/mies.</span>
                 </div>
 
                 {billingPeriod === 'yearly' && (
-                  <p className="text-sm text-green-600 mb-4">
+                  <p className="text-sm text-green-600 dark:text-green-400 mb-4">
                     Rozliczenie roczne: {plan.pricing.yearly} PLN
                   </p>
                 )}
 
                 <ul className="space-y-3 mb-6">
-                  <li className="flex items-center gap-2 text-sm text-gray-600">
-                    <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                  <li className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
                     {formatLimit(plan.limits.maxUsers)} uzytkownikow
                   </li>
-                  <li className="flex items-center gap-2 text-sm text-gray-600">
-                    <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                  <li className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
                     {formatLimit(plan.limits.maxStreams)} strumieni
                   </li>
-                  <li className="flex items-center gap-2 text-sm text-gray-600">
-                    <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                  <li className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                    <CheckCircle className="h-5 w-5 text-green-500" />
                     {formatLimit(plan.limits.maxContacts)} kontaktow
                   </li>
                   {plan.limits.features.aiAssistant && (
-                    <li className="flex items-center gap-2 text-sm text-gray-600">
-                      <SparklesIcon className="h-5 w-5 text-indigo-500" />
+                    <li className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                      <Sparkles className="h-5 w-5 text-indigo-500" />
                       Asystent AI
                     </li>
                   )}
                   {plan.limits.features.customFields && (
-                    <li className="flex items-center gap-2 text-sm text-gray-600">
-                      <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                    <li className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                      <CheckCircle className="h-5 w-5 text-green-500" />
                       Pola niestandardowe
                     </li>
                   )}
                   {plan.limits.features.whiteLabel && (
-                    <li className="flex items-center gap-2 text-sm text-gray-600">
-                      <CheckCircleIcon className="h-5 w-5 text-green-500" />
+                    <li className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                      <CheckCircle className="h-5 w-5 text-green-500" />
                       White Label
                     </li>
                   )}
@@ -330,7 +329,7 @@ export default function BillingPage() {
                 {isCurrentPlan ? (
                   <button
                     disabled
-                    className="w-full py-3 px-4 rounded-lg bg-gray-100 text-gray-500 font-medium cursor-not-allowed"
+                    className="w-full py-3 px-4 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 font-medium cursor-not-allowed"
                   >
                     Aktualny plan
                   </button>
@@ -341,14 +340,14 @@ export default function BillingPage() {
                     className={`w-full py-3 px-4 rounded-lg font-medium transition-colors ${
                       plan.name === 'PROFESSIONAL'
                         ? 'bg-indigo-600 text-white hover:bg-indigo-700'
-                        : 'bg-gray-900 text-white hover:bg-gray-800'
+                        : 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-200'
                     } disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
                   >
                     {upgrading ? (
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
                     ) : (
                       <>
-                        <ArrowUpIcon className="h-4 w-4" />
+                        <ArrowUp className="h-4 w-4" />
                         Wybierz plan
                       </>
                     )}
@@ -359,6 +358,6 @@ export default function BillingPage() {
           })}
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

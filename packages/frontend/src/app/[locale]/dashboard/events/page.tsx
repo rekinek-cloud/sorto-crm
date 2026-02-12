@@ -3,10 +3,34 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import {
+  CalendarDays,
+  Plus,
+  Calendar,
+  CheckCircle2,
+  Clock,
+  Layers,
+  MapPin,
+  Wallet,
+  Trash2,
+} from 'lucide-react';
 import { eventsApi, CreateEventRequest, EventFilters } from '@/lib/api/events';
 import { Event } from '@/types/gtd';
 
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { FilterBar } from '@/components/ui/FilterBar';
+import { DataTable, Column } from '@/components/ui/DataTable';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ActionButton } from '@/components/ui/ActionButton';
+import { StatCard } from '@/components/ui/StatCard';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
+import { FormModal } from '@/components/ui/FormModal';
+
+// ─── Config ──────────────────────────────────────────────────────────
 const EVENT_TYPES = [
   { value: 'CONFERENCE', label: 'Konferencja' },
   { value: 'TRADE_SHOW', label: 'Targi' },
@@ -27,15 +51,17 @@ const STATUS_OPTIONS = [
   { value: 'CANCELLED', label: 'Anulowane' },
 ];
 
-const getStatusColor = (status: string) => {
+type StatusVariant = 'default' | 'success' | 'warning' | 'error' | 'info' | 'neutral';
+
+const getStatusVariant = (status: string): StatusVariant => {
   switch (status) {
-    case 'DRAFT': return 'bg-gray-100 text-gray-700';
-    case 'PLANNING': return 'bg-blue-100 text-blue-700';
-    case 'CONFIRMED': return 'bg-green-100 text-green-700';
-    case 'IN_PROGRESS': return 'bg-yellow-100 text-yellow-700';
-    case 'COMPLETED': return 'bg-gray-100 text-gray-600';
-    case 'CANCELLED': return 'bg-red-100 text-red-700';
-    default: return 'bg-gray-100 text-gray-700';
+    case 'DRAFT': return 'neutral';
+    case 'PLANNING': return 'info';
+    case 'CONFIRMED': return 'success';
+    case 'IN_PROGRESS': return 'warning';
+    case 'COMPLETED': return 'default';
+    case 'CANCELLED': return 'error';
+    default: return 'neutral';
   }
 };
 
@@ -60,14 +86,24 @@ const formatCurrency = (amount?: number, currency?: string) => {
   }).format(amount);
 };
 
+// ─── Input class helper ──────────────────────────────────────────────
+const inputClass =
+  'w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors';
+const labelClass = 'block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1';
+
+// ─── Page ────────────────────────────────────────────────────────────
 export default function EventsPage() {
+  const router = useRouter();
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [typeFilter, setTypeFilter] = useState<string>('');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
-  const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, pages: 0 });
+  const [pagination, setPagination] = useState({ page: 1, limit: 100, total: 0, pages: 0 });
+  const [deleteLoadingId, setDeleteLoadingId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -104,7 +140,7 @@ export default function EventsPage() {
       setPagination(prev => ({ ...prev, total: response.pagination.total, pages: response.pagination.pages }));
     } catch (error) {
       console.error('Failed to load events:', error);
-      toast.error('Nie udalo sie zaladowac eventow');
+      toast.error('Nie udalo sie zaladowac wydarzen');
     } finally {
       setIsLoading(false);
     }
@@ -116,7 +152,7 @@ export default function EventsPage() {
 
   const handleCreate = async () => {
     if (!formData.name.trim()) {
-      toast.error('Nazwa eventu jest wymagana');
+      toast.error('Nazwa wydarzenia jest wymagana');
       return;
     }
     if (!formData.startDate || !formData.endDate) {
@@ -125,6 +161,7 @@ export default function EventsPage() {
     }
 
     try {
+      setCreating(true);
       const data: CreateEventRequest = {
         name: formData.name.trim(),
         description: formData.description.trim() || undefined,
@@ -140,7 +177,7 @@ export default function EventsPage() {
       };
 
       await eventsApi.createEvent(data);
-      toast.success('Event utworzony pomyslnie!');
+      toast.success('Wydarzenie utworzone pomyslnie!');
       setShowCreateModal(false);
       setFormData({
         name: '',
@@ -158,372 +195,431 @@ export default function EventsPage() {
       loadEvents();
     } catch (error) {
       console.error('Failed to create event:', error);
-      toast.error('Nie udalo sie utworzyc eventu');
+      toast.error('Nie udalo sie utworzyc wydarzenia');
+    } finally {
+      setCreating(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('Czy na pewno chcesz usunac ten event?')) return;
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setDeleteLoadingId(id);
     try {
       await eventsApi.deleteEvent(id);
-      toast.success('Event usuniety');
+      toast.success('Wydarzenie zostalo usuniete');
       loadEvents();
     } catch (error) {
       console.error('Failed to delete event:', error);
-      toast.error('Nie udalo sie usunac eventu');
+      toast.error('Nie udalo sie usunac wydarzenia');
+    } finally {
+      setDeleteLoadingId(null);
     }
   };
 
+  // ─── Filtered data ─────────────────────────────────────────────────
+  const filteredEvents = searchQuery
+    ? events.filter(e =>
+        e.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        e.venue?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        e.city?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : events;
+
+  // ─── Table columns ─────────────────────────────────────────────────
+  const columns: Column<Event>[] = [
+    {
+      key: 'name',
+      label: 'Nazwa',
+      sortable: true,
+      render: (_val, row) => (
+        <div>
+          <div className="font-medium text-slate-900 dark:text-slate-100">{row.name}</div>
+          {row.description && (
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate max-w-xs">{row.description}</p>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: 'eventType',
+      label: 'Typ',
+      sortable: true,
+      render: (_val, row) => (
+        <span className="text-sm text-slate-700 dark:text-slate-300">
+          {getEventTypeLabel(row.eventType)}
+        </span>
+      ),
+    },
+    {
+      key: 'venue',
+      label: 'Miejsce',
+      sortable: true,
+      render: (_val, row) => (
+        <div className="flex items-center gap-1.5">
+          <MapPin className="w-3.5 h-3.5 text-slate-400" />
+          <div>
+            <div className="text-sm text-slate-700 dark:text-slate-300">{row.venue || '-'}</div>
+            {row.city && (
+              <div className="text-xs text-slate-500 dark:text-slate-400">
+                {row.city}{row.country ? `, ${row.country}` : ''}
+              </div>
+            )}
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'startDate',
+      label: 'Daty',
+      sortable: true,
+      getValue: (row) => new Date(row.startDate).getTime(),
+      render: (_val, row) => (
+        <div className="flex items-center gap-1.5">
+          <Calendar className="w-3.5 h-3.5 text-slate-400" />
+          <div>
+            <div className="text-sm text-slate-700 dark:text-slate-300">{formatDate(row.startDate)}</div>
+            <div className="text-xs text-slate-500 dark:text-slate-400">do {formatDate(row.endDate)}</div>
+          </div>
+        </div>
+      ),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      sortable: true,
+      render: (_val, row) => (
+        <StatusBadge variant={getStatusVariant(row.status)} dot>
+          {getStatusLabel(row.status)}
+        </StatusBadge>
+      ),
+    },
+    {
+      key: 'budgetPlanned',
+      label: 'Budzet',
+      sortable: true,
+      render: (_val, row) => (
+        <div className="flex items-center gap-1.5">
+          <Wallet className="w-3.5 h-3.5 text-slate-400" />
+          <span className="text-sm text-slate-700 dark:text-slate-300">
+            {formatCurrency(row.budgetPlanned, row.currency)}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Akcje',
+      sortable: false,
+      render: (_val, row) => (
+        <div className="flex justify-end">
+          <ActionButton
+            variant="ghost"
+            size="sm"
+            icon={Trash2}
+            loading={deleteLoadingId === row.id}
+            onClick={(e: React.MouseEvent<HTMLButtonElement>) => handleDelete(row.id, e)}
+            className="text-slate-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400"
+          />
+        </div>
+      ),
+    },
+  ];
+
+  // ─── Loading ───────────────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
+      <PageShell>
+        <SkeletonPage />
+      </PageShell>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Eventy / Targi</h1>
-          <p className="text-gray-600">Zarzadzaj wydarzeniami i targami</p>
-        </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Dodaj event
-        </button>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Wydarzenia / Targi"
+        subtitle="Zarzadzaj wydarzeniami, targami i konferencjami"
+        icon={CalendarDays}
+        iconColor="text-violet-600 bg-violet-50 dark:bg-violet-900/30 dark:text-violet-400"
+        breadcrumbs={[
+          { label: 'Wydarzenia' },
+        ]}
+        actions={
+          <ActionButton
+            icon={Plus}
+            onClick={() => setShowCreateModal(true)}
+          >
+            Dodaj wydarzenie
+          </ActionButton>
+        }
+      />
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <p className="text-sm text-gray-600">Wszystkie</p>
-          <p className="text-2xl font-bold text-gray-900">{pagination.total}</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <p className="text-sm text-gray-600">Planowane</p>
-          <p className="text-2xl font-bold text-blue-600">{events.filter(e => e.status === 'PLANNING').length}</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <p className="text-sm text-gray-600">Potwierdzone</p>
-          <p className="text-2xl font-bold text-green-600">{events.filter(e => e.status === 'CONFIRMED').length}</p>
-        </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
-          <p className="text-sm text-gray-600">W trakcie</p>
-          <p className="text-2xl font-bold text-yellow-600">{events.filter(e => e.status === 'IN_PROGRESS').length}</p>
-        </div>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6"
+      >
+        <StatCard
+          label="Wszystkie"
+          value={pagination.total}
+          icon={Layers}
+          iconColor="text-slate-600 bg-slate-50 dark:bg-slate-700/50 dark:text-slate-400"
+        />
+        <StatCard
+          label="Planowane"
+          value={events.filter(e => e.status === 'PLANNING').length}
+          icon={Clock}
+          iconColor="text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"
+        />
+        <StatCard
+          label="Potwierdzone"
+          value={events.filter(e => e.status === 'CONFIRMED').length}
+          icon={CheckCircle2}
+          iconColor="text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400"
+        />
+        <StatCard
+          label="W trakcie"
+          value={events.filter(e => e.status === 'IN_PROGRESS').length}
+          icon={CalendarDays}
+          iconColor="text-amber-600 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-400"
+        />
+      </motion.div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <div className="flex flex-col md:flex-row md:items-center gap-4">
-          <select
-            value={statusFilter}
-            onChange={(e) => { setStatusFilter(e.target.value); setPagination(p => ({ ...p, page: 1 })); }}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-          >
-            <option value="">Wszystkie statusy</option>
-            {STATUS_OPTIONS.map(s => (
-              <option key={s.value} value={s.value}>{s.label}</option>
-            ))}
-          </select>
+      {/* FilterBar */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="mb-6"
+      >
+        <FilterBar
+          search={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Szukaj po nazwie, miejscu, miescie..."
+          filters={[
+            {
+              key: 'status',
+              label: 'Wszystkie statusy',
+              options: STATUS_OPTIONS,
+            },
+            {
+              key: 'eventType',
+              label: 'Wszystkie typy',
+              options: EVENT_TYPES,
+            },
+          ]}
+          filterValues={{
+            status: statusFilter || 'all',
+            eventType: typeFilter || 'all',
+          }}
+          onFilterChange={(key, value) => {
+            const val = value === 'all' ? '' : value;
+            if (key === 'status') setStatusFilter(val);
+            if (key === 'eventType') setTypeFilter(val);
+            setPagination(p => ({ ...p, page: 1 }));
+          }}
+          sortOptions={[
+            { value: 'asc', label: 'Data: rosnaco' },
+            { value: 'desc', label: 'Data: malejaco' },
+          ]}
+          sortValue={sortOrder}
+          onSortChange={(val) => setSortOrder(val as 'asc' | 'desc')}
+          actions={
+            <span className="text-xs text-slate-500 dark:text-slate-400 ml-2">
+              Znaleziono: {filteredEvents.length}
+            </span>
+          }
+        />
+      </motion.div>
 
-          <select
-            value={typeFilter}
-            onChange={(e) => { setTypeFilter(e.target.value); setPagination(p => ({ ...p, page: 1 })); }}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
-          >
-            <option value="">Wszystkie typy</option>
-            {EVENT_TYPES.map(t => (
-              <option key={t.value} value={t.value}>{t.label}</option>
-            ))}
-          </select>
-
-          <button
-            onClick={() => setSortOrder(prev => prev === 'asc' ? 'desc' : 'asc')}
-            className="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors"
-          >
-            Data: {sortOrder === 'asc' ? 'rosnaco' : 'malejaco'} {sortOrder === 'asc' ? '↑' : '↓'}
-          </button>
-
-          <div className="text-sm text-gray-500 ml-auto">
-            Znaleziono: {events.length}
+      {/* Data Table */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        {filteredEvents.length === 0 && !isLoading ? (
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+            <EmptyState
+              icon={CalendarDays}
+              title="Brak wydarzen"
+              description="Dodaj pierwsze wydarzenie aby rozpoczac"
+              action={
+                <ActionButton icon={Plus} onClick={() => setShowCreateModal(true)}>
+                  Dodaj wydarzenie
+                </ActionButton>
+              }
+            />
           </div>
-        </div>
-      </div>
-
-      {/* Events Table */}
-      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nazwa</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Typ</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Miejsce</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Daty</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Budzet</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Akcje</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {events.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center">
-                    <div className="text-gray-400 text-4xl mb-3">📅</div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-1">Brak eventow</h3>
-                    <p className="text-gray-600">Dodaj pierwszy event aby rozpoczac</p>
-                  </td>
-                </tr>
-              ) : (
-                events.map((event) => (
-                  <tr key={event.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <Link
-                        href={`/dashboard/events/${event.id}`}
-                        className="text-sm font-medium text-blue-600 hover:text-blue-800"
-                      >
-                        {event.name}
-                      </Link>
-                      {event.description && (
-                        <p className="text-xs text-gray-500 mt-0.5 truncate max-w-xs">{event.description}</p>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {getEventTypeLabel(event.eventType)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      <div>{event.venue || '-'}</div>
-                      {event.city && <div className="text-xs text-gray-500">{event.city}{event.country ? `, ${event.country}` : ''}</div>}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      <div>{formatDate(event.startDate)}</div>
-                      <div className="text-xs text-gray-500">do {formatDate(event.endDate)}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(event.status)}`}>
-                        {getStatusLabel(event.status)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {formatCurrency(event.budgetPlanned, event.currency)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                      <button
-                        onClick={() => handleDelete(event.id)}
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        Usun
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Pagination */}
-      {pagination.pages > 1 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-700">
-            Strona {pagination.page} z {pagination.pages} (lacznie {pagination.total})
-          </div>
-          <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setPagination(p => ({ ...p, page: p.page - 1 }))}
-              disabled={pagination.page <= 1}
-              className="px-3 py-1 border border-gray-300 rounded-md disabled:opacity-50 hover:bg-gray-100 text-sm"
-            >
-              Poprzednia
-            </button>
-            <button
-              onClick={() => setPagination(p => ({ ...p, page: p.page + 1 }))}
-              disabled={pagination.page >= pagination.pages}
-              className="px-3 py-1 border border-gray-300 rounded-md disabled:opacity-50 hover:bg-gray-100 text-sm"
-            >
-              Nastepna
-            </button>
-          </div>
-        </div>
-      )}
+        ) : (
+          <DataTable<Event>
+            columns={columns}
+            data={filteredEvents}
+            onRowClick={(row) => router.push(`/dashboard/events/${row.id}`)}
+            storageKey="events-list"
+            pageSize={20}
+            emptyMessage="Brak wydarzen do wyswietlenia"
+          />
+        )}
+      </motion.div>
 
       {/* Create Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Nowy event</h3>
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-            </div>
+      <FormModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        title="Nowe wydarzenie"
+        subtitle="Uzupelnij dane nowego wydarzenia"
+        size="lg"
+        position="right"
+        footer={
+          <>
+            <ActionButton variant="secondary" onClick={() => setShowCreateModal(false)}>
+              Anuluj
+            </ActionButton>
+            <ActionButton
+              icon={Plus}
+              loading={creating}
+              onClick={handleCreate}
+              disabled={!formData.name.trim() || !formData.startDate || !formData.endDate}
+            >
+              Utworz wydarzenie
+            </ActionButton>
+          </>
+        }
+      >
+        <div className="space-y-4">
+          <div>
+            <label className={labelClass}>Nazwa wydarzenia *</label>
+            <input
+              type="text"
+              value={formData.name}
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+              className={inputClass}
+              placeholder="Np. Targi ITM Poznan 2026"
+            />
+          </div>
 
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nazwa eventu *</label>
-                <input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Np. Targi ITM Poznan 2026"
-                />
-              </div>
+          <div>
+            <label className={labelClass}>Opis</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className={inputClass}
+              rows={2}
+              placeholder="Krotki opis wydarzenia..."
+            />
+          </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Opis</label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  rows={2}
-                  placeholder="Krotki opis wydarzenia..."
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Typ wydarzenia *</label>
-                  <select
-                    value={formData.eventType}
-                    onChange={(e) => setFormData({ ...formData, eventType: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {EVENT_TYPES.map(t => (
-                      <option key={t.value} value={t.value}>{t.label}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    {STATUS_OPTIONS.map(s => (
-                      <option key={s.value} value={s.value}>{s.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Miejsce</label>
-                  <input
-                    type="text"
-                    value={formData.venue}
-                    onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Hala Expo"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Miasto</label>
-                  <input
-                    type="text"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Poznan"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Kraj</label>
-                  <input
-                    type="text"
-                    value={formData.country}
-                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Polska"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Data rozpoczecia *</label>
-                  <input
-                    type="date"
-                    value={formData.startDate}
-                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Data zakonczenia *</label>
-                  <input
-                    type="date"
-                    value={formData.endDate}
-                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Planowany budzet</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.budgetPlanned}
-                    onChange={(e) => setFormData({ ...formData, budgetPlanned: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Waluta</label>
-                  <select
-                    value={formData.currency}
-                    onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="PLN">PLN</option>
-                    <option value="EUR">EUR</option>
-                    <option value="USD">USD</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="px-6 py-4 border-t border-gray-200 flex space-x-3">
-              <button
-                onClick={() => setShowCreateModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Typ wydarzenia *</label>
+              <select
+                value={formData.eventType}
+                onChange={(e) => setFormData({ ...formData, eventType: e.target.value })}
+                className={inputClass}
               >
-                Anuluj
-              </button>
-              <button
-                onClick={handleCreate}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                disabled={!formData.name.trim() || !formData.startDate || !formData.endDate}
+                {EVENT_TYPES.map(t => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Status</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                className={inputClass}
               >
-                Utworz event
-              </button>
+                {STATUS_OPTIONS.map(s => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4">
+            <div>
+              <label className={labelClass}>Miejsce</label>
+              <input
+                type="text"
+                value={formData.venue}
+                onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
+                className={inputClass}
+                placeholder="Hala Expo"
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Miasto</label>
+              <input
+                type="text"
+                value={formData.city}
+                onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                className={inputClass}
+                placeholder="Poznan"
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Kraj</label>
+              <input
+                type="text"
+                value={formData.country}
+                onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                className={inputClass}
+                placeholder="Polska"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Data rozpoczecia *</label>
+              <input
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Data zakonczenia *</label>
+              <input
+                type="date"
+                value={formData.endDate}
+                onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Planowany budzet</label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.budgetPlanned}
+                onChange={(e) => setFormData({ ...formData, budgetPlanned: e.target.value })}
+                className={inputClass}
+                placeholder="0.00"
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Waluta</label>
+              <select
+                value={formData.currency}
+                onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
+                className={inputClass}
+              >
+                <option value="PLN">PLN</option>
+                <option value="EUR">EUR</option>
+                <option value="USD">USD</option>
+              </select>
             </div>
           </div>
         </div>
-      )}
-    </div>
+      </FormModal>
+    </PageShell>
   );
 }

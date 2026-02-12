@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  ChevronDownIcon,
-  MagnifyingGlassIcon,
-  UserIcon,
-  XMarkIcon,
-  PlusIcon
-} from '@heroicons/react/24/outline';
+import {
+  ChevronDown,
+  Search,
+  User,
+  X,
+  Plus
+} from 'lucide-react';
 import { Contact } from '@/types/crm';
 import { contactsApi } from '@/lib/api/contacts';
 
@@ -143,7 +143,7 @@ export default function CustomerSelect({
         <div className="flex items-center flex-1 min-w-0">
           {selectedCustomer ? (
             <div className="flex items-center space-x-2 flex-1 min-w-0">
-              <UserIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <div className="flex-1 min-w-0">
                 <div className="text-sm font-medium text-gray-900 truncate">
                   {selectedCustomer.name}
@@ -162,20 +162,20 @@ export default function CustomerSelect({
                   }}
                   className="text-gray-400 hover:text-gray-600 flex-shrink-0"
                 >
-                  <XMarkIcon className="w-4 h-4" />
+                  <X className="w-4 h-4" />
                 </button>
               )}
             </div>
           ) : (
             <div className="flex items-center space-x-2 text-gray-500">
-              <UserIcon className="w-4 h-4" />
+              <User className="w-4 h-4" />
               <span className="text-sm">{placeholder}</span>
             </div>
           )}
         </div>
         
         {!disabled && (
-          <ChevronDownIcon 
+          <ChevronDown 
             className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ml-2 ${
               isOpen ? 'rotate-180' : ''
             }`} 
@@ -204,7 +204,7 @@ export default function CustomerSelect({
                   placeholder="Szukaj klienta..."
                   className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:ring-1 focus:ring-primary-500 focus:border-primary-500"
                 />
-                <MagnifyingGlassIcon className="w-4 h-4 absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Search className="w-4 h-4 absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400" />
               </div>
             </div>
 
@@ -224,7 +224,7 @@ export default function CustomerSelect({
                       className="w-full px-3 py-2 text-left hover:bg-gray-50 focus:bg-gray-50 focus:outline-none border-b border-gray-100 last:border-b-0"
                     >
                       <div className="flex items-center space-x-2">
-                        <UserIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                        <User className="w-4 h-4 text-gray-400 flex-shrink-0" />
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium text-gray-900 truncate">
                             {contact.firstName} {contact.lastName}
@@ -253,7 +253,7 @@ export default function CustomerSelect({
                 </>
               ) : (
                 <div className="p-3 text-center text-gray-500">
-                  <UserIcon className="w-8 h-8 mx-auto text-gray-300 mb-2" />
+                  <User className="w-8 h-8 mx-auto text-gray-300 mb-2" />
                   <p className="text-sm">
                     {searchTerm ? 'Nie znaleziono klientów' : 'Brak klientów'}
                   </p>
@@ -262,7 +262,7 @@ export default function CustomerSelect({
                       onClick={handleCreateNewCustomer}
                       className="mt-2 text-sm text-primary-600 hover:text-primary-700 flex items-center justify-center space-x-1"
                     >
-                      <PlusIcon className="w-4 h-4" />
+                      <Plus className="w-4 h-4" />
                       <span>Dodaj nowego klienta</span>
                     </button>
                   )}
@@ -277,7 +277,7 @@ export default function CustomerSelect({
                   onClick={handleCreateNewCustomer}
                   className="w-full px-3 py-2 text-left text-sm text-primary-600 hover:text-primary-700 hover:bg-primary-50 rounded-md flex items-center space-x-2"
                 >
-                  <PlusIcon className="w-4 h-4" />
+                  <Plus className="w-4 h-4" />
                   <span>Dodaj nowego klienta</span>
                 </button>
               </div>
@@ -303,7 +303,7 @@ export default function CustomerSelect({
                     onClick={() => setShowCreateForm(false)}
                     className="text-gray-400 hover:text-gray-600"
                   >
-                    <XMarkIcon className="w-6 h-6" />
+                    <X className="w-6 h-6" />
                   </button>
                 </div>
               </div>

@@ -4,14 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { tasksApi } from '@/lib/api/gtd';
 import { Task } from '@/types/gtd';
 import { toast } from 'react-hot-toast';
-import { 
-  LinkIcon, 
-  PlusIcon, 
-  TrashIcon, 
-  ClockIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon
-} from '@heroicons/react/24/outline';
+import {
+  Link,
+  Plus,
+  Trash2,
+  Clock,
+  CheckCircle,
+  AlertTriangle
+} from 'lucide-react';
 
 interface TaskDependenciesProps {
   taskId: string;
@@ -147,13 +147,13 @@ export default function TaskDependencies({ taskId, onDependenciesChange }: TaskD
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'COMPLETED':
-        return <CheckCircleIcon className="w-4 h-4 text-green-600" />;
+        return <CheckCircle className="w-4 h-4 text-green-600" />;
       case 'IN_PROGRESS':
-        return <ClockIcon className="w-4 h-4 text-blue-600" />;
+        return <Clock className="w-4 h-4 text-blue-600" />;
       case 'WAITING':
-        return <ExclamationTriangleIcon className="w-4 h-4 text-yellow-600" />;
+        return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
       default:
-        return <ClockIcon className="w-4 h-4 text-gray-400" />;
+        return <Clock className="w-4 h-4 text-gray-400" />;
     }
   };
 
@@ -202,7 +202,7 @@ export default function TaskDependencies({ taskId, onDependenciesChange }: TaskD
           <h2 className="text-lg font-semibold text-gray-900">Task Dependencies</h2>
         </div>
         <div className="p-6 text-center text-red-600">
-          <ExclamationTriangleIcon className="w-8 h-8 mx-auto mb-2" />
+          <AlertTriangle className="w-8 h-8 mx-auto mb-2" />
           <p>{error}</p>
           <button 
             onClick={loadDependencies}
@@ -229,7 +229,7 @@ export default function TaskDependencies({ taskId, onDependenciesChange }: TaskD
             onClick={() => setShowAddForm(!showAddForm)}
             className="btn btn-primary"
           >
-            <PlusIcon className="w-4 h-4 mr-2" />
+            <Plus className="w-4 h-4 mr-2" />
             Add Dependency
           </button>
         </div>
@@ -341,7 +341,7 @@ export default function TaskDependencies({ taskId, onDependenciesChange }: TaskD
           
           {dependencies.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              <LinkIcon className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+              <Link className="w-8 h-8 mx-auto mb-2 text-gray-300" />
               <p>No dependencies defined</p>
               <p className="text-xs">This task can start immediately</p>
             </div>
@@ -390,7 +390,7 @@ export default function TaskDependencies({ taskId, onDependenciesChange }: TaskD
                       className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       title="Remove dependency"
                     >
-                      <TrashIcon className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -410,7 +410,7 @@ export default function TaskDependencies({ taskId, onDependenciesChange }: TaskD
           
           {dependents.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              <LinkIcon className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+              <Link className="w-8 h-8 mx-auto mb-2 text-gray-300" />
               <p>No dependent tasks</p>
               <p className="text-xs">No other tasks are waiting for this one</p>
             </div>

@@ -14,6 +14,8 @@
 
 import { prisma } from '../config/database';
 import { AIRouter } from './ai/AIRouter';
+import { PipelineConfigLoader } from './ai/PipelineConfigLoader';
+import { PipelineConfig } from './ai/PipelineConfigDefaults';
 
 export interface EmailMessage {
   id: string;
@@ -90,6 +92,7 @@ class EmailPipelineService {
    */
   async processEmail(message: EmailMessage, organizationId: string, forceSkipAI: boolean = false): Promise<PipelineResult> {
     const startTime = Date.now();
+    const config = await PipelineConfigLoader.loadConfig(prisma, organizationId);
     const rulesExecuted: string[] = [];
 
     const result: PipelineResult = {
@@ -110,7 +113,7 @@ class EmailPipelineService {
 
       // ========== STAGE 1: PRE-FILTER ==========
       console.log(`[EmailPipeline] Stage 1: PRE-FILTER for ${message.id}`);
-      const preFilterRules = await this.getRulesForStage('PRE_FILTER', organizationId);
+      const preFilterRules = await this.getRulesForStage('PRE_FILTER', organizationId, config);
 
       for (const rule of preFilterRules) {
         if (this.evaluateConditions(rule.conditions, message, context)) {
@@ -135,7 +138,7 @@ class EmailPipelineService {
       // ========== STAGE 2: CLASSIFY ==========
       console.log(`[EmailPipeline] Stage 2: CLASSIFY for ${message.id}`);
       result.stage = 'CLASSIFY';
-      const classifyRules = await this.getRulesForStage('CLASSIFY', organizationId);
+      const classifyRules = await this.getRulesForStage('CLASSIFY', organizationId, config);
 
       for (const rule of classifyRules) {
         if (this.evaluateConditions(rule.conditions, message, context)) {
@@ -161,11 +164,11 @@ class EmailPipelineService {
       result.stage = 'AI_ANALYSIS';
 
       // Tutaj wywołujemy AI
-      const aiResult = await this.runAIAnalysis(message, context, organizationId);
+      const aiResult = await this.runAIAnalysis(message, context, organizationId, config);
       result.aiAnalysis = aiResult;
 
       // Uruchom reguły AI
-      const aiRules = await this.getRulesForStage('AI_ANALYSIS', organizationId);
+      const aiRules = await this.getRulesForStage('AI_ANALYSIS', organizationId, config);
       for (const rule of aiRules) {
         // Przekaż też wyniki AI do kontekstu
         const enrichedContext = { ...context, ai: aiResult };
@@ -250,7 +253,7 @@ class EmailPipelineService {
   /**
    * Pobieranie reguł dla danego etapu
    */
-  private async getRulesForStage(stage: string, organizationId: string): Promise<PipelineRule[]> {
+  private async getRulesForStage(stage: string, organizationId: string, config: PipelineConfig): Promise<PipelineRule[]> {
     // Pobierz reguły z bazy
     const dbRules = await prisma.unified_rules.findMany({
       where: {
@@ -274,89 +277,31 @@ class EmailPipelineService {
     }));
 
     // Dodaj domyślne reguły systemowe
-    const systemRules = this.getSystemRules(stage);
+    const systemRules = this.getSystemRules(stage, config);
 
     return [...systemRules, ...rules].sort((a, b) => b.priority - a.priority);
   }
 
   /**
-   * Domyślne reguły systemowe (hardcoded)
+   * System rules loaded from config (DB with defaults fallback)
    */
-  private getSystemRules(stage: string): PipelineRule[] {
+  private getSystemRules(stage: string, config: PipelineConfig): PipelineRule[] {
     if (stage === 'PRE_FILTER') {
-      return [
-        {
-          id: 'sys-spam-keywords',
-          name: '[System] Spam Keywords',
-          stage: 'PRE_FILTER',
-          priority: 100,
-          conditions: [
-            { field: 'subject', operator: 'contains', value: ['viagra', 'casino', 'lottery', 'winner', 'crypto profit', 'make money fast'] }
-          ],
-          actions: [{ type: 'REJECT' }],
-          stopProcessing: true
-        },
-        {
-          id: 'sys-noreply',
-          name: '[System] No-Reply Emails',
-          stage: 'PRE_FILTER',
-          priority: 90,
-          conditions: [
-            { field: 'from', operator: 'contains', value: ['noreply@', 'no-reply@', 'donotreply@', 'mailer-daemon'] }
-          ],
-          actions: [{ type: 'ARCHIVE' }, { type: 'SKIP_AI' }],
-          stopProcessing: true
-        }
-      ];
+      return (config.systemRules.preFilter || []).map(r => ({
+        ...r,
+        stage: 'PRE_FILTER' as const,
+        conditions: r.conditions as RuleCondition[],
+        actions: r.actions as RuleAction[],
+      }));
     }
-
     if (stage === 'CLASSIFY') {
-      return [
-        {
-          id: 'sys-newsletter',
-          name: '[System] Newsletter Detection',
-          stage: 'CLASSIFY',
-          priority: 80,
-          conditions: [
-            { field: 'subject', operator: 'contains', value: ['newsletter', 'unsubscribe', 'weekly digest', 'monthly update'] }
-          ],
-          actions: [
-            { type: 'SET_CATEGORY', value: 'NEWSLETTER' },
-            { type: 'SKIP_AI' }
-          ],
-          stopProcessing: false
-        },
-        {
-          id: 'sys-vip',
-          name: '[System] VIP Priority',
-          stage: 'CLASSIFY',
-          priority: 95,
-          conditions: [
-            { field: 'isVIP', operator: 'equals', value: true }
-          ],
-          actions: [
-            { type: 'SET_PRIORITY', value: 'HIGH' },
-            { type: 'SET_CATEGORY', value: 'VIP' }
-          ],
-          stopProcessing: false
-        },
-        {
-          id: 'sys-invoice',
-          name: '[System] Invoice Detection',
-          stage: 'CLASSIFY',
-          priority: 85,
-          conditions: [
-            { field: 'subject', operator: 'contains', value: ['faktura', 'invoice', 'rachunek', 'payment', 'płatność'] }
-          ],
-          actions: [
-            { type: 'SET_CATEGORY', value: 'INVOICE' },
-            { type: 'SET_PRIORITY', value: 'HIGH' }
-          ],
-          stopProcessing: false
-        }
-      ];
+      return (config.systemRules.classify || []).map(r => ({
+        ...r,
+        stage: 'CLASSIFY' as const,
+        conditions: r.conditions as RuleCondition[],
+        actions: r.actions as RuleAction[],
+      }));
     }
-
     return [];
   }
 
@@ -462,7 +407,7 @@ class EmailPipelineService {
    * Analiza AI (wywoływana tylko dla wartościowych maili)
    * Używa scentralizowanego systemu AI Management (providery, modele, prompty)
    */
-  private async runAIAnalysis(message: EmailMessage, context: Record<string, any>, organizationId: string): Promise<PipelineResult['aiAnalysis']> {
+  private async runAIAnalysis(message: EmailMessage, context: Record<string, any>, organizationId: string, config: PipelineConfig): Promise<PipelineResult['aiAnalysis']> {
     try {
       console.log('[EmailPipeline] Running AI analysis via AI Management...');
 
@@ -473,7 +418,7 @@ class EmailPipelineService {
       // Sprawdź czy są dostępne providery AI
       if (!aiRouter.hasAvailableProviders()) {
         console.log('[EmailPipeline] No AI providers configured, using heuristic fallback');
-        return this.runHeuristicAnalysis(message, context);
+        return this.runHeuristicAnalysis(message, context, config);
       }
 
       // 2. Pobierz szablon "Email Analysis" z bazy (lub użyj domyślnego)
@@ -496,11 +441,11 @@ class EmailPipelineService {
 
       if (!promptTemplate) {
         console.log('[EmailPipeline] Could not create template, using heuristic fallback');
-        return this.runHeuristicAnalysis(message, context);
+        return this.runHeuristicAnalysis(message, context, config);
       }
 
       // 3. Przygotuj prompt z podstawionymi zmiennymi
-      const emailContent = message.body?.substring(0, 3000) || ''; // Limit do 3000 znaków
+      const emailContent = message.body?.substring(0, config.contentLimits.aiContentLimit) || '';
       const systemPrompt = promptTemplate.systemPrompt || 'You are an AI assistant that analyzes emails. Respond with valid JSON only.';
 
       let userPrompt = promptTemplate.userPromptTemplate;
@@ -534,7 +479,7 @@ class EmailPipelineService {
       } catch (parseError) {
         console.warn('[EmailPipeline] Could not parse AI response as JSON:', parseError);
         // Użyj heurystyki jako fallback
-        return this.runHeuristicAnalysis(message, context);
+        return this.runHeuristicAnalysis(message, context, config);
       }
 
       // 6. Mapuj odpowiedź AI na format PipelineResult
@@ -564,16 +509,16 @@ class EmailPipelineService {
       console.error('[EmailPipeline] AI analysis error:', error);
       // Fallback do heurystyki w przypadku błędu
       console.log('[EmailPipeline] Falling back to heuristic analysis');
-      return this.runHeuristicAnalysis(message, context);
+      return this.runHeuristicAnalysis(message, context, config);
     }
   }
 
   /**
    * Heurystyczna analiza (fallback gdy AI niedostępne)
    */
-  private runHeuristicAnalysis(message: EmailMessage, context: Record<string, any>): PipelineResult['aiAnalysis'] {
-    const urgencyScore = this.calculateUrgencyScore(message);
-    const sentiment = this.detectSentiment(message);
+  private runHeuristicAnalysis(message: EmailMessage, context: Record<string, any>, config: PipelineConfig): PipelineResult['aiAnalysis'] {
+    const urgencyScore = this.calculateUrgencyScore(message, config);
+    const sentiment = this.detectSentiment(message, config);
 
     return {
       sentiment,
@@ -648,10 +593,10 @@ Zwróć JSON z polami:
     }
   }
 
-  private calculateUrgencyScore(message: EmailMessage): number {
+  private calculateUrgencyScore(message: EmailMessage, config: PipelineConfig): number {
     let score = 50; // bazowy
 
-    const urgentKeywords = ['pilne', 'urgent', 'asap', 'natychmiast', 'dzisiaj', 'deadline', 'krytyczne'];
+    const urgentKeywords = config.keywords.urgency;
     const subject = message.subject.toLowerCase();
     const body = message.body.toLowerCase();
 
@@ -663,11 +608,11 @@ Zwróć JSON z polami:
     return Math.min(100, score);
   }
 
-  private detectSentiment(message: EmailMessage): 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE' {
+  private detectSentiment(message: EmailMessage, config: PipelineConfig): 'POSITIVE' | 'NEUTRAL' | 'NEGATIVE' {
     const text = (message.subject + ' ' + message.body).toLowerCase();
 
-    const positiveWords = ['dziękuję', 'świetnie', 'super', 'doskonale', 'gratulacje', 'thank you', 'great', 'excellent'];
-    const negativeWords = ['problem', 'błąd', 'reklamacja', 'zły', 'niezadowolony', 'complaint', 'error', 'issue', 'wrong'];
+    const positiveWords = config.keywords.sentimentPositive;
+    const negativeWords = config.keywords.sentimentNegative;
 
     let positiveCount = 0;
     let negativeCount = 0;

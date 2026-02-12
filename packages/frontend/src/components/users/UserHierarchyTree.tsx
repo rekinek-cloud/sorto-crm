@@ -4,17 +4,17 @@ import React, { useState, useEffect } from 'react';
 import { UserHierarchyTree, UserWithHierarchy, userHierarchyApi } from '@/lib/api/userHierarchy';
 import { toast } from 'react-hot-toast';
 import {
-  ChevronDownIcon,
-  ChevronRightIcon,
-  UserGroupIcon,
-  ShieldCheckIcon,
-  EyeIcon,
-  PencilIcon,
-  TrashIcon,
-  PlusIcon,
-  ExclamationTriangleIcon,
-  UserIcon
-} from '@heroicons/react/24/outline';
+  ChevronDown,
+  ChevronRight,
+  Users,
+  ShieldCheck,
+  Eye,
+  Pencil,
+  Trash2,
+  Plus,
+  AlertTriangle,
+  User
+} from 'lucide-react';
 
 interface UserHierarchyTreeProps {
   userId: string;
@@ -118,9 +118,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         <div className="w-6 h-6 flex items-center justify-center mr-3">
           {hasChildren ? (
             isExpanded ? (
-              <ChevronDownIcon className="h-4 w-4 text-gray-500" />
+              <ChevronDown className="h-4 w-4 text-gray-500" />
             ) : (
-              <ChevronRightIcon className="h-4 w-4 text-gray-500" />
+              <ChevronRight className="h-4 w-4 text-gray-500" />
             )
           ) : (
             <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
@@ -176,7 +176,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg"
             title="Dodaj relację"
           >
-            <PlusIcon className="h-4 w-4" />
+            <Plus className="h-4 w-4" />
           </button>
           <button
             onClick={(e) => {
@@ -186,7 +186,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
             title="Zobacz szczegóły"
           >
-            <EyeIcon className="h-4 w-4" />
+            <Eye className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -210,7 +210,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                   )}
                   <div className="flex items-center gap-1 ml-auto">
                     {!relation.isActive && (
-                      <ExclamationTriangleIcon className="h-4 w-4 text-amber-500" title="Nieaktywna relacja" />
+                      <AlertTriangle className="h-4 w-4 text-amber-500" title="Nieaktywna relacja" />
                     )}
                     <span className="text-xs">
                       {relation.inheritanceRule.replace('_', ' ').toLowerCase()}
@@ -233,7 +233,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                       className="p-1 text-gray-400 hover:text-blue-600 hover:bg-white rounded"
                       title="Edytuj relację"
                     >
-                      <PencilIcon className="h-3 w-3" />
+                      <Pencil className="h-3 w-3" />
                     </button>
                   </div>
                 </div>
@@ -347,13 +347,13 @@ export default function UserHierarchyTreeComponent({
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-medium text-gray-900 flex items-center gap-2">
-            <UserGroupIcon className="h-5 w-5" />
+            <Users className="h-5 w-5" />
             Hierarchia Użytkowników
           </h3>
           <div className="flex items-center gap-4">
             {hierarchy.hasCycles && (
               <div className="flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-1 rounded text-sm">
-                <ExclamationTriangleIcon className="h-4 w-4" />
+                <AlertTriangle className="h-4 w-4" />
                 Wykryto cykle
               </div>
             )}
@@ -422,7 +422,7 @@ export default function UserHierarchyTreeComponent({
           {direction !== 'down' && hierarchy.managers.length > 0 && (
             <div>
               <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                <ChevronDownIcon className="h-4 w-4" />
+                <ChevronDown className="h-4 w-4" />
                 Managerowie ({hierarchy.managers.length})
               </h4>
               <div className="space-y-2">
@@ -446,7 +446,7 @@ export default function UserHierarchyTreeComponent({
           {/* Current User */}
           <div>
             <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-              <ShieldCheckIcon className="h-4 w-4" />
+              <ShieldCheck className="h-4 w-4" />
               Aktualny użytkownik
             </h4>
             <TreeNode
@@ -465,7 +465,7 @@ export default function UserHierarchyTreeComponent({
           {direction !== 'up' && hierarchy.employees.length > 0 && (
             <div>
               <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                <ChevronDownIcon className="h-4 w-4" />
+                <ChevronDown className="h-4 w-4" />
                 Podwładni ({hierarchy.employees.length})
               </h4>
               <div className="space-y-2">
@@ -489,7 +489,7 @@ export default function UserHierarchyTreeComponent({
           {/* Empty State */}
           {hierarchy.totalRelations === 0 && (
             <div className="text-center py-12 text-gray-500">
-              <UserGroupIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
               <h4 className="text-lg font-medium text-gray-900 mb-2">Brak relacji hierarchicznych</h4>
               <p className="text-gray-600 mb-4">Ten użytkownik nie ma żadnych relacji zarządczych.</p>
               <button

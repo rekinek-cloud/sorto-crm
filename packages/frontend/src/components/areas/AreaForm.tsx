@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { AreaOfResponsibility } from '@/lib/api/areas';
 import { areasApi } from '@/lib/api/areas';
-import { XMarkIcon, PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { X, Plus, Trash2 } from 'lucide-react';
 
 interface AreaFormProps {
   area?: AreaOfResponsibility;
@@ -111,7 +111,7 @@ export default function AreaForm({ area, onSubmit, onCancel }: AreaFormProps) {
             onClick={onCancel}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <XMarkIcon className="w-6 h-6" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
@@ -247,7 +247,7 @@ export default function AreaForm({ area, onSubmit, onCancel }: AreaFormProps) {
                       onClick={() => removeOutcome(index)}
                       className="p-2 text-red-600 hover:text-red-800"
                     >
-                      <TrashIcon className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   )}
                 </div>
@@ -257,7 +257,7 @@ export default function AreaForm({ area, onSubmit, onCancel }: AreaFormProps) {
                 onClick={addOutcome}
                 className="flex items-center space-x-2 text-primary-600 hover:text-primary-700 text-sm"
               >
-                <PlusIcon className="w-4 h-4" />
+                <Plus className="w-4 h-4" />
                 <span>Add Outcome</span>
               </button>
             </div>

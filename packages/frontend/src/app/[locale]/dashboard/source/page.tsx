@@ -1,79 +1,108 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { sourceApi, SourceItem, SourceFilters } from '@/lib/api/source';
 import { flowApi, FlowAction, FlowPendingItem, FLOW_ELEMENT_TYPE_LABELS } from '@/lib/api/flow';
 import { FlowProcessModal, FlowBatchProcessor, FlowStatsPanel, FlowConversationModal } from '@/components/flow';
 import { toast } from 'react-hot-toast';
 import apiClient from '@/lib/api/client';
 import {
-    SparklesIcon,
-    ClipboardDocumentListIcon,
-    LightBulbIcon,
-    DocumentTextIcon,
-    EnvelopeIcon,
-    ArchiveBoxIcon,
-    CheckCircleIcon,
-    CalendarIcon,
-    UserIcon,
-    Squares2X2Icon,
-    ArrowPathIcon,
-    ChartBarIcon,
-    ChatBubbleLeftRightIcon,
-    MicrophoneIcon,
-    BoltIcon,
-    TagIcon,
-    BuildingOfficeIcon,
-    CurrencyDollarIcon,
-    ClockIcon,
-    UserGroupIcon,
-    ScissorsIcon,
-    PencilSquareIcon,
-    XCircleIcon,
-    AcademicCapIcon,
-    MagnifyingGlassIcon,
-    FunnelIcon,
-    BarsArrowDownIcon,
-    ExclamationTriangleIcon,
-} from '@heroicons/react/24/outline';
+    Inbox,
+    Sparkles,
+    ClipboardList,
+    Lightbulb,
+    FileText,
+    Mail,
+    Archive,
+    CheckCircle,
+    Calendar,
+    User,
+    LayoutGrid,
+    RefreshCw,
+    BarChart3,
+    MessageSquare,
+    Mic,
+    Zap,
+    Tag,
+    Building2,
+    DollarSign,
+    Clock,
+    Users,
+    Scissors,
+    PenSquare,
+    XCircle,
+    GraduationCap,
+    Search,
+    Filter,
+    ArrowDownWideNarrow,
+    AlertTriangle,
+    ArrowUp,
+    Minus,
+    ArrowDown,
+    Plus,
+    X,
+    LucideIcon,
+} from 'lucide-react';
 import VoiceRecorder from '@/components/source/VoiceRecorder';
 
-// Source types
-const CAPTURE_SOURCES = {
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { FilterBar } from '@/components/ui/FilterBar';
+import { StatCard } from '@/components/ui/StatCard';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ActionButton } from '@/components/ui/ActionButton';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
+
+// Source types with Lucide icons
+const CAPTURE_SOURCES: Record<string, {
+    name: string;
+    icon: LucideIcon;
+    color: string;
+    darkColor: string;
+    description: string;
+}> = {
     MEETING_NOTES: {
-        name: 'Notatki ze spotkań',
-        icon: ClipboardDocumentListIcon,
+        name: 'Notatki ze spotkan',
+        icon: ClipboardList,
         color: 'bg-blue-50 border-blue-200 text-blue-800',
-        description: 'Notatki z rozmów, spotkań, telefonów'
+        darkColor: 'dark:bg-blue-900/30 dark:border-blue-700/50 dark:text-blue-300',
+        description: 'Notatki z rozmow, spotkan, telefonow'
     },
     IDEA: {
-        name: 'Pomysły',
-        icon: LightBulbIcon,
+        name: 'Pomysly',
+        icon: Lightbulb,
         color: 'bg-yellow-50 border-yellow-200 text-yellow-800',
-        description: 'Pomysły które przyszły do głowy'
+        darkColor: 'dark:bg-yellow-900/30 dark:border-yellow-700/50 dark:text-yellow-300',
+        description: 'Pomysly ktore przyszly do glowy'
     },
     DOCUMENT: {
         name: 'Dokumenty',
-        icon: DocumentTextIcon,
+        icon: FileText,
         color: 'bg-purple-50 border-purple-200 text-purple-800',
-        description: 'Dokumenty, pliki, załączniki'
+        darkColor: 'dark:bg-purple-900/30 dark:border-purple-700/50 dark:text-purple-300',
+        description: 'Dokumenty, pliki, zalaczniki'
     },
     EMAIL: {
         name: 'E-maile',
-        icon: EnvelopeIcon,
+        icon: Mail,
         color: 'bg-red-50 border-red-200 text-red-800',
-        description: 'E-maile wymagające akcji'
+        darkColor: 'dark:bg-red-900/30 dark:border-red-700/50 dark:text-red-300',
+        description: 'E-maile wymagajace akcji'
     },
     VOICE: {
-        name: 'Nagranie głosowe',
-        icon: MicrophoneIcon,
-        color: 'bg-green-50 border-green-200 text-green-800',
-        description: 'Nagrania głosowe i dyktafon'
+        name: 'Nagranie glosowe',
+        icon: Mic,
+        color: 'bg-emerald-50 border-emerald-200 text-emerald-800',
+        darkColor: 'dark:bg-emerald-900/30 dark:border-emerald-700/50 dark:text-emerald-300',
+        description: 'Nagrania glosowe i dyktafon'
     },
     OTHER: {
         name: 'Inne',
-        icon: ArchiveBoxIcon,
-        color: 'bg-gray-50 border-gray-200 text-gray-800',
+        icon: Archive,
+        color: 'bg-slate-50 border-slate-200 text-slate-800',
+        darkColor: 'dark:bg-slate-800/50 dark:border-slate-600/50 dark:text-slate-300',
         description: 'Wszystko inne'
     }
 };
@@ -84,6 +113,20 @@ interface Stream {
     color?: string;
     description?: string;
 }
+
+// Animation variants
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: { staggerChildren: 0.05 }
+    }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 12 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.3 } }
+};
 
 export default function SourcePage() {
     const [items, setItems] = useState<SourceItem[]>([]);
@@ -104,7 +147,7 @@ export default function SourcePage() {
     const [showStats, setShowStats] = useState(false);
     const [processingItem, setProcessingItem] = useState<SourceItem | null>(null);
     const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
-    const [useDialogMode, setUseDialogMode] = useState(true); // Domyslnie tryb dialogowy
+    const [useDialogMode, setUseDialogMode] = useState(true);
     const [correctionMode, setCorrectionMode] = useState(false);
 
     // Filter states
@@ -118,6 +161,15 @@ export default function SourcePage() {
     const [rejectingId, setRejectingId] = useState<string | null>(null);
     const [rejectReason, setRejectReason] = useState('');
     const [learnedIds, setLearnedIds] = useState<Set<string>>(new Set());
+
+    // Stats
+    const stats = useMemo(() => {
+        const total = items.length;
+        const unprocessed = items.filter(i => !i.flowStatus || i.flowStatus === 'NEW' || i.flowStatus === 'AWAITING_DECISION').length;
+        const processed = items.filter(i => i.flowStatus === 'PROCESSED').length;
+        const archived = items.filter(i => i.flowStatus === 'REFERENCE' || i.flowStatus === 'DELETED' || i.flowStatus === 'FROZEN').length;
+        return { total, unprocessed, processed, archived };
+    }, [items]);
 
     // Load source data and streams
     const loadData = async () => {
@@ -140,7 +192,7 @@ export default function SourcePage() {
             setStreams(streamsResponse.data?.data || []);
         } catch (err) {
             console.error('Error loading data:', err);
-            setError('Błąd podczas ładowania danych');
+            setError('Blad podczas ladowania danych');
             setItems([]);
         } finally {
             setLoading(false);
@@ -151,7 +203,7 @@ export default function SourcePage() {
     const handleVoiceRecordingComplete = (blob: Blob, duration: number) => {
         const maxSize = 5 * 1024 * 1024; // 5MB limit
         if (blob.size > maxSize) {
-            toast.error(`Nagranie jest za duże (${(blob.size / 1024 / 1024).toFixed(1)}MB). Maksimum to 5MB.`);
+            toast.error(`Nagranie jest za duze (${(blob.size / 1024 / 1024).toFixed(1)}MB). Maksimum to 5MB.`);
             setAudioBlob(null);
             return;
         }
@@ -171,20 +223,19 @@ export default function SourcePage() {
         // Voice type requires audio blob
         if (selectedSource === 'VOICE') {
             if (!audioBlob) {
-                toast.error('Nagraj najpierw wiadomość głosową');
+                toast.error('Nagraj najpierw wiadomosc glosowa');
                 return;
             }
-            // Convert blob to base64 for storage
             const reader = new FileReader();
             reader.onerror = () => {
                 console.error('FileReader error:', reader.error);
-                toast.error('Błąd odczytu nagrania. Spróbuj ponownie.');
+                toast.error('Blad odczytu nagrania. Sprobuj ponownie.');
             };
             reader.onloadend = async () => {
                 const base64Audio = reader.result as string;
                 try {
                     await sourceApi.addItem({
-                        content: captureContent.trim() || `Nagranie głosowe (${formatAudioDuration(audioDuration)})`,
+                        content: captureContent.trim() || `Nagranie glosowe (${formatAudioDuration(audioDuration)})`,
                         note: captureNote.trim() || undefined,
                         sourceType: 'VOICE',
                         source: 'voice',
@@ -194,14 +245,14 @@ export default function SourcePage() {
                             audioType: 'audio/webm'
                         }
                     });
-                    toast.success('Nagranie dodane do Źródła!');
+                    toast.success('Nagranie dodane do Zrodla!');
                     resetCaptureForm();
                     loadData();
                 } catch (error: any) {
                     console.error('Error capturing voice:', error);
                     const msg = error?.response?.status === 413
-                        ? 'Nagranie jest za duże dla serwera. Nagraj krótszą wiadomość.'
-                        : 'Błąd podczas dodawania nagrania';
+                        ? 'Nagranie jest za duze dla serwera. Nagraj krotsza wiadomosc.'
+                        : 'Blad podczas dodawania nagrania';
                     toast.error(msg);
                 }
             };
@@ -211,7 +262,7 @@ export default function SourcePage() {
 
         // Regular capture
         if (!selectedSource || !captureContent.trim()) {
-            toast.error('Wybierz źródło i wprowadź treść');
+            toast.error('Wybierz zrodlo i wprowadz tresc');
             return;
         }
 
@@ -223,12 +274,12 @@ export default function SourcePage() {
                 source: 'manual'
             });
 
-            toast.success('Dodano do Źródła!');
+            toast.success('Dodano do Zrodla!');
             resetCaptureForm();
             loadData();
         } catch (error: any) {
             console.error('Error capturing item:', error);
-            toast.error('Błąd podczas dodawania do źródła');
+            toast.error('Blad podczas dodawania do zrodla');
         }
     };
 
@@ -253,16 +304,16 @@ export default function SourcePage() {
         }
     };
 
-    // Handle analyze item (trigger AI analysis without opening modal)
+    // Handle analyze item
     const handleAnalyze = async (item: SourceItem) => {
         setProcessingIds(prev => new Set(prev).add(item.id));
         try {
             await apiClient.post(`/flow/process/${item.id}`, { autoExecute: false });
-            toast.success('Analiza AI zakończona');
+            toast.success('Analiza AI zakonczona');
             loadData();
         } catch (error: any) {
             console.error('Analyze error:', error);
-            toast.error(error?.response?.data?.error || 'Błąd analizy AI');
+            toast.error(error?.response?.data?.error || 'Blad analizy AI');
         } finally {
             setProcessingIds(prev => {
                 const next = new Set(prev);
@@ -281,7 +332,7 @@ export default function SourcePage() {
         setShowBatchModal(true);
     };
 
-    // Quick approve AI suggestion (Human-in-the-Loop: Zatwierdź)
+    // Quick approve AI suggestion
     const handleQuickApprove = async (item: SourceItem) => {
         if (!item.suggestedAction) return;
 
@@ -289,25 +340,21 @@ export default function SourcePage() {
         try {
             const streamId = item.suggestedStreams?.[0]?.streamId;
 
-            // Use confirm endpoint - triggers learning automatically
             await apiClient.post(`/flow/confirm/${item.id}`, {
                 action: item.suggestedAction,
                 streamId,
-                reason: 'Zatwierdzono sugestię AI'
+                reason: 'Zatwierdzono sugestie AI'
             });
 
-            // Record positive feedback
             await flowApi.recordFeedback(item.id, {
                 suggestedAction: item.suggestedAction as any,
                 actualAction: item.suggestedAction as any,
                 wasHelpful: true
             });
 
-            // Show learning indicator
             setLearnedIds(prev => new Set(prev).add(item.id));
-            toast.success('Zatwierdzone! AI się uczy z Twojej decyzji');
+            toast.success('Zatwierdzone! AI sie uczy z Twojej decyzji');
 
-            // Refresh after short delay to show the learning indicator
             setTimeout(() => {
                 loadData();
                 setLearnedIds(prev => {
@@ -318,7 +365,7 @@ export default function SourcePage() {
             }, 1500);
         } catch (error: any) {
             console.error('Quick approve error:', error);
-            toast.error('Błąd podczas zatwierdzania: ' + (error?.response?.data?.error || error.message));
+            toast.error('Blad podczas zatwierdzania: ' + (error?.response?.data?.error || error.message));
         } finally {
             setProcessingIds(prev => {
                 const next = new Set(prev);
@@ -328,26 +375,25 @@ export default function SourcePage() {
         }
     };
 
-    // Reject AI suggestion (Human-in-the-Loop: Odrzuć)
+    // Reject AI suggestion
     const handleReject = async (item: SourceItem) => {
         if (!item.suggestedAction) return;
 
         setProcessingIds(prev => new Set(prev).add(item.id));
         try {
-            // Record negative feedback - weakens pattern
             await flowApi.recordFeedback(item.id, {
                 suggestedAction: item.suggestedAction as any,
-                actualAction: 'USUN' as any, // Rejection
+                actualAction: 'USUN' as any,
                 wasHelpful: false
             });
 
-            toast.success('Sugestia odrzucona. AI się uczy.');
+            toast.success('Sugestia odrzucona. AI sie uczy.');
             setRejectingId(null);
             setRejectReason('');
             loadData();
         } catch (error: any) {
             console.error('Reject error:', error);
-            toast.error('Błąd podczas odrzucania');
+            toast.error('Blad podczas odrzucania');
         } finally {
             setProcessingIds(prev => {
                 const next = new Set(prev);
@@ -377,10 +423,9 @@ export default function SourcePage() {
         }
     };
 
-    // Helper: get effective suggested action (from top-level field or from aiAnalysis JSON)
+    // Helper: get effective suggested action
     const getEffectiveSuggestedAction = (item: SourceItem): string | undefined => {
         if (item.suggestedAction) return item.suggestedAction;
-        // Try to extract from aiAnalysis JSON (some items have analysis but suggestedAction not stored separately)
         const analysis = item.aiAnalysis as any;
         if (analysis?.suggestedAction) return analysis.suggestedAction;
         if (analysis?.action) return analysis.action;
@@ -407,7 +452,7 @@ export default function SourcePage() {
         const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
         const diffDays = Math.floor(diffHours / 24);
 
-        if (diffHours < 1) return 'przed chwilą';
+        if (diffHours < 1) return 'przed chwila';
         if (diffHours < 24) return `${diffHours}h temu`;
         if (diffDays < 7) return `${diffDays} dni temu`;
         return date.toLocaleDateString('pl-PL');
@@ -427,212 +472,272 @@ export default function SourcePage() {
         }));
     };
 
+    // Priority icon helper
+    const renderPriorityIcon = (urgency: string) => {
+        switch (urgency) {
+            case 'high':
+                return (
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md font-medium bg-red-50 text-red-600 dark:bg-red-900/30 dark:text-red-400">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        Pilne
+                    </span>
+                );
+            case 'medium':
+                return (
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md font-medium bg-amber-50 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400">
+                        <ArrowUp className="w-3.5 h-3.5" />
+                        Srednie
+                    </span>
+                );
+            case 'low':
+            default:
+                return (
+                    <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md font-medium bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400">
+                        <Minus className="w-3.5 h-3.5" />
+                        Niskie
+                    </span>
+                );
+        }
+    };
+
     if (loading) {
         return (
-            <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                <span className="ml-3">Ładowanie Źródła...</span>
-            </div>
+            <PageShell>
+                <SkeletonPage />
+            </PageShell>
         );
     }
 
     return (
-        <div className="space-y-6">
+        <PageShell>
             {/* Header */}
-            <div className="flex justify-between items-start">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-                        <SparklesIcon className="w-8 h-8 text-blue-600" />
-                        Źródło (Source)
-                    </h1>
-                    <p className="text-gray-600 mt-2 max-w-2xl">
-                        <strong>Wszystko zaczyna się tutaj.</strong> To jest Twoje centralne miejsce zrzutu.
-                        Wszystkie nowe informacje, pomysły i zadania trafiają tutaj, zanim popłyną do odpowiednich Strumieni.
-                    </p>
-                </div>
-                <div className="flex gap-2 items-center">
-                    {/* Dialog Mode Toggle */}
-                    <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
-                        <button
-                            onClick={() => setUseDialogMode(false)}
-                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                                !useDialogMode
-                                    ? 'bg-white shadow text-indigo-700'
-                                    : 'text-gray-600 hover:text-gray-900'
-                            }`}
+            <PageHeader
+                title="Zrodlo"
+                subtitle="Przechwytuj i przetwarzaj mysli, pomysly i informacje"
+                icon={Inbox}
+                iconColor="text-indigo-600"
+                breadcrumbs={[{ label: 'Zrodlo' }]}
+                actions={
+                    <div className="flex gap-2 items-center">
+                        {/* Dialog Mode Toggle */}
+                        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 rounded-xl p-1">
+                            <button
+                                onClick={() => setUseDialogMode(false)}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
+                                    !useDialogMode
+                                        ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-700 dark:text-indigo-400'
+                                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                                }`}
+                            >
+                                <Sparkles className="w-4 h-4" />
+                                Klasyczny
+                            </button>
+                            <button
+                                onClick={() => setUseDialogMode(true)}
+                                className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all flex items-center gap-1.5 ${
+                                    useDialogMode
+                                        ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-sm'
+                                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                                }`}
+                            >
+                                <MessageSquare className="w-4 h-4" />
+                                Dialogowy
+                            </button>
+                        </div>
+
+                        <ActionButton
+                            variant={showStats ? 'primary' : 'secondary'}
+                            icon={BarChart3}
+                            onClick={() => setShowStats(!showStats)}
                         >
-                            <SparklesIcon className="w-4 h-4" />
-                            Klasyczny
-                        </button>
-                        <button
-                            onClick={() => setUseDialogMode(true)}
-                            className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors flex items-center gap-1.5 ${
-                                useDialogMode
-                                    ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow'
-                                    : 'text-gray-600 hover:text-gray-900'
-                            }`}
+                            Statystyki
+                        </ActionButton>
+                        <ActionButton
+                            variant="primary"
+                            icon={Plus}
+                            onClick={() => setShowCaptureForm(true)}
                         >
-                            <ChatBubbleLeftRightIcon className="w-4 h-4" />
-                            Dialogowy
-                        </button>
+                            Dodaj do Zrodla
+                        </ActionButton>
                     </div>
+                }
+            />
 
-                    <button
-                        onClick={() => setShowStats(!showStats)}
-                        className={`px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 ${
-                            showStats
-                                ? 'bg-indigo-100 text-indigo-700 border border-indigo-200'
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                    >
-                        <ChartBarIcon className="w-5 h-5" />
-                        Statystyki
-                    </button>
-                    <button
-                        onClick={() => setShowCaptureForm(true)}
-                        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-                    >
-                        <ClipboardDocumentListIcon className="w-5 h-5" />
-                        Dodaj do Źródła
-                    </button>
-                </div>
-            </div>
+            {/* Stat Cards Row */}
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6"
+            >
+                <StatCard
+                    label="Lacznie"
+                    value={stats.total}
+                    icon={Inbox}
+                    iconColor="text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400"
+                />
+                <StatCard
+                    label="Nieprzetworzone"
+                    value={stats.unprocessed}
+                    icon={AlertTriangle}
+                    iconColor="text-amber-600 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-400"
+                />
+                <StatCard
+                    label="Przetworzone"
+                    value={stats.processed}
+                    icon={CheckCircle}
+                    iconColor="text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400"
+                />
+                <StatCard
+                    label="Zarchiwizowane"
+                    value={stats.archived}
+                    icon={Archive}
+                    iconColor="text-slate-600 bg-slate-100 dark:bg-slate-700 dark:text-slate-400"
+                />
+            </motion.div>
 
-            {/* Stats Panel */}
+            {/* Flow Stats Panel */}
             {showStats && (
-                <FlowStatsPanel />
+                <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mb-6"
+                >
+                    <FlowStatsPanel />
+                </motion.div>
             )}
 
             {/* Filter Bar */}
-            <div className="bg-white rounded-lg shadow-sm border p-4">
-                <div className="flex flex-wrap items-center gap-3">
-                    {/* Search */}
-                    <div className="relative flex-1 min-w-[200px]">
-                        <MagnifyingGlassIcon className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input
-                            type="text"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                            placeholder="Szukaj w treści..."
-                            className="w-full pl-9 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        />
-                    </div>
-
-                    {/* Source Type Filter */}
-                    <div className="flex items-center gap-1.5">
-                        <FunnelIcon className="w-4 h-4 text-gray-500" />
-                        <select
-                            value={filterSource}
-                            onChange={(e) => setFilterSource(e.target.value)}
-                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                            <option value="">Wszystkie typy</option>
-                            <option value="MEETING_NOTES">Notatki</option>
-                            <option value="IDEA">Pomysly</option>
-                            <option value="DOCUMENT">Dokumenty</option>
-                            <option value="EMAIL">E-maile</option>
-                            <option value="VOICE">Nagrania</option>
-                            <option value="OTHER">Inne</option>
-                        </select>
-                    </div>
-
-                    {/* Urgency Filter */}
-                    <div className="flex items-center gap-1.5">
-                        <ExclamationTriangleIcon className="w-4 h-4 text-gray-500" />
-                        <select
-                            value={urgencyLevel}
-                            onChange={(e) => setUrgencyLevel(e.target.value as SourceFilters['urgencyLevel'])}
-                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                            <option value="all">Wszystkie pilnosci</option>
-                            <option value="high">Pilne</option>
-                            <option value="medium">Srednie</option>
-                            <option value="low">Niskie</option>
-                        </select>
-                    </div>
-
-                    {/* Sort */}
-                    <div className="flex items-center gap-1.5">
-                        <BarsArrowDownIcon className="w-4 h-4 text-gray-500" />
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value as SourceFilters['sortBy'])}
-                            className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                            <option value="date_desc">Najnowsze</option>
-                            <option value="date_asc">Najstarsze</option>
-                            <option value="urgency_desc">Najbardziej pilne</option>
-                            <option value="urgency_asc">Najmniej pilne</option>
-                        </select>
-                    </div>
-                </div>
+            <div className="mb-6">
+                <FilterBar
+                    search={searchQuery}
+                    onSearchChange={setSearchQuery}
+                    searchPlaceholder="Szukaj w tresci..."
+                    filters={[
+                        {
+                            key: 'source',
+                            label: 'Wszystkie typy',
+                            options: [
+                                { value: 'MEETING_NOTES', label: 'Notatki' },
+                                { value: 'IDEA', label: 'Pomysly' },
+                                { value: 'DOCUMENT', label: 'Dokumenty' },
+                                { value: 'EMAIL', label: 'E-maile' },
+                                { value: 'VOICE', label: 'Nagrania' },
+                                { value: 'OTHER', label: 'Inne' },
+                            ]
+                        },
+                        {
+                            key: 'urgency',
+                            label: 'Wszystkie pilnosci',
+                            options: [
+                                { value: 'high', label: 'Pilne' },
+                                { value: 'medium', label: 'Srednie' },
+                                { value: 'low', label: 'Niskie' },
+                            ]
+                        },
+                    ]}
+                    filterValues={{ source: filterSource, urgency: urgencyLevel || '' }}
+                    onFilterChange={(key, value) => {
+                        if (key === 'source') setFilterSource(value === 'all' ? '' : value);
+                        if (key === 'urgency') setUrgencyLevel((value === 'all' ? 'all' : value) as SourceFilters['urgencyLevel']);
+                    }}
+                    sortOptions={[
+                        { value: 'date_desc', label: 'Najnowsze' },
+                        { value: 'date_asc', label: 'Najstarsze' },
+                        { value: 'urgency_desc', label: 'Najbardziej pilne' },
+                        { value: 'urgency_asc', label: 'Najmniej pilne' },
+                    ]}
+                    sortValue={sortBy}
+                    onSortChange={(val) => setSortBy(val as SourceFilters['sortBy'])}
+                />
             </div>
 
             {/* Batch Actions Bar */}
             {items.length > 0 && (
-                <div className="bg-white rounded-lg shadow-sm border p-4 flex items-center justify-between">
+                <motion.div
+                    initial={{ opacity: 0, y: -5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4 flex items-center justify-between mb-6"
+                >
                     <div className="flex items-center gap-4">
                         <label className="flex items-center gap-2 cursor-pointer">
                             <input
                                 type="checkbox"
                                 checked={selectedItems.size === items.length && items.length > 0}
                                 onChange={selectAllItems}
-                                className="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                className="w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500"
                             />
-                            <span className="text-sm text-gray-600">
+                            <span className="text-sm text-slate-600 dark:text-slate-400">
                                 Zaznacz wszystkie ({selectedItems.size}/{items.length})
                             </span>
                         </label>
                     </div>
 
                     <div className="flex items-center gap-3">
-                        <button
+                        <ActionButton
+                            variant="ghost"
+                            icon={RefreshCw}
                             onClick={loadData}
-                            className="px-3 py-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+                            size="sm"
                         >
-                            <ArrowPathIcon className="w-4 h-4" />
-                            Odśwież
-                        </button>
+                            Odswiez
+                        </ActionButton>
 
                         {selectedItems.size > 0 && (
-                            <button
+                            <ActionButton
+                                variant="primary"
+                                icon={LayoutGrid}
                                 onClick={handleBatchProcess}
-                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors flex items-center gap-2"
                             >
-                                <Squares2X2Icon className="w-5 h-5" />
-                                Przetwórz zaznaczone ({selectedItems.size})
-                            </button>
+                                Przetworz zaznaczone ({selectedItems.size})
+                            </ActionButton>
                         )}
                     </div>
-                </div>
+                </motion.div>
             )}
 
             {/* Items List */}
-            <div className="bg-white rounded-lg shadow-sm border">
-                <div className="p-6 border-b border-gray-200">
-                    <h2 className="text-lg font-semibold text-gray-900">
-                        Elementy w Źródle ({items.length})
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm"
+            >
+                <div className="p-6 border-b border-slate-200/50 dark:border-slate-700/50">
+                    <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                        Elementy w Zrodle ({items.length})
                     </h2>
                 </div>
 
                 {items.length === 0 ? (
-                    <div className="p-12 text-center">
-                        <CheckCircleIcon className="w-16 h-16 mx-auto mb-4 text-green-600" />
-                        <h3 className="text-xl font-bold text-green-600 mb-2">Źródło jest czyste!</h3>
-                        <p className="text-gray-600">
-                            Wszystko zostało przetworzone i popłynęło do odpowiednich strumieni.
-                        </p>
-                    </div>
+                    <EmptyState
+                        icon={CheckCircle}
+                        title="Zrodlo jest czyste!"
+                        description="Wszystko zostalo przetworzone i poplynelow do odpowiednich strumieni."
+                        className="py-16"
+                    />
                 ) : (
-                    <div className="divide-y divide-gray-200">
+                    <motion.div
+                        variants={containerVariants}
+                        initial="hidden"
+                        animate="visible"
+                        className="divide-y divide-slate-100 dark:divide-slate-700/50"
+                    >
                         {items.map((item) => {
                             const sourceConfig = CAPTURE_SOURCES[item.sourceType as keyof typeof CAPTURE_SOURCES] || CAPTURE_SOURCES.OTHER;
+                            const SourceIcon = sourceConfig.icon;
                             const isSelected = selectedItems.has(item.id);
 
                             return (
-                                <div
+                                <motion.div
                                     key={item.id}
-                                    className={`p-6 transition-colors ${isSelected ? 'bg-indigo-50' : 'hover:bg-gray-50'}`}
+                                    variants={itemVariants}
+                                    className={`p-6 transition-all duration-200 ${
+                                        isSelected
+                                            ? 'bg-indigo-50/50 dark:bg-indigo-900/20'
+                                            : 'hover:bg-slate-50/50 dark:hover:bg-slate-700/20'
+                                    }`}
                                 >
                                     <div className="flex items-start gap-4">
                                         {/* Checkbox */}
@@ -640,62 +745,62 @@ export default function SourcePage() {
                                             type="checkbox"
                                             checked={isSelected}
                                             onChange={() => toggleItemSelection(item.id)}
-                                            className="mt-1 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                                            className="mt-1 w-4 h-4 rounded border-slate-300 dark:border-slate-600 text-indigo-600 focus:ring-indigo-500"
                                         />
 
-                                        <div className="flex-1">
+                                        <div className="flex-1 min-w-0">
                                             <div className="flex items-center space-x-3 mb-3">
-                                                <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border ${sourceConfig.color}`}>
-                                                    <sourceConfig.icon className="w-4 h-4" />
+                                                <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium border ${sourceConfig.color} ${sourceConfig.darkColor}`}>
+                                                    <SourceIcon className="w-4 h-4" />
                                                     {sourceConfig.name}
                                                 </span>
                                             </div>
 
-                                            <h3 className="text-base font-medium text-gray-900 mb-2">
+                                            <h3 className="text-base font-medium text-slate-900 dark:text-slate-100 mb-2">
                                                 {item.content}
                                             </h3>
 
                                             {item.note && (
-                                                <p className="text-sm text-gray-600 mb-3 bg-gray-50 p-2 rounded">
+                                                <p className="text-sm text-slate-600 dark:text-slate-400 mb-3 bg-slate-50 dark:bg-slate-900/50 p-2 rounded-lg">
                                                     {item.note}
                                                 </p>
                                             )}
 
                                             {/* AI Analysis Results */}
                                             {item.aiAnalysis && (
-                                                <div className="mb-3 p-3 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-100 rounded-lg">
-                                                    <div className="flex items-center gap-2 mb-2">
-                                                        <SparklesIcon className="w-4 h-4 text-indigo-600" />
-                                                        <span className="text-xs font-semibold text-indigo-700 uppercase">Analiza AI</span>
+                                                <div className="mb-3 p-3 bg-gradient-to-r from-indigo-50/80 to-purple-50/80 dark:from-indigo-900/20 dark:to-purple-900/20 border border-indigo-100 dark:border-indigo-800/30 rounded-xl">
+                                                    <div className="flex items-center gap-2 mb-2 flex-wrap">
+                                                        <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                                                        <span className="text-xs font-semibold text-indigo-700 dark:text-indigo-300 uppercase">Analiza AI</span>
                                                         {item.aiConfidence != null && (
-                                                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                                                                item.aiConfidence >= 0.8 ? 'bg-green-100 text-green-700' :
-                                                                item.aiConfidence >= 0.6 ? 'bg-yellow-100 text-yellow-700' :
-                                                                'bg-gray-100 text-gray-600'
-                                                            }`}>
+                                                            <StatusBadge variant={
+                                                                item.aiConfidence >= 0.8 ? 'success' :
+                                                                item.aiConfidence >= 0.6 ? 'warning' : 'neutral'
+                                                            }>
                                                                 {Math.round(item.aiConfidence * 100)}%
-                                                            </span>
+                                                            </StatusBadge>
                                                         )}
                                                         {item.flowStatus && (
-                                                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
-                                                                item.flowStatus === 'AWAITING_DECISION' ? 'bg-amber-100 text-amber-700' :
-                                                                item.flowStatus === 'SPLIT' ? 'bg-blue-100 text-blue-700' :
-                                                                item.flowStatus === 'PROCESSED' && item.userDecisionReason === 'AUTOPILOT' ? 'bg-violet-100 text-violet-700' :
-                                                                item.flowStatus === 'PROCESSED' ? 'bg-green-100 text-green-700' :
-                                                                'bg-gray-100 text-gray-600'
-                                                            }`}>
-                                                                {item.flowStatus === 'AWAITING_DECISION' ? 'Czeka na decyzję' :
+                                                            <StatusBadge
+                                                                variant={
+                                                                    item.flowStatus === 'AWAITING_DECISION' ? 'warning' :
+                                                                    item.flowStatus === 'SPLIT' ? 'info' :
+                                                                    item.flowStatus === 'PROCESSED' ? 'success' : 'neutral'
+                                                                }
+                                                                dot
+                                                            >
+                                                                {item.flowStatus === 'AWAITING_DECISION' ? 'Czeka na decyzje' :
                                                                  item.flowStatus === 'SPLIT' ? 'Podzielony' :
                                                                  item.flowStatus === 'PROCESSED' && item.userDecisionReason === 'AUTOPILOT'
                                                                    ? `Autopilot ${Math.round((item.aiConfidence || 0) * 100)}%`
                                                                    : item.flowStatus === 'PROCESSED' ? 'Przetworzony' :
                                                                  item.flowStatus}
-                                                            </span>
+                                                            </StatusBadge>
                                                         )}
                                                     </div>
 
                                                     {/* AI Summary */}
-                                                    <p className="text-sm text-gray-700 mb-2">{item.aiAnalysis.summary}</p>
+                                                    <p className="text-sm text-slate-700 dark:text-slate-300 mb-2">{item.aiAnalysis.summary}</p>
 
                                                     {/* Suggested Action + Stream */}
                                                     <div className="flex flex-wrap gap-2 mb-2">
@@ -703,44 +808,35 @@ export default function SourcePage() {
                                                             const action = getEffectiveSuggestedAction(item);
                                                             return action ? (
                                                             <span className={`inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md font-medium ${
-                                                                action === 'ZROB_TERAZ' ? 'bg-red-100 text-red-700' :
-                                                                action === 'ZAPLANUJ' ? 'bg-blue-100 text-blue-700' :
-                                                                action === 'PROJEKT' ? 'bg-purple-100 text-purple-700' :
-                                                                action === 'KIEDYS_MOZE' ? 'bg-cyan-100 text-cyan-700' :
-                                                                action === 'REFERENCJA' ? 'bg-gray-100 text-gray-700' :
-                                                                action === 'USUN' ? 'bg-red-50 text-red-500' :
-                                                                'bg-gray-100 text-gray-600'
+                                                                action === 'ZROB_TERAZ' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                                                                action === 'ZAPLANUJ' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                                                                action === 'PROJEKT' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' :
+                                                                action === 'KIEDYS_MOZE' ? 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400' :
+                                                                action === 'REFERENCJA' ? 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300' :
+                                                                action === 'USUN' ? 'bg-red-50 text-red-500 dark:bg-red-900/20 dark:text-red-400' :
+                                                                'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
                                                             }`}>
-                                                                <BoltIcon className="w-3 h-3" />
-                                                                {action === 'ZROB_TERAZ' ? 'Zrób teraz' :
+                                                                <Zap className="w-3 h-3" />
+                                                                {action === 'ZROB_TERAZ' ? 'Zrob teraz' :
                                                                  action === 'ZAPLANUJ' ? 'Zaplanuj' :
                                                                  action === 'PROJEKT' ? 'Projekt' :
-                                                                 action === 'KIEDYS_MOZE' ? 'Kiedyś/może' :
+                                                                 action === 'KIEDYS_MOZE' ? 'Kiedys/moze' :
                                                                  action === 'REFERENCJA' ? 'Referencja' :
-                                                                 action === 'USUN' ? 'Usuń' :
+                                                                 action === 'USUN' ? 'Usun' :
                                                                  action}
                                                             </span>
                                                             ) : null;
                                                         })()}
                                                         {item.suggestedStreams?.[0] && (
-                                                            <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md font-medium bg-indigo-100 text-indigo-700">
-                                                                <TagIcon className="w-3 h-3" />
-                                                                → {item.suggestedStreams[0].streamName}
+                                                            <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md font-medium bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400">
+                                                                <Tag className="w-3 h-3" />
+                                                                {item.suggestedStreams[0].streamName}
                                                             </span>
                                                         )}
-                                                        {item.aiAnalysis.urgency && (
-                                                            <span className={`text-xs px-2 py-1 rounded-md font-medium ${
-                                                                item.aiAnalysis.urgency === 'high' ? 'bg-red-50 text-red-600' :
-                                                                item.aiAnalysis.urgency === 'medium' ? 'bg-yellow-50 text-yellow-600' :
-                                                                'bg-green-50 text-green-600'
-                                                            }`}>
-                                                                {item.aiAnalysis.urgency === 'high' ? '🔴 Pilne' :
-                                                                 item.aiAnalysis.urgency === 'medium' ? '🟡 Średnie' : '🟢 Niskie'}
-                                                            </span>
-                                                        )}
+                                                        {item.aiAnalysis.urgency && renderPriorityIcon(item.aiAnalysis.urgency)}
                                                         {item.aiAnalysis.estimatedTime && (
-                                                            <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-gray-50 text-gray-600">
-                                                                <ClockIcon className="w-3 h-3" />
+                                                            <span className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-md bg-slate-50 text-slate-600 dark:bg-slate-700 dark:text-slate-400">
+                                                                <Clock className="w-3 h-3" />
                                                                 {item.aiAnalysis.estimatedTime}
                                                             </span>
                                                         )}
@@ -749,19 +845,19 @@ export default function SourcePage() {
                                                     {/* Entities */}
                                                     {item.aiAnalysis.entities.length > 0 && (
                                                         <div className="flex flex-wrap gap-1.5">
-                                                            {item.aiAnalysis.entities.slice(0, 6).map((entity, idx) => (
+                                                            {item.aiAnalysis.entities.slice(0, 6).map((entity: any, idx: number) => (
                                                                 <span key={idx} className={`inline-flex items-center gap-1 text-xs px-2 py-0.5 rounded ${
-                                                                    entity.type === 'person' ? 'bg-blue-50 text-blue-600' :
-                                                                    entity.type === 'company' ? 'bg-purple-50 text-purple-600' :
-                                                                    entity.type === 'amount' ? 'bg-green-50 text-green-600' :
-                                                                    entity.type === 'date' || entity.type === 'deadline' ? 'bg-orange-50 text-orange-600' :
-                                                                    entity.type === 'task' ? 'bg-cyan-50 text-cyan-600' :
-                                                                    'bg-gray-50 text-gray-500'
+                                                                    entity.type === 'person' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400' :
+                                                                    entity.type === 'company' ? 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400' :
+                                                                    entity.type === 'amount' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                                                                    entity.type === 'date' || entity.type === 'deadline' ? 'bg-orange-50 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' :
+                                                                    entity.type === 'task' ? 'bg-cyan-50 text-cyan-600 dark:bg-cyan-900/30 dark:text-cyan-400' :
+                                                                    'bg-slate-50 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
                                                                 }`}>
-                                                                    {entity.type === 'person' && <UserGroupIcon className="w-3 h-3" />}
-                                                                    {entity.type === 'company' && <BuildingOfficeIcon className="w-3 h-3" />}
-                                                                    {entity.type === 'amount' && <CurrencyDollarIcon className="w-3 h-3" />}
-                                                                    {(entity.type === 'date' || entity.type === 'deadline') && <CalendarIcon className="w-3 h-3" />}
+                                                                    {entity.type === 'person' && <Users className="w-3 h-3" />}
+                                                                    {entity.type === 'company' && <Building2 className="w-3 h-3" />}
+                                                                    {entity.type === 'amount' && <DollarSign className="w-3 h-3" />}
+                                                                    {(entity.type === 'date' || entity.type === 'deadline') && <Calendar className="w-3 h-3" />}
                                                                     {entity.value}
                                                                 </span>
                                                             ))}
@@ -772,27 +868,27 @@ export default function SourcePage() {
 
                                             {/* Reject reason input */}
                                             {rejectingId === item.id && (
-                                                <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
-                                                    <p className="text-sm font-medium text-red-700 mb-2">Dlaczego odrzucasz sugestię?</p>
+                                                <div className="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-xl">
+                                                    <p className="text-sm font-medium text-red-700 dark:text-red-400 mb-2">Dlaczego odrzucasz sugestie?</p>
                                                     <div className="flex gap-2">
                                                         <input
                                                             type="text"
                                                             value={rejectReason}
                                                             onChange={(e) => setRejectReason(e.target.value)}
-                                                            placeholder="Opcjonalny powód..."
-                                                            className="flex-1 px-3 py-1.5 text-sm border border-red-300 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                                                            placeholder="Opcjonalny powod..."
+                                                            className="flex-1 px-3 py-1.5 text-sm border border-red-300 dark:border-red-700 rounded-lg bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-red-500 focus:border-transparent"
                                                             onKeyDown={(e) => { if (e.key === 'Enter') handleReject(item); }}
                                                         />
                                                         <button
                                                             onClick={() => handleReject(item)}
                                                             disabled={processingIds.has(item.id)}
-                                                            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white text-sm rounded-md"
+                                                            className="px-3 py-1.5 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white text-sm rounded-lg font-medium transition-colors"
                                                         >
-                                                            Odrzuć
+                                                            Odrzuc
                                                         </button>
                                                         <button
                                                             onClick={() => { setRejectingId(null); setRejectReason(''); }}
-                                                            className="px-3 py-1.5 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm rounded-md"
+                                                            className="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 text-sm rounded-lg font-medium transition-colors"
                                                         >
                                                             Anuluj
                                                         </button>
@@ -802,19 +898,19 @@ export default function SourcePage() {
 
                                             {/* Split indicator */}
                                             {item.flowStatus === 'SPLIT' && (
-                                                <div className="mb-3 flex items-center gap-2 text-xs text-blue-600 bg-blue-50 px-3 py-1.5 rounded">
-                                                    <ScissorsIcon className="w-4 h-4" />
-                                                    Element podzielony na części — podzadania są w Źródle
+                                                <div className="mb-3 flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-lg">
+                                                    <Scissors className="w-4 h-4" />
+                                                    Element podzielony na czesci -- podzadania sa w Zrodle
                                                 </div>
                                             )}
 
-                                            <div className="flex items-center space-x-4 text-xs text-gray-500">
+                                            <div className="flex items-center space-x-4 text-xs text-slate-500 dark:text-slate-400">
                                                 <span className="flex items-center gap-1">
-                                                    <CalendarIcon className="w-4 h-4" />
+                                                    <Calendar className="w-4 h-4" />
                                                     {formatTimeAgo(item.capturedAt)}
                                                 </span>
                                                 <span className="flex items-center gap-1">
-                                                    <UserIcon className="w-4 h-4" />
+                                                    <User className="w-4 h-4" />
                                                     {item.capturedBy?.firstName}
                                                 </span>
                                             </div>
@@ -823,205 +919,219 @@ export default function SourcePage() {
                                         {/* Action buttons - Human-in-the-Loop */}
                                         <div className="flex flex-col gap-2 shrink-0">
                                             {['PROCESSED', 'SPLIT', 'FROZEN', 'REFERENCE', 'DELETED'].includes(item.flowStatus || '') ? (
-                                                <span className={`px-4 py-2 text-sm font-medium rounded-lg flex items-center gap-2 ${
-                                                    item.flowStatus === 'PROCESSED' && item.userDecisionReason === 'AUTOPILOT' ? 'bg-violet-100 text-violet-700' :
-                                                    item.flowStatus === 'PROCESSED' ? 'bg-green-100 text-green-700' :
-                                                    item.flowStatus === 'SPLIT' ? 'bg-purple-100 text-purple-700' :
-                                                    item.flowStatus === 'FROZEN' ? 'bg-cyan-100 text-cyan-700' :
-                                                    item.flowStatus === 'REFERENCE' ? 'bg-gray-100 text-gray-600' :
-                                                    'bg-red-100 text-red-700'
-                                                }`}>
-                                                    <CheckCircleIcon className="w-4 h-4" />
+                                                <StatusBadge
+                                                    variant={
+                                                        item.flowStatus === 'PROCESSED' ? 'success' :
+                                                        item.flowStatus === 'SPLIT' ? 'info' :
+                                                        item.flowStatus === 'FROZEN' ? 'info' :
+                                                        item.flowStatus === 'REFERENCE' ? 'neutral' : 'error'
+                                                    }
+                                                    size="md"
+                                                    dot
+                                                >
                                                     {item.flowStatus === 'PROCESSED' && item.userDecisionReason === 'AUTOPILOT'
                                                       ? `Autopilot ${Math.round((item.aiConfidence || 0) * 100)}%`
                                                       : item.flowStatus === 'PROCESSED' ? 'Przetworzony' :
                                                      item.flowStatus === 'SPLIT' ? 'Podzielony' :
-                                                     item.flowStatus === 'FROZEN' ? 'Zamrożony' :
+                                                     item.flowStatus === 'FROZEN' ? 'Zamrozony' :
                                                      item.flowStatus === 'REFERENCE' ? 'Referencja' :
-                                                     'Usunięty'}
-                                                </span>
+                                                     'Usuniety'}
+                                                </StatusBadge>
                                             ) : item.aiAnalysis ? (() => {
                                                 const effectiveAction = getEffectiveSuggestedAction(item);
                                                 return (
                                                 <>
-                                                    {/* Zatwierdź - Quick approve (only if we have a suggested action) */}
+                                                    {/* Approve */}
                                                     {effectiveAction && (
-                                                        <button
+                                                        <ActionButton
+                                                            variant="primary"
+                                                            icon={CheckCircle}
+                                                            size="sm"
+                                                            loading={processingIds.has(item.id)}
                                                             onClick={() => handleQuickApprove({
                                                                 ...item,
                                                                 suggestedAction: effectiveAction
                                                             })}
-                                                            disabled={processingIds.has(item.id)}
-                                                            className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                                                            className="bg-emerald-600 hover:bg-emerald-700"
                                                         >
-                                                            {processingIds.has(item.id) ? (
-                                                                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                            ) : (
-                                                                <CheckCircleIcon className="w-4 h-4" />
-                                                            )}
-                                                            Zatwierdź
-                                                        </button>
+                                                            Zatwierdz
+                                                        </ActionButton>
                                                     )}
 
-                                                    {/* Koryguj - Open modal with existing analysis for editing */}
-                                                    <button
+                                                    {/* Correct */}
+                                                    <ActionButton
+                                                        variant="secondary"
+                                                        icon={PenSquare}
+                                                        size="sm"
                                                         onClick={() => handleProcess({
                                                             ...item,
                                                             suggestedAction: effectiveAction || item.suggestedAction
                                                         }, true)}
-                                                        className="px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                                                        className="bg-amber-500 hover:bg-amber-600 text-white border-amber-500"
                                                     >
-                                                        <PencilSquareIcon className="w-4 h-4" />
                                                         Koryguj
-                                                    </button>
+                                                    </ActionButton>
 
-                                                    {/* Odrzuć - Reject suggestion */}
+                                                    {/* Reject */}
                                                     {effectiveAction && (
-                                                        <button
-                                                            onClick={() => setRejectingId(rejectingId === item.id ? null : item.id)}
+                                                        <ActionButton
+                                                            variant="ghost"
+                                                            icon={XCircle}
+                                                            size="sm"
                                                             disabled={processingIds.has(item.id)}
-                                                            className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
+                                                            onClick={() => setRejectingId(rejectingId === item.id ? null : item.id)}
                                                         >
-                                                            <XCircleIcon className="w-4 h-4" />
-                                                            Odrzuć
-                                                        </button>
+                                                            Odrzuc
+                                                        </ActionButton>
                                                     )}
 
                                                     {/* Learning indicator */}
                                                     {learnedIds.has(item.id) && (
-                                                        <div className="flex items-center gap-1 text-xs text-indigo-600 animate-pulse">
-                                                            <AcademicCapIcon className="w-3.5 h-3.5" />
-                                                            AI się uczy...
+                                                        <div className="flex items-center gap-1 text-xs text-indigo-600 dark:text-indigo-400 animate-pulse">
+                                                            <GraduationCap className="w-3.5 h-3.5" />
+                                                            AI sie uczy...
                                                         </div>
                                                     )}
                                                 </>
                                                 );
                                             })() : (
-                                                <button
+                                                <ActionButton
+                                                    variant="primary"
+                                                    icon={Sparkles}
+                                                    size="sm"
+                                                    loading={processingIds.has(item.id)}
                                                     onClick={() => handleAnalyze(item)}
-                                                    disabled={processingIds.has(item.id)}
-                                                    className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-400 text-white text-sm font-medium rounded-lg transition-colors flex items-center gap-2"
                                                 >
-                                                    {processingIds.has(item.id) ? (
-                                                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                                                    ) : (
-                                                        <SparklesIcon className="w-4 h-4" />
-                                                    )}
                                                     Analizuj
-                                                </button>
+                                                </ActionButton>
                                             )}
                                         </div>
                                     </div>
-                                </div>
+                                </motion.div>
                             );
                         })}
-                    </div>
+                    </motion.div>
                 )}
-            </div>
+            </motion.div>
 
             {/* Capture Form Modal */}
-            {showCaptureForm && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-lg p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
-                        <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                            <ClipboardDocumentListIcon className="w-6 h-6 text-blue-600" />
-                            Dodaj do Źródła
-                        </h3>
+            <AnimatePresence>
+                {showCaptureForm && (
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+                        onClick={(e) => { if (e.target === e.currentTarget) resetCaptureForm(); }}
+                    >
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                            className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-white/20 dark:border-slate-700/30 rounded-2xl p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto shadow-2xl"
+                        >
+                            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2 text-slate-900 dark:text-slate-100">
+                                <ClipboardList className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />
+                                Dodaj do Zrodla
+                            </h3>
 
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Typ</label>
-                            <div className="grid grid-cols-2 gap-2">
-                                {Object.entries(CAPTURE_SOURCES).map(([key, source]) => (
-                                    <button
-                                        key={key}
-                                        onClick={() => {
-                                            setSelectedSource(key);
-                                            // Reset audio when switching away from VOICE
-                                            if (key !== 'VOICE') {
-                                                setAudioBlob(null);
-                                                setAudioDuration(0);
-                                            }
-                                        }}
-                                        className={`p-3 rounded-lg border text-left transition-colors ${selectedSource === key
-                                            ? source.color + ' border-current'
-                                            : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                                            }`}
-                                    >
-                                        <div className="font-medium flex items-center gap-2">
-                                            <source.icon className="w-5 h-5" />
-                                            {source.name}
-                                        </div>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        {/* Voice Recorder - shown when VOICE type selected */}
-                        {selectedSource === 'VOICE' && (
                             <div className="mb-4">
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Nagranie głosowe
-                                </label>
-                                <VoiceRecorder
-                                    onRecordingComplete={handleVoiceRecordingComplete}
-                                    maxDuration={300}
-                                    className="mb-2"
-                                />
-                                {audioBlob && (
-                                    <p className="text-sm text-green-600 flex items-center gap-1">
-                                        <CheckCircleIcon className="w-4 h-4" />
-                                        Nagranie gotowe ({formatAudioDuration(audioDuration)})
-                                    </p>
-                                )}
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Typ</label>
+                                <div className="grid grid-cols-2 gap-2">
+                                    {Object.entries(CAPTURE_SOURCES).map(([key, source]) => {
+                                        const ItemIcon = source.icon;
+                                        return (
+                                            <button
+                                                key={key}
+                                                onClick={() => {
+                                                    setSelectedSource(key);
+                                                    if (key !== 'VOICE') {
+                                                        setAudioBlob(null);
+                                                        setAudioDuration(0);
+                                                    }
+                                                }}
+                                                className={`p-3 rounded-xl border text-left transition-all ${selectedSource === key
+                                                    ? `${source.color} ${source.darkColor} border-current shadow-sm`
+                                                    : 'bg-slate-50 dark:bg-slate-900/50 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                                }`}
+                                            >
+                                                <div className="font-medium flex items-center gap-2 text-sm">
+                                                    <ItemIcon className="w-5 h-5" />
+                                                    {source.name}
+                                                </div>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
-                        )}
 
-                        {/* Content field - optional for voice, required for others */}
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
-                                {selectedSource === 'VOICE' ? 'Tytuł nagrania (opcjonalnie)' : 'Treść'}
-                            </label>
-                            <textarea
-                                value={captureContent}
-                                onChange={(e) => setCaptureContent(e.target.value)}
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                rows={selectedSource === 'VOICE' ? 2 : 3}
-                                placeholder={selectedSource === 'VOICE' ? 'Opcjonalny opis nagrania...' : 'Co chcesz przechwycić?'}
-                            />
-                        </div>
+                            {/* Voice Recorder */}
+                            {selectedSource === 'VOICE' && (
+                                <div className="mb-4">
+                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                        Nagranie glosowe
+                                    </label>
+                                    <VoiceRecorder
+                                        onRecordingComplete={handleVoiceRecordingComplete}
+                                        maxDuration={300}
+                                        className="mb-2"
+                                    />
+                                    {audioBlob && (
+                                        <p className="text-sm text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                                            <CheckCircle className="w-4 h-4" />
+                                            Nagranie gotowe ({formatAudioDuration(audioDuration)})
+                                        </p>
+                                    )}
+                                </div>
+                            )}
 
-                        <div className="mb-4">
-                            <label className="block text-sm font-medium text-gray-700 mb-2">Notatka (opcjonalnie)</label>
-                            <textarea
-                                value={captureNote}
-                                onChange={(e) => setCaptureNote(e.target.value)}
-                                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                rows={2}
-                                placeholder="Dodatkowe informacje..."
-                            />
-                        </div>
+                            {/* Content field */}
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                    {selectedSource === 'VOICE' ? 'Tytul nagrania (opcjonalnie)' : 'Tresc'}
+                                </label>
+                                <textarea
+                                    value={captureContent}
+                                    onChange={(e) => setCaptureContent(e.target.value)}
+                                    className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
+                                    rows={selectedSource === 'VOICE' ? 2 : 3}
+                                    placeholder={selectedSource === 'VOICE' ? 'Opcjonalny opis nagrania...' : 'Co chcesz przechwycic?'}
+                                />
+                            </div>
 
-                        <div className="flex justify-end space-x-3">
-                            <button
-                                onClick={resetCaptureForm}
-                                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
-                            >
-                                Anuluj
-                            </button>
-                            <button
-                                onClick={handleQuickCapture}
-                                disabled={
-                                    !selectedSource ||
-                                    (selectedSource === 'VOICE' ? !audioBlob : !captureContent.trim())
-                                }
-                                className="px-6 py-2 bg-blue-600 text-white rounded-lg disabled:bg-gray-300 hover:bg-blue-700"
-                            >
-                                {selectedSource === 'VOICE' ? 'Dodaj nagranie' : 'Dodaj'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+                            <div className="mb-4">
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Notatka (opcjonalnie)</label>
+                                <textarea
+                                    value={captureNote}
+                                    onChange={(e) => setCaptureNote(e.target.value)}
+                                    className="w-full p-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
+                                    rows={2}
+                                    placeholder="Dodatkowe informacje..."
+                                />
+                            </div>
+
+                            <div className="flex justify-end space-x-3">
+                                <ActionButton
+                                    variant="ghost"
+                                    onClick={resetCaptureForm}
+                                >
+                                    Anuluj
+                                </ActionButton>
+                                <ActionButton
+                                    variant="primary"
+                                    onClick={handleQuickCapture}
+                                    disabled={
+                                        !selectedSource ||
+                                        (selectedSource === 'VOICE' ? !audioBlob : !captureContent.trim())
+                                    }
+                                >
+                                    {selectedSource === 'VOICE' ? 'Dodaj nagranie' : 'Dodaj'}
+                                </ActionButton>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Flow Process Modal (Classic Mode) */}
             {showProcessModal && processingItem && (
@@ -1087,6 +1197,6 @@ export default function SourcePage() {
                     }}
                 />
             )}
-        </div>
+        </PageShell>
     );
 }

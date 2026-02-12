@@ -6,12 +6,12 @@ import { toast } from 'react-hot-toast';
 import { logger } from '@/lib/logger';
 import { aiRulesApi, AIRule, CreateRuleRequest, RuleCondition, RuleAction, ModuleField } from '@/lib/api/aiRules';
 import {
-  XMarkIcon,
-  PlusIcon,
-  TrashIcon,
-  SparklesIcon,
-  Cog6ToothIcon,
-} from '@heroicons/react/24/outline';
+  X,
+  Plus,
+  Trash2,
+  Sparkles,
+  Settings,
+} from 'lucide-react';
 
 interface AIRuleFormProps {
   rule?: AIRule;
@@ -277,7 +277,7 @@ export default function AIRuleForm({ rule, onSubmit, onCancel }: AIRuleFormProps
           <div className="px-6 py-4 border-b border-gray-200">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium text-gray-900">
-                <SparklesIcon className="w-6 h-6 inline mr-2 text-purple-500" />
+                <Sparkles className="w-6 h-6 inline mr-2 text-purple-500" />
                 {rule ? 'Edytuj regułę AI' : 'Nowa reguła AI'}
               </h3>
               <button
@@ -285,7 +285,7 @@ export default function AIRuleForm({ rule, onSubmit, onCancel }: AIRuleFormProps
                 onClick={onCancel}
                 className="text-gray-400 hover:text-gray-500"
               >
-                <XMarkIcon className="w-6 h-6" />
+                <X className="w-6 h-6" />
               </button>
             </div>
           </div>
@@ -401,14 +401,14 @@ export default function AIRuleForm({ rule, onSubmit, onCancel }: AIRuleFormProps
                   className="flex items-center space-x-2 px-3 py-1 text-sm bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200"
                   disabled={isLoadingFields}
                 >
-                  <PlusIcon className="w-4 h-4" />
+                  <Plus className="w-4 h-4" />
                   <span>Dodaj warunek</span>
                 </button>
               </div>
 
               {isLoadingFields ? (
                 <div className="text-center py-4">
-                  <Cog6ToothIcon className="w-6 h-6 animate-spin mx-auto text-gray-400" />
+                  <Settings className="w-6 h-6 animate-spin mx-auto text-gray-400" />
                   <p className="text-gray-500 mt-2">Ładowanie pól modułu...</p>
                 </div>
               ) : formData.conditions.length === 0 ? (
@@ -469,7 +469,7 @@ export default function AIRuleForm({ rule, onSubmit, onCancel }: AIRuleFormProps
                         onClick={() => removeCondition(index)}
                         className="text-red-400 hover:text-red-600"
                       >
-                        <TrashIcon className="w-5 h-5" />
+                        <Trash2 className="w-5 h-5" />
                       </button>
                     </div>
                   ))}
@@ -486,7 +486,7 @@ export default function AIRuleForm({ rule, onSubmit, onCancel }: AIRuleFormProps
                   onClick={addAction}
                   className="flex items-center space-x-2 px-3 py-1 text-sm bg-green-100 text-green-700 rounded-lg hover:bg-green-200"
                 >
-                  <PlusIcon className="w-4 h-4" />
+                  <Plus className="w-4 h-4" />
                   <span>Dodaj akcję</span>
                 </button>
               </div>
@@ -519,7 +519,7 @@ export default function AIRuleForm({ rule, onSubmit, onCancel }: AIRuleFormProps
                           onClick={() => removeAction(index)}
                           className="text-red-400 hover:text-red-600"
                         >
-                          <TrashIcon className="w-5 h-5" />
+                          <Trash2 className="w-5 h-5" />
                         </button>
                       </div>
 
@@ -637,7 +637,7 @@ export default function AIRuleForm({ rule, onSubmit, onCancel }: AIRuleFormProps
             >
               {isLoading ? (
                 <>
-                  <Cog6ToothIcon className="w-4 h-4 animate-spin inline mr-2" />
+                  <Settings className="w-4 h-4 animate-spin inline mr-2" />
                   {rule ? 'Zapisywanie...' : 'Tworzenie...'}
                 </>
               ) : (

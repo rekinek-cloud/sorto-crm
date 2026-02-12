@@ -4,6 +4,8 @@ import { FlowRAGService } from './FlowRAGService';
 import { AIRouter } from './AIRouter';
 import { AIRequest } from './providers/BaseProvider';
 import logger from '../../config/logger';
+import { PipelineConfigLoader } from './PipelineConfigLoader';
+import { PipelineConfig } from './PipelineConfigDefaults';
 
 // =============================================================================
 // Interfaces
@@ -89,32 +91,6 @@ export interface ProcessingResult {
   linkedEntities?: { contactId?: string; companyId?: string };
 }
 
-// Free email domains -- skip for company matching
-const FREE_EMAIL_DOMAINS = new Set([
-  'gmail.com', 'googlemail.com', 'outlook.com', 'hotmail.com', 'live.com',
-  'yahoo.com', 'yahoo.pl', 'wp.pl', 'o2.pl', 'onet.pl', 'interia.pl',
-  'op.pl', 'poczta.fm', 'gazeta.pl', 'tlen.pl', 'icloud.com', 'me.com',
-  'protonmail.com', 'proton.me', 'aol.com', 'mail.com', 'zoho.com',
-]);
-
-// AI classification prompt
-const CLASSIFICATION_SYSTEM_PROMPT = `You are an email classification expert. Classify the email into exactly one category.
-
-Categories:
-- BUSINESS: Work-related, client communication, project discussions, invoices, offers
-- NEWSLETTER: Marketing emails, digests, promotional content, subscriptions
-- SPAM: Unsolicited, phishing, scam, irrelevant bulk mail
-- TRANSACTIONAL: Order confirmations, shipping notifications, password resets, system alerts
-- PERSONAL: Personal non-work communication
-
-Respond ONLY with valid JSON (no markdown):
-{"classification":"CATEGORY","confidence":0.85,"summary":"One sentence summary","extractedTasks":[{"title":"Task description","priority":"MEDIUM"}]}
-
-Rules:
-- confidence must be between 0.0 and 1.0
-- extractedTasks: extract actionable items from the email (can be empty array)
-- If unsure, use lower confidence`;
-
 // =============================================================================
 // RuleProcessingPipeline
 // =============================================================================
@@ -122,6 +98,8 @@ Rules:
 export class RuleProcessingPipeline {
   private prisma: PrismaClient;
   private ragService: FlowRAGService;
+  private config!: PipelineConfig;
+  private freeEmailDomains!: Set<string>;
 
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
@@ -142,6 +120,11 @@ export class RuleProcessingPipeline {
     entityData: EntityData
   ): Promise<ProcessingResult> {
     const startTime = Date.now();
+
+    // Load dynamic config from DB (with cache + fallback to defaults)
+    const config = await PipelineConfigLoader.loadConfig(this.prisma, organizationId);
+    this.config = config;
+    this.freeEmailDomains = new Set(config.domains.freeEmailDomains);
 
     // Create or update processing record
     const processingRecord = await this.prisma.data_processing.upsert({
@@ -197,18 +180,18 @@ export class RuleProcessingPipeline {
         finalConfidence = crmCheck.confidence;
       } else if (listCheck.matched) {
         finalClass = listCheck.classification || (listCheck.listType === 'BLACKLIST' ? 'SPAM' : 'BUSINESS');
-        finalConfidence = 0.95;
+        finalConfidence = this.config.thresholds.listMatchConfidence;
       } else if (patternCheck.matched) {
         finalClass = patternCheck.classification || 'NEWSLETTER';
         finalConfidence = patternCheck.confidence;
       } else if (ruleMatch.matched && ruleMatch.actions?.forceClassification) {
         finalClass = ruleMatch.actions.forceClassification;
-        finalConfidence = ruleMatch.confidence || 0.85;
+        finalConfidence = ruleMatch.confidence || this.config.thresholds.defaultRuleConfidence;
       } else {
         // Stage 3: AI Classification (only if no rules matched)
         aiResult = await this.classifyWithAI(organizationId, entityData);
         if (aiResult) {
-          finalClass = aiResult.confidence >= 0.4 ? aiResult.classification : 'UNKNOWN';
+          finalClass = aiResult.confidence >= this.config.thresholds.unknownThreshold ? aiResult.classification : 'UNKNOWN';
           finalConfidence = aiResult.confidence;
           if (aiResult.extraction?.extractedTasks) {
             extractedTasks = aiResult.extraction.extractedTasks;
@@ -240,7 +223,7 @@ export class RuleProcessingPipeline {
       }
 
       // Extract tasks from content (if AI didn't already extract)
-      if (extractedTasks.length === 0 && finalClass === 'BUSINESS') {
+      if (extractedTasks.length === 0 && this.config.postActions[finalClass]?.extractTasks) {
         extractedTasks = this.extractTasksFromContent(entityData);
       }
       if (extractedTasks.length > 0) {
@@ -257,14 +240,14 @@ export class RuleProcessingPipeline {
         actionsExecuted.push(`SET_PRIORITY:${ruleMatch.actions.setPriority}`);
       }
 
-      if (finalClass === 'BUSINESS' || ruleMatch.actions?.addToRag) {
-        // BUSINESS or rule-forced -> RAG
+      const classActions = this.config.postActions[finalClass] || {};
+
+      if (classActions.rag || ruleMatch.actions?.addToRag) {
         addedToRag = await this.addToRAG(organizationId, entityType, entityId, entityData, finalClass);
         if (addedToRag) actionsExecuted.push('ADDED_TO_RAG');
       }
 
-      if (finalClass === 'BUSINESS' || ruleMatch.actions?.addToFlow) {
-        // BUSINESS or rule-forced -> Flow
+      if (classActions.flow || ruleMatch.actions?.addToFlow) {
         const flowResult = await this.addToFlow(organizationId, entityType, entityId, entityData);
         if (flowResult) {
           addedToFlow = true;
@@ -273,26 +256,27 @@ export class RuleProcessingPipeline {
         }
       }
 
-      if (finalClass === 'NEWSLETTER' || ruleMatch.actions?.list?.action === 'SUGGEST_BLACKLIST') {
-        // NEWSLETTER or rule-forced -> suggest blacklist
-        if (!addedToRag) {
+      if (classActions.suggestBlacklist || ruleMatch.actions?.list?.action === 'SUGGEST_BLACKLIST') {
+        if (!addedToRag && (classActions.rag !== false)) {
           addedToRag = await this.addToRAG(organizationId, entityType, entityId, entityData, finalClass);
           if (addedToRag) actionsExecuted.push('ADDED_TO_RAG');
         }
-        if (senderDomain && !FREE_EMAIL_DOMAINS.has(senderDomain)) {
+        if (senderDomain && !this.freeEmailDomains.has(senderDomain)) {
           await this.suggestBlacklist(organizationId, senderDomain, senderEmail, finalConfidence);
           actionsExecuted.push('SUGGESTED_BLACKLIST');
         }
       }
 
-      if (finalClass === 'SPAM' || ruleMatch.actions?.reject) {
-        // SPAM -> ignore + auto-blacklist if confidence > 90%
+      if (classActions.autoBlacklist || ruleMatch.actions?.reject) {
         actionsExecuted.push('IGNORED_SPAM');
-
-        if (finalConfidence > 0.9 && senderDomain && !FREE_EMAIL_DOMAINS.has(senderDomain)) {
+        if (finalConfidence > this.config.thresholds.autoBlacklistThreshold && senderDomain && !this.freeEmailDomains.has(senderDomain)) {
           await this.autoBlacklist(organizationId, senderDomain, senderEmail, finalConfidence);
           actionsExecuted.push('AUTO_BLACKLISTED');
         }
+      }
+
+      if (classActions.extractTasks && extractedTasks.length === 0) {
+        extractedTasks = this.extractTasksFromContent(entityData);
       }
 
       // Update processing record with all results
@@ -392,7 +376,7 @@ export class RuleProcessingPipeline {
     }
 
     // Check companies by domain
-    if (senderDomain && !FREE_EMAIL_DOMAINS.has(senderDomain)) {
+    if (senderDomain && !this.freeEmailDomains.has(senderDomain)) {
       const company = await this.prisma.company.findFirst({
         where: {
           organizationId,
@@ -729,16 +713,16 @@ export class RuleProcessingPipeline {
         entityData.subject ? `Subject: ${entityData.subject}` : '',
         entityData.headers?.['list-unsubscribe'] ? `Header List-Unsubscribe: present` : '',
         '',
-        (entityData.body || entityData.content || '').substring(0, 3000),
+        (entityData.body || entityData.content || '').substring(0, this.config.contentLimits.aiContentLimit),
       ].filter(Boolean).join('\n');
 
       const request: AIRequest = {
-        model: 'gpt-4o-mini',
+        model: this.config.aiParams.model,
         messages: [
-          { role: 'system', content: CLASSIFICATION_SYSTEM_PROMPT },
+          { role: 'system', content: PipelineConfigLoader.buildClassificationPrompt(this.config) },
           { role: 'user', content: `Classify this email:\n\n${emailContent}` },
         ],
-        config: { temperature: 0.2, maxTokens: 300 },
+        config: { temperature: this.config.aiParams.temperature, maxTokens: this.config.aiParams.maxTokens },
       };
 
       const response = await aiRouter.processRequest(request);
@@ -747,7 +731,7 @@ export class RuleProcessingPipeline {
       const parsed = this.parseAIResponse(response.content);
       if (!parsed) return undefined;
 
-      const validClasses = ['BUSINESS', 'NEWSLETTER', 'SPAM', 'TRANSACTIONAL', 'PERSONAL'];
+      const validClasses = this.config.classifications.validClasses;
       const classification = validClasses.includes(parsed.classification)
         ? parsed.classification
         : 'UNKNOWN';
@@ -805,7 +789,7 @@ export class RuleProcessingPipeline {
         entityData.body || entityData.content || '',
       ].filter(Boolean).join('\n');
 
-      if (content.length < 20) return false;
+      if (content.length < this.config.contentLimits.minContentLength) return false;
 
       const contentHash = crypto.createHash('sha256').update(content).digest('hex');
       await this.prisma.$executeRawUnsafe(`
@@ -818,7 +802,7 @@ export class RuleProcessingPipeline {
       `,
         `rag-${entityType}-${entityId}`,
         entityData.subject || `${entityType} ${entityId}`,
-        content.substring(0, 10000),
+        content.substring(0, this.config.contentLimits.ragContentLimit),
         contentHash,
         entityType,
         entityId,
@@ -848,7 +832,7 @@ export class RuleProcessingPipeline {
 
       const content = entityData.subject
         ? `[${entityData.from || 'Unknown'}] ${entityData.subject}`
-        : entityData.body?.substring(0, 200) || 'Processed email';
+        : entityData.body?.substring(0, this.config.contentLimits.flowPreviewLimit) || 'Processed email';
 
       const inboxItem = await this.prisma.inboxItem.create({
         data: {
@@ -976,7 +960,7 @@ export class RuleProcessingPipeline {
       }
 
       // Try to find company by domain
-      if (senderDomain && !FREE_EMAIL_DOMAINS.has(senderDomain)) {
+      if (senderDomain && !this.freeEmailDomains.has(senderDomain)) {
         const company = await this.prisma.company.findFirst({
           where: { organizationId, domain: { equals: senderDomain, mode: 'insensitive' } },
           select: { id: true },
@@ -992,28 +976,26 @@ export class RuleProcessingPipeline {
 
   private extractTasksFromContent(entityData: EntityData): ExtractedTask[] {
     const text = entityData.body || entityData.content || '';
-    if (!text || text.length < 20) return [];
+    if (!text || text.length < this.config.contentLimits.minContentLength) return [];
 
     const tasks: ExtractedTask[] = [];
     const lines = text.split(/[.\n]/).filter(l => l.trim().length > 10);
 
-    const actionPatterns = [
-      /(?:please|proszę|prosze)\s+(.{10,80})/i,
-      /(?:can you|could you|możesz|mozesz)\s+(.{10,80})/i,
-      /(?:need to|trzeba|musisz|należy|nalezy)\s+(.{10,80})/i,
-      /(?:send|wyślij|wyslij|prześlij|przeslij)\s+(.{10,80})/i,
-      /(?:review|sprawdź|sprawdz|przejrzyj)\s+(.{10,80})/i,
-      /(?:prepare|przygotuj|zaplanuj)\s+(.{10,80})/i,
-      /(?:deadline|termin|do dnia|by\s+\w+day)\s*:?\s*(.{5,80})/i,
-    ];
+    const actionPatterns = this.config.taskExtraction.patterns.map(
+      p => new RegExp(p.pattern, p.flags)
+    );
+
+    const urgencyRegex = new RegExp(
+      this.config.taskExtraction.urgencyPatterns.join('|'), 'i'
+    );
 
     for (const line of lines) {
       for (const pattern of actionPatterns) {
         const match = line.match(pattern);
         if (match) {
           const title = match[1].trim().replace(/[,;]$/, '');
-          if (title.length >= 10 && !tasks.some(t => t.title === title)) {
-            const isUrgent = /asap|urgent|pilne|natychmiast|dzisiaj|today/i.test(line);
+          if (title.length >= this.config.taskExtraction.minTitleLength && !tasks.some(t => t.title === title)) {
+            const isUrgent = urgencyRegex.test(line);
             tasks.push({
               title,
               priority: isUrgent ? 'HIGH' : 'MEDIUM',
@@ -1023,7 +1005,7 @@ export class RuleProcessingPipeline {
           break;
         }
       }
-      if (tasks.length >= 5) break;
+      if (tasks.length >= this.config.taskExtraction.maxTasks) break;
     }
 
     return tasks;

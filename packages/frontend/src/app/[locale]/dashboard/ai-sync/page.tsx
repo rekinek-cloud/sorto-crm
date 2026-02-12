@@ -3,19 +3,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import {
-  CloudArrowUpIcon,
-  ChatBubbleLeftRightIcon,
-  MagnifyingGlassIcon,
-  DocumentTextIcon,
-  TrashIcon,
-  ArrowPathIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ClockIcon,
-  SparklesIcon,
-  FolderIcon,
-  ChevronRightIcon,
-} from '@heroicons/react/24/outline';
+  Upload,
+  MessageSquare,
+  Search,
+  FileText,
+  Trash2,
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Sparkles,
+  Folder,
+  ChevronRight,
+  Bot,
+  Brain,
+} from 'lucide-react';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
 import aiSyncApi, {
   AiSource,
   AiConversation,
@@ -24,10 +29,10 @@ import aiSyncApi, {
   SearchResult,
 } from '@/lib/api/aiSync';
 
-const SOURCE_LABELS: Record<AiSource, { name: string; color: string; icon: string }> = {
-  CHATGPT: { name: 'ChatGPT', color: 'bg-green-100 text-green-800', icon: '🤖' },
-  CLAUDE: { name: 'Claude', color: 'bg-orange-100 text-orange-800', icon: '🧠' },
-  DEEPSEEK: { name: 'DeepSeek', color: 'bg-blue-100 text-blue-800', icon: '🔍' },
+const SOURCE_LABELS: Record<AiSource, { name: string; color: string; icon: React.ReactNode }> = {
+  CHATGPT: { name: 'ChatGPT', color: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400', icon: <Bot className="w-4 h-4" /> },
+  CLAUDE: { name: 'Claude', color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400', icon: <Brain className="w-4 h-4" /> },
+  DEEPSEEK: { name: 'DeepSeek', color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400', icon: <Search className="w-4 h-4" /> },
 };
 
 export default function AiSyncPage() {
@@ -205,54 +210,48 @@ export default function AiSyncPage() {
   };
 
   return (
-    <div className="p-6">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-purple-100 rounded-lg">
-            <ChatBubbleLeftRightIcon className="h-6 w-6 text-purple-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">AI Conversations Sync</h1>
-            <p className="text-sm text-gray-600">Import konwersacji z ChatGPT, Claude, DeepSeek do bazy RAG</p>
-          </div>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="AI Conversations Sync"
+        subtitle="Import konwersacji z ChatGPT, Claude, DeepSeek do bazy RAG"
+        icon={MessageSquare}
+        iconColor="text-purple-600"
+      />
 
       {/* Summary Cards */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center gap-2 text-gray-600 mb-1">
-              <DocumentTextIcon className="h-4 w-4" />
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 mb-1">
+              <FileText className="h-4 w-4" />
               <span className="text-sm">Konwersacje</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{summary.totalConversations}</p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{summary.totalConversations}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center gap-2 text-gray-600 mb-1">
-              <CheckCircleIcon className="h-4 w-4" />
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 mb-1">
+              <CheckCircle className="h-4 w-4" />
               <span className="text-sm">Zaindeksowane</span>
             </div>
             <p className="text-2xl font-bold text-green-600">{summary.indexedConversations}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center gap-2 text-gray-600 mb-1">
-              <FolderIcon className="h-4 w-4" />
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 mb-1">
+              <Folder className="h-4 w-4" />
               <span className="text-sm">Aplikacje</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{Object.keys(summary.byApp).length}</p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{Object.keys(summary.byApp).length}</p>
           </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-4">
-            <div className="flex items-center gap-2 text-gray-600 mb-1">
-              <SparklesIcon className="h-4 w-4" />
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 mb-1">
+              <Sparkles className="h-4 w-4" />
               <span className="text-sm">Zrodla</span>
             </div>
             <div className="flex gap-2 mt-1">
               {Object.entries(summary.bySource).map(([source, count]) => (
                 <span
                   key={source}
-                  className={`px-2 py-0.5 rounded text-xs font-medium ${SOURCE_LABELS[source as AiSource]?.color || 'bg-gray-100'}`}
+                  className={`px-2 py-0.5 rounded text-xs font-medium ${SOURCE_LABELS[source as AiSource]?.color || 'bg-slate-100 dark:bg-slate-700'}`}
                 >
                   {source}: {count}
                 </span>
@@ -263,59 +262,59 @@ export default function AiSyncPage() {
       )}
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-6 border-b border-gray-200">
+      <div className="flex gap-2 mb-6 border-b border-slate-200 dark:border-slate-700">
         <button
           onClick={() => setActiveTab('import')}
           className={`px-4 py-2 font-medium border-b-2 transition-colors ${
             activeTab === 'import'
-              ? 'border-purple-600 text-purple-600'
-              : 'border-transparent text-gray-600 hover:text-gray-900'
+              ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+              : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
           }`}
         >
-          <CloudArrowUpIcon className="h-4 w-4 inline mr-2" />
+          <Upload className="h-4 w-4 inline mr-2" />
           Import
         </button>
         <button
           onClick={() => setActiveTab('conversations')}
           className={`px-4 py-2 font-medium border-b-2 transition-colors ${
             activeTab === 'conversations'
-              ? 'border-purple-600 text-purple-600'
-              : 'border-transparent text-gray-600 hover:text-gray-900'
+              ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+              : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
           }`}
         >
-          <DocumentTextIcon className="h-4 w-4 inline mr-2" />
+          <FileText className="h-4 w-4 inline mr-2" />
           Konwersacje
         </button>
         <button
           onClick={() => setActiveTab('search')}
           className={`px-4 py-2 font-medium border-b-2 transition-colors ${
             activeTab === 'search'
-              ? 'border-purple-600 text-purple-600'
-              : 'border-transparent text-gray-600 hover:text-gray-900'
+              ? 'border-purple-600 text-purple-600 dark:text-purple-400'
+              : 'border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
           }`}
         >
-          <MagnifyingGlassIcon className="h-4 w-4 inline mr-2" />
+          <Search className="h-4 w-4 inline mr-2" />
           Wyszukiwanie
         </button>
       </div>
 
       {/* Import Tab */}
       {activeTab === 'import' && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Import konwersacji</h2>
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Import konwersacji</h2>
 
           {/* Source Selection */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Zrodlo</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Zrodlo</label>
             <div className="flex gap-3">
               {(['CHATGPT', 'CLAUDE', 'DEEPSEEK'] as AiSource[]).map((source) => (
                 <button
                   key={source}
                   onClick={() => setSelectedSource(source)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg border transition-colors ${
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-colors ${
                     selectedSource === source
-                      ? 'border-purple-600 bg-purple-50 text-purple-700'
-                      : 'border-gray-300 hover:border-gray-400'
+                      ? 'border-purple-600 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
+                      : 'border-slate-300 dark:border-slate-600 hover:border-slate-400 dark:hover:border-slate-500'
                   }`}
                 >
                   <span>{SOURCE_LABELS[source].icon}</span>
@@ -327,8 +326,8 @@ export default function AiSyncPage() {
 
           {/* File Upload */}
           <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-2">Plik JSON</label>
-            <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-purple-400 transition-colors">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Plik JSON</label>
+            <div className="border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-xl p-6 text-center hover:border-purple-400 dark:hover:border-purple-500 transition-colors">
               <input
                 type="file"
                 accept=".json"
@@ -337,13 +336,13 @@ export default function AiSyncPage() {
                 id="file-upload"
               />
               <label htmlFor="file-upload" className="cursor-pointer">
-                <CloudArrowUpIcon className="h-12 w-12 mx-auto text-gray-400 mb-2" />
+                <Upload className="h-12 w-12 mx-auto text-slate-400 dark:text-slate-500 mb-2" />
                 {jsonFile ? (
-                  <p className="text-sm text-gray-900 font-medium">{jsonFile.name}</p>
+                  <p className="text-sm text-slate-900 dark:text-slate-100 font-medium">{jsonFile.name}</p>
                 ) : (
                   <>
-                    <p className="text-sm text-gray-600">Kliknij aby wybrac plik</p>
-                    <p className="text-xs text-gray-400 mt-1">Eksport JSON z ChatGPT, Claude lub DeepSeek</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400">Kliknij aby wybrac plik</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Eksport JSON z ChatGPT, Claude lub DeepSeek</p>
                   </>
                 )}
               </label>
@@ -359,7 +358,7 @@ export default function AiSyncPage() {
                 onChange={(e) => setImportOptions({ ...importOptions, indexAfterImport: e.target.checked })}
                 className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
               />
-              <span className="text-sm text-gray-700">Indeksuj po imporcie (embeddingi dla RAG)</span>
+              <span className="text-sm text-slate-700 dark:text-slate-300">Indeksuj po imporcie (embeddingi dla RAG)</span>
             </label>
             <label className="flex items-center gap-3">
               <input
@@ -368,7 +367,7 @@ export default function AiSyncPage() {
                 onChange={(e) => setImportOptions({ ...importOptions, createStreams: e.target.checked })}
                 className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
               />
-              <span className="text-sm text-gray-700">Twórz strumienie REFERENCE per aplikacja</span>
+              <span className="text-sm text-slate-700 dark:text-slate-300">Twórz strumienie REFERENCE per aplikacja</span>
             </label>
           </div>
 
@@ -376,16 +375,16 @@ export default function AiSyncPage() {
           <button
             onClick={handleImport}
             disabled={!jsonFile || importing}
-            className="flex items-center gap-2 px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-2 px-6 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {importing ? (
               <>
-                <ArrowPathIcon className="h-4 w-4 animate-spin" />
+                <RefreshCw className="h-4 w-4 animate-spin" />
                 Importowanie...
               </>
             ) : (
               <>
-                <CloudArrowUpIcon className="h-4 w-4" />
+                <Upload className="h-4 w-4" />
                 Importuj
               </>
             )}
@@ -393,24 +392,24 @@ export default function AiSyncPage() {
 
           {/* Import Result */}
           {importResult && (
-            <div className={`mt-6 p-4 rounded-lg ${importResult.success ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'}`}>
+            <div className={`mt-6 p-4 rounded-xl ${importResult.success ? 'bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800'}`}>
               <div className="flex items-center gap-2 mb-2">
                 {importResult.success ? (
-                  <CheckCircleIcon className="h-5 w-5 text-green-600" />
+                  <CheckCircle className="h-5 w-5 text-green-600" />
                 ) : (
-                  <XCircleIcon className="h-5 w-5 text-red-600" />
+                  <XCircle className="h-5 w-5 text-red-600" />
                 )}
-                <span className={`font-medium ${importResult.success ? 'text-green-800' : 'text-red-800'}`}>
+                <span className={`font-medium ${importResult.success ? 'text-green-800 dark:text-green-400' : 'text-red-800 dark:text-red-400'}`}>
                   {importResult.success ? 'Import zakonczony' : 'Import zakonczony z bledami'}
                 </span>
               </div>
-              <div className="text-sm space-y-1">
+              <div className="text-sm space-y-1 text-slate-700 dark:text-slate-300">
                 <p>Zaimportowano: {importResult.conversationsImported}</p>
                 <p>Pominieto (duplikaty): {importResult.conversationsSkipped}</p>
                 {importResult.errors.length > 0 && (
                   <div className="mt-2">
-                    <p className="font-medium text-red-700">Bledy:</p>
-                    <ul className="list-disc list-inside text-red-600">
+                    <p className="font-medium text-red-700 dark:text-red-400">Bledy:</p>
+                    <ul className="list-disc list-inside text-red-600 dark:text-red-400">
                       {importResult.errors.slice(0, 5).map((err, i) => (
                         <li key={i}>{err}</li>
                       ))}
@@ -425,13 +424,13 @@ export default function AiSyncPage() {
 
       {/* Conversations Tab */}
       {activeTab === 'conversations' && (
-        <div className="bg-white rounded-xl border border-gray-200">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
           {/* Filters */}
-          <div className="p-4 border-b border-gray-200 flex gap-4 items-center">
+          <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex gap-4 items-center">
             <select
               value={filterSource}
               onChange={(e) => setFilterSource(e.target.value as AiSource | '')}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-purple-500 focus:border-purple-500"
+              className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:ring-purple-500 focus:border-purple-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
             >
               <option value="">Wszystkie zrodla</option>
               <option value="CHATGPT">ChatGPT</option>
@@ -443,75 +442,75 @@ export default function AiSyncPage() {
               placeholder="Filtruj po aplikacji..."
               value={filterApp}
               onChange={(e) => setFilterApp(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-purple-500 focus:border-purple-500"
+              className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:ring-purple-500 focus:border-purple-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
             />
             <button
               onClick={loadConversations}
-              className="p-2 text-gray-600 hover:text-gray-900"
+              className="p-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
             >
-              <ArrowPathIcon className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
             </button>
             <div className="flex-1" />
             <button
               onClick={handleIndexAll}
-              className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm"
+              className="flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 text-sm transition-colors"
             >
-              <SparklesIcon className="h-4 w-4" />
+              <Sparkles className="h-4 w-4" />
               Indeksuj wszystkie
             </button>
           </div>
 
           {/* Conversations List */}
-          <div className="divide-y divide-gray-100">
+          <div className="divide-y divide-slate-100 dark:divide-slate-700">
             {loading ? (
-              <div className="p-8 text-center text-gray-500">Ladowanie...</div>
+              <div className="p-8 text-center text-slate-500 dark:text-slate-400">Ladowanie...</div>
             ) : conversations.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">Brak konwersacji</div>
+              <div className="p-8 text-center text-slate-500 dark:text-slate-400">Brak konwersacji</div>
             ) : (
               conversations.map((conv) => (
-                <div key={conv.id} className="p-4 hover:bg-gray-50 transition-colors">
+                <div key={conv.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                   <div className="flex items-start gap-4">
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${SOURCE_LABELS[conv.source]?.color}`}>
-                          {SOURCE_LABELS[conv.source]?.icon} {SOURCE_LABELS[conv.source]?.name}
+                          {SOURCE_LABELS[conv.source]?.name}
                         </span>
                         {conv.appName && (
-                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300">
                             {conv.appName}
                           </span>
                         )}
                         {conv.isIndexed ? (
-                          <CheckCircleIcon className="h-4 w-4 text-green-500" />
+                          <CheckCircle className="h-4 w-4 text-green-500" />
                         ) : (
-                          <ClockIcon className="h-4 w-4 text-yellow-500" />
+                          <Clock className="h-4 w-4 text-yellow-500" />
                         )}
                       </div>
-                      <h3 className="font-medium text-gray-900">{conv.title}</h3>
-                      <p className="text-sm text-gray-500 mt-1">
+                      <h3 className="font-medium text-slate-900 dark:text-slate-100">{conv.title}</h3>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                         {conv.messageCount} wiadomosci
-                        {conv.tokenCount && ` • ${conv.tokenCount} tokenow`}
-                        {conv._count?.chunks && ` • ${conv._count.chunks} chunkow`}
+                        {conv.tokenCount && ` \u2022 ${conv.tokenCount} tokenow`}
+                        {conv._count?.chunks && ` \u2022 ${conv._count.chunks} chunkow`}
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
                       {!conv.isIndexed && (
                         <button
                           onClick={() => handleIndex(conv.id)}
-                          className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg"
+                          className="p-2 text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/30 rounded-lg"
                           title="Indeksuj"
                         >
-                          <SparklesIcon className="h-4 w-4" />
+                          <Sparkles className="h-4 w-4" />
                         </button>
                       )}
                       <button
                         onClick={() => handleDelete(conv.id)}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg"
+                        className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg"
                         title="Usun"
                       >
-                        <TrashIcon className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4" />
                       </button>
-                      <ChevronRightIcon className="h-5 w-5 text-gray-400" />
+                      <ChevronRight className="h-5 w-5 text-slate-400 dark:text-slate-500" />
                     </div>
                   </div>
                 </div>
@@ -523,25 +522,25 @@ export default function AiSyncPage() {
 
       {/* Search Tab */}
       {activeTab === 'search' && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Wyszukiwanie semantyczne</h2>
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Wyszukiwanie semantyczne</h2>
 
           <div className="flex gap-3 mb-6">
             <div className="flex-1 relative">
-              <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search className="h-5 w-5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
               <input
                 type="text"
                 placeholder="Szukaj w konwersacjach AI..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-purple-500 focus:border-purple-500"
+                className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:ring-purple-500 focus:border-purple-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
               />
             </div>
             <button
               onClick={handleSearch}
               disabled={searching}
-              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50"
+              className="px-6 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 transition-colors"
             >
               {searching ? 'Szukam...' : 'Szukaj'}
             </button>
@@ -551,32 +550,32 @@ export default function AiSyncPage() {
           {searchResults.length > 0 && (
             <div className="space-y-4">
               {searchResults.map((result, i) => (
-                <div key={i} className="p-4 bg-gray-50 rounded-lg">
+                <div key={i} className="p-4 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
                   <div className="flex items-center gap-2 mb-2">
                     <span className={`px-2 py-0.5 rounded text-xs font-medium ${SOURCE_LABELS[result.source as AiSource]?.color}`}>
                       {result.source}
                     </span>
                     {result.appName && (
-                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-200 text-gray-700">
+                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-300">
                         {result.appName}
                       </span>
                     )}
-                    <span className="text-xs text-gray-500">
+                    <span className="text-xs text-slate-500 dark:text-slate-400">
                       Similarity: {(result.similarity * 100).toFixed(1)}%
                     </span>
                   </div>
-                  <h4 className="font-medium text-gray-900 mb-1">{result.title}</h4>
-                  <p className="text-sm text-gray-600 line-clamp-3">{result.content}</p>
+                  <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-1">{result.title}</h4>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-3">{result.content}</p>
                 </div>
               ))}
             </div>
           )}
 
           {searchResults.length === 0 && searchQuery && !searching && (
-            <p className="text-center text-gray-500 py-8">Brak wynikow</p>
+            <p className="text-center text-slate-500 dark:text-slate-400 py-8">Brak wynikow</p>
           )}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

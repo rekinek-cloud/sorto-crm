@@ -4,17 +4,21 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import {
-  BoltIcon,
-  LightBulbIcon,
-  CheckCircleIcon,
-  XMarkIcon,
-  ArrowRightIcon,
-  ExclamationTriangleIcon,
-  ClockIcon,
-  RocketLaunchIcon,
-  ChartBarIcon,
-  PencilIcon,
-} from '@heroicons/react/24/outline';
+  Zap,
+  Lightbulb,
+  CheckCircle2,
+  X,
+  ArrowRight,
+  AlertTriangle,
+  Clock,
+  Rocket,
+  BarChart3,
+  Pencil,
+  Target,
+  Wrench,
+} from 'lucide-react';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 interface Goal {
   id: string;
@@ -70,8 +74,8 @@ export default function SmartImprovementsPage() {
       const mockGoals: Goal[] = [
         {
           id: '1',
-          title: 'Increase website conversion rate by 15%',
-          description: 'Improve landing page optimization and user experience to boost conversion from 2.3% to 2.65% by Q2 end',
+          title: 'Zwiekszyc konwersje na stronie o 15%',
+          description: 'Poprawic optymalizacje landing page i UX aby podniesc konwersje z 2.3% do 2.65% do konca Q2',
           status: 'ACTIVE',
           smartScore: {
             specific: 85,
@@ -84,8 +88,8 @@ export default function SmartImprovementsPage() {
         },
         {
           id: '2',
-          title: 'Launch mobile app',
-          description: 'Develop and release iOS and Android mobile application',
+          title: 'Uruchomic aplikacje mobilna',
+          description: 'Opracowac i wydac aplikacje mobilna na iOS i Android',
           status: 'ACTIVE',
           smartScore: {
             specific: 60,
@@ -98,8 +102,8 @@ export default function SmartImprovementsPage() {
         },
         {
           id: '3',
-          title: 'Get better at time management',
-          description: 'Improve productivity and organization',
+          title: 'Poprawic zarzadzanie czasem',
+          description: 'Poprawic produktywnosc i organizacje',
           status: 'DRAFT',
           smartScore: {
             specific: 30,
@@ -114,7 +118,7 @@ export default function SmartImprovementsPage() {
 
       setGoals(mockGoals);
       if (mockGoals.length > 0) {
-        setSelectedGoal(mockGoals[1]); // Select the mobile app goal which needs improvement
+        setSelectedGoal(mockGoals[1]);
       }
       setIsLoading(false);
     }, 500);
@@ -122,7 +126,7 @@ export default function SmartImprovementsPage() {
 
   const generateImprovements = async (goalId: string) => {
     setIsGenerating(true);
-    
+
     setTimeout(() => {
       const mockImprovements: GeneratedImprovements = {
         goalId,
@@ -133,10 +137,10 @@ export default function SmartImprovementsPage() {
             dimension: 'specific',
             currentScore: 60,
             targetScore: 85,
-            suggestion: "Define specific features, platforms, and target audience",
-            originalText: "Launch mobile app",
-            improvedText: "Launch iOS and Android mobile app with core features (user authentication, offline sync, push notifications) for existing web users by Q3 2024",
-            explanation: "Specifies platforms, key features, and target audience",
+            suggestion: "Zdefiniuj konkretne funkcje, platformy i grupę docelową",
+            originalText: "Uruchomić aplikację mobilną",
+            improvedText: "Uruchomić aplikację mobilną na iOS i Android z kluczowymi funkcjami (autentykacja, synchronizacja offline, powiadomienia push) dla obecnych użytkowników webowych do Q3 2024",
+            explanation: "Precyzuje platformy, kluczowe funkcje i grupę docelową",
             priority: 'HIGH',
             applied: false
           },
@@ -146,10 +150,10 @@ export default function SmartImprovementsPage() {
             dimension: 'measurable',
             currentScore: 40,
             targetScore: 90,
-            suggestion: "Add concrete metrics and success criteria",
-            originalText: "Develop and release iOS and Android mobile application",
-            improvedText: "Develop and release mobile app achieving 1,000 downloads in first month, 4.5+ app store rating, and 60% feature adoption rate",
-            explanation: "Includes specific download targets, quality metrics, and usage indicators",
+            suggestion: "Dodaj konkretne metryki i kryteria sukcesu",
+            originalText: "Opracować i wydać aplikację mobilną na iOS i Android",
+            improvedText: "Opracować i wydać aplikację mobilną osiągając 1000 pobrań w pierwszym miesiącu, ocenę 4.5+ w sklepie i 60% wskaźnik adopcji funkcji",
+            explanation: "Zawiera konkretne cele pobrań, metryki jakości i wskaźniki użytkowania",
             priority: 'HIGH',
             applied: false
           },
@@ -159,10 +163,10 @@ export default function SmartImprovementsPage() {
             dimension: 'timeBound',
             currentScore: 65,
             targetScore: 85,
-            suggestion: "Add specific milestones and deadlines",
-            originalText: "by Q3 2024",
-            improvedText: "Beta release by August 15, 2024; App store submission by September 1; Full launch by September 30, 2024",
-            explanation: "Breaks down timeline into specific milestones with clear deadlines",
+            suggestion: "Dodaj konkretne kamienie milowe i terminy",
+            originalText: "do Q3 2024",
+            improvedText: "Wydanie beta do 15 sierpnia 2024; Złożenie do sklepu do 1 września; Pełne uruchomienie do 30 września 2024",
+            explanation: "Dzieli oś czasu na konkretne kamienie milowe z jasnymi terminami",
             priority: 'MEDIUM',
             applied: false
           },
@@ -172,10 +176,10 @@ export default function SmartImprovementsPage() {
             dimension: 'achievable',
             currentScore: 70,
             targetScore: 80,
-            suggestion: "Consider resource constraints and validate feasibility",
-            originalText: "Develop and release iOS and Android mobile application",
-            improvedText: "Develop MVP mobile app with 2 developers over 4 months, focusing on core features validated through user testing",
-            explanation: "Accounts for team size, timeline, and scope validation",
+            suggestion: "Rozważ ograniczenia zasobowe i zweryfikuj wykonalność",
+            originalText: "Opracować i wydać aplikację mobilną na iOS i Android",
+            improvedText: "Opracować MVP aplikacji z 2 developerami przez 4 miesiące, skupiając się na kluczowych funkcjach zwalidowanych testami użytkowników",
+            explanation: "Uwzględnia wielkość zespołu, oś czasu i walidację zakresu",
             priority: 'MEDIUM',
             applied: false
           }
@@ -186,30 +190,28 @@ export default function SmartImprovementsPage() {
 
       setImprovements(mockImprovements);
       setIsGenerating(false);
-      toast.success('Improvements generated successfully!');
+      toast.success('Ulepszenia wygenerowane pomyślnie!');
     }, 2500);
   };
 
   const applyImprovement = (improvement: Improvement) => {
     setImprovements(prev => {
       if (!prev) return prev;
-      
+
       return {
         ...prev,
-        improvements: prev.improvements.map(imp => 
+        improvements: prev.improvements.map(imp =>
           imp.id === improvement.id ? { ...imp, applied: true } : imp
         )
       };
     });
 
-    // Update goal score
     setSelectedGoal(prev => {
       if (!prev) return prev;
-      
+
       const updatedScore = { ...prev.smartScore };
       updatedScore[improvement.dimension] = improvement.targetScore;
-      
-      // Recalculate overall score
+
       const dimensions = ['specific', 'measurable', 'achievable', 'relevant', 'timeBound'] as const;
       const average = dimensions.reduce((sum, dim) => sum + updatedScore[dim], 0) / dimensions.length;
       updatedScore.overall = Math.round(average);
@@ -220,85 +222,81 @@ export default function SmartImprovementsPage() {
       };
     });
 
-    toast.success('Improvement applied to goal!');
+    toast.success('Ulepszenie zastosowane do celu!');
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'HIGH': return 'text-red-600 bg-red-100';
-      case 'MEDIUM': return 'text-yellow-600 bg-yellow-100';
-      case 'LOW': return 'text-green-600 bg-green-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'HIGH': return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30';
+      case 'MEDIUM': return 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30';
+      case 'LOW': return 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30';
+      default: return 'text-slate-600 bg-slate-100 dark:text-slate-400 dark:bg-slate-700';
     }
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-green-600';
-    if (score >= 60) return 'text-yellow-600';
-    return 'text-red-600';
+    if (score >= 80) return 'text-green-600 dark:text-green-400';
+    if (score >= 60) return 'text-yellow-600 dark:text-yellow-400';
+    return 'text-red-600 dark:text-red-400';
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+    return new Date(dateString).toLocaleDateString('pl-PL');
   };
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
+      <PageShell>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        </div>
+      </PageShell>
     );
   }
 
   return (
-    <motion.div
-      className="space-y-6"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">SMART Improvements</h1>
-          <p className="text-gray-600">AI-powered suggestions to enhance your goals</p>
-        </div>
-        <div className="flex items-center space-x-3">
-          {selectedGoal && (
+    <PageShell>
+      <PageHeader
+        title="Ulepszenia SMART"
+        subtitle="Sugestie AI do ulepszania celów"
+        icon={Zap}
+        iconColor="text-amber-600"
+        actions={
+          selectedGoal ? (
             <button
               onClick={() => generateImprovements(selectedGoal.id)}
               disabled={isGenerating}
-              className="btn btn-primary"
+              className="flex items-center px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50"
             >
               {isGenerating ? (
                 <>
                   <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                  Generating...
+                  Generowanie...
                 </>
               ) : (
                 <>
-                  <BoltIcon className="w-5 h-5 mr-2" />
-                  Generate Improvements
+                  <Zap className="w-5 h-5 mr-2" />
+                  Generuj ulepszenia
                 </>
               )}
             </button>
-          )}
-        </div>
-      </div>
+          ) : undefined
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Goals List */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900">Goals ({goals.length})</h3>
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Cele ({goals.length})</h3>
             </div>
-            <div className="divide-y divide-gray-200">
+            <div className="divide-y divide-slate-200 dark:divide-slate-700">
               {goals.map((goal, index) => (
                 <motion.div
                   key={goal.id}
-                  className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-                    selectedGoal?.id === goal.id ? 'bg-primary-50 border-l-4 border-primary-500' : ''
+                  className={`p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${
+                    selectedGoal?.id === goal.id ? 'bg-indigo-50 dark:bg-indigo-900/20 border-l-4 border-indigo-500' : ''
                   }`}
                   onClick={() => {
                     setSelectedGoal(goal);
@@ -310,25 +308,25 @@ export default function SmartImprovementsPage() {
                 >
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-gray-900 text-sm">{goal.title}</h4>
+                      <h4 className="font-medium text-slate-900 dark:text-slate-100 text-sm">{goal.title}</h4>
                       <span className={`text-sm font-medium ${getScoreColor(goal.smartScore.overall)}`}>
                         {goal.smartScore.overall}%
                       </span>
                     </div>
-                    
+
                     <div className="grid grid-cols-5 gap-1 text-xs">
                       {Object.entries(goal.smartScore).filter(([key]) => key !== 'overall').map(([dimension, score]) => (
                         <div key={dimension} className="text-center">
                           <div className={`font-medium ${getScoreColor(score)}`}>{score}</div>
-                          <div className="text-gray-500 capitalize">{dimension.charAt(0)}</div>
+                          <div className="text-slate-500 dark:text-slate-400 capitalize">{dimension.charAt(0)}</div>
                         </div>
                       ))}
                     </div>
-                    
+
                     {goal.smartScore.overall < 70 && (
-                      <div className="flex items-center text-xs text-orange-600">
-                        <ExclamationTriangleIcon className="w-3 h-3 mr-1" />
-                        Needs improvement
+                      <div className="flex items-center text-xs text-orange-600 dark:text-orange-400">
+                        <AlertTriangle className="w-3 h-3 mr-1" />
+                        Wymaga ulepszenia
                       </div>
                     )}
                   </div>
@@ -343,23 +341,23 @@ export default function SmartImprovementsPage() {
           {selectedGoal ? (
             <div className="space-y-6">
               {/* Goal Overview */}
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+              <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex-1">
-                    <h3 className="text-lg font-semibold text-gray-900">{selectedGoal.title}</h3>
-                    <p className="text-gray-600 mt-1">{selectedGoal.description}</p>
+                    <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{selectedGoal.title}</h3>
+                    <p className="text-slate-600 dark:text-slate-400 mt-1">{selectedGoal.description}</p>
                   </div>
                   <span className={`text-2xl font-bold ${getScoreColor(selectedGoal.smartScore.overall)}`}>
                     {selectedGoal.smartScore.overall}%
                   </span>
                 </div>
-                
+
                 <div className="grid grid-cols-5 gap-4 mt-4">
                   {Object.entries(selectedGoal.smartScore).filter(([key]) => key !== 'overall').map(([dimension, score]) => (
                     <div key={dimension} className="text-center">
                       <div className={`text-xl font-bold ${getScoreColor(score)}`}>{score}</div>
-                      <div className="text-sm text-gray-600 capitalize">{dimension}</div>
-                      <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
+                      <div className="text-sm text-slate-600 dark:text-slate-400 capitalize">{dimension}</div>
+                      <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1 mt-1">
                         <div
                           className={`h-1 rounded-full transition-all duration-300 ${
                             score >= 80 ? 'bg-green-500' : score >= 60 ? 'bg-yellow-500' : 'bg-red-500'
@@ -375,21 +373,21 @@ export default function SmartImprovementsPage() {
               {/* Improvements */}
               {improvements ? (
                 <div className="space-y-4">
-                  <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+                  <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        Improvement Suggestions ({improvements.improvements.length})
+                      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                        Sugestie ulepszeń ({improvements.improvements.length})
                       </h3>
-                      <div className="text-sm text-gray-500">
-                        Generated: {formatDate(improvements.generatedAt)}
+                      <div className="text-sm text-slate-500 dark:text-slate-400">
+                        Wygenerowano: {formatDate(improvements.generatedAt)}
                       </div>
                     </div>
-                    
-                    <div className="bg-blue-50 p-4 rounded-lg mb-6">
+
+                    <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg mb-6 border border-blue-200 dark:border-blue-800/30">
                       <div className="flex items-center">
-                        <LightBulbIcon className="w-5 h-5 text-blue-600 mr-2" />
-                        <span className="text-blue-900 font-medium">
-                          Potential improvement: +{improvements.overallImpact} points overall
+                        <Lightbulb className="w-5 h-5 text-blue-600 dark:text-blue-400 mr-2" />
+                        <span className="text-blue-900 dark:text-blue-300 font-medium">
+                          Potencjalna poprawa: +{improvements.overallImpact} punktów ogólnie
                         </span>
                       </div>
                     </div>
@@ -398,90 +396,90 @@ export default function SmartImprovementsPage() {
                       {improvements.improvements.map((improvement, index) => (
                         <motion.div
                           key={improvement.id}
-                          className="border border-gray-200 rounded-lg p-4"
+                          className="border border-slate-200 dark:border-slate-700 rounded-lg p-4"
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ duration: 0.3, delay: index * 0.1 }}
                         >
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center space-x-3">
-                              <span className="text-lg font-semibold text-gray-900 capitalize">
+                              <span className="text-lg font-semibold text-slate-900 dark:text-slate-100 capitalize">
                                 {improvement.dimension}
                               </span>
                               <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(improvement.priority)}`}>
-                                {improvement.priority}
+                                {improvement.priority === 'HIGH' ? 'Wysoki' : improvement.priority === 'MEDIUM' ? 'Średni' : 'Niski'}
                               </span>
                               <div className="flex items-center space-x-2 text-sm">
                                 <span className={getScoreColor(improvement.currentScore)}>
                                   {improvement.currentScore}
                                 </span>
-                                <ArrowRightIcon className="w-4 h-4 text-gray-400" />
+                                <ArrowRight className="w-4 h-4 text-slate-400 dark:text-slate-500" />
                                 <span className={getScoreColor(improvement.targetScore)}>
                                   {improvement.targetScore}
                                 </span>
                               </div>
                             </div>
-                            
+
                             <div className="flex items-center space-x-2">
                               <button
                                 onClick={() => {
                                   setSelectedImprovement(improvement);
                                   setShowComparisonModal(true);
                                 }}
-                                className="btn btn-outline text-sm py-1 px-2"
+                                className="flex items-center px-2 py-1 text-sm border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                               >
-                                <PencilIcon className="w-4 h-4 mr-1" />
-                                Preview
+                                <Pencil className="w-4 h-4 mr-1" />
+                                Podgląd
                               </button>
                               <button
                                 onClick={() => applyImprovement(improvement)}
                                 disabled={improvement.applied}
-                                className={`btn text-sm py-1 px-2 ${
-                                  improvement.applied 
-                                    ? 'btn-outline opacity-50 cursor-not-allowed' 
-                                    : 'btn-primary'
+                                className={`flex items-center px-2 py-1 text-sm rounded-lg transition-colors ${
+                                  improvement.applied
+                                    ? 'border border-slate-300 dark:border-slate-600 text-slate-400 dark:text-slate-500 opacity-50 cursor-not-allowed'
+                                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
                                 }`}
                               >
                                 {improvement.applied ? (
                                   <>
-                                    <CheckCircleIcon className="w-4 h-4 mr-1" />
-                                    Applied
+                                    <CheckCircle2 className="w-4 h-4 mr-1" />
+                                    Zastosowano
                                   </>
                                 ) : (
-                                  'Apply'
+                                  'Zastosuj'
                                 )}
                               </button>
                             </div>
                           </div>
-                          
-                          <p className="text-gray-700 mb-2">{improvement.suggestion}</p>
-                          <p className="text-sm text-gray-600">{improvement.explanation}</p>
+
+                          <p className="text-slate-700 dark:text-slate-300 mb-2">{improvement.suggestion}</p>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">{improvement.explanation}</p>
                         </motion.div>
                       ))}
                     </div>
                   </div>
                 </div>
               ) : (
-                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-                  <div className="text-6xl mb-4">🔧</div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Generate Improvements</h3>
-                  <p className="text-gray-600 mb-4">
-                    Click "Generate Improvements" to get AI-powered suggestions for this goal
+                <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-12 text-center">
+                  <Wrench className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Generuj ulepszenia</h3>
+                  <p className="text-slate-600 dark:text-slate-400 mb-4">
+                    Kliknij &quot;Generuj ulepszenia&quot;, aby uzyskać sugestie AI dla tego celu
                   </p>
                   <button
                     onClick={() => generateImprovements(selectedGoal.id)}
                     disabled={isGenerating}
-                    className="btn btn-primary"
+                    className="inline-flex items-center px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors disabled:opacity-50"
                   >
                     {isGenerating ? (
                       <>
                         <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                        Generating...
+                        Generowanie...
                       </>
                     ) : (
                       <>
-                        <BoltIcon className="w-5 h-5 mr-2" />
-                        Generate Improvements
+                        <Zap className="w-5 h-5 mr-2" />
+                        Generuj ulepszenia
                       </>
                     )}
                   </button>
@@ -489,10 +487,10 @@ export default function SmartImprovementsPage() {
               )}
             </div>
           ) : (
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-              <div className="text-6xl mb-4">🎯</div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a Goal</h3>
-              <p className="text-gray-600">Choose a goal from the list to generate improvements</p>
+            <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-12 text-center">
+              <Target className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Wybierz cel</h3>
+              <p className="text-slate-600 dark:text-slate-400">Wybierz cel z listy, aby wygenerować ulepszenia</p>
             </div>
           )}
         </div>
@@ -503,21 +501,21 @@ export default function SmartImprovementsPage() {
         {showComparisonModal && selectedImprovement && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <motion.div
-              className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+              className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
             >
-              <div className="px-6 py-4 border-b border-gray-200">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    {selectedImprovement.dimension.charAt(0).toUpperCase() + selectedImprovement.dimension.slice(1)} Improvement Preview
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    Podgląd ulepszenia: {selectedImprovement.dimension.charAt(0).toUpperCase() + selectedImprovement.dimension.slice(1)}
                   </h3>
                   <button
                     onClick={() => setShowComparisonModal(false)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                   >
-                    <XMarkIcon className="w-6 h-6" />
+                    <X className="w-6 h-6" />
                   </button>
                 </div>
               </div>
@@ -525,38 +523,38 @@ export default function SmartImprovementsPage() {
               <div className="p-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-3">Current Version</h4>
-                    <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                      <p className="text-red-900">{selectedImprovement.originalText}</p>
-                      <div className="mt-2 text-sm text-red-700">
-                        Score: {selectedImprovement.currentScore}/100
+                    <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-3">Obecna wersja</h4>
+                    <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-lg">
+                      <p className="text-red-900 dark:text-red-300">{selectedImprovement.originalText}</p>
+                      <div className="mt-2 text-sm text-red-700 dark:text-red-400">
+                        Wynik: {selectedImprovement.currentScore}/100
                       </div>
                     </div>
                   </div>
-                  
+
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-3">Improved Version</h4>
-                    <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                      <p className="text-green-900">{selectedImprovement.improvedText}</p>
-                      <div className="mt-2 text-sm text-green-700">
-                        Score: {selectedImprovement.targetScore}/100
+                    <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-3">Ulepszona wersja</h4>
+                    <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/30 rounded-lg">
+                      <p className="text-green-900 dark:text-green-300">{selectedImprovement.improvedText}</p>
+                      <div className="mt-2 text-sm text-green-700 dark:text-green-400">
+                        Wynik: {selectedImprovement.targetScore}/100
                       </div>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="mt-6">
-                  <h4 className="font-medium text-gray-900 mb-2">Why This Improvement Helps</h4>
-                  <p className="text-gray-700">{selectedImprovement.explanation}</p>
+                  <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">Dlaczego to ulepszenie pomaga</h4>
+                  <p className="text-slate-700 dark:text-slate-300">{selectedImprovement.explanation}</p>
                 </div>
               </div>
 
-              <div className="px-6 py-4 border-t border-gray-200 flex space-x-3">
+              <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex space-x-3">
                 <button
                   onClick={() => setShowComparisonModal(false)}
-                  className="btn btn-outline flex-1"
+                  className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
-                  Close
+                  Zamknij
                 </button>
                 <button
                   onClick={() => {
@@ -564,9 +562,9 @@ export default function SmartImprovementsPage() {
                     setShowComparisonModal(false);
                   }}
                   disabled={selectedImprovement.applied}
-                  className="btn btn-primary flex-1"
+                  className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50"
                 >
-                  {selectedImprovement.applied ? 'Already Applied' : 'Apply Improvement'}
+                  {selectedImprovement.applied ? 'Już zastosowano' : 'Zastosuj ulepszenie'}
                 </button>
               </div>
             </motion.div>
@@ -575,29 +573,32 @@ export default function SmartImprovementsPage() {
       </AnimatePresence>
 
       {/* Improvement Tips */}
-      <div className="bg-blue-50 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-blue-900 mb-3">💡 SMART Improvement Tips</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800">
+      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-2xl p-6 border border-blue-200 dark:border-blue-800/30">
+        <h3 className="text-lg font-semibold text-blue-900 dark:text-blue-300 mb-3 flex items-center gap-2">
+          <Lightbulb className="h-5 w-5" />
+          Wskazówki dotyczące ulepszeń SMART
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-blue-800 dark:text-blue-300">
           <div>
-            <strong>Specific:</strong> Use concrete details, numbers, and clear outcomes
+            <strong>Specific (Konkretny):</strong> Użyj konkretnych szczegółów, liczb i jasnych rezultatów
           </div>
           <div>
-            <strong>Measurable:</strong> Include metrics, KPIs, and tracking methods
+            <strong>Measurable (Mierzalny):</strong> Dołącz metryki, KPI i metody śledzenia
           </div>
           <div>
-            <strong>Achievable:</strong> Consider resources, skills, and constraints
+            <strong>Achievable (Osiągalny):</strong> Rozważ zasoby, umiejętności i ograniczenia
           </div>
           <div>
-            <strong>Relevant:</strong> Align with broader objectives and priorities
+            <strong>Relevant (Istotny):</strong> Dopasuj do szerszych celów i priorytetów
           </div>
           <div>
-            <strong>Time-bound:</strong> Set specific deadlines and milestones
+            <strong>Time-bound (Czasowy):</strong> Ustaw konkretne terminy i kamienie milowe
           </div>
           <div>
-            <strong>Review:</strong> Regularly assess and refine your goals
+            <strong>Przegląd:</strong> Regularnie oceniaj i udoskonalaj swoje cele
           </div>
         </div>
       </div>
-    </motion.div>
+    </PageShell>
   );
 }

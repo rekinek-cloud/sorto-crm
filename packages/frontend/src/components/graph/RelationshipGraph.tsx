@@ -5,14 +5,14 @@ import dynamic from 'next/dynamic';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import { LoadingSpinner } from '../ui/LoadingSpinner';
-import { 
-  ArrowsPointingInIcon, 
-  ArrowsPointingOutIcon,
-  FunnelIcon,
-  ArrowPathIcon,
-  PhotoIcon,
-  InformationCircleIcon
-} from '@heroicons/react/24/outline';
+import {
+  Minimize2,
+  Maximize2,
+  Filter,
+  RefreshCw,
+  Image,
+  Info
+} from 'lucide-react';
 import { useRelationshipData } from '../../hooks/useRelationshipData';
 import { GraphControls } from './GraphControls';
 import { GraphLegend } from './GraphLegend';
@@ -183,7 +183,7 @@ export function RelationshipGraph({
     <Card className="p-6">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-semibold flex items-center gap-2">
-          <InformationCircleIcon className="w-5 h-5" />
+          <Info className="w-5 h-5" />
           Mapa Powiązań
         </h3>
         <div className="flex items-center gap-2">
@@ -193,7 +193,7 @@ export function RelationshipGraph({
             size="sm"
             title="Wycentruj graf"
           >
-            <ArrowsPointingInIcon className="w-4 h-4" />
+            <Minimize2 className="w-4 h-4" />
           </Button>
           <Button
             onClick={exportImage}
@@ -201,7 +201,7 @@ export function RelationshipGraph({
             size="sm"
             title="Eksportuj jako obraz"
           >
-            <PhotoIcon className="w-4 h-4" />
+            <Image className="w-4 h-4" />
           </Button>
           <Button
             onClick={resetGraph}
@@ -209,7 +209,7 @@ export function RelationshipGraph({
             size="sm"
             title="Resetuj graf"
           >
-            <ArrowPathIcon className="w-4 h-4" />
+            <RefreshCw className="w-4 h-4" />
           </Button>
         </div>
       </div>

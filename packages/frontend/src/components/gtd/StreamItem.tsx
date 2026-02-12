@@ -3,15 +3,15 @@
 import React from 'react';
 import { Stream } from '@/types/gtd';
 import {
-  PencilIcon,
-  TrashIcon,
-  ArchiveBoxIcon,
-  ArchiveBoxXMarkIcon,
-  DocumentDuplicateIcon,
-  CheckBadgeIcon,
-  ClockIcon,
-  DocumentIcon
-} from '@heroicons/react/24/outline';
+  Pencil,
+  Trash2,
+  Archive,
+  ArchiveRestore,
+  Copy,
+  BadgeCheck,
+  Clock,
+  FileText
+} from 'lucide-react';
 
 interface StreamItemProps {
   stream: Stream;
@@ -35,14 +35,14 @@ export default function StreamItem({
     switch (status) {
       case 'FLOWING':
       case 'ACTIVE':
-        return <CheckBadgeIcon className="h-5 w-5 text-blue-500" />;
+        return <BadgeCheck className="h-5 w-5 text-blue-500" />;
       case 'FROZEN':
       case 'ARCHIVED':
-        return <ArchiveBoxIcon className="h-5 w-5 text-slate-500" />;
+        return <Archive className="h-5 w-5 text-slate-500" />;
       case 'TEMPLATE':
-        return <DocumentIcon className="h-5 w-5 text-purple-500" />;
+        return <FileText className="h-5 w-5 text-purple-500" />;
       default:
-        return <ClockIcon className="h-5 w-5 text-yellow-500" />;
+        return <Clock className="h-5 w-5 text-yellow-500" />;
     }
   };
 
@@ -133,7 +133,7 @@ export default function StreamItem({
             className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
             title="Edytuj strumień"
           >
-            <PencilIcon className="h-4 w-4" />
+            <Pencil className="h-4 w-4" />
           </button>
 
           <button
@@ -144,7 +144,7 @@ export default function StreamItem({
             className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg"
             title="Duplikuj strumień"
           >
-            <DocumentDuplicateIcon className="h-4 w-4" />
+            <Copy className="h-4 w-4" />
           </button>
 
           <button
@@ -157,9 +157,9 @@ export default function StreamItem({
             title={(stream.status as string) === 'ARCHIVED' || (stream.status as string) === 'FROZEN' ? 'Odmroź strumień' : 'Zamroź strumień'}
           >
             {(stream.status as string) === 'ARCHIVED' || (stream.status as string) === 'FROZEN' ? (
-              <ArchiveBoxXMarkIcon className="h-4 w-4" />
+              <ArchiveRestore className="h-4 w-4" />
             ) : (
-              <ArchiveBoxIcon className="h-4 w-4" />
+              <Archive className="h-4 w-4" />
             )}
           </button>
 
@@ -171,7 +171,7 @@ export default function StreamItem({
             className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
             title="Usuń strumień"
           >
-            <TrashIcon className="h-4 w-4" />
+            <Trash2 className="h-4 w-4" />
           </button>
         </div>
       </div>

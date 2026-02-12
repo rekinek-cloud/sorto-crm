@@ -2,18 +2,20 @@
 
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
-  MapIcon,
-  ArrowRightIcon,
-  PlusIcon,
-  RectangleStackIcon,
-  ArrowPathIcon,
-  MagnifyingGlassPlusIcon,
-  MagnifyingGlassMinusIcon,
-  ArrowsPointingOutIcon
-} from '@heroicons/react/24/outline';
+  Map,
+  ArrowRight,
+  Plus,
+  Layers,
+  RefreshCw,
+  ZoomIn,
+  ZoomOut,
+  Maximize2,
+} from 'lucide-react';
 import Link from 'next/link';
 import apiClient from '@/lib/api/client';
 import { toast } from 'react-hot-toast';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 interface Stream {
   id: string;
@@ -58,15 +60,15 @@ const ROLE_COLORS: Record<string, string> = {
 };
 
 const ROLE_LABELS: Record<string, string> = {
-  INBOX: 'Źródło',
+  INBOX: 'Zrodlo',
   PROJECTS: 'Projektowy',
-  AREAS: 'Ciągły',
+  AREAS: 'Ciagly',
   REFERENCE: 'Referencyjny',
-  SOMEDAY_MAYBE: 'Zamrożony',
+  SOMEDAY_MAYBE: 'Zamrozony',
   NEXT_ACTIONS: 'Zadania',
-  WAITING_FOR: 'Oczekujące',
+  WAITING_FOR: 'Oczekujace',
   CONTEXTS: 'Kontekst',
-  CUSTOM: 'Własny',
+  CUSTOM: 'Wlasny',
 };
 
 export default function StreamsMapPage() {
@@ -100,7 +102,7 @@ export default function StreamsMapPage() {
       }
     } catch (error) {
       console.error('Error fetching streams:', error);
-      toast.error('Nie udało się pobrać strumieni');
+      toast.error('Nie udalo sie pobrac strumieni');
     } finally {
       setLoading(false);
     }
@@ -256,84 +258,79 @@ export default function StreamsMapPage() {
 
   if (loading) {
     return (
-      <div className="p-6 flex items-center justify-center h-[calc(100vh-200px)]">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Ładowanie mapy strumieni...</p>
+      <PageShell>
+        <div className="flex items-center justify-center h-[calc(100vh-200px)]">
+          <div className="text-center">
+            <RefreshCw className="h-12 w-12 animate-spin text-blue-600 dark:text-blue-400 mx-auto mb-4" />
+            <p className="text-slate-600 dark:text-slate-400">Ladowanie mapy strumieni...</p>
+          </div>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="p-6 h-full">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <MapIcon className="h-6 w-6 text-blue-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Mapa Strumieni</h1>
-            <p className="text-sm text-gray-600">
-              {streams.length} strumieni {relations.length > 0 ? `• ${relations.length} powiązań` : ''}
-            </p>
-          </div>
-        </div>
+    <PageShell>
+      <PageHeader
+        title="Mapa Strumieni"
+        subtitle={`${streams.length} strumieni${relations.length > 0 ? ` / ${relations.length} powiazan` : ''}`}
+        icon={Map}
+        iconColor="text-blue-600"
+        actions={
+          <div className="flex items-center gap-2">
+            {/* Zoom controls */}
+            <div className="flex items-center gap-1 bg-white/80 dark:bg-slate-800/80 border border-white/20 dark:border-slate-700/30 rounded-xl p-1">
+              <button
+                onClick={() => setZoom(z => Math.max(0.3, z - 0.1))}
+                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-lg"
+                title="Pomniejsz"
+              >
+                <ZoomOut className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+              </button>
+              <span className="px-2 text-sm text-slate-600 dark:text-slate-400 min-w-[50px] text-center">
+                {Math.round(zoom * 100)}%
+              </span>
+              <button
+                onClick={() => setZoom(z => Math.min(2, z + 0.1))}
+                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-lg"
+                title="Powieksz"
+              >
+                <ZoomIn className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+              </button>
+              <button
+                onClick={resetView}
+                className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-700/50 rounded-lg"
+                title="Resetuj widok"
+              >
+                <Maximize2 className="h-4 w-4 text-slate-600 dark:text-slate-400" />
+              </button>
+            </div>
 
-        <div className="flex items-center gap-2">
-          {/* Zoom controls */}
-          <div className="flex items-center gap-1 bg-white border rounded-lg p-1">
             <button
-              onClick={() => setZoom(z => Math.max(0.3, z - 0.1))}
-              className="p-1.5 hover:bg-gray-100 rounded"
-              title="Pomniejsz"
+              onClick={fetchData}
+              className="flex items-center gap-2 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-300"
             >
-              <MagnifyingGlassMinusIcon className="h-4 w-4" />
+              <RefreshCw className="h-4 w-4" />
+              Odswiez
             </button>
-            <span className="px-2 text-sm text-gray-600 min-w-[50px] text-center">
-              {Math.round(zoom * 100)}%
-            </span>
-            <button
-              onClick={() => setZoom(z => Math.min(2, z + 0.1))}
-              className="p-1.5 hover:bg-gray-100 rounded"
-              title="Powiększ"
+
+            <Link
+              href="/dashboard/streams"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
             >
-              <MagnifyingGlassPlusIcon className="h-4 w-4" />
-            </button>
-            <button
-              onClick={resetView}
-              className="p-1.5 hover:bg-gray-100 rounded"
-              title="Resetuj widok"
-            >
-              <ArrowsPointingOutIcon className="h-4 w-4" />
-            </button>
+              <Layers className="h-4 w-4" />
+              Strumienie
+            </Link>
           </div>
-
-          <button
-            onClick={fetchData}
-            className="flex items-center gap-2 px-3 py-2 border rounded-lg hover:bg-gray-50"
-          >
-            <ArrowPathIcon className="h-4 w-4" />
-            Odśwież
-          </button>
-
-          <Link
-            href="/dashboard/streams"
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            <RectangleStackIcon className="h-4 w-4" />
-            Strumienie
-          </Link>
-        </div>
-      </div>
+        }
+      />
 
       {/* Legend */}
       <div className="flex flex-wrap gap-2 mb-4">
         {Object.entries(ROLE_LABELS).slice(0, 6).map(([role, label]) => (
           <span
             key={role}
-            className="inline-flex items-center gap-1.5 px-2 py-1 text-xs rounded-full border"
+            className="inline-flex items-center gap-1.5 px-2 py-1 text-xs rounded-full border dark:text-slate-300"
             style={{
               borderColor: ROLE_COLORS[role],
               backgroundColor: `${ROLE_COLORS[role]}10`
@@ -350,28 +347,28 @@ export default function StreamsMapPage() {
 
       {/* Map Canvas */}
       {streams.length === 0 ? (
-        <div className="bg-white rounded-xl border border-gray-200 p-8">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-8">
           <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="p-4 bg-gray-100 rounded-full mb-4">
-              <MapIcon className="h-12 w-12 text-gray-400" />
+            <div className="p-4 bg-slate-100 dark:bg-slate-700/50 rounded-full mb-4">
+              <Map className="h-12 w-12 text-slate-400 dark:text-slate-500" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Brak strumieni</h3>
-            <p className="text-gray-600 max-w-md mb-6">
-              Utwórz strumienie, aby zobaczyć mapę wizualizującą ich hierarchię.
+            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">Brak strumieni</h3>
+            <p className="text-slate-600 dark:text-slate-400 max-w-md mb-6">
+              Utworz strumienie, aby zobaczyc mape wizualizujaca ich hierarchie.
             </p>
             <Link
               href="/dashboard/streams"
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors"
             >
-              <PlusIcon className="h-4 w-4" />
-              Utwórz strumień
+              <Plus className="h-4 w-4" />
+              Utworz strumien
             </Link>
           </div>
         </div>
       ) : (
         <div
           ref={containerRef}
-          className="bg-white rounded-xl border border-gray-200 overflow-hidden relative"
+          className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm overflow-hidden relative"
           style={{ height: 'calc(100vh - 280px)', cursor: isDragging ? 'grabbing' : 'grab' }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
@@ -383,7 +380,7 @@ export default function StreamsMapPage() {
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: 'radial-gradient(circle, #e5e7eb 1px, transparent 1px)',
+              backgroundImage: 'radial-gradient(circle, #cbd5e1 1px, transparent 1px)',
               backgroundSize: `${20 * zoom}px ${20 * zoom}px`,
               backgroundPosition: `${pan.x}px ${pan.y}px`,
             }}
@@ -449,8 +446,8 @@ export default function StreamsMapPage() {
               return (
                 <div
                   key={node.id}
-                  className={`absolute bg-white rounded-lg border-2 shadow-sm hover:shadow-md transition-shadow cursor-pointer ${
-                    isSelected ? 'ring-2 ring-blue-500 ring-offset-2' : ''
+                  className={`absolute bg-white dark:bg-slate-800 rounded-lg border-2 shadow-sm hover:shadow-md transition-shadow cursor-pointer ${
+                    isSelected ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-900' : ''
                   }`}
                   style={{
                     left: node.x,
@@ -472,7 +469,7 @@ export default function StreamsMapPage() {
                   {/* Content */}
                   <div className="p-3">
                     <div className="flex items-start justify-between gap-2">
-                      <h3 className="font-medium text-gray-900 text-sm truncate flex-1">
+                      <h3 className="font-medium text-slate-900 dark:text-slate-100 text-sm truncate flex-1">
                         {node.stream.name}
                       </h3>
                       {node.stream.gtdRole && (
@@ -486,17 +483,17 @@ export default function StreamsMapPage() {
                     </div>
 
                     {node.stream.description && (
-                      <p className="text-xs text-gray-500 mt-1 line-clamp-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-1">
                         {node.stream.description}
                       </p>
                     )}
 
-                    <div className="flex items-center gap-2 mt-2 text-[10px] text-gray-400">
+                    <div className="flex items-center gap-2 mt-2 text-[10px] text-slate-400 dark:text-slate-500">
                       {node.stream._count?.tasks !== undefined && (
-                        <span>{node.stream._count.tasks} zadań</span>
+                        <span>{node.stream._count.tasks} zadan</span>
                       )}
                       {node.children.length > 0 && (
-                        <span>• {node.children.length} podstrumieni</span>
+                        <span>/ {node.children.length} podstrumieni</span>
                       )}
                     </div>
                   </div>
@@ -509,42 +506,42 @@ export default function StreamsMapPage() {
 
       {/* Selected stream details */}
       {selectedStream && (
-        <div className="fixed bottom-6 right-6 bg-white rounded-xl shadow-lg border p-4 w-80 z-50">
+        <div className="fixed bottom-6 right-6 bg-white/90 backdrop-blur-xl dark:bg-slate-800/90 rounded-2xl shadow-lg border border-white/20 dark:border-slate-700/30 p-4 w-80 z-50">
           <div className="flex items-start justify-between mb-3">
             <div>
-              <h3 className="font-semibold text-gray-900">{selectedStream.name}</h3>
-              <p className="text-sm text-gray-500">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100">{selectedStream.name}</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
                 {ROLE_LABELS[selectedStream.gtdRole || ''] || selectedStream.streamType}
               </p>
             </div>
             <button
               onClick={() => setSelectedStream(null)}
-              className="text-gray-400 hover:text-gray-600"
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
             >
               ×
             </button>
           </div>
 
           {selectedStream.description && (
-            <p className="text-sm text-gray-600 mb-3">{selectedStream.description}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">{selectedStream.description}</p>
           )}
 
           <div className="flex gap-2">
             <Link
               href={`/dashboard/streams/${selectedStream.id}`}
-              className="flex-1 text-center px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700"
+              className="flex-1 text-center px-3 py-2 bg-blue-600 text-white text-sm rounded-xl hover:bg-blue-700"
             >
-              Otwórz
+              Otworz
             </Link>
             <button
               onClick={() => setSelectedStream(null)}
-              className="px-3 py-2 border text-sm rounded-lg hover:bg-gray-50"
+              className="px-3 py-2 border border-slate-300 dark:border-slate-600 text-sm rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-700 dark:text-slate-300"
             >
               Zamknij
             </button>
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

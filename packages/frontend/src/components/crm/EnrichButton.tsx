@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { SparklesIcon } from '@heroicons/react/24/outline';
+import { Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { useEnrichment } from '@/hooks/useEnrichment';
@@ -105,7 +105,7 @@ export function EnrichButton({
         onMouseLeave={() => setShowInfo(false)}
         title={!showTooltip ? tooltipContent() : undefined}
       >
-        <SparklesIcon className={cn('h-4 w-4', iconOnly ? '' : '-ml-0.5')} />
+        <Sparkles className={cn('h-4 w-4', iconOnly ? '' : '-ml-0.5')} />
         {!iconOnly && !isEnriching && label}
         {!iconOnly && isEnriching && 'Wzbogacanie...'}
       </Button>

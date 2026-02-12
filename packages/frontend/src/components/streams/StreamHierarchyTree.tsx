@@ -5,16 +5,16 @@ import { useRouter } from 'next/navigation';
 import { StreamHierarchy, StreamWithRelations, streamHierarchyApi } from '@/lib/api/streamHierarchy';
 import { toast } from 'react-hot-toast';
 import {
-  ChevronDownIcon,
-  ChevronRightIcon,
-  ShareIcon,
-  ShieldCheckIcon,
-  EyeIcon,
-  PencilIcon,
-  TrashIcon,
-  PlusIcon,
-  ExclamationTriangleIcon
-} from '@heroicons/react/24/outline';
+  ChevronDown,
+  ChevronRight,
+  Share2,
+  ShieldCheck,
+  Eye,
+  Pencil,
+  Trash2,
+  Plus,
+  AlertTriangle
+} from 'lucide-react';
 
 interface StreamHierarchyTreeProps {
   streamId: string;
@@ -96,9 +96,9 @@ const TreeNode: React.FC<TreeNodeProps> = ({
         <div className="w-6 h-6 flex items-center justify-center mr-2">
           {hasChildren ? (
             isExpanded ? (
-              <ChevronDownIcon className="h-4 w-4 text-gray-500" />
+              <ChevronDown className="h-4 w-4 text-gray-500" />
             ) : (
-              <ChevronRightIcon className="h-4 w-4 text-gray-500" />
+              <ChevronRight className="h-4 w-4 text-gray-500" />
             )
           ) : (
             <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
@@ -145,7 +145,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             className="p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded"
             title="Add relation"
           >
-            <PlusIcon className="h-4 w-4" />
+            <Plus className="h-4 w-4" />
           </button>
           <button
             onClick={(e) => {
@@ -155,7 +155,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
             className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
             title="View details"
           >
-            <EyeIcon className="h-4 w-4" />
+            <Eye className="h-4 w-4" />
           </button>
         </div>
       </div>
@@ -179,7 +179,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                   )}
                   <div className="flex items-center gap-1 ml-auto">
                     {!relation.isActive && (
-                      <ExclamationTriangleIcon className="h-4 w-4 text-amber-500" title="Inactive relation" />
+                      <AlertTriangle className="h-4 w-4 text-amber-500" title="Inactive relation" />
                     )}
                     <span className="text-xs">
                       {relation.inheritanceRule.replace('_', ' ').toLowerCase()}
@@ -192,7 +192,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                       className="p-1 text-gray-400 hover:text-blue-600 hover:bg-white rounded"
                       title="Edit relation"
                     >
-                      <PencilIcon className="h-3 w-3" />
+                      <Pencil className="h-3 w-3" />
                     </button>
                   </div>
                 </div>
@@ -310,13 +310,13 @@ export default function StreamHierarchyTree({
       <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-medium text-gray-900 flex items-center gap-2">
-            <ShareIcon className="h-5 w-5" />
+            <Share2 className="h-5 w-5" />
             Stream Hierarchy
           </h3>
           <div className="flex items-center gap-4">
             {hierarchy.hasCycles && (
               <div className="flex items-center gap-1 text-amber-600 bg-amber-50 px-2 py-1 rounded text-sm">
-                <ExclamationTriangleIcon className="h-4 w-4" />
+                <AlertTriangle className="h-4 w-4" />
                 Cycles detected
               </div>
             )}
@@ -385,7 +385,7 @@ export default function StreamHierarchyTree({
           {direction !== 'down' && hierarchy.parents.length > 0 && (
             <div>
               <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                <ChevronDownIcon className="h-4 w-4" />
+                <ChevronDown className="h-4 w-4" />
                 Parent Streams ({hierarchy.parents.length})
               </h4>
               <div className="space-y-2">
@@ -410,7 +410,7 @@ export default function StreamHierarchyTree({
           {/* Current Stream */}
           <div>
             <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-              <ShieldCheckIcon className="h-4 w-4" />
+              <ShieldCheck className="h-4 w-4" />
               Current Stream
             </h4>
             <TreeNode
@@ -430,7 +430,7 @@ export default function StreamHierarchyTree({
           {direction !== 'up' && hierarchy.children.length > 0 && (
             <div>
               <h4 className="text-sm font-medium text-gray-700 mb-3 flex items-center gap-2">
-                <ChevronDownIcon className="h-4 w-4" />
+                <ChevronDown className="h-4 w-4" />
                 Child Streams ({hierarchy.children.length})
               </h4>
               <div className="space-y-2">
@@ -455,7 +455,7 @@ export default function StreamHierarchyTree({
           {/* Empty State */}
           {hierarchy.totalRelations === 0 && (
             <div className="text-center py-12 text-gray-500">
-              <ShareIcon className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+              <Share2 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
               <h4 className="text-lg font-medium text-gray-900 mb-2">No hierarchy relations</h4>
               <p className="text-gray-600 mb-4">This stream doesn't have any parent or child relationships.</p>
               <button

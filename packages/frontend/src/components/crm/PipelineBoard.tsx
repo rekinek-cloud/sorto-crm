@@ -7,15 +7,15 @@ import { dealsApi } from '@/lib/api/deals';
 import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  BuildingOfficeIcon,
-  UserIcon,
-  CalendarIcon,
-  CurrencyDollarIcon,
-  EllipsisVerticalIcon,
-  PencilIcon,
-  TrashIcon,
-  EyeIcon,
-} from '@heroicons/react/24/outline';
+  Building2,
+  User,
+  Calendar,
+  DollarSign,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  Eye,
+} from 'lucide-react';
 
 interface PipelineBoardProps {
   deals: Deal[];
@@ -240,7 +240,7 @@ export default function PipelineBoard({
                                     {deal.title}
                                   </h4>
                                   <div className="flex items-center text-xs text-gray-500 mt-1">
-                                    <BuildingOfficeIcon className="w-3 h-3 mr-1" />
+                                    <Building2 className="w-3 h-3 mr-1" />
                                     <span className="truncate">
                                       {getCompanyName(deal.companyId)}
                                     </span>
@@ -249,7 +249,7 @@ export default function PipelineBoard({
                                 
                                 <div className="relative">
                                   <button className="p-1 text-gray-400 hover:text-gray-600 rounded">
-                                    <EllipsisVerticalIcon className="w-4 h-4" />
+                                    <MoreVertical className="w-4 h-4" />
                                   </button>
                                   {/* Dropdown menu would go here */}
                                 </div>
@@ -257,7 +257,7 @@ export default function PipelineBoard({
 
                               {/* Deal Value */}
                               <div className="flex items-center mb-2">
-                                <CurrencyDollarIcon className="w-4 h-4 text-green-600 mr-1" />
+                                <DollarSign className="w-4 h-4 text-green-600 mr-1" />
                                 <span className="font-semibold text-gray-900 text-sm">
                                   {formatCurrency(deal.value || 0)}
                                 </span>
@@ -266,7 +266,7 @@ export default function PipelineBoard({
                               {/* Deal Contact */}
                               {(deal as any).contactId && (
                                 <div className="flex items-center text-xs text-gray-500 mb-2">
-                                  <UserIcon className="w-3 h-3 mr-1" />
+                                  <User className="w-3 h-3 mr-1" />
                                   <span className="truncate">
                                     {getContactName((deal as any).contactId)}
                                   </span>
@@ -276,7 +276,7 @@ export default function PipelineBoard({
                               {/* Expected Close Date */}
                               {deal.expectedCloseDate && (
                                 <div className="flex items-center text-xs text-gray-500 mb-3">
-                                  <CalendarIcon className="w-3 h-3 mr-1" />
+                                  <Calendar className="w-3 h-3 mr-1" />
                                   <span>
                                     {formatDate(deal.expectedCloseDate)}
                                   </span>
@@ -304,14 +304,14 @@ export default function PipelineBoard({
                                   className="p-1 text-gray-400 hover:text-blue-600 rounded"
                                   title="Edit deal"
                                 >
-                                  <PencilIcon className="w-3 h-3" />
+                                  <Pencil className="w-3 h-3" />
                                 </button>
                                 <button
                                   onClick={() => onDeleteDeal(deal.id)}
                                   className="p-1 text-gray-400 hover:text-red-600 rounded"
                                   title="Delete deal"
                                 >
-                                  <TrashIcon className="w-3 h-3" />
+                                  <Trash2 className="w-3 h-3" />
                                 </button>
                               </div>
                             </div>

@@ -7,15 +7,17 @@ import Cookies from 'js-cookie';
 import { weeklyReviewApi } from '@/lib/api/weeklyReview';
 import { toast } from 'react-hot-toast';
 import {
-  ChevronLeftIcon,
-  ChevronRightIcon,
-  CalendarDaysIcon,
-  ChartBarIcon,
-  CheckCircleIcon,
-  ArrowTrendingUpIcon,
-  ArrowTrendingDownIcon,
-  ClockIcon,
-} from '@heroicons/react/24/outline';
+  ChevronLeft,
+  ChevronRight,
+  CalendarDays,
+  BarChart3,
+  CheckCircle2,
+  TrendingUp,
+  TrendingDown,
+  Clock,
+} from 'lucide-react';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 interface WeeklyReviewBurndownData {
   week: number;
@@ -39,7 +41,7 @@ interface BurndownSummary {
 export default function WeeklyReviewBurndownPage() {
   const { user, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
-  
+
   useEffect(() => {
     if (!isLoading && (!isAuthenticated || !Cookies.get('access_token'))) {
       window.location.href = '/auth/login/';
@@ -60,7 +62,7 @@ export default function WeeklyReviewBurndownPage() {
       setLoading(false);
       return;
     }
-    
+
     try {
       setLoading(true);
       const response = await weeklyReviewApi.getBurndownData(timeRange);
@@ -70,7 +72,7 @@ export default function WeeklyReviewBurndownPage() {
     } catch (error: any) {
       console.error('Error loading weekly review burndown data:', error);
       toast.error('Failed to load burndown data');
-      
+
       // Mock data for demo
       const mockData: WeeklyReviewBurndownData[] = [];
       for (let i = 0; i < timeRange; i++) {
@@ -78,7 +80,7 @@ export default function WeeklyReviewBurndownPage() {
         weekStart.setDate(weekStart.getDate() - ((timeRange - i) * 7));
         const weekEnd = new Date(weekStart);
         weekEnd.setDate(weekEnd.getDate() + 6);
-        
+
         mockData.push({
           week: i + 1,
           weekStart: weekStart.toISOString().split('T')[0],
@@ -91,7 +93,7 @@ export default function WeeklyReviewBurndownPage() {
           newTasks: Math.floor(Math.random() * 10) + 3,
         });
       }
-      
+
       setBurndownData(mockData);
       setSummary({
         totalWeeks: timeRange,
@@ -105,26 +107,26 @@ export default function WeeklyReviewBurndownPage() {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('pl-PL', { 
-      month: 'short', 
-      day: 'numeric' 
+    return new Date(dateStr).toLocaleDateString('pl-PL', {
+      month: 'short',
+      day: 'numeric'
     });
   };
 
   const calculateTrends = () => {
     if (burndownData.length < 4) return null;
-    
+
     const recentWeeks = burndownData.slice(-4);
     const earlierWeeks = burndownData.slice(-8, -4);
-    
+
     if (earlierWeeks.length === 0) return null;
-    
+
     const recentAvgCompletion = recentWeeks.reduce((sum, week) => sum + week.reviewCompletion, 0) / recentWeeks.length;
     const earlierAvgCompletion = earlierWeeks.reduce((sum, week) => sum + week.reviewCompletion, 0) / earlierWeeks.length;
-    
+
     const recentAvgTasks = recentWeeks.reduce((sum, week) => sum + week.completedTasks, 0) / recentWeeks.length;
     const earlierAvgTasks = earlierWeeks.reduce((sum, week) => sum + week.completedTasks, 0) / earlierWeeks.length;
-    
+
     return {
       reviewTrend: recentAvgCompletion - earlierAvgCompletion,
       taskTrend: recentAvgTasks - earlierAvgTasks,
@@ -142,83 +144,84 @@ export default function WeeklyReviewBurndownPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Weekly Review Burndown</h1>
-          <p className="text-gray-600">Śledź postępy w przeglądzie tygodniowym i realizacji zadań</p>
-        </div>
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => router.push('/dashboard/reviews/weekly')}
-            className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50"
-          >
-            Back to Weekly Review
-          </button>
-          <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(parseInt(e.target.value))}
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm"
-          >
-            <option value={4}>Last 4 weeks</option>
-            <option value={8}>Last 8 weeks</option>
-            <option value={12}>Last 12 weeks</option>
-            <option value={24}>Last 6 months</option>
-            <option value={52}>Last year</option>
-          </select>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Weekly Review Burndown"
+        subtitle="Sledz postepy w przegladzie tygodniowym i realizacji zadan"
+        icon={BarChart3}
+        iconColor="text-blue-600"
+        actions={
+          <div className="flex items-center space-x-4">
+            <button
+              onClick={() => router.push('/dashboard/reviews/weekly')}
+              className="px-4 py-2 text-sm border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
+            >
+              Powrot do przegladu
+            </button>
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(parseInt(e.target.value))}
+              className="px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-md text-sm"
+            >
+              <option value={4}>Ostatnie 4 tygodnie</option>
+              <option value={8}>Ostatnie 8 tygodni</option>
+              <option value={12}>Ostatnie 12 tygodni</option>
+              <option value={24}>Ostatnie 6 miesiecy</option>
+              <option value={52}>Ostatni rok</option>
+            </select>
+          </div>
+        }
+      />
 
       {/* Summary Statistics */}
       {summary && (
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
             <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <CalendarDaysIcon className="w-6 h-6 text-blue-600" />
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <CalendarDays className="w-6 h-6 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Weeks Tracked</p>
-                <p className="text-2xl font-semibold text-gray-900">{summary.totalWeeks}</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Sledzone tygodnie</p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{summary.totalWeeks}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
             <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CheckCircleIcon className="w-6 h-6 text-green-600" />
+              <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                <CheckCircle2 className="w-6 h-6 text-green-600 dark:text-green-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Reviews Completed</p>
-                <p className="text-2xl font-semibold text-gray-900">
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Wykonane przeglady</p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
                   {summary.weeksWithReview}/{summary.totalWeeks}
                 </p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
             <div className="flex items-center">
-              <div className="p-2 bg-purple-100 rounded-lg">
-                <ChartBarIcon className="w-6 h-6 text-purple-600" />
+              <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+                <BarChart3 className="w-6 h-6 text-purple-600 dark:text-purple-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Review Rate</p>
-                <p className="text-2xl font-semibold text-gray-900">{summary.reviewCompletionRate}%</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Wskaznik przegladow</p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{summary.reviewCompletionRate}%</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
             <div className="flex items-center">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <ClockIcon className="w-6 h-6 text-orange-600" />
+              <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                <Clock className="w-6 h-6 text-orange-600 dark:text-orange-400" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Avg Tasks/Week</p>
-                <p className="text-2xl font-semibold text-gray-900">{summary.averageTasksCompleted}</p>
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Sr. zadan/tydzien</p>
+                <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{summary.averageTasksCompleted}</p>
               </div>
             </div>
           </div>
@@ -227,18 +230,18 @@ export default function WeeklyReviewBurndownPage() {
 
       {/* Trends */}
       {trends && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-white rounded-lg shadow p-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-medium text-gray-900">Review Completion Trend</h3>
-                <p className="text-sm text-gray-600">Last 4 weeks vs previous 4 weeks</p>
+                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">Trend ukonczen przegladow</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Ostatnie 4 tygodnie vs poprzednie 4</p>
               </div>
               <div className={`flex items-center ${trends.reviewTrend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {trends.reviewTrend >= 0 ? (
-                  <ArrowTrendingUpIcon className="w-6 h-6 mr-1" />
+                  <TrendingUp className="w-6 h-6 mr-1" />
                 ) : (
-                  <ArrowTrendingDownIcon className="w-6 h-6 mr-1" />
+                  <TrendingDown className="w-6 h-6 mr-1" />
                 )}
                 <span className="text-xl font-semibold">
                   {trends.reviewTrend >= 0 ? '+' : ''}{Math.round(trends.reviewTrend)}%
@@ -247,20 +250,20 @@ export default function WeeklyReviewBurndownPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow p-4">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-medium text-gray-900">Task Completion Trend</h3>
-                <p className="text-sm text-gray-600">Last 4 weeks vs previous 4 weeks</p>
+                <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">Trend ukonczen zadan</h3>
+                <p className="text-sm text-slate-600 dark:text-slate-400">Ostatnie 4 tygodnie vs poprzednie 4</p>
               </div>
               <div className={`flex items-center ${trends.taskTrend >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {trends.taskTrend >= 0 ? (
-                  <ArrowTrendingUpIcon className="w-6 h-6 mr-1" />
+                  <TrendingUp className="w-6 h-6 mr-1" />
                 ) : (
-                  <ArrowTrendingDownIcon className="w-6 h-6 mr-1" />
+                  <TrendingDown className="w-6 h-6 mr-1" />
                 )}
                 <span className="text-xl font-semibold">
-                  {trends.taskTrend >= 0 ? '+' : ''}{Math.round(trends.taskTrend)} tasks
+                  {trends.taskTrend >= 0 ? '+' : ''}{Math.round(trends.taskTrend)} zadan
                 </span>
               </div>
             </div>
@@ -270,14 +273,14 @@ export default function WeeklyReviewBurndownPage() {
 
       {/* Burndown Charts */}
       {burndownData.length > 0 ? (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
           {/* Review Completion Chart */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-medium text-gray-900">Weekly Review Completion</h3>
+              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">Ukonczenie przegladu tygodniowego</h3>
               <div className="flex items-center space-x-2">
                 <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                <span className="text-sm text-gray-600">Review Progress %</span>
+                <span className="text-sm text-slate-600 dark:text-slate-400">Postep przegladu %</span>
               </div>
             </div>
 
@@ -291,14 +294,14 @@ export default function WeeklyReviewBurndownPage() {
                       y1={40 + (1 - percentage / 100) * 220}
                       x2="550"
                       y2={40 + (1 - percentage / 100) * 220}
-                      stroke="#f3f4f6"
+                      stroke="#e2e8f0"
                       strokeWidth="1"
                     />
                     <text
                       x="40"
                       y={45 + (1 - percentage / 100) * 220}
                       fontSize="10"
-                      fill="#6b7280"
+                      fill="#64748b"
                       textAnchor="end"
                     >
                       {percentage}%
@@ -330,7 +333,7 @@ export default function WeeklyReviewBurndownPage() {
                       cx={x}
                       cy={y}
                       r={week.hasReview ? "6" : "3"}
-                      fill={week.hasReview ? "#3b82f6" : "#d1d5db"}
+                      fill={week.hasReview ? "#3b82f6" : "#cbd5e1"}
                       stroke="white"
                       strokeWidth="2"
                     />
@@ -347,10 +350,10 @@ export default function WeeklyReviewBurndownPage() {
                       x={x}
                       y="285"
                       fontSize="10"
-                      fill="#6b7280"
+                      fill="#64748b"
                       textAnchor="middle"
                     >
-                      W{week.week}
+                      T{week.week}
                     </text>
                   );
                 })}
@@ -359,17 +362,17 @@ export default function WeeklyReviewBurndownPage() {
           </div>
 
           {/* Task Completion Chart */}
-          <div className="bg-white rounded-lg shadow p-6">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-medium text-gray-900">Weekly Task Completion</h3>
+              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">Ukonczenie zadan tygodniowych</h3>
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
                   <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Completed</span>
+                  <span className="text-sm text-slate-600 dark:text-slate-400">Ukonczone</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-3 h-3 bg-gray-400 rounded-full"></div>
-                  <span className="text-sm text-gray-600">Total</span>
+                  <div className="w-3 h-3 bg-slate-400 rounded-full"></div>
+                  <span className="text-sm text-slate-600 dark:text-slate-400">Razem</span>
                 </div>
               </div>
             </div>
@@ -387,14 +390,14 @@ export default function WeeklyReviewBurndownPage() {
                         y1={40 + (4 - i) * 55}
                         x2="550"
                         y2={40 + (4 - i) * 55}
-                        stroke="#f3f4f6"
+                        stroke="#e2e8f0"
                         strokeWidth="1"
                       />
                       <text
                         x="40"
                         y={45 + (4 - i) * 55}
                         fontSize="10"
-                        fill="#6b7280"
+                        fill="#64748b"
                         textAnchor="end"
                       >
                         {value}
@@ -414,7 +417,7 @@ export default function WeeklyReviewBurndownPage() {
                     })
                     .join(' ')}
                   fill="none"
-                  stroke="#9ca3af"
+                  stroke="#94a3b8"
                   strokeWidth="2"
                   strokeDasharray="5,5"
                 />
@@ -462,10 +465,10 @@ export default function WeeklyReviewBurndownPage() {
                       x={x}
                       y="285"
                       fontSize="10"
-                      fill="#6b7280"
+                      fill="#64748b"
                       textAnchor="middle"
                     >
-                      W{week.week}
+                      T{week.week}
                     </text>
                   );
                 })}
@@ -474,80 +477,80 @@ export default function WeeklyReviewBurndownPage() {
           </div>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow text-center py-12">
-          <div className="text-6xl mb-4">📊</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Review Data</h3>
-          <p className="text-gray-600">Start completing weekly reviews to see burndown charts</p>
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm text-center py-12 mt-6">
+          <BarChart3 className="w-16 h-16 mx-auto mb-4 text-slate-400 dark:text-slate-500" />
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Brak danych</h3>
+          <p className="text-slate-600 dark:text-slate-400">Zacznij wykonywac przeglady tygodniowe aby zobaczyc wykresy</p>
         </div>
       )}
 
       {/* Weekly Details Table */}
       {burndownData.length > 0 && (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h3 className="text-lg font-medium text-gray-900">Weekly Details</h3>
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm overflow-hidden mt-6">
+          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+            <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">Szczegoly tygodniowe</h3>
           </div>
-          
+
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
+              <thead className="bg-slate-50 dark:bg-slate-800">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Week
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Tydzien
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Period
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Okres
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Review Progress
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Postep przegladu
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tasks Completed
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Ukonczone zadania
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    New Tasks
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Nowe zadania
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Stalled
+                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                    Zablokowane
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white dark:bg-slate-800 divide-y divide-slate-200 dark:divide-slate-700">
                 {burndownData.slice(-10).reverse().map((week) => (
-                  <tr key={week.week} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      Week {week.week}
+                  <tr key={week.week} className="hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-slate-100">
+                      Tydzien {week.week}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
                       {formatDate(week.weekStart)} - {formatDate(week.weekEnd)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                        <div className="w-16 bg-slate-200 dark:bg-slate-600 rounded-full h-2 mr-2">
                           <div
                             className="bg-blue-500 h-2 rounded-full"
                             style={{ width: `${week.reviewCompletion}%` }}
                           ></div>
                         </div>
-                        <span className="text-sm text-gray-900">{week.reviewCompletion}%</span>
+                        <span className="text-sm text-slate-900 dark:text-slate-100">{week.reviewCompletion}%</span>
                         {week.hasReview && (
-                          <span className="ml-2 text-green-600">✅</span>
+                          <CheckCircle2 className="ml-2 w-4 h-4 text-green-600 dark:text-green-400" />
                         )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-100">
                       {week.completedTasks}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-900 dark:text-slate-100">
                       {week.newTasks}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        week.stalledTasks === 0 
-                          ? 'bg-green-100 text-green-800' 
+                        week.stalledTasks === 0
+                          ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300'
                           : week.stalledTasks <= 2
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-red-100 text-red-800'
+                          ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300'
+                          : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300'
                       }`}>
                         {week.stalledTasks}
                       </span>
@@ -559,6 +562,6 @@ export default function WeeklyReviewBurndownPage() {
           </div>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

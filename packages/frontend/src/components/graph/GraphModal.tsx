@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { X } from 'lucide-react';
 import { RelationshipGraph } from './RelationshipGraph';
 
 interface GraphModalProps {
@@ -51,7 +51,7 @@ export function GraphModal({ isOpen, onClose, entityId, entityType, entityName }
                 onClick={onClose}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
-                <XMarkIcon className="w-6 h-6 text-gray-600" />
+                <X className="w-6 h-6 text-gray-600" />
               </button>
             </div>
 

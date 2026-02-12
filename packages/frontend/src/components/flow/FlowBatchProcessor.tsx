@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  SparklesIcon,
-  XMarkIcon,
-  CheckIcon,
-  ArrowPathIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-} from '@heroicons/react/24/outline';
+  Sparkles,
+  X,
+  Check,
+  RefreshCw,
+  ChevronDown,
+  ChevronRight,
+} from 'lucide-react';
 import { flowApi, FlowAction, FlowPendingItem, FLOW_ACTION_LABELS } from '@/lib/api/flow';
 import { toast } from 'react-hot-toast';
 
@@ -182,7 +182,7 @@ export default function FlowBatchProcessor({ items, streams, onClose, onProcesse
         <div className="flex-shrink-0 border-b px-6 py-4 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold flex items-center gap-2">
-              <SparklesIcon className="w-6 h-6 text-indigo-600" />
+              <Sparkles className="w-6 h-6 text-indigo-600" />
               Batch Flow Processing
             </h2>
             <p className="text-sm text-gray-500 mt-1">
@@ -193,7 +193,7 @@ export default function FlowBatchProcessor({ items, streams, onClose, onProcesse
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
-            <XMarkIcon className="w-5 h-5" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -256,12 +256,12 @@ export default function FlowBatchProcessor({ items, streams, onClose, onProcesse
             >
               {loadingAi ? (
                 <>
-                  <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                  <RefreshCw className="w-4 h-4 animate-spin" />
                   Ładowanie AI...
                 </>
               ) : (
                 <>
-                  <SparklesIcon className="w-4 h-4" />
+                  <Sparkles className="w-4 h-4" />
                   Zaakceptuj sugestie AI
                 </>
               )}
@@ -293,9 +293,9 @@ export default function FlowBatchProcessor({ items, streams, onClose, onProcesse
                     className="p-1 hover:bg-gray-100 rounded"
                   >
                     {item.isExpanded ? (
-                      <ChevronDownIcon className="w-4 h-4" />
+                      <ChevronDown className="w-4 h-4" />
                     ) : (
-                      <ChevronRightIcon className="w-4 h-4" />
+                      <ChevronRight className="w-4 h-4" />
                     )}
                   </button>
 
@@ -344,7 +344,7 @@ export default function FlowBatchProcessor({ items, streams, onClose, onProcesse
                         ? 'bg-yellow-100 text-yellow-600'
                         : 'bg-green-100 text-green-600'
                     }`}>
-                      <CheckIcon className="w-4 h-4" />
+                      <Check className="w-4 h-4" />
                     </div>
                   )}
                 </div>
@@ -393,12 +393,12 @@ export default function FlowBatchProcessor({ items, streams, onClose, onProcesse
             >
               {processing ? (
                 <>
-                  <ArrowPathIcon className="w-4 h-4 animate-spin" />
+                  <RefreshCw className="w-4 h-4 animate-spin" />
                   Przetwarzanie...
                 </>
               ) : (
                 <>
-                  <CheckIcon className="w-4 h-4" />
+                  <Check className="w-4 h-4" />
                   Przetwórz ({readyCount})
                 </>
               )}

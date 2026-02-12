@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { UserIcon, ClockIcon, FlagIcon } from '@heroicons/react/24/outline';
+import { Clock, Flag } from 'lucide-react';
 import { GanttTask, Priority } from '@/types/views';
 
 interface GanttTaskRowProps {
@@ -92,7 +92,7 @@ export default function GanttTaskRow({
             
             {/* Duration */}
             <div className="flex items-center text-xs text-gray-500">
-              <ClockIcon className="w-3 h-3 mr-1" />
+              <Clock className="w-3 h-3 mr-1" />
               <span>{task.duration}d</span>
             </div>
           </div>
@@ -158,7 +158,7 @@ export default function GanttTaskRow({
               priorityColors[task.priority]
             }`}
           >
-            {task.priority === 'urgent' && <FlagIcon className="w-3 h-3 mr-1" />}
+            {task.priority === 'urgent' && <Flag className="w-3 h-3 mr-1" />}
             {task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
           </span>
 

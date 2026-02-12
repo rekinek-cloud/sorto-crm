@@ -5,13 +5,9 @@ import { UserWithHierarchy, userHierarchyApi, HierarchyStats } from '@/lib/api/u
 import UserCard from '@/components/users/UserCard';
 import UserHierarchyModal from '@/components/users/UserHierarchyModal';
 import { toast } from 'react-hot-toast';
-import {
-  UserGroupIcon,
-  MagnifyingGlassIcon,
-  ChartBarIcon,
-  ShareIcon,
-  UsersIcon
-} from '@heroicons/react/24/outline';
+import { Users, Search, BarChart3, Share2 } from 'lucide-react';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 export default function TeamPage() {
   const [users, setUsers] = useState<UserWithHierarchy[]>([]);
@@ -37,7 +33,7 @@ export default function TeamPage() {
       setUsers(response.users);
     } catch (error: any) {
       console.error('Error loading team:', error);
-      toast.error('Nie udalo sie zaladowac zespolu');
+      toast.error('Nie udało się załadować zespołu');
     } finally {
       setLoading(false);
     }
@@ -58,61 +54,62 @@ export default function TeamPage() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
-      </div>
+      <PageShell>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Zespol</h1>
-          <p className="text-gray-600">Przeglad czlonkow zespolu i hierarchii organizacyjnej</p>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Zespół"
+        subtitle="Przegląd członków zespołu i hierarchii organizacyjnej"
+        icon={Users}
+        iconColor="text-indigo-600"
+      />
 
       {/* Statistics */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white p-4 rounded-lg shadow border">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
             <div className="flex items-center">
-              <UsersIcon className="h-8 w-8 text-blue-500" />
+              <Users className="h-8 w-8 text-blue-500 dark:text-blue-400" />
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500">Czlonkowie zespolu</p>
-                <p className="text-2xl font-bold text-gray-900">{users.length}</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Członkowie zespołu</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{users.length}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-lg shadow border">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
             <div className="flex items-center">
-              <ShareIcon className="h-8 w-8 text-green-500" />
+              <Share2 className="h-8 w-8 text-green-500 dark:text-green-400" />
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500">Aktywne relacje</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.activeRelations}</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Aktywne relacje</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.activeRelations}</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-lg shadow border">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
             <div className="flex items-center">
-              <ChartBarIcon className="h-8 w-8 text-purple-500" />
+              <BarChart3 className="h-8 w-8 text-purple-500 dark:text-purple-400" />
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500">Penetracja hierarchii</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.hierarchyPenetration.toFixed(1)}%</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Penetracja hierarchii</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.hierarchyPenetration.toFixed(1)}%</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white p-4 rounded-lg shadow border">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
             <div className="flex items-center">
-              <UserGroupIcon className="h-8 w-8 text-orange-500" />
+              <Users className="h-8 w-8 text-orange-500 dark:text-orange-400" />
               <div className="ml-3">
-                <p className="text-sm font-medium text-gray-500">Sredni rozmiar zespolu</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.averageTeamSize.toFixed(1)}</p>
+                <p className="text-sm font-medium text-slate-500 dark:text-slate-400">Średni rozmiar zespołu</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.averageTeamSize.toFixed(1)}</p>
               </div>
             </div>
           </div>
@@ -120,29 +117,29 @@ export default function TeamPage() {
       )}
 
       {/* Search */}
-      <div className="bg-white p-4 rounded-lg shadow border">
-        <div className="relative max-w-md">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4 mb-6">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400 dark:text-slate-500" />
           <input
             type="text"
-            placeholder="Szukaj czlonkow zespolu..."
+            placeholder="Szukaj członków zespołu..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+            className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
           />
         </div>
       </div>
 
       {/* Team Members Grid */}
-      <div className="bg-white rounded-lg shadow border">
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
         {users.length === 0 ? (
           <div className="p-8 text-center">
-            <UserGroupIcon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">Nie znaleziono czlonkow zespolu</h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <Users className="mx-auto h-12 w-12 text-slate-400 dark:text-slate-500" />
+            <h3 className="mt-2 text-sm font-medium text-slate-900 dark:text-slate-100">Nie znaleziono członków zespołu</h3>
+            <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
               {searchTerm
-                ? 'Sprobuj dostosowac filtry wyszukiwania.'
-                : 'Zespol jest pusty.'}
+                ? 'Spróbuj dostosować filtry wyszukiwania.'
+                : 'Zespół jest pusty.'}
             </p>
           </div>
         ) : (
@@ -167,6 +164,6 @@ export default function TeamPage() {
           user={hierarchyUser}
         />
       )}
-    </div>
+    </PageShell>
   );
 }

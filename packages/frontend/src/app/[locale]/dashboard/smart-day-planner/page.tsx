@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 import Cookies from 'js-cookie';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { CalendarDays, ClipboardList, AlertTriangle } from 'lucide-react';
 
 interface Task {
   id: string;
@@ -48,97 +51,79 @@ export default function SmartDayPlannerPage() {
 
   if (loading) {
     return (
-      <div style={{ padding: '40px', textAlign: 'center' }}>
-        <div style={{
-          width: '40px',
-          height: '40px',
-          border: '4px solid #e5e7eb',
-          borderTop: '4px solid #4f46e5',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite',
-          margin: '0 auto'
-        }} />
-        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-        <p style={{ marginTop: '16px', color: '#6b7280' }}>Ladowanie...</p>
-      </div>
+      <PageShell>
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="w-10 h-10 border-4 border-slate-200 dark:border-slate-700 border-t-indigo-600 dark:border-t-indigo-400 rounded-full animate-spin" />
+          <p className="mt-4 text-slate-500 dark:text-slate-400">Ladowanie...</p>
+        </div>
+      </PageShell>
     );
   }
 
   if (error) {
     return (
-      <div style={{ padding: '40px' }}>
-        <div style={{
-          background: '#fef2f2',
-          border: '1px solid #fecaca',
-          borderRadius: '8px',
-          padding: '20px',
-          maxWidth: '500px',
-          margin: '0 auto'
-        }}>
-          <h2 style={{ color: '#dc2626', margin: '0 0 10px 0' }}>Blad</h2>
-          <p style={{ color: '#b91c1c', margin: 0 }}>{error}</p>
+      <PageShell>
+        <PageHeader
+          title="Planer Dnia"
+          subtitle="Planuj swój dzień według priorytetów strumieni i zadań"
+          icon={CalendarDays}
+          iconColor="text-indigo-600"
+        />
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-2xl p-5 max-w-lg">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-5 h-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+            <div>
+              <h2 className="text-red-700 dark:text-red-300 font-semibold mb-1">Blad</h2>
+              <p className="text-red-600 dark:text-red-400 text-sm">{error}</p>
+            </div>
+          </div>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div style={{ padding: '24px' }}>
-      <h1 style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '20px', color: '#111827' }}>
-        📅 Planer Dnia
-      </h1>
-      <p style={{ color: '#6b7280', marginBottom: '20px' }}>
-        Planuj swój dzień według priorytetów strumieni i zadań
-      </p>
+    <PageShell>
+      <PageHeader
+        title="Planer Dnia"
+        subtitle="Planuj swój dzień według priorytetów strumieni i zadań"
+        icon={CalendarDays}
+        iconColor="text-indigo-600"
+      />
 
-      <div style={{
-        background: 'white',
-        borderRadius: '8px',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-        overflow: 'hidden'
-      }}>
-        <div style={{ padding: '16px', borderBottom: '1px solid #e5e7eb' }}>
-          <strong>Zadania ({tasks.length})</strong>
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-200 dark:border-slate-700">
+          <strong className="text-slate-900 dark:text-slate-100">Zadania ({tasks.length})</strong>
         </div>
 
         {tasks.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#6b7280' }}>
-            <p style={{ fontSize: '32px', marginBottom: '10px' }}>📋</p>
-            <p>Brak zadan</p>
+          <div className="py-10 text-center">
+            <ClipboardList className="w-10 h-10 text-slate-400 dark:text-slate-500 mx-auto mb-3" />
+            <p className="text-slate-500 dark:text-slate-400">Brak zadan</p>
           </div>
         ) : (
           <div>
             {tasks.map((task) => (
               <div
                 key={task.id}
-                style={{
-                  padding: '12px 16px',
-                  borderBottom: '1px solid #f3f4f6',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px'
-                }}
+                className="px-4 py-3 border-b border-slate-100 dark:border-slate-700/50 flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors"
               >
-                <span style={{ fontWeight: '500', color: '#111827' }}>{task.title}</span>
+                <span className="font-medium text-slate-900 dark:text-slate-100">{task.title}</span>
                 {task.priority && (
-                  <span style={{
-                    fontSize: '12px',
-                    padding: '2px 8px',
-                    borderRadius: '4px',
-                    background: task.priority === 'HIGH' ? '#fef3c7' : '#e5e7eb',
-                    color: task.priority === 'HIGH' ? '#92400e' : '#374151'
-                  }}>
+                  <span className={`text-xs px-2 py-0.5 rounded ${
+                    task.priority === 'HIGH'
+                      ? 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300'
+                      : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
+                  }`}>
                     {task.priority}
                   </span>
                 )}
                 {task.status && (
-                  <span style={{
-                    fontSize: '12px',
-                    padding: '2px 8px',
-                    borderRadius: '4px',
-                    background: task.status === 'DONE' ? '#d1fae5' : '#dbeafe',
-                    color: task.status === 'DONE' ? '#065f46' : '#1e40af'
-                  }}>
+                  <span className={`text-xs px-2 py-0.5 rounded ${
+                    task.status === 'DONE'
+                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300'
+                      : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300'
+                  }`}>
                     {task.status}
                   </span>
                 )}
@@ -147,6 +132,6 @@ export default function SmartDayPlannerPage() {
           </div>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }

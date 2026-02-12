@@ -2,16 +2,18 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  ChartBarIcon,
-  ArrowPathIcon,
-  CalendarIcon,
-  CurrencyDollarIcon,
-  ClockIcon,
-  ArrowTrendingUpIcon,
-  FunnelIcon,
-} from '@heroicons/react/24/outline';
+  BarChart3,
+  RefreshCw,
+  Calendar,
+  DollarSign,
+  Clock,
+  TrendingUp,
+  Filter,
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { pipelineAnalyticsApi, type PipelineOverview, type PipelineStage } from '@/lib/api/pipelineAnalytics';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 const defaultStages: PipelineStage[] = [
   { id: '1', name: 'Nowe', deals: 0, value: 0, avgDays: 0, conversionRate: 100, color: '#6366F1' },
@@ -46,7 +48,7 @@ export default function PipelineAnalyticsPage() {
       }
     } catch (error) {
       console.error('Failed to load pipeline stats:', error);
-      toast.error('Nie udało się pobrać danych analityki');
+      toast.error('Nie udalo sie pobrac danych analityki');
     } finally {
       setLoading(false);
     }
@@ -65,125 +67,120 @@ export default function PipelineAnalyticsPage() {
   const maxValue = Math.max(...stats.stages.map((s) => s.value), 1);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <ChartBarIcon className="h-6 w-6 text-blue-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Pipeline Analytics</h1>
-            <p className="text-sm text-gray-600">Analiza lejka sprzedazowego</p>
-          </div>
-        </div>
+    <PageShell>
+      <PageHeader
+        title="Pipeline Analytics"
+        subtitle="Analiza lejka sprzedazowego"
+        icon={BarChart3}
+        iconColor="text-blue-600"
+        actions={
+          <div className="flex items-center gap-3">
+            <select
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+              className="px-4 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-100 rounded-lg"
+            >
+              <option value="7">Ostatnie 7 dni</option>
+              <option value="30">Ostatnie 30 dni</option>
+              <option value="90">Ostatnie 90 dni</option>
+              <option value="365">Ostatni rok</option>
+            </select>
 
-        <div className="flex items-center gap-3">
-          <select
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          >
-            <option value="7">Ostatnie 7 dni</option>
-            <option value="30">Ostatnie 30 dni</option>
-            <option value="90">Ostatnie 90 dni</option>
-            <option value="365">Ostatni rok</option>
-          </select>
-
-          <button
-            onClick={loadStats}
-            disabled={loading}
-            className="p-2 text-gray-500 hover:text-gray-700"
-          >
-            <ArrowPathIcon className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-        </div>
-      </div>
+            <button
+              onClick={loadStats}
+              disabled={loading}
+              className="p-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+            >
+              <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+          </div>
+        }
+      />
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <FunnelIcon className="h-5 w-5 text-blue-600" />
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <Filter className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Deals w pipeline</p>
-              <p className="text-xl font-bold text-gray-900">{stats.totalDeals}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Deals w pipeline</p>
+              <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{stats.totalDeals}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <CurrencyDollarIcon className="h-5 w-5 text-green-600" />
+            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Wartosc pipeline</p>
-              <p className="text-xl font-bold text-gray-900">{formatCurrency(stats.totalValue)}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Wartosc pipeline</p>
+              <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{formatCurrency(stats.totalValue)}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <ArrowTrendingUpIcon className="h-5 w-5 text-purple-600" />
+            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+              <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Srednia wartosc</p>
-              <p className="text-xl font-bold text-gray-900">{formatCurrency(stats.avgDealValue)}</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Srednia wartosc</p>
+              <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{formatCurrency(stats.avgDealValue)}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <ClockIcon className="h-5 w-5 text-orange-600" />
+            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+              <Clock className="h-5 w-5 text-orange-600 dark:text-orange-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Sredni cykl</p>
-              <p className="text-xl font-bold text-gray-900">{stats.avgCycleTime} dni</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Sredni cykl</p>
+              <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{stats.avgCycleTime} dni</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-xl border border-gray-200 p-4">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 rounded-lg">
-              <ChartBarIcon className="h-5 w-5 text-emerald-600" />
+            <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+              <BarChart3 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">Win Rate</p>
-              <p className="text-xl font-bold text-gray-900">{stats.winRate.toFixed(1)}%</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Win Rate</p>
+              <p className="text-xl font-bold text-slate-900 dark:text-slate-100">{stats.winRate.toFixed(1)}%</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Funnel Chart */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-6">Lejek konwersji</h2>
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6 mb-6">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-6">Lejek konwersji</h2>
 
         {loading ? (
           <div className="flex items-center justify-center py-16">
-            <ArrowPathIcon className="h-8 w-8 text-gray-400 animate-spin" />
+            <RefreshCw className="h-8 w-8 text-slate-400 dark:text-slate-500 animate-spin" />
           </div>
         ) : (
           <div className="space-y-4">
             {stats.stages.map((stage, index) => (
               <div key={stage.id} className="flex items-center gap-4">
                 <div className="w-32 text-right">
-                  <p className="font-medium text-gray-900">{stage.name}</p>
-                  <p className="text-sm text-gray-500">{stage.deals} deals</p>
+                  <p className="font-medium text-slate-900 dark:text-slate-100">{stage.name}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">{stage.deals} deals</p>
                 </div>
 
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
                     {/* Deals bar */}
-                    <div className="flex-1 h-10 bg-gray-100 rounded-lg overflow-hidden">
+                    <div className="flex-1 h-10 bg-slate-100 dark:bg-slate-700 rounded-lg overflow-hidden">
                       <div
                         className="h-full transition-all duration-500"
                         style={{
@@ -196,18 +193,18 @@ export default function PipelineAnalyticsPage() {
                     {/* Conversion arrow */}
                     {index < stats.stages.length - 1 && (
                       <div className="text-center w-16">
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
                           {stage.conversionRate.toFixed(0)}%
                         </div>
-                        <div className="text-xs text-gray-500">konwersja</div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400">konwersja</div>
                       </div>
                     )}
                   </div>
                 </div>
 
                 <div className="w-32 text-right">
-                  <p className="font-medium text-gray-900">{formatCurrency(stage.value)}</p>
-                  <p className="text-sm text-gray-500">sr. {stage.avgDays} dni</p>
+                  <p className="font-medium text-slate-900 dark:text-slate-100">{formatCurrency(stage.value)}</p>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">sr. {stage.avgDays} dni</p>
                 </div>
               </div>
             ))}
@@ -218,8 +215,8 @@ export default function PipelineAnalyticsPage() {
       {/* Stage Details */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Value by Stage */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Wartosc wg etapu</h2>
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Wartosc wg etapu</h2>
 
           <div className="space-y-3">
             {stats.stages.map((stage) => (
@@ -230,10 +227,10 @@ export default function PipelineAnalyticsPage() {
                 />
                 <div className="flex-1">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">{stage.name}</span>
-                    <span className="font-medium text-gray-900">{formatCurrency(stage.value)}</span>
+                    <span className="text-slate-600 dark:text-slate-400">{stage.name}</span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100">{formatCurrency(stage.value)}</span>
                   </div>
-                  <div className="mt-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="mt-1 h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                     <div
                       className="h-full transition-all duration-500"
                       style={{
@@ -249,8 +246,8 @@ export default function PipelineAnalyticsPage() {
         </div>
 
         {/* Time in Stage */}
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Sredni czas w etapie</h2>
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Sredni czas w etapie</h2>
 
           <div className="space-y-3">
             {stats.stages.map((stage) => (
@@ -261,10 +258,10 @@ export default function PipelineAnalyticsPage() {
                 />
                 <div className="flex-1">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">{stage.name}</span>
-                    <span className="font-medium text-gray-900">{stage.avgDays} dni</span>
+                    <span className="text-slate-600 dark:text-slate-400">{stage.name}</span>
+                    <span className="font-medium text-slate-900 dark:text-slate-100">{stage.avgDays} dni</span>
                   </div>
-                  <div className="mt-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                  <div className="mt-1 h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
                     <div
                       className="h-full transition-all duration-500"
                       style={{
@@ -281,21 +278,21 @@ export default function PipelineAnalyticsPage() {
       </div>
 
       {/* Insights */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 mt-6">
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border border-blue-200 dark:border-blue-800/50 rounded-2xl p-6 mt-6">
         <div className="flex items-start gap-4">
           <div className="p-2 bg-blue-500 rounded-lg">
-            <ArrowTrendingUpIcon className="h-6 w-6 text-white" />
+            <TrendingUp className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Wnioski AI</h3>
-            <div className="space-y-2 text-sm text-gray-700">
-              <p>• Najwieksza utrata konwersji nastepuje miedzy etapem "Kwalifikacja" a "Propozycja" - rozwaź usprawnienie procesu.</p>
-              <p>• Sredni czas w etapie "Propozycja" jest najdluzszy - mozliwe waskie gardlo w przygotowaniu ofert.</p>
-              <p>• Win rate na poziomie {stats.winRate.toFixed(1)}% jest powyzej sredniej branżowej (25%).</p>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Wnioski AI</h3>
+            <div className="space-y-2 text-sm text-slate-700 dark:text-slate-300">
+              <p>Najwieksza utrata konwersji nastepuje miedzy etapem "Kwalifikacja" a "Propozycja" - rozwaz usprawnienie procesu.</p>
+              <p>Sredni czas w etapie "Propozycja" jest najdluzszy - mozliwe waskie gardlo w przygotowaniu ofert.</p>
+              <p>Win rate na poziomie {stats.winRate.toFixed(1)}% jest powyzej sredniej branzowej (25%).</p>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

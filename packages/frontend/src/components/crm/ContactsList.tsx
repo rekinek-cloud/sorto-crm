@@ -1,18 +1,30 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { Users, Plus, User, Building2, Mail, Phone } from 'lucide-react';
 import { Contact, Company } from '@/types/crm';
 import ContactForm from './ContactForm';
-import ContactItem from './ContactItem';
 import { contactsApi } from '@/lib/api/contacts';
 import { companiesApi } from '@/lib/api/companies';
 import { toast } from 'react-hot-toast';
+
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { FilterBar } from '@/components/ui/FilterBar';
+import { DataTable, Column } from '@/components/ui/DataTable';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ActionButton } from '@/components/ui/ActionButton';
+import { StatCard } from '@/components/ui/StatCard';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
 
 interface ContactsListProps {
   companyId?: string;
 }
 
 export default function ContactsList({ companyId }: ContactsListProps) {
+  const router = useRouter();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -36,12 +48,12 @@ export default function ContactsList({ companyId }: ContactsListProps) {
         }),
         companiesApi.getCompanies({ limit: 100 })
       ]);
-      
+
       setContacts(contactsResponse.contacts);
       setCompanies(companiesResponse.companies);
     } catch (error: any) {
       console.error('Error fetching data:', error);
-      toast.error('Failed to load contacts');
+      toast.error('Nie udalo sie zaladowac kontaktow');
     } finally {
       setIsLoading(false);
     }
@@ -52,42 +64,40 @@ export default function ContactsList({ companyId }: ContactsListProps) {
       const newContact = await contactsApi.createContact(data);
       setContacts(prev => [newContact, ...prev]);
       setIsFormOpen(false);
-      toast.success('Contact created successfully');
+      toast.success('Kontakt utworzony pomyslnie');
     } catch (error: any) {
       console.error('Error creating contact:', error);
-      toast.error('Failed to create contact');
+      toast.error('Nie udalo sie utworzyc kontaktu');
       throw error;
     }
   };
 
   const handleUpdateContact = async (data: any) => {
     if (!editingContact) return;
-    
+
     try {
       const updatedContact = await contactsApi.updateContact(editingContact.id, data);
-      setContacts(prev => prev.map(contact => 
+      setContacts(prev => prev.map(contact =>
         contact.id === editingContact.id ? updatedContact : contact
       ));
       setEditingContact(null);
       setIsFormOpen(false);
-      toast.success('Contact updated successfully');
+      toast.success('Kontakt zaktualizowany pomyslnie');
     } catch (error: any) {
       console.error('Error updating contact:', error);
-      toast.error('Failed to update contact');
+      toast.error('Nie udalo sie zaktualizowac kontaktu');
       throw error;
     }
   };
 
   const handleDeleteContact = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this contact?')) return;
-    
     try {
       await contactsApi.deleteContact(id);
       setContacts(prev => prev.filter(contact => contact.id !== id));
-      toast.success('Contact deleted successfully');
+      toast.success('Kontakt usuniety pomyslnie');
     } catch (error: any) {
       console.error('Error deleting contact:', error);
-      toast.error('Failed to delete contact');
+      toast.error('Nie udalo sie usunac kontaktu');
     }
   };
 
@@ -101,116 +111,210 @@ export default function ContactsList({ companyId }: ContactsListProps) {
     setEditingContact(null);
   };
 
+  // Stats
+  const withCompanies = useMemo(
+    () => contacts.filter(c => c.companyId || c.assignedCompany).length,
+    [contacts]
+  );
+  const independent = useMemo(
+    () => contacts.filter(c => !c.companyId && !c.assignedCompany).length,
+    [contacts]
+  );
+
+  // Filter config for FilterBar
+  const companyFilterOptions = useMemo(
+    () => companies.map(c => ({ value: c.id, label: c.name })),
+    [companies]
+  );
+
+  // DataTable columns
+  const columns: Column<Contact>[] = useMemo(() => [
+    {
+      key: 'name',
+      label: 'Imie i nazwisko',
+      sortable: true,
+      getValue: (contact) => `${contact.firstName} ${contact.lastName}`,
+      render: (_: any, contact: Contact) => (
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800">
+            <User className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
+          </div>
+          <span className="font-medium text-slate-900 dark:text-slate-100">
+            {contact.firstName} {contact.lastName}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'email',
+      label: 'Email',
+      sortable: true,
+      render: (value: any) => value ? (
+        <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+          <Mail className="w-3.5 h-3.5" />
+          <span>{value}</span>
+        </div>
+      ) : (
+        <span className="text-slate-400 dark:text-slate-600">-</span>
+      ),
+    },
+    {
+      key: 'phone',
+      label: 'Telefon',
+      sortable: false,
+      render: (value: any) => value ? (
+        <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+          <Phone className="w-3.5 h-3.5" />
+          <span>{value}</span>
+        </div>
+      ) : (
+        <span className="text-slate-400 dark:text-slate-600">-</span>
+      ),
+    },
+    {
+      key: 'company',
+      label: 'Firma',
+      sortable: true,
+      getValue: (contact) => contact.assignedCompany?.name || '',
+      render: (_: any, contact: Contact) => contact.assignedCompany ? (
+        <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-400">
+          <Building2 className="w-3.5 h-3.5" />
+          <span>{contact.assignedCompany.name}</span>
+        </div>
+      ) : (
+        <span className="text-slate-400 dark:text-slate-600">-</span>
+      ),
+    },
+    {
+      key: 'position',
+      label: 'Stanowisko',
+      sortable: true,
+    },
+  ], []);
+
+  // Loading state
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-      </div>
+      <PageShell>
+        <SkeletonPage />
+      </PageShell>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <PageShell>
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Contacts</h1>
-          <p className="text-gray-600">Manage your professional relationships</p>
-        </div>
-        <button
-          onClick={() => setIsFormOpen(true)}
-          className="btn btn-primary"
-        >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-          </svg>
-          Add Contact
-        </button>
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="flex-1">
-          <input
-            type="text"
-            placeholder="Search contacts..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="input w-full"
-          />
-        </div>
-        <div className="sm:w-64">
-          <select
-            value={selectedCompany}
-            onChange={(e) => setSelectedCompany(e.target.value)}
-            className="input w-full"
+      <PageHeader
+        title="Kontakty"
+        subtitle={`${contacts.length} kontaktow w bazie`}
+        icon={Users}
+        iconColor="text-blue-600"
+        breadcrumbs={[{ label: 'Kontakty' }]}
+        actions={
+          <ActionButton
+            variant="primary"
+            icon={Plus}
+            onClick={() => setIsFormOpen(true)}
           >
-            <option value="">All companies</option>
-            {companies.map(company => (
-              <option key={company.id} value={company.id}>
-                {company.name}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+            Dodaj kontakt
+          </ActionButton>
+        }
+      />
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Contacts</h3>
-          <p className="text-3xl font-bold text-primary-600">{contacts.length}</p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">With Companies</h3>
-          <p className="text-3xl font-bold text-success-600">
-            {contacts.filter(c => c.companyId || c.assignedCompany).length}
-          </p>
-        </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Independent</h3>
-          <p className="text-3xl font-bold text-warning-600">
-            {contacts.filter(c => !c.companyId && !c.assignedCompany).length}
-          </p>
-        </div>
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"
+      >
+        <StatCard
+          label="Wszystkie"
+          value={contacts.length}
+          icon={Users}
+          iconColor="text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"
+        />
+        <StatCard
+          label="Z firmami"
+          value={withCompanies}
+          icon={Building2}
+          iconColor="text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400"
+        />
+        <StatCard
+          label="Niezalezni"
+          value={independent}
+          icon={User}
+          iconColor="text-amber-600 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-400"
+        />
+      </motion.div>
 
-      {/* Contacts List */}
-      <div className="bg-white rounded-lg shadow">
+      {/* Filter Bar */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="mb-6"
+      >
+        <FilterBar
+          search={searchTerm}
+          onSearchChange={setSearchTerm}
+          searchPlaceholder="Szukaj kontaktow..."
+          filters={[
+            {
+              key: 'company',
+              label: 'Wszystkie firmy',
+              options: companyFilterOptions,
+            },
+          ]}
+          filterValues={{ company: selectedCompany || 'all' }}
+          onFilterChange={(key, value) => {
+            if (key === 'company') {
+              setSelectedCompany(value === 'all' ? '' : value);
+            }
+          }}
+        />
+      </motion.div>
+
+      {/* Data Table / Empty State */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
         {contacts.length === 0 ? (
-          <div className="text-center py-12">
-            <div className="text-6xl mb-4">👤</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No contacts found</h3>
-            <p className="text-gray-600 mb-4">
-              {searchTerm || selectedCompany 
-                ? 'Try adjusting your filters' 
-                : 'Start by adding your first contact'
-              }
-            </p>
-            {!searchTerm && !selectedCompany && (
-              <button
-                onClick={() => setIsFormOpen(true)}
-                className="btn btn-primary"
-              >
-                Add First Contact
-              </button>
-            )}
-          </div>
+          <EmptyState
+            icon={Users}
+            title="Brak kontaktow"
+            description={
+              searchTerm || selectedCompany
+                ? 'Sprobuj zmienic filtry wyszukiwania'
+                : 'Zacznij od dodania pierwszego kontaktu'
+            }
+            action={
+              !searchTerm && !selectedCompany ? (
+                <ActionButton
+                  variant="primary"
+                  icon={Plus}
+                  onClick={() => setIsFormOpen(true)}
+                >
+                  Dodaj pierwszy kontakt
+                </ActionButton>
+              ) : undefined
+            }
+          />
         ) : (
-          <div className="divide-y divide-gray-200">
-            {contacts.map(contact => (
-              <ContactItem
-                key={contact.id}
-                contact={contact}
-                companies={companies}
-                onEdit={handleEditContact}
-                onDelete={handleDeleteContact}
-                onOpen={(id) => window.location.href = `/crm/dashboard/contacts/${id}`}
-              />
-            ))}
-          </div>
+          <DataTable<Contact>
+            columns={columns}
+            data={contacts}
+            storageKey="contacts-list"
+            pageSize={20}
+            stickyHeader
+            onRowClick={(contact) => router.push(`/dashboard/contacts/${contact.id}`)}
+            emptyMessage="Brak kontaktow"
+            emptyIcon={<Users className="w-8 h-8" />}
+          />
         )}
-      </div>
+      </motion.div>
 
       {/* Contact Form Modal */}
       {isFormOpen && (
@@ -221,6 +325,6 @@ export default function ContactsList({ companyId }: ContactsListProps) {
           onCancel={handleCloseForm}
         />
       )}
-    </div>
+    </PageShell>
   );
 }

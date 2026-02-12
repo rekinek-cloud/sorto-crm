@@ -6,12 +6,12 @@ import { streamsApi } from '@/lib/api/streams';
 import { Stream } from '@/types/gtd';
 import { toast } from 'react-hot-toast';
 import {
-  XMarkIcon,
-  MagnifyingGlassIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-  InformationCircleIcon
-} from '@heroicons/react/24/outline';
+  X,
+  Search,
+  AlertTriangle,
+  CheckCircle,
+  Info
+} from 'lucide-react';
 
 interface CreateStreamRelationModalProps {
   isOpen: boolean;
@@ -253,7 +253,7 @@ export default function CreateStreamRelationModal({
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600"
           >
-            <XMarkIcon className="h-6 w-6" />
+            <X className="h-6 w-6" />
           </button>
         </div>
 
@@ -309,7 +309,7 @@ export default function CreateStreamRelationModal({
               
               {/* Search */}
               <div className="relative mb-3">
-                <MagnifyingGlassIcon className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <Search className="h-5 w-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Search streams..."
@@ -365,9 +365,9 @@ export default function CreateStreamRelationModal({
                   : 'bg-red-50 text-red-700'
               }`}>
                 {validationResult.isValid ? (
-                  <CheckCircleIcon className="h-5 w-5" />
+                  <CheckCircle className="h-5 w-5" />
                 ) : (
-                  <ExclamationTriangleIcon className="h-5 w-5" />
+                  <AlertTriangle className="h-5 w-5" />
                 )}
                 <span className="text-sm font-medium">
                   {validationResult.isValid 
@@ -439,7 +439,7 @@ export default function CreateStreamRelationModal({
                 onClick={() => setShowAdvanced(!showAdvanced)}
                 className="flex items-center gap-2 text-sm text-indigo-600 hover:text-indigo-700"
               >
-                <InformationCircleIcon className="h-4 w-4" />
+                <Info className="h-4 w-4" />
                 {showAdvanced ? 'Hide' : 'Show'} Advanced Options
               </button>
             </div>
@@ -520,7 +520,7 @@ export default function CreateStreamRelationModal({
                             onClick={() => removePermission(index)}
                             className="text-red-600 hover:text-red-700"
                           >
-                            <XMarkIcon className="h-4 w-4" />
+                            <X className="h-4 w-4" />
                           </button>
                         </div>
                       ))}

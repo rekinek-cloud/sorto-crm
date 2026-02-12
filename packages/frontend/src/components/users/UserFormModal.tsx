@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { X } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { apiClient } from '@/lib/api/client';
 
@@ -131,7 +131,7 @@ export default function UserFormModal({ isOpen, onClose, onSuccess, user }: User
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <XMarkIcon className="h-6 w-6" />
+            <X className="h-6 w-6" />
           </button>
         </div>
 

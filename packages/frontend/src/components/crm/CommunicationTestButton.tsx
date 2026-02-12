@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { apiClient } from '@/lib/api/client';
 import { toast } from 'react-hot-toast';
-import { PhoneIcon, EnvelopeIcon, ChatBubbleLeftIcon } from '@heroicons/react/24/outline';
+import { Phone, Mail, MessageCircle } from 'lucide-react';
 
 interface CommunicationTestButtonProps {
   companyId: string;
@@ -52,9 +52,9 @@ export function CommunicationTestButton({ companyId, onCommunicationAdded }: Com
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
           ) : (
             <>
-              <EnvelopeIcon className="w-4 h-4" />
-              <PhoneIcon className="w-4 h-4" />
-              <ChatBubbleLeftIcon className="w-4 h-4" />
+              <Mail className="w-4 h-4" />
+              <Phone className="w-4 h-4" />
+              <MessageCircle className="w-4 h-4" />
             </>
           )}
           <span>{loading ? 'Creating...' : 'Add Sample Communications'}</span>

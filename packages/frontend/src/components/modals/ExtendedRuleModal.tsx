@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
+import { X, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import type { CommunicationRule, AIPromptTemplate, PromptVariable } from '@/types/communicationRules';
 
@@ -145,7 +145,7 @@ export default function ExtendedRuleModal({ isOpen, onClose, onSave, rule, aiMod
               onClick={onClose}
               className="text-gray-400 hover:text-gray-500"
             >
-              <XMarkIcon className="h-6 w-6" />
+              <X className="h-6 w-6" />
             </button>
           </div>
         </div>
@@ -250,7 +250,7 @@ export default function ExtendedRuleModal({ isOpen, onClose, onSave, rule, aiMod
                 variant="secondary"
                 size="sm"
               >
-                <PlusIcon className="w-4 h-4 mr-1" />
+                <Plus className="w-4 h-4 mr-1" />
                 Dodaj prompt
               </Button>
             </div>
@@ -434,7 +434,7 @@ export default function ExtendedRuleModal({ isOpen, onClose, onSave, rule, aiMod
                       onClick={() => removePrompt(prompt.id)}
                       className="text-red-600 hover:text-red-800"
                     >
-                      <XMarkIcon className="w-5 h-5" />
+                      <X className="w-5 h-5" />
                     </button>
                   </div>
                 </div>

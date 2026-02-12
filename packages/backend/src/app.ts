@@ -125,6 +125,7 @@ import aiMessagesRoutes from './routes/aiMessages';
 import teamRoutes from './routes/team';
 import dataProcessingRoutes from './routes/dataProcessing';
 import emailPipelineRoutes from './routes/emailPipeline';
+import pipelineConfigRoutes from './routes/pipelineConfig';
 
 const app = express();
 
@@ -285,6 +286,7 @@ apiRouter.use('/voice', voiceSimpleRoutes);  // Voice TTS - synteza mowy
 apiRouter.use('/voice-response', voiceResponseRoutes);  // Voice Response - asystent glosowy
 apiRouter.use('/admin/bug-reports', bugReportsRoutes);  // Bug Reports
 apiRouter.use('/admin/mcp-keys', mcpKeysRoutes);  // MCP API Keys
+apiRouter.use('/admin/pipeline-config', pipelineConfigRoutes);  // Pipeline Configuration
 apiRouter.use('/ai-rules', aiRulesRoutes);  // AI Rules
 apiRouter.use('/email-domain-rules', emailDomainRulesRoutes);  // Email Domain Rules - listy domen
 apiRouter.use('/email-analysis', emailAnalysisRoutes);  // Email Analysis - analiza AI emaili

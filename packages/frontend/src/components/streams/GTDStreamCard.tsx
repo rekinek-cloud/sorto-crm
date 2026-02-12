@@ -7,23 +7,23 @@
 
 import React, { useState } from 'react';
 import {
-  FolderIcon,
-  InboxIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  StarIcon,
-  ArchiveBoxIcon,
-  Squares2X2Icon,
-  CogIcon,
-  ChartBarIcon,
-  ArrowTrendingUpIcon,
-  EllipsisVerticalIcon,
-  PencilIcon,
-  TrashIcon,
-  ArrowPathIcon,
-  PauseCircleIcon,
-  PlayCircleIcon
-} from '@heroicons/react/24/outline';
+  Folder,
+  Inbox,
+  CheckCircle,
+  Clock,
+  Star,
+  Archive,
+  LayoutGrid,
+  Settings,
+  BarChart3,
+  TrendingUp,
+  MoreVertical,
+  Pencil,
+  Trash2,
+  RefreshCw,
+  PauseCircle,
+  PlayCircle
+} from 'lucide-react';
 import { GTDRole, StreamType } from '@/types/gtd';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
@@ -81,23 +81,23 @@ const GTDStreamCard: React.FC<GTDStreamCardProps> = ({
   const getGTDIcon = (role?: GTDRole) => {
     switch (role) {
       case 'INBOX':
-        return <InboxIcon className="w-5 h-5" />;
+        return <Inbox className="w-5 h-5" />;
       case 'NEXT_ACTIONS':
-        return <CheckCircleIcon className="w-5 h-5" />;
+        return <CheckCircle className="w-5 h-5" />;
       case 'WAITING_FOR':
-        return <ClockIcon className="w-5 h-5" />;
+        return <Clock className="w-5 h-5" />;
       case 'SOMEDAY_MAYBE':
-        return <StarIcon className="w-5 h-5" />;
+        return <Star className="w-5 h-5" />;
       case 'PROJECTS':
-        return <FolderIcon className="w-5 h-5" />;
+        return <Folder className="w-5 h-5" />;
       case 'CONTEXTS':
-        return <Squares2X2Icon className="w-5 h-5" />;
+        return <LayoutGrid className="w-5 h-5" />;
       case 'AREAS':
-        return <ChartBarIcon className="w-5 h-5" />;
+        return <BarChart3 className="w-5 h-5" />;
       case 'REFERENCE':
-        return <ArchiveBoxIcon className="w-5 h-5" />;
+        return <Archive className="w-5 h-5" />;
       default:
-        return <FolderIcon className="w-5 h-5" />;
+        return <Folder className="w-5 h-5" />;
     }
   };
 
@@ -165,7 +165,7 @@ const GTDStreamCard: React.FC<GTDStreamCardProps> = ({
                 setShowMenu(!showMenu);
               }}
             >
-              <EllipsisVerticalIcon className="w-4 h-4" />
+              <MoreVertical className="w-4 h-4" />
             </Button>
             
             {showMenu && (
@@ -179,7 +179,7 @@ const GTDStreamCard: React.FC<GTDStreamCardProps> = ({
                       setShowMenu(false);
                     }}
                   >
-                    <PencilIcon className="w-4 h-4" />
+                    <Pencil className="w-4 h-4" />
                     <span>Edytuj</span>
                   </button>
                 )}
@@ -192,7 +192,7 @@ const GTDStreamCard: React.FC<GTDStreamCardProps> = ({
                       setShowMenu(false);
                     }}
                   >
-                    <CogIcon className="w-4 h-4" />
+                    <Settings className="w-4 h-4" />
                     <span>Ustawienia strumienia</span>
                   </button>
                 )}
@@ -205,7 +205,7 @@ const GTDStreamCard: React.FC<GTDStreamCardProps> = ({
                       setShowMenu(false);
                     }}
                   >
-                    <Squares2X2Icon className="w-4 h-4" />
+                    <LayoutGrid className="w-4 h-4" />
                     <span>Hierarchia</span>
                   </button>
                 )}
@@ -218,7 +218,7 @@ const GTDStreamCard: React.FC<GTDStreamCardProps> = ({
                       setShowMenu(false);
                     }}
                   >
-                    <ArrowPathIcon className="w-4 h-4" />
+                    <RefreshCw className="w-4 h-4" />
                     <span>Migruj do GTD</span>
                   </button>
                 )}
@@ -231,7 +231,7 @@ const GTDStreamCard: React.FC<GTDStreamCardProps> = ({
                       setShowMenu(false);
                     }}
                   >
-                    <PauseCircleIcon className="w-4 h-4" />
+                    <PauseCircle className="w-4 h-4" />
                     <span>Zamroź strumień</span>
                   </button>
                 )}
@@ -244,7 +244,7 @@ const GTDStreamCard: React.FC<GTDStreamCardProps> = ({
                       setShowMenu(false);
                     }}
                   >
-                    <PlayCircleIcon className="w-4 h-4" />
+                    <PlayCircle className="w-4 h-4" />
                     <span>Odmroź strumień</span>
                   </button>
                 )}
@@ -257,7 +257,7 @@ const GTDStreamCard: React.FC<GTDStreamCardProps> = ({
                       setShowMenu(false);
                     }}
                   >
-                    <TrashIcon className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" />
                     <span>Usuń</span>
                   </button>
                 )}
@@ -327,7 +327,7 @@ const GTDStreamCard: React.FC<GTDStreamCardProps> = ({
             <div className="text-sm">
               {stream.gtdConfig.inboxBehavior?.autoProcessing && (
                 <div className="flex items-center space-x-2 text-green-600">
-                  <ChartBarIcon className="w-4 h-4" />
+                  <BarChart3 className="w-4 h-4" />
                   <span>Auto-przetwarzanie włączone</span>
                 </div>
               )}
@@ -345,7 +345,7 @@ const GTDStreamCard: React.FC<GTDStreamCardProps> = ({
           <div className="flex items-center space-x-2">
             {stream.stats?.avgProcessingTime && (
               <>
-                <ClockIcon className="w-4 h-4" />
+                <Clock className="w-4 h-4" />
                 <span>~{Math.round(stream.stats.avgProcessingTime)}min</span>
               </>
             )}

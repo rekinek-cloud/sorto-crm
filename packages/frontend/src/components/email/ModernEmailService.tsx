@@ -3,17 +3,17 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import {
-  EnvelopeIcon,
-  PaperAirplaneIcon,
-  DocumentTextIcon,
-  ChartBarIcon,
-  CogIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ClockIcon,
-  EyeIcon,
-  CursorArrowRaysIcon
-} from '@heroicons/react/24/outline';
+  Mail,
+  Send,
+  FileText,
+  BarChart3,
+  Settings,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Eye,
+  MousePointerClick
+} from 'lucide-react';
 
 interface EmailTemplate {
   id: string;
@@ -199,7 +199,7 @@ export default function ModernEmailService() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-              <EnvelopeIcon className="w-8 h-8 mr-3 text-blue-600" />
+              <Mail className="w-8 h-8 mr-3 text-blue-600" />
               Modern Email Service
             </h1>
             <p className="mt-1 text-sm text-gray-600">
@@ -211,7 +211,7 @@ export default function ModernEmailService() {
             disabled={loading}
             className="btn btn-outline flex items-center"
           >
-            <CogIcon className="w-4 h-4 mr-2" />
+            <Settings className="w-4 h-4 mr-2" />
             Test Config
           </button>
         </div>
@@ -224,9 +224,9 @@ export default function ModernEmailService() {
         }`}>
           <div className="flex items-center">
             {configTest.success ? (
-              <CheckCircleIcon className="w-5 h-5 text-green-600 mr-2" />
+              <CheckCircle className="w-5 h-5 text-green-600 mr-2" />
             ) : (
-              <XCircleIcon className="w-5 h-5 text-red-600 mr-2" />
+              <XCircle className="w-5 h-5 text-red-600 mr-2" />
             )}
             <span className="font-medium">
               {configTest.success 
@@ -243,9 +243,9 @@ export default function ModernEmailService() {
         <div className="border-b border-gray-200">
           <nav className="flex space-x-8 px-6">
             {[
-              { key: 'send', label: 'Send Email', icon: PaperAirplaneIcon },
-              { key: 'templates', label: 'Templates', icon: DocumentTextIcon },
-              { key: 'stats', label: 'Statistics', icon: ChartBarIcon },
+              { key: 'send', label: 'Send Email', icon: Send },
+              { key: 'templates', label: 'Templates', icon: FileText },
+              { key: 'stats', label: 'Statistics', icon: BarChart3 },
             ].map(({ key, label, icon: Icon }) => (
               <button
                 key={key}
@@ -316,7 +316,7 @@ export default function ModernEmailService() {
                 disabled={loading}
                 className="btn btn-primary flex items-center"
               >
-                <PaperAirplaneIcon className="w-4 h-4 mr-2" />
+                <Send className="w-4 h-4 mr-2" />
                 {loading ? 'Sending...' : 'Send Email'}
               </button>
             </div>
@@ -406,7 +406,7 @@ export default function ModernEmailService() {
                 disabled={loading || !templateForm.templateId}
                 className="btn btn-primary flex items-center"
               >
-                <DocumentTextIcon className="w-4 h-4 mr-2" />
+                <FileText className="w-4 h-4 mr-2" />
                 {loading ? 'Sending...' : 'Send Template Email'}
               </button>
             </div>
@@ -429,7 +429,7 @@ export default function ModernEmailService() {
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
                     <div className="flex items-center">
-                      <PaperAirplaneIcon className="w-8 h-8 text-blue-600" />
+                      <Send className="w-8 h-8 text-blue-600" />
                       <div className="ml-3">
                         <div className="text-2xl font-bold text-blue-900">{stats.sent}</div>
                         <div className="text-sm text-blue-600">Sent</div>
@@ -439,7 +439,7 @@ export default function ModernEmailService() {
 
                   <div className="bg-green-50 p-4 rounded-lg border border-green-200">
                     <div className="flex items-center">
-                      <CheckCircleIcon className="w-8 h-8 text-green-600" />
+                      <CheckCircle className="w-8 h-8 text-green-600" />
                       <div className="ml-3">
                         <div className="text-2xl font-bold text-green-900">{stats.delivered}</div>
                         <div className="text-sm text-green-600">Delivered</div>
@@ -449,7 +449,7 @@ export default function ModernEmailService() {
 
                   <div className="bg-red-50 p-4 rounded-lg border border-red-200">
                     <div className="flex items-center">
-                      <XCircleIcon className="w-8 h-8 text-red-600" />
+                      <XCircle className="w-8 h-8 text-red-600" />
                       <div className="ml-3">
                         <div className="text-2xl font-bold text-red-900">{stats.failed}</div>
                         <div className="text-sm text-red-600">Failed</div>
@@ -459,7 +459,7 @@ export default function ModernEmailService() {
 
                   <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
                     <div className="flex items-center">
-                      <EyeIcon className="w-8 h-8 text-purple-600" />
+                      <Eye className="w-8 h-8 text-purple-600" />
                       <div className="ml-3">
                         <div className="text-2xl font-bold text-purple-900">{stats.opened}</div>
                         <div className="text-sm text-purple-600">Opened</div>

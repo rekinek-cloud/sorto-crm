@@ -6,13 +6,13 @@ import SmartScoreBadge from './SmartScoreBadge';
 import SmartAnalysisModal from './SmartAnalysisModal';
 import { toast } from 'react-hot-toast';
 import {
-  ChartBarIcon,
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  ArrowPathIcon,
-  DocumentTextIcon,
-  FolderIcon
-} from '@heroicons/react/24/outline';
+  BarChart3,
+  Search,
+  Filter,
+  RefreshCw,
+  FileText,
+  Folder
+} from 'lucide-react';
 
 type ReportType = 'tasks' | 'projects';
 
@@ -127,7 +127,7 @@ export default function SmartReportsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white p-4 rounded-lg shadow border">
           <div className="flex items-center">
-            <ChartBarIcon className="h-8 w-8 text-blue-500" />
+            <BarChart3 className="h-8 w-8 text-blue-500" />
             <div className="ml-3">
               <p className="text-sm font-medium text-gray-500">Średni wynik RZUT</p>
               <p className="text-2xl font-bold text-gray-900">{statistics.averageScore}</p>
@@ -202,9 +202,9 @@ export default function SmartReportsPage() {
           className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center gap-2"
         >
           {loading ? (
-            <ArrowPathIcon className="h-5 w-5 animate-spin" />
+            <RefreshCw className="h-5 w-5 animate-spin" />
           ) : (
-            <ChartBarIcon className="h-5 w-5" />
+            <BarChart3 className="h-5 w-5" />
           )}
           Analizuj zbiorowo
         </button>
@@ -224,7 +224,7 @@ export default function SmartReportsPage() {
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            <DocumentTextIcon className="h-5 w-5 inline mr-2" />
+            <FileText className="h-5 w-5 inline mr-2" />
             Zadania
           </button>
           <button
@@ -238,7 +238,7 @@ export default function SmartReportsPage() {
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
-            <FolderIcon className="h-5 w-5 inline mr-2" />
+            <Folder className="h-5 w-5 inline mr-2" />
             Strumienie projektowe
           </button>
         </nav>
@@ -251,7 +251,7 @@ export default function SmartReportsPage() {
       <div className="bg-white p-4 rounded-lg shadow border">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex items-center gap-2">
-            <FunnelIcon className="h-5 w-5 text-gray-400" />
+            <Filter className="h-5 w-5 text-gray-400" />
             <select
               value={selectedScoreRange}
               onChange={(e) => {
@@ -296,7 +296,7 @@ export default function SmartReportsPage() {
       <div className="bg-white rounded-lg shadow border overflow-hidden">
         {reportsData && (reportType === 'tasks' ? reportsData.tasks : reportsData.projects)?.length === 0 ? (
           <div className="p-8 text-center">
-            <ChartBarIcon className="mx-auto h-12 w-12 text-gray-400" />
+            <BarChart3 className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">Brak analizowanych {reportType === 'tasks' ? 'zadań' : 'strumieni'}</h3>
             <p className="mt-1 text-sm text-gray-500">
               Rozpocznij analizę aby zobaczyć wyniki RZUT.

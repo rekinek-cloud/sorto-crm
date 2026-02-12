@@ -1,15 +1,15 @@
 'use client';
 
 import { useTheme } from './ThemeProvider';
-import { SunIcon, MoonIcon, ComputerDesktopIcon } from '@heroicons/react/24/outline';
+import { Sun, Moon, Monitor } from 'lucide-react';
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
 
   const themes = [
-    { key: 'light', icon: SunIcon, label: 'Jasny' },
-    { key: 'dark', icon: MoonIcon, label: 'Ciemny' },
-    { key: 'system', icon: ComputerDesktopIcon, label: 'System' },
+    { key: 'light', icon: Sun, label: 'Jasny' },
+    { key: 'dark', icon: Moon, label: 'Ciemny' },
+    { key: 'system', icon: Monitor, label: 'System' },
   ] as const;
 
   return (
@@ -45,11 +45,11 @@ export function ThemeToggleCompact() {
   const getIcon = () => {
     switch (theme) {
       case 'light':
-        return SunIcon;
+        return Sun;
       case 'dark':
-        return MoonIcon;
+        return Moon;
       default:
-        return ComputerDesktopIcon;
+        return Monitor;
     }
   };
 

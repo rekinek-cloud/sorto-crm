@@ -2,20 +2,22 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-  MagnifyingGlassIcon,
-  SparklesIcon,
-  DocumentTextIcon,
-  UserIcon,
-  BuildingOfficeIcon,
-  FolderIcon,
-  CurrencyDollarIcon,
-  AdjustmentsHorizontalIcon,
-  ArrowPathIcon,
-  ClockIcon,
-} from '@heroicons/react/24/outline';
+  Search,
+  Sparkles,
+  FileText,
+  User,
+  Building2,
+  Folder,
+  DollarSign,
+  SlidersHorizontal,
+  RefreshCw,
+  Clock,
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { realVectorSearchApi } from '@/lib/api/realVectorSearch';
 import debounce from 'lodash/debounce';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 interface SearchResult {
   id: string;
@@ -35,12 +37,12 @@ interface SearchFilters {
 }
 
 const typeConfig: Record<string, { icon: React.ComponentType<any>; color: string; label: string }> = {
-  contact: { icon: UserIcon, color: 'text-blue-600 bg-blue-100', label: 'Kontakt' },
-  company: { icon: BuildingOfficeIcon, color: 'text-green-600 bg-green-100', label: 'Firma' },
-  deal: { icon: CurrencyDollarIcon, color: 'text-pink-600 bg-pink-100', label: 'Transakcja' },
-  project: { icon: FolderIcon, color: 'text-purple-600 bg-purple-100', label: 'Projekt' },
-  task: { icon: DocumentTextIcon, color: 'text-orange-600 bg-orange-100', label: 'Zadanie' },
-  document: { icon: DocumentTextIcon, color: 'text-gray-600 bg-gray-100', label: 'Dokument' },
+  contact: { icon: User, color: 'text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400', label: 'Kontakt' },
+  company: { icon: Building2, color: 'text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400', label: 'Firma' },
+  deal: { icon: DollarSign, color: 'text-pink-600 bg-pink-100 dark:bg-pink-900/30 dark:text-pink-400', label: 'Transakcja' },
+  project: { icon: Folder, color: 'text-purple-600 bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400', label: 'Projekt' },
+  task: { icon: FileText, color: 'text-orange-600 bg-orange-100 dark:bg-orange-900/30 dark:text-orange-400', label: 'Zadanie' },
+  document: { icon: FileText, color: 'text-slate-600 bg-slate-100 dark:bg-slate-700 dark:text-slate-400', label: 'Dokument' },
 };
 
 export default function SearchPage() {
@@ -56,7 +58,6 @@ export default function SearchPage() {
   const [searchMode, setSearchMode] = useState<'keyword' | 'semantic'>('semantic');
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
 
-  // Load recent searches from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('recentSearches');
     if (saved) {
@@ -91,23 +92,20 @@ export default function SearchPage() {
           metadata: r.metadata,
         })));
       } else {
-        // Fallback to mock for keyword search (no dedicated API)
         setResults([]);
       }
 
-      // Save to recent searches
       const newRecent = [searchQuery, ...recentSearches.filter((s) => s !== searchQuery)].slice(0, 5);
       setRecentSearches(newRecent);
       localStorage.setItem('recentSearches', JSON.stringify(newRecent));
     } catch (error) {
       console.error('Search failed:', error);
-      toast.error('Wyszukiwanie nie powiodlo sie');
+      toast.error('Wyszukiwanie nie powiodło się');
     } finally {
       setLoading(false);
     }
   };
 
-  // Debounced search
   const debouncedSearch = useCallback(
     debounce((q: string) => performSearch(q), 300),
     [filters, searchMode]
@@ -136,17 +134,13 @@ export default function SearchPage() {
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-indigo-100 rounded-lg">
-          <MagnifyingGlassIcon className="h-6 w-6 text-indigo-600" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Wyszukiwanie</h1>
-          <p className="text-sm text-gray-600">Wyszukiwanie semantyczne AI</p>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Wyszukiwanie"
+        subtitle="Wyszukiwanie semantyczne AI"
+        icon={Search}
+        iconColor="text-indigo-600"
+      />
 
       {/* Search Mode Toggle */}
       <div className="flex items-center gap-2 mb-4">
@@ -155,10 +149,10 @@ export default function SearchPage() {
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             searchMode === 'semantic'
               ? 'bg-indigo-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
           }`}
         >
-          <SparklesIcon className="h-4 w-4" />
+          <Sparkles className="h-4 w-4" />
           Semantyczne (AI)
         </button>
         <button
@@ -166,30 +160,30 @@ export default function SearchPage() {
           className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
             searchMode === 'keyword'
               ? 'bg-indigo-600 text-white'
-              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
           }`}
         >
-          <MagnifyingGlassIcon className="h-4 w-4" />
-          Slownikowe
+          <Search className="h-4 w-4" />
+          Słownikowe
         </button>
       </div>
 
       {/* Search Input */}
       <div className="relative mb-4">
-        <MagnifyingGlassIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 dark:text-slate-500" />
         <input
           type="text"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder={
             searchMode === 'semantic'
-              ? 'Opisz czego szukasz, np. "klient zainteresowany wdrozeniem CRM"'
-              : 'Wpisz slowa kluczowe...'
+              ? 'Opisz czego szukasz, np. "klient zainteresowany wdrożeniem CRM"'
+              : 'Wpisz słowa kluczowe...'
           }
-          className="w-full pl-12 pr-12 py-4 border border-gray-300 rounded-xl text-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+          className="w-full pl-12 pr-12 py-4 border border-slate-300 dark:border-slate-600 rounded-xl text-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100"
         />
         {loading && (
-          <ArrowPathIcon className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 animate-spin" />
+          <RefreshCw className="absolute right-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 dark:text-slate-500 animate-spin" />
         )}
       </div>
 
@@ -203,7 +197,7 @@ export default function SearchPage() {
               className={`flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-colors ${
                 filters.types.includes(type)
                   ? 'bg-indigo-600 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:hover:bg-slate-700'
               }`}
             >
               {React.createElement(config.icon, { className: 'h-4 w-4' })}
@@ -214,19 +208,19 @@ export default function SearchPage() {
 
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center gap-1 px-3 py-1 text-gray-500 hover:text-gray-700"
+          className="flex items-center gap-1 px-3 py-1 text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300"
         >
-          <AdjustmentsHorizontalIcon className="h-4 w-4" />
+          <SlidersHorizontal className="h-4 w-4" />
           Filtry
         </button>
       </div>
 
       {/* Advanced Filters */}
       {showFilters && (
-        <div className="bg-gray-50 rounded-xl p-4 mb-4">
+        <div className="bg-slate-50 dark:bg-slate-800 rounded-xl p-4 mb-4">
           <div className="flex items-center gap-4">
             <div>
-              <label className="block text-sm text-gray-600 mb-1">Min. score</label>
+              <label className="block text-sm text-slate-600 dark:text-slate-400 mb-1">Min. score</label>
               <input
                 type="range"
                 value={filters.minScore}
@@ -236,11 +230,11 @@ export default function SearchPage() {
                 step={0.1}
                 className="w-32"
               />
-              <span className="ml-2 text-sm text-gray-600">{(filters.minScore || 0).toFixed(1)}</span>
+              <span className="ml-2 text-sm text-slate-600 dark:text-slate-400">{(filters.minScore || 0).toFixed(1)}</span>
             </div>
 
-            <button onClick={clearFilters} className="text-sm text-gray-500 hover:text-gray-700">
-              Wyczysc filtry
+            <button onClick={clearFilters} className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300">
+              Wyczyść filtry
             </button>
           </div>
         </div>
@@ -249,8 +243,8 @@ export default function SearchPage() {
       {/* Recent Searches */}
       {!query && recentSearches.length > 0 && (
         <div className="mb-6">
-          <h3 className="text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-            <ClockIcon className="h-4 w-4" />
+          <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2 flex items-center gap-2">
+            <Clock className="h-4 w-4" />
             Ostatnie wyszukiwania
           </h3>
           <div className="flex flex-wrap gap-2">
@@ -258,7 +252,7 @@ export default function SearchPage() {
               <button
                 key={index}
                 onClick={() => setQuery(search)}
-                className="px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm hover:bg-gray-200"
+                className="px-3 py-1 bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 rounded-full text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
               >
                 {search}
               </button>
@@ -270,12 +264,12 @@ export default function SearchPage() {
       {/* Results */}
       {results.length > 0 ? (
         <div className="space-y-3">
-          <div className="flex items-center justify-between text-sm text-gray-500 mb-2">
-            <span>Znaleziono {results.length} wynikow</span>
+          <div className="flex items-center justify-between text-sm text-slate-500 dark:text-slate-400 mb-2">
+            <span>Znaleziono {results.length} wyników</span>
             {searchMode === 'semantic' && (
               <span className="flex items-center gap-1">
-                <SparklesIcon className="h-4 w-4 text-indigo-500" />
-                Posortowane wg trafnosci AI
+                <Sparkles className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />
+                Posortowane wg trafności AI
               </span>
             )}
           </div>
@@ -287,7 +281,7 @@ export default function SearchPage() {
             return (
               <div
                 key={result.id}
-                className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer"
+                className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer"
               >
                 <div className="flex items-start gap-4">
                   <div className={`p-2 rounded-lg ${config.color}`}>
@@ -296,21 +290,21 @@ export default function SearchPage() {
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <h3 className="font-medium text-gray-900">{result.title}</h3>
-                      <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs rounded">
+                      <h3 className="font-medium text-slate-900 dark:text-slate-100">{result.title}</h3>
+                      <span className="px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 text-xs rounded">
                         {config.label}
                       </span>
                     </div>
 
                     {result.description && (
-                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                      <p className="text-sm text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">
                         {result.description}
                       </p>
                     )}
 
                     {result.highlights && result.highlights.length > 0 && (
                       <div
-                        className="text-sm text-gray-500 mt-2 line-clamp-2"
+                        className="text-sm text-slate-500 dark:text-slate-400 mt-2 line-clamp-2"
                         dangerouslySetInnerHTML={{ __html: result.highlights[0] }}
                       />
                     )}
@@ -324,10 +318,10 @@ export default function SearchPage() {
                             ? 'bg-green-500'
                             : result.score > 0.6
                             ? 'bg-yellow-500'
-                            : 'bg-gray-400'
+                            : 'bg-slate-400'
                         }`}
                       />
-                      <span className="text-gray-500">{(result.score * 100).toFixed(0)}%</span>
+                      <span className="text-slate-500 dark:text-slate-400">{(result.score * 100).toFixed(0)}%</span>
                     </div>
                   </div>
                 </div>
@@ -337,21 +331,21 @@ export default function SearchPage() {
         </div>
       ) : query && !loading ? (
         <div className="text-center py-12">
-          <MagnifyingGlassIcon className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500">Brak wynikow dla "{query}"</p>
-          <p className="text-sm text-gray-400 mt-1">
-            Sprobuj innych slow kluczowych lub zmien tryb wyszukiwania
+          <Search className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+          <p className="text-slate-500 dark:text-slate-400">Brak wyników dla &quot;{query}&quot;</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
+            Spróbuj innych słów kluczowych lub zmień tryb wyszukiwania
           </p>
         </div>
       ) : !query ? (
         <div className="text-center py-12">
-          <SparklesIcon className="h-12 w-12 text-indigo-300 mx-auto mb-4" />
-          <p className="text-gray-500">Wpisz zapytanie, aby rozpoczac wyszukiwanie</p>
-          <p className="text-sm text-gray-400 mt-1">
+          <Sparkles className="h-12 w-12 text-indigo-300 dark:text-indigo-600 mx-auto mb-4" />
+          <p className="text-slate-500 dark:text-slate-400">Wpisz zapytanie, aby rozpocząć wyszukiwanie</p>
+          <p className="text-sm text-slate-400 dark:text-slate-500 mt-1">
             Wyszukiwanie semantyczne rozumie kontekst i znaczenie
           </p>
         </div>
       ) : null}
-    </div>
+    </PageShell>
   );
 }

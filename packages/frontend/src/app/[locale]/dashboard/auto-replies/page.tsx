@@ -2,19 +2,22 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  PlusIcon,
-  PencilIcon,
-  TrashIcon,
-  PlayIcon,
-  PauseIcon,
-  BeakerIcon,
-  ClockIcon,
-  EnvelopeIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-} from '@heroicons/react/24/outline';
+  Plus,
+  Pencil,
+  Trash2,
+  Play,
+  Pause,
+  FlaskConical,
+  Clock,
+  Mail,
+  CheckCircle,
+  XCircle,
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { autoRepliesApi, type AutoReply } from '@/lib/api/autoReplies';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { SkeletonPage } from '@/components/ui/SkeletonPage';
 
 // Types imported from @/lib/api/autoReplies
 
@@ -200,34 +203,38 @@ export default function AutoRepliesPage() {
     });
   };
 
+  if (loading) {
+    return (
+      <PageShell>
+        <SkeletonPage rows={4} withStats={false} />
+      </PageShell>
+    );
+  }
+
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-blue-100 rounded-lg">
-            <EnvelopeIcon className="h-6 w-6 text-blue-600" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Auto-odpowiedzi</h1>
-            <p className="text-sm text-gray-600">Automatyczne odpowiedzi na przychodzace emaile</p>
-          </div>
-        </div>
-        <button
-          onClick={() => setShowForm(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          <PlusIcon className="h-5 w-5" />
-          Nowa regula
-        </button>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Auto-odpowiedzi"
+        subtitle="Automatyczne odpowiedzi na przychodzace emaile"
+        icon={Mail}
+        iconColor="text-blue-600"
+        actions={
+          <button
+            onClick={() => setShowForm(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="h-5 w-5" />
+            Nowa regula
+          </button>
+        }
+      />
 
       {/* Form Modal */}
       {showForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-sm">
             <div className="p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">
                 {editingRule ? 'Edytuj regule' : 'Nowa regula auto-odpowiedzi'}
               </h2>
 
@@ -235,22 +242,22 @@ export default function AutoRepliesPage() {
                 {/* Basic info */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Nazwa *</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nazwa *</label>
                     <input
                       type="text"
                       value={formData.name}
                       onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                       placeholder="np. Odpowiedz na zapytania"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Priorytet</label>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Priorytet</label>
                     <input
                       type="number"
                       value={formData.priority}
                       onChange={(e) => setFormData({ ...formData, priority: parseInt(e.target.value) })}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                      className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                       min={1}
                       max={100}
                     />
@@ -258,57 +265,57 @@ export default function AutoRepliesPage() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Opis</label>
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Opis</label>
                   <input
                     type="text"
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                     placeholder="Opcjonalny opis reguly"
                   />
                 </div>
 
                 {/* Conditions */}
-                <div className="border-t pt-4">
-                  <h3 className="font-medium text-gray-900 mb-3">Warunki</h3>
+                <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                  <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-3">Warunki</h3>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1">Od adresu email</label>
+                      <label className="block text-sm text-slate-600 dark:text-slate-400 mb-1">Od adresu email</label>
                       <input
                         type="email"
                         value={formData.fromEmail}
                         onChange={(e) => setFormData({ ...formData, fromEmail: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         placeholder="konkretny@email.com"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1">Od domeny</label>
+                      <label className="block text-sm text-slate-600 dark:text-slate-400 mb-1">Od domeny</label>
                       <input
                         type="text"
                         value={formData.fromDomain}
                         onChange={(e) => setFormData({ ...formData, fromDomain: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         placeholder="example.com"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1">Temat zawiera (przecinki)</label>
+                      <label className="block text-sm text-slate-600 dark:text-slate-400 mb-1">Temat zawiera (przecinki)</label>
                       <input
                         type="text"
                         value={formData.subjectContains}
                         onChange={(e) => setFormData({ ...formData, subjectContains: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         placeholder="zapytanie, oferta, cennik"
                       />
                     </div>
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1">Tresc zawiera (przecinki)</label>
+                      <label className="block text-sm text-slate-600 dark:text-slate-400 mb-1">Tresc zawiera (przecinki)</label>
                       <input
                         type="text"
                         value={formData.bodyContains}
                         onChange={(e) => setFormData({ ...formData, bodyContains: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         placeholder="prosze o kontakt, potrzebuje"
                       />
                     </div>
@@ -316,46 +323,46 @@ export default function AutoRepliesPage() {
                 </div>
 
                 {/* Reply config */}
-                <div className="border-t pt-4">
-                  <h3 className="font-medium text-gray-900 mb-3">Konfiguracja odpowiedzi</h3>
+                <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                  <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-3">Konfiguracja odpowiedzi</h3>
                   <div>
-                    <label className="block text-sm text-gray-600 mb-1">Temat odpowiedzi</label>
+                    <label className="block text-sm text-slate-600 dark:text-slate-400 mb-1">Temat odpowiedzi</label>
                     <input
                       type="text"
                       value={formData.replySubject}
                       onChange={(e) => setFormData({ ...formData, replySubject: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                       placeholder="Re: {{subject}}"
                     />
                   </div>
                   <div className="mt-3">
-                    <label className="block text-sm text-gray-600 mb-1">Szablon odpowiedzi *</label>
+                    <label className="block text-sm text-slate-600 dark:text-slate-400 mb-1">Szablon odpowiedzi *</label>
                     <textarea
                       value={formData.template}
                       onChange={(e) => setFormData({ ...formData, template: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                       rows={5}
                       placeholder="Dziekujemy za wiadomosc. Odpowiemy najszybciej jak to mozliwe.&#10;&#10;Pozdrawiamy,&#10;Zespol"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4 mt-3">
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1">Opoznienie (sekundy)</label>
+                      <label className="block text-sm text-slate-600 dark:text-slate-400 mb-1">Opoznienie (sekundy)</label>
                       <input
                         type="number"
                         value={formData.delay}
                         onChange={(e) => setFormData({ ...formData, delay: parseInt(e.target.value) })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         min={0}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm text-gray-600 mb-1">Cooldown (sekundy)</label>
+                      <label className="block text-sm text-slate-600 dark:text-slate-400 mb-1">Cooldown (sekundy)</label>
                       <input
                         type="number"
                         value={formData.cooldownPeriod}
                         onChange={(e) => setFormData({ ...formData, cooldownPeriod: parseInt(e.target.value) })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         min={0}
                       />
                     </div>
@@ -368,14 +375,14 @@ export default function AutoRepliesPage() {
                         onChange={(e) => setFormData({ ...formData, onlyBusinessHours: e.target.checked })}
                         className="rounded"
                       />
-                      <span className="text-sm text-gray-700">Tylko w godzinach pracy</span>
+                      <span className="text-sm text-slate-700 dark:text-slate-300">Tylko w godzinach pracy</span>
                     </label>
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="border-t pt-4">
-                  <h3 className="font-medium text-gray-900 mb-3">Akcje dodatkowe</h3>
+                <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
+                  <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-3">Akcje dodatkowe</h3>
                   <div className="flex flex-wrap gap-4">
                     <label className="flex items-center gap-2">
                       <input
@@ -384,7 +391,7 @@ export default function AutoRepliesPage() {
                         onChange={(e) => setFormData({ ...formData, markAsRead: e.target.checked })}
                         className="rounded"
                       />
-                      <span className="text-sm text-gray-700">Oznacz jako przeczytane</span>
+                      <span className="text-sm text-slate-700 dark:text-slate-300">Oznacz jako przeczytane</span>
                     </label>
                     <label className="flex items-center gap-2">
                       <input
@@ -393,26 +400,26 @@ export default function AutoRepliesPage() {
                         onChange={(e) => setFormData({ ...formData, createTask: e.target.checked })}
                         className="rounded"
                       />
-                      <span className="text-sm text-gray-700">Utworz zadanie</span>
+                      <span className="text-sm text-slate-700 dark:text-slate-300">Utworz zadanie</span>
                     </label>
                   </div>
                   <div className="mt-3">
-                    <label className="block text-sm text-gray-600 mb-1">Dodaj etykiete</label>
+                    <label className="block text-sm text-slate-600 dark:text-slate-400 mb-1">Dodaj etykiete</label>
                     <input
                       type="text"
                       value={formData.addLabel}
                       onChange={(e) => setFormData({ ...formData, addLabel: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                       placeholder="np. auto-reply"
                     />
                   </div>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 mt-6 pt-4 border-t">
+              <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
                 <button
                   onClick={resetForm}
-                  className="px-4 py-2 text-gray-600 hover:text-gray-900"
+                  className="px-4 py-2 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100"
                 >
                   Anuluj
                 </button>
@@ -429,14 +436,10 @@ export default function AutoRepliesPage() {
       )}
 
       {/* Rules List */}
-      {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-        </div>
-      ) : autoReplies.length === 0 ? (
-        <div className="text-center py-12 bg-gray-50 rounded-xl">
-          <EnvelopeIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">Brak regul auto-odpowiedzi</p>
+      {autoReplies.length === 0 ? (
+        <div className="text-center py-12 bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+          <Mail className="h-12 w-12 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
+          <p className="text-slate-500 dark:text-slate-400">Brak regul auto-odpowiedzi</p>
           <button
             onClick={() => setShowForm(true)}
             className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
@@ -449,31 +452,31 @@ export default function AutoRepliesPage() {
           {autoReplies.map((rule) => (
             <div
               key={rule.id}
-              className={`bg-white rounded-xl border ${rule.enabled ? 'border-gray-200' : 'border-gray-100 opacity-60'} p-4 hover:shadow-sm transition-shadow`}
+              className={`bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm ${!rule.enabled ? 'opacity-60' : ''} p-4 hover:shadow-md transition-shadow`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-start gap-4">
                   <button
                     onClick={() => handleToggle(rule.id)}
                     className={`mt-1 p-2 rounded-lg transition-colors ${
-                      rule.enabled ? 'bg-green-100 text-green-600' : 'bg-gray-100 text-gray-400'
+                      rule.enabled ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-100 text-slate-400 dark:bg-slate-700 dark:text-slate-500'
                     }`}
                   >
-                    {rule.enabled ? <PlayIcon className="h-4 w-4" /> : <PauseIcon className="h-4 w-4" />}
+                    {rule.enabled ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
                   </button>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-gray-900">{rule.name}</h3>
-                      <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded">
+                      <h3 className="font-semibold text-slate-900 dark:text-slate-100">{rule.name}</h3>
+                      <span className="px-2 py-0.5 bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400 text-xs rounded">
                         Priorytet: {rule.priority}
                       </span>
                     </div>
                     {rule.description && (
-                      <p className="text-sm text-gray-500 mt-1">{rule.description}</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{rule.description}</p>
                     )}
-                    <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+                    <div className="flex items-center gap-4 mt-2 text-xs text-slate-500 dark:text-slate-400">
                       <span className="flex items-center gap-1">
-                        <ClockIcon className="h-4 w-4" />
+                        <Clock className="h-4 w-4" />
                         Wykonan: {rule._count?.executions || 0}
                       </span>
                       {rule.replyConfig.delay > 0 && (
@@ -488,24 +491,24 @@ export default function AutoRepliesPage() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => handleTest(rule.id)}
-                    className="p-2 text-gray-500 hover:text-blue-600 transition-colors"
+                    className="p-2 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors"
                     title="Testuj"
                   >
-                    <BeakerIcon className="h-5 w-5" />
+                    <FlaskConical className="h-5 w-5" />
                   </button>
                   <button
                     onClick={() => handleEdit(rule)}
-                    className="p-2 text-gray-500 hover:text-blue-600 transition-colors"
+                    className="p-2 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors"
                     title="Edytuj"
                   >
-                    <PencilIcon className="h-5 w-5" />
+                    <Pencil className="h-5 w-5" />
                   </button>
                   <button
                     onClick={() => handleDelete(rule.id)}
-                    className="p-2 text-gray-500 hover:text-red-600 transition-colors"
+                    className="p-2 text-slate-500 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400 transition-colors"
                     title="Usun"
                   >
-                    <TrashIcon className="h-5 w-5" />
+                    <Trash2 className="h-5 w-5" />
                   </button>
                 </div>
               </div>
@@ -513,6 +516,6 @@ export default function AutoRepliesPage() {
           ))}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

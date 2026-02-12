@@ -1,18 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
-import { 
-  EnvelopeIcon, 
-  PhoneIcon, 
-  ChatBubbleLeftIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-  UserIcon,
-  ClockIcon,
-  MagnifyingGlassIcon,
-  FunnelIcon,
-  ArrowPathIcon
-} from '@heroicons/react/24/outline';
+import {
+  Mail,
+  Phone,
+  MessageCircle,
+  ChevronDown,
+  ChevronRight,
+  User,
+  Clock,
+  Search,
+  Filter,
+  RefreshCw
+} from 'lucide-react';
 
 interface CommunicationHistory {
   id: string;
@@ -141,15 +141,15 @@ export function CommunicationHistory({ history, loading, onRefresh }: Communicat
   const getCommunicationIcon = (type: string) => {
     switch (type.toLowerCase()) {
       case 'email':
-        return <EnvelopeIcon className="w-4 h-4" />;
+        return <Mail className="w-4 h-4" />;
       case 'phone':
       case 'call':
-        return <PhoneIcon className="w-4 h-4" />;
+        return <Phone className="w-4 h-4" />;
       case 'sms':
       case 'chat':
-        return <ChatBubbleLeftIcon className="w-4 h-4" />;
+        return <MessageCircle className="w-4 h-4" />;
       default:
-        return <EnvelopeIcon className="w-4 h-4" />;
+        return <Mail className="w-4 h-4" />;
     }
   };
 
@@ -252,7 +252,7 @@ export function CommunicationHistory({ history, loading, onRefresh }: Communicat
       {/* Content */}
       {filteredHistory.length === 0 ? (
         <div className="text-center py-8 text-gray-500">
-          <EnvelopeIcon className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+          <Mail className="w-12 h-12 mx-auto mb-4 text-gray-300" />
           <p>Brak komunikacji spełniającej kryteria</p>
           <p className="text-sm">Spróbuj zmienić filtry wyszukiwania</p>
         </div>
@@ -275,9 +275,9 @@ export function CommunicationHistory({ history, loading, onRefresh }: Communicat
                     <div className="flex items-center space-x-3">
                       <div className="flex items-center space-x-1">
                         {isExpanded ? (
-                          <ChevronDownIcon className="w-4 h-4 text-gray-400" />
+                          <ChevronDown className="w-4 h-4 text-gray-400" />
                         ) : (
-                          <ChevronRightIcon className="w-4 h-4 text-gray-400" />
+                          <ChevronRight className="w-4 h-4 text-gray-400" />
                         )}
                         {getCommunicationIcon(latestMessage.type)}
                       </div>
@@ -435,7 +435,7 @@ export function CommunicationHistory({ history, loading, onRefresh }: Communicat
                 <div className="flex items-center space-x-4 text-xs text-gray-500">
                   {message.contact && (
                     <div className="flex items-center space-x-1">
-                      <UserIcon className="w-3 h-3" />
+                      <User className="w-3 h-3" />
                       <span>{message.contact.firstName} {message.contact.lastName}</span>
                     </div>
                   )}

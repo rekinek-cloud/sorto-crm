@@ -4,26 +4,32 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import {
-  PlusIcon,
-  XMarkIcon,
-  DocumentTextIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  TrophyIcon,
-  BriefcaseIcon,
-  HeartIcon,
-  AcademicCapIcon,
-  CurrencyDollarIcon,
-  UserGroupIcon,
-  ArrowPathIcon,
-} from '@heroicons/react/24/outline';
+  Plus,
+  X,
+  FileText,
+  CheckCircle2,
+  Clock,
+  Trophy,
+  Briefcase,
+  Heart,
+  GraduationCap,
+  DollarSign,
+  Users,
+  RefreshCw,
+  Search,
+  Target,
+  Rocket,
+  LayoutTemplate,
+} from 'lucide-react';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 interface GoalTemplate {
   id: string;
   name: string;
   category: string;
   description: string;
-  icon: string;
+  icon: React.ComponentType<any>;
   iconColor: string;
   template: {
     title: string;
@@ -61,7 +67,7 @@ export default function SmartTemplatesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [newTemplate, setNewTemplate] = useState<CustomTemplate>({
     name: '',
-    category: 'Business',
+    category: 'Biznes',
     description: '',
     title: '',
     templateDescription: '',
@@ -80,216 +86,216 @@ export default function SmartTemplatesPage() {
       const mockTemplates: GoalTemplate[] = [
         {
           id: '1',
-          name: 'Revenue Growth',
-          category: 'Business',
-          description: 'Increase business revenue through strategic initiatives',
-          icon: '💰',
+          name: 'Wzrost przychodów',
+          category: 'Biznes',
+          description: 'Zwiększenie przychodów firmy poprzez strategiczne inicjatywy',
+          icon: DollarSign,
           iconColor: '#10b981',
           template: {
-            title: 'Increase [PRODUCT/SERVICE] revenue by [X]% in [TIMEFRAME]',
-            description: 'Achieve [SPECIFIC REVENUE AMOUNT] in [PRODUCT/SERVICE] sales by implementing [STRATEGY] and reaching [TARGET MARKET] through [CHANNELS]',
-            timeframe: '[X] months/quarters',
+            title: 'Zwiększyć przychody z [PRODUKT/USŁUGA] o [X]% w [OKRESIE]',
+            description: 'Osiągnąć [KONKRETNĄ KWOTĘ] przychodów ze sprzedaży [PRODUKTU/USŁUGI] wdrażając [STRATEGIĘ] i docierając do [RYNKU DOCELOWEGO] poprzez [KANAŁY]',
+            timeframe: '[X] miesięcy/kwartałów',
             measurableMetrics: [
-              'Monthly recurring revenue (MRR)',
-              'Total revenue growth percentage',
-              'Customer acquisition cost (CAC)',
-              'Average order value (AOV)',
-              'Conversion rate improvements'
+              'Miesięczny przychód powtarzalny (MRR)',
+              'Procentowy wzrost całkowitych przychodów',
+              'Koszt pozyskania klienta (CAC)',
+              'Średnia wartość zamówienia (AOV)',
+              'Poprawa wskaźnika konwersji'
             ],
             keyMilestones: [
-              'Q1: Launch new marketing campaigns',
-              'Q2: Achieve 50% of target growth',
-              'Q3: Optimize pricing strategy',
-              'Q4: Reach full revenue target'
+              'Q1: Uruchomienie nowych kampanii marketingowych',
+              'Q2: Osiągnięcie 50% docelowego wzrostu',
+              'Q3: Optymalizacja strategii cenowej',
+              'Q4: Osiągnięcie pełnego celu przychodowego'
             ],
             successCriteria: [
-              'Revenue increased by target percentage',
-              'Maintained or improved profit margins',
-              'Customer satisfaction scores above 8/10',
-              'Sustainable growth trajectory established'
+              'Przychody wzrosły o docelowy procent',
+              'Utrzymanie lub poprawa marż zysku',
+              'Ocena satysfakcji klientów powyżej 8/10',
+              'Ustanowienie zrównoważonej trajektorii wzrostu'
             ]
           },
-          estimatedDuration: '6-12 months',
+          estimatedDuration: '6-12 miesięcy',
           difficulty: 'Intermediate',
           usageCount: 47,
           lastUsed: new Date(Date.now() - 864000000).toISOString()
         },
         {
           id: '2',
-          name: 'Health & Fitness',
-          category: 'Personal',
-          description: 'Achieve specific health and fitness targets',
-          icon: '💪',
+          name: 'Zdrowie i fitness',
+          category: 'Osobiste',
+          description: 'Osiągnięcie konkretnych celów zdrowotnych i fitnessowych',
+          icon: Heart,
           iconColor: '#ef4444',
           template: {
-            title: 'Achieve [SPECIFIC FITNESS GOAL] by [DATE]',
-            description: 'Reach [SPECIFIC MEASURABLE TARGET] through consistent [EXERCISE TYPE] and [NUTRITION PLAN] while tracking progress with [MEASUREMENT METHOD]',
-            timeframe: '[X] weeks/months',
+            title: 'Osiągnąć [KONKRETNY CEL FITNESS] do [DATY]',
+            description: 'Osiągnąć [KONKRETNY MIERZALNY CEL] poprzez regularne [ĆWICZENIA] i [PLAN ŻYWIENIA] śledząc postępy za pomocą [METODY POMIARU]',
+            timeframe: '[X] tygodni/miesięcy',
             measurableMetrics: [
-              'Weight loss/gain in pounds/kg',
-              'Body fat percentage',
-              'Workout frequency per week',
-              'Performance metrics (reps, time, distance)',
-              'Energy levels (1-10 scale)'
+              'Utrata/przyrost wagi w kg',
+              'Procent tkanki tłuszczowej',
+              'Częstotliwość treningów tygodniowo',
+              'Metryki wydajności (powtórzenia, czas, dystans)',
+              'Poziom energii (skala 1-10)'
             ],
             keyMilestones: [
-              'Week 4: Establish consistent routine',
-              'Week 8: Achieve 50% of target',
-              'Week 12: Reach 75% of goal',
-              'Week 16: Achieve full target'
+              'Tydzień 4: Ustanowienie stałej rutyny',
+              'Tydzień 8: Osiągnięcie 50% celu',
+              'Tydzień 12: Osiągnięcie 75% celu',
+              'Tydzień 16: Osiągnięcie pełnego celu'
             ],
             successCriteria: [
-              'Target weight/measurement achieved',
-              'Sustainable habits established',
-              'Improved overall health markers',
-              'Maintained motivation and consistency'
+              'Docelowa waga/pomiar osiągnięty',
+              'Zrównoważone nawyki ustanowione',
+              'Poprawa ogólnych wskaźników zdrowia',
+              'Utrzymanie motywacji i konsekwencji'
             ]
           },
-          estimatedDuration: '3-6 months',
+          estimatedDuration: '3-6 miesięcy',
           difficulty: 'Beginner',
           usageCount: 89,
           lastUsed: new Date(Date.now() - 172800000).toISOString()
         },
         {
           id: '3',
-          name: 'Skill Development',
-          category: 'Professional',
-          description: 'Master new professional skills or technologies',
-          icon: '🎓',
+          name: 'Rozwój umiejętności',
+          category: 'Zawodowe',
+          description: 'Opanowanie nowych umiejętności zawodowych lub technologii',
+          icon: GraduationCap,
           iconColor: '#3b82f6',
           template: {
-            title: 'Master [SKILL/TECHNOLOGY] to [PROFICIENCY LEVEL] by [DATE]',
-            description: 'Develop expertise in [SPECIFIC SKILL] through [LEARNING METHOD] and demonstrate proficiency by [CONCRETE OUTCOME/PROJECT]',
-            timeframe: '[X] months',
+            title: 'Opanować [UMIEJĘTNOŚĆ/TECHNOLOGIĘ] do poziomu [BIEGŁOŚCI] do [DATY]',
+            description: 'Rozwinąć ekspertyzę w [KONKRETNEJ UMIEJĘTNOŚCI] poprzez [METODĘ NAUKI] i wykazać biegłość przez [KONKRETNY WYNIK/PROJEKT]',
+            timeframe: '[X] miesięcy',
             measurableMetrics: [
-              'Certification completion',
-              'Project portfolio items',
-              'Peer/mentor assessment scores',
-              'Practical application success rate',
-              'Knowledge test scores'
+              'Ukończenie certyfikacji',
+              'Elementy portfolio projektów',
+              'Oceny rówieśników/mentora',
+              'Wskaźnik sukcesu praktycznego zastosowania',
+              'Wyniki testów wiedzy'
             ],
             keyMilestones: [
-              'Month 1: Complete foundational learning',
-              'Month 2: Build first practical project',
-              'Month 3: Seek feedback and iterate',
-              'Month 4: Achieve certification/assessment'
+              'Miesiąc 1: Ukończenie nauki podstaw',
+              'Miesiąc 2: Budowa pierwszego praktycznego projektu',
+              'Miesiąc 3: Pozyskanie feedbacku i iteracja',
+              'Miesiąc 4: Osiągnięcie certyfikacji/oceny'
             ],
             successCriteria: [
-              'Certification or formal recognition achieved',
-              'Successfully applied skills in real project',
-              'Positive feedback from peers/mentors',
-              'Confident to teach or mentor others'
+              'Certyfikacja lub formalne uznanie osiągnięte',
+              'Pomyślne zastosowanie umiejętności w realnym projekcie',
+              'Pozytywny feedback od rówieśników/mentorów',
+              'Pewność do uczenia lub mentoringu innych'
             ]
           },
-          estimatedDuration: '3-6 months',
+          estimatedDuration: '3-6 miesięcy',
           difficulty: 'Intermediate',
           usageCount: 65,
           lastUsed: new Date(Date.now() - 432000000).toISOString()
         },
         {
           id: '4',
-          name: 'Product Launch',
-          category: 'Business',
-          description: 'Successfully launch a new product or service',
-          icon: '🚀',
+          name: 'Premiera produktu',
+          category: 'Biznes',
+          description: 'Pomyślne uruchomienie nowego produktu lub usługi',
+          icon: Rocket,
           iconColor: '#8b5cf6',
           template: {
-            title: 'Launch [PRODUCT NAME] and achieve [SUCCESS METRIC] by [DATE]',
-            description: 'Successfully develop, test, and launch [PRODUCT] targeting [AUDIENCE] with goals of [SPECIFIC METRICS] within [TIMEFRAME]',
-            timeframe: '[X] months from concept to launch',
+            title: 'Uruchomić [NAZWA PRODUKTU] i osiągnąć [METRYKĘ SUKCESU] do [DATY]',
+            description: 'Pomyślnie opracować, przetestować i uruchomić [PRODUKT] skierowany do [ODBIORCÓW] z celami [KONKRETNE METRYKI] w ciągu [OKRESU]',
+            timeframe: '[X] miesięcy od koncepcji do premiery',
             measurableMetrics: [
-              'Product development milestones completed',
-              'Beta user feedback scores',
-              'Launch day signups/sales',
-              'Customer satisfaction ratings',
-              'Market penetration rate'
+              'Ukończone kamienie milowe rozwoju produktu',
+              'Oceny feedbacku użytkowników beta',
+              'Rejestracje/sprzedaż w dniu premiery',
+              'Oceny satysfakcji klientów',
+              'Wskaźnik penetracji rynku'
             ],
             keyMilestones: [
-              'Phase 1: Product development & testing',
-              'Phase 2: Beta release & feedback',
-              'Phase 3: Marketing campaign launch',
-              'Phase 4: Official product launch'
+              'Faza 1: Rozwój i testowanie produktu',
+              'Faza 2: Wydanie beta i feedback',
+              'Faza 3: Uruchomienie kampanii marketingowej',
+              'Faza 4: Oficjalna premiera produktu'
             ],
             successCriteria: [
-              'Product meets quality standards',
-              'Launch targets achieved',
-              'Positive market reception',
-              'Sustainable customer acquisition'
+              'Produkt spełnia standardy jakości',
+              'Cele premierowe osiągnięte',
+              'Pozytywne przyjęcie na rynku',
+              'Zrównoważone pozyskiwanie klientów'
             ]
           },
-          estimatedDuration: '9-18 months',
+          estimatedDuration: '9-18 miesięcy',
           difficulty: 'Advanced',
           usageCount: 23,
           lastUsed: new Date(Date.now() - 1296000000).toISOString()
         },
         {
           id: '5',
-          name: 'Team Building',
-          category: 'Leadership',
-          description: 'Build and develop high-performing teams',
-          icon: '👥',
+          name: 'Budowanie zespołu',
+          category: 'Przywództwo',
+          description: 'Budowanie i rozwijanie wysoko wydajnych zespołów',
+          icon: Users,
           iconColor: '#f59e0b',
           template: {
-            title: 'Build a high-performing [TEAM TYPE] team of [SIZE] by [DATE]',
-            description: 'Recruit, develop, and optimize a [TEAM SIZE] team achieving [PERFORMANCE METRICS] while maintaining [CULTURE GOALS]',
-            timeframe: '[X] months',
+            title: 'Zbudować wysoko wydajny zespół [TYP ZESPOŁU] o wielkości [ROZMIAR] do [DATY]',
+            description: 'Zrekrutować, rozwinąć i zoptymalizować zespół [ROZMIAR] osiągający [METRYKI WYDAJNOŚCI] przy utrzymaniu [CELÓW KULTUROWYCH]',
+            timeframe: '[X] miesięcy',
             measurableMetrics: [
-              'Team performance scores',
-              'Employee satisfaction ratings',
-              'Retention rate percentage',
-              'Goal achievement rate',
-              'Team collaboration index'
+              'Wyniki wydajności zespołu',
+              'Oceny satysfakcji pracowników',
+              'Wskaźnik retencji',
+              'Wskaźnik realizacji celów',
+              'Indeks współpracy zespołowej'
             ],
             keyMilestones: [
-              'Month 1: Define roles and recruit',
-              'Month 2: Onboard and train team',
-              'Month 3: Establish processes and culture',
-              'Month 6: Achieve target performance'
+              'Miesiąc 1: Zdefiniowanie ról i rekrutacja',
+              'Miesiąc 2: Onboarding i szkolenie zespołu',
+              'Miesiąc 3: Ustanowienie procesów i kultury',
+              'Miesiąc 6: Osiągnięcie docelowej wydajności'
             ],
             successCriteria: [
-              'All positions filled with quality hires',
-              'Team achieves performance targets',
-              'High employee satisfaction scores',
-              'Strong team culture established'
+              'Wszystkie stanowiska obsadzone jakościowymi kandydatami',
+              'Zespół osiąga cele wydajnościowe',
+              'Wysokie oceny satysfakcji pracowników',
+              'Silna kultura zespołowa ustanowiona'
             ]
           },
-          estimatedDuration: '6-12 months',
+          estimatedDuration: '6-12 miesięcy',
           difficulty: 'Advanced',
           usageCount: 31,
           lastUsed: new Date(Date.now() - 259200000).toISOString()
         },
         {
           id: '6',
-          name: 'Habit Formation',
-          category: 'Personal',
-          description: 'Establish positive daily habits',
-          icon: '🔄',
+          name: 'Kształtowanie nawyków',
+          category: 'Osobiste',
+          description: 'Ustanowienie pozytywnych codziennych nawyków',
+          icon: RefreshCw,
           iconColor: '#06b6d4',
           template: {
-            title: 'Establish [HABIT] routine with [FREQUENCY] for [DURATION]',
-            description: 'Build a sustainable [HABIT] practice performed [FREQUENCY] and tracked through [METHOD] to achieve [BENEFIT/OUTCOME]',
-            timeframe: '[X] days/weeks',
+            title: 'Ustanowić rutynę [NAWYK] z częstotliwością [CZĘSTOTLIWOŚĆ] przez [CZAS]',
+            description: 'Zbudować zrównoważoną praktykę [NAWYK] wykonywaną [CZĘSTOTLIWOŚĆ] i śledzoną przez [METODĘ] aby osiągnąć [KORZYŚĆ/WYNIK]',
+            timeframe: '[X] dni/tygodni',
             measurableMetrics: [
-              'Daily completion rate (%)',
-              'Weekly consistency score',
-              'Monthly habit strength rating',
-              'Outcome measurements',
-              'Habit stack integration'
+              'Dzienny wskaźnik realizacji (%)',
+              'Tygodniowy wynik konsekwencji',
+              'Miesięczna ocena siły nawyku',
+              'Pomiary wyników',
+              'Integracja ze stosem nawyków'
             ],
             keyMilestones: [
-              'Week 1: Daily execution focus',
-              'Week 3: Habit cue establishment',
-              'Week 6: Automatic behavior pattern',
-              'Week 12: Sustained habit integration'
+              'Tydzień 1: Skupienie na codziennym wykonaniu',
+              'Tydzień 3: Ustanowienie sygnału nawyku',
+              'Tydzień 6: Automatyczny wzorzec zachowania',
+              'Tydzień 12: Trwała integracja nawyku'
             ],
             successCriteria: [
-              'Habit performed consistently for target period',
-              'Automatic behavior without conscious effort',
-              'Positive impact on desired outcome',
-              'Integration with existing routines'
+              'Nawyk wykonywany konsekwentnie przez docelowy okres',
+              'Automatyczne zachowanie bez świadomego wysiłku',
+              'Pozytywny wpływ na pożądany wynik',
+              'Integracja z istniejącymi rutynami'
             ]
           },
-          estimatedDuration: '66-90 days',
+          estimatedDuration: '66-90 dni',
           difficulty: 'Beginner',
           usageCount: 156,
           lastUsed: new Date(Date.now() - 86400000).toISOString()
@@ -301,7 +307,7 @@ export default function SmartTemplatesPage() {
     }, 500);
   };
 
-  const categories = ['all', 'Business', 'Personal', 'Professional', 'Leadership'];
+  const categories = ['all', 'Biznes', 'Osobiste', 'Zawodowe', 'Przywództwo'];
 
   const filteredTemplates = templates.filter(template => {
     const matchesCategory = selectedCategory === 'all' || template.category === selectedCategory;
@@ -313,10 +319,9 @@ export default function SmartTemplatesPage() {
   const handleUseTemplate = (template: GoalTemplate) => {
     setSelectedTemplate(template);
     setShowTemplateModal(true);
-    
-    // Update usage count
-    setTemplates(prev => prev.map(t => 
-      t.id === template.id 
+
+    setTemplates(prev => prev.map(t =>
+      t.id === template.id
         ? { ...t, usageCount: t.usageCount + 1, lastUsed: new Date().toISOString() }
         : t
     ));
@@ -324,7 +329,7 @@ export default function SmartTemplatesPage() {
 
   const handleCreateTemplate = () => {
     if (!newTemplate.name.trim()) {
-      toast.error('Template name is required');
+      toast.error('Nazwa szablonu jest wymagana');
       return;
     }
 
@@ -333,7 +338,7 @@ export default function SmartTemplatesPage() {
       name: newTemplate.name,
       category: newTemplate.category,
       description: newTemplate.description,
-      icon: '🎯',
+      icon: Target,
       iconColor: '#6b7280',
       template: {
         title: newTemplate.title,
@@ -343,7 +348,7 @@ export default function SmartTemplatesPage() {
         keyMilestones: newTemplate.milestones.split('\n').filter(m => m.trim()),
         successCriteria: newTemplate.criteria.split('\n').filter(c => c.trim())
       },
-      estimatedDuration: 'Custom',
+      estimatedDuration: 'Niestandardowy',
       difficulty: 'Intermediate',
       usageCount: 0
     };
@@ -351,7 +356,7 @@ export default function SmartTemplatesPage() {
     setTemplates(prev => [template, ...prev]);
     setNewTemplate({
       name: '',
-      category: 'Business',
+      category: 'Biznes',
       description: '',
       title: '',
       templateDescription: '',
@@ -361,77 +366,85 @@ export default function SmartTemplatesPage() {
       criteria: ''
     });
     setShowCreateModal(false);
-    toast.success('Custom template created!');
+    toast.success('Szablon niestandardowy utworzony!');
   };
 
   const getDifficultyColor = (difficulty: string) => {
     switch (difficulty) {
-      case 'Beginner': return 'text-green-600 bg-green-100';
-      case 'Intermediate': return 'text-yellow-600 bg-yellow-100';
-      case 'Advanced': return 'text-red-600 bg-red-100';
-      default: return 'text-gray-600 bg-gray-100';
+      case 'Beginner': return 'text-green-600 bg-green-100 dark:text-green-400 dark:bg-green-900/30';
+      case 'Intermediate': return 'text-yellow-600 bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-900/30';
+      case 'Advanced': return 'text-red-600 bg-red-100 dark:text-red-400 dark:bg-red-900/30';
+      default: return 'text-slate-600 bg-slate-100 dark:text-slate-400 dark:bg-slate-700';
+    }
+  };
+
+  const getDifficultyLabel = (difficulty: string) => {
+    switch (difficulty) {
+      case 'Beginner': return 'Początkujący';
+      case 'Intermediate': return 'Średniozaawansowany';
+      case 'Advanced': return 'Zaawansowany';
+      default: return difficulty;
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString();
+    return new Date(dateString).toLocaleDateString('pl-PL');
   };
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
+      <PageShell>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+        </div>
+      </PageShell>
     );
   }
 
   return (
-    <motion.div
-      className="space-y-6"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">SMART Templates</h1>
-          <p className="text-gray-600">Ready-to-use templates for common goal types</p>
-        </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="btn btn-primary"
-        >
-          <PlusIcon className="w-5 h-5 mr-2" />
-          Create Template
-        </button>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Szablony SMART"
+        subtitle="Gotowe szablony do popularnych typów celów"
+        icon={LayoutTemplate}
+        iconColor="text-purple-600"
+        actions={
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+          >
+            <Plus className="w-5 h-5 mr-2" />
+            Utwórz szablon
+          </button>
+        }
+      />
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="flex items-center space-x-4">
-            <label className="text-sm font-medium text-gray-700">Category:</label>
+            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Kategoria:</label>
             <select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm"
+              className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
             >
               {categories.map(category => (
                 <option key={category} value={category}>
-                  {category === 'all' ? 'All Categories' : category}
+                  {category === 'all' ? 'Wszystkie kategorie' : category}
                 </option>
               ))}
             </select>
           </div>
-          
-          <div className="flex-1 max-w-md">
+
+          <div className="flex-1 max-w-md relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400 dark:text-slate-500" />
             <input
               type="text"
-              placeholder="Search templates..."
+              placeholder="Szukaj szablonów..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
             />
           </div>
         </div>
@@ -439,73 +452,76 @@ export default function SmartTemplatesPage() {
 
       {/* Templates Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredTemplates.map((template, index) => (
-          <motion.div
-            key={template.id}
-            className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 hover:shadow-md transition-all cursor-pointer"
-            onClick={() => handleUseTemplate(template)}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
-            whileHover={{ scale: 1.02 }}
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center space-x-3">
-                <div
-                  className="w-12 h-12 rounded-lg flex items-center justify-center text-white text-xl"
-                  style={{ backgroundColor: template.iconColor }}
-                >
-                  {template.icon}
+        {filteredTemplates.map((template, index) => {
+          const Icon = template.icon;
+          return (
+            <motion.div
+              key={template.id}
+              className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6 hover:shadow-md transition-all cursor-pointer"
+              onClick={() => handleUseTemplate(template)}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
+              whileHover={{ scale: 1.02 }}
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center space-x-3">
+                  <div
+                    className="w-12 h-12 rounded-lg flex items-center justify-center text-white"
+                    style={{ backgroundColor: template.iconColor }}
+                  >
+                    <Icon className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-slate-900 dark:text-slate-100">{template.name}</h3>
+                    <span className="text-sm text-slate-500 dark:text-slate-400">{template.category}</span>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">{template.name}</h3>
-                  <span className="text-sm text-gray-500">{template.category}</span>
-                </div>
+                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getDifficultyColor(template.difficulty)}`}>
+                  {getDifficultyLabel(template.difficulty)}
+                </span>
               </div>
-              <span className={`px-2 py-1 text-xs font-medium rounded-full ${getDifficultyColor(template.difficulty)}`}>
-                {template.difficulty}
-              </span>
-            </div>
-            
-            <p className="text-gray-600 text-sm mb-4">{template.description}</p>
-            
-            <div className="space-y-2 text-sm text-gray-500">
-              <div className="flex items-center justify-between">
-                <span>Duration:</span>
-                <span className="font-medium">{template.estimatedDuration}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Used:</span>
-                <span className="font-medium">{template.usageCount} times</span>
-              </div>
-              {template.lastUsed && (
+
+              <p className="text-slate-600 dark:text-slate-400 text-sm mb-4">{template.description}</p>
+
+              <div className="space-y-2 text-sm text-slate-500 dark:text-slate-400">
                 <div className="flex items-center justify-between">
-                  <span>Last used:</span>
-                  <span className="font-medium">{formatDate(template.lastUsed)}</span>
+                  <span>Czas trwania:</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-300">{template.estimatedDuration}</span>
                 </div>
-              )}
-            </div>
-            
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleUseTemplate(template);
-                }}
-                className="w-full btn btn-primary text-sm"
-              >
-                Use Template
-              </button>
-            </div>
-          </motion.div>
-        ))}
+                <div className="flex items-center justify-between">
+                  <span>Użyto:</span>
+                  <span className="font-medium text-slate-700 dark:text-slate-300">{template.usageCount} razy</span>
+                </div>
+                {template.lastUsed && (
+                  <div className="flex items-center justify-between">
+                    <span>Ostatnio użyto:</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">{formatDate(template.lastUsed)}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleUseTemplate(template);
+                  }}
+                  className="w-full px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
+                >
+                  Użyj szablonu
+                </button>
+              </div>
+            </motion.div>
+          );
+        })}
       </div>
 
       {filteredTemplates.length === 0 && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-          <div className="text-6xl mb-4">🔍</div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">No Templates Found</h3>
-          <p className="text-gray-600">Try adjusting your search or filter criteria</p>
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-12 text-center">
+          <Search className="h-12 w-12 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Nie znaleziono szablonów</h3>
+          <p className="text-slate-600 dark:text-slate-400">Spróbuj dostosować kryteria wyszukiwania lub filtrowania</p>
         </div>
       )}
 
@@ -514,56 +530,56 @@ export default function SmartTemplatesPage() {
         {showTemplateModal && selectedTemplate && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <motion.div
-              className="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+              className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
             >
-              <div className="px-6 py-4 border-b border-gray-200">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
                     <div
-                      className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-lg"
+                      className="w-10 h-10 rounded-lg flex items-center justify-center text-white"
                       style={{ backgroundColor: selectedTemplate.iconColor }}
                     >
-                      {selectedTemplate.icon}
+                      {React.createElement(selectedTemplate.icon, { className: 'w-5 h-5' })}
                     </div>
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900">{selectedTemplate.name}</h3>
-                      <p className="text-sm text-gray-500">{selectedTemplate.category} Template</p>
+                      <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">{selectedTemplate.name}</h3>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">Szablon {selectedTemplate.category}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => setShowTemplateModal(false)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                   >
-                    <XMarkIcon className="w-6 h-6" />
+                    <X className="w-6 h-6" />
                   </button>
                 </div>
               </div>
 
               <div className="p-6 space-y-6">
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Goal Title Template</h4>
-                  <p className="text-gray-700 bg-gray-50 p-3 rounded-lg font-mono text-sm">
+                  <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">Szablon tytułu celu</h4>
+                  <p className="text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg font-mono text-sm">
                     {selectedTemplate.template.title}
                   </p>
                 </div>
 
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Description Template</h4>
-                  <p className="text-gray-700 bg-gray-50 p-3 rounded-lg font-mono text-sm">
+                  <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">Szablon opisu</h4>
+                  <p className="text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-700/50 p-3 rounded-lg font-mono text-sm">
                     {selectedTemplate.template.description}
                   </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Measurable Metrics</h4>
-                    <ul className="space-y-1 text-sm text-gray-700">
+                    <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">Mierzalne metryki</h4>
+                    <ul className="space-y-1 text-sm text-slate-700 dark:text-slate-300">
                       {selectedTemplate.template.measurableMetrics.map((metric, index) => (
                         <li key={index} className="flex items-start">
-                          <span className="text-primary-600 mr-2">•</span>
+                          <span className="text-indigo-600 dark:text-indigo-400 mr-2">&#8226;</span>
                           {metric}
                         </li>
                       ))}
@@ -571,11 +587,11 @@ export default function SmartTemplatesPage() {
                   </div>
 
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Key Milestones</h4>
-                    <ul className="space-y-1 text-sm text-gray-700">
+                    <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">Kluczowe kamienie milowe</h4>
+                    <ul className="space-y-1 text-sm text-slate-700 dark:text-slate-300">
                       {selectedTemplate.template.keyMilestones.map((milestone, index) => (
                         <li key={index} className="flex items-start">
-                          <span className="text-green-600 mr-2">•</span>
+                          <span className="text-green-600 dark:text-green-400 mr-2">&#8226;</span>
                           {milestone}
                         </li>
                       ))}
@@ -584,49 +600,49 @@ export default function SmartTemplatesPage() {
                 </div>
 
                 <div>
-                  <h4 className="font-medium text-gray-900 mb-2">Success Criteria</h4>
-                  <ul className="space-y-1 text-sm text-gray-700">
+                  <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-2">Kryteria sukcesu</h4>
+                  <ul className="space-y-1 text-sm text-slate-700 dark:text-slate-300">
                     {selectedTemplate.template.successCriteria.map((criteria, index) => (
                       <li key={index} className="flex items-start">
-                        <CheckCircleIcon className="w-4 h-4 text-green-600 mr-2 mt-0.5 flex-shrink-0" />
+                        <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400 mr-2 mt-0.5 flex-shrink-0" />
                         {criteria}
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                <div className="grid grid-cols-3 gap-4 p-4 bg-gray-50 rounded-lg">
+                <div className="grid grid-cols-3 gap-4 p-4 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
                   <div className="text-center">
-                    <div className="text-sm text-gray-600">Duration</div>
-                    <div className="font-medium text-gray-900">{selectedTemplate.estimatedDuration}</div>
+                    <div className="text-sm text-slate-600 dark:text-slate-400">Czas trwania</div>
+                    <div className="font-medium text-slate-900 dark:text-slate-100">{selectedTemplate.estimatedDuration}</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-sm text-gray-600">Difficulty</div>
-                    <div className="font-medium text-gray-900">{selectedTemplate.difficulty}</div>
+                    <div className="text-sm text-slate-600 dark:text-slate-400">Trudność</div>
+                    <div className="font-medium text-slate-900 dark:text-slate-100">{getDifficultyLabel(selectedTemplate.difficulty)}</div>
                   </div>
                   <div className="text-center">
-                    <div className="text-sm text-gray-600">Times Used</div>
-                    <div className="font-medium text-gray-900">{selectedTemplate.usageCount}</div>
+                    <div className="text-sm text-slate-600 dark:text-slate-400">Liczba użyć</div>
+                    <div className="font-medium text-slate-900 dark:text-slate-100">{selectedTemplate.usageCount}</div>
                   </div>
                 </div>
               </div>
 
-              <div className="px-6 py-4 border-t border-gray-200 flex space-x-3">
+              <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex space-x-3">
                 <button
                   onClick={() => setShowTemplateModal(false)}
-                  className="btn btn-outline flex-1"
+                  className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
-                  Close
+                  Zamknij
                 </button>
                 <button
                   onClick={() => {
-                    toast.success('Template copied! Create your goal based on this template.');
+                    toast.success('Szablon skopiowany! Utwórz cel na jego podstawie.');
                     setShowTemplateModal(false);
                   }}
-                  className="btn btn-primary flex-1"
+                  className="flex-1 flex items-center justify-center px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
                 >
-                  <DocumentTextIcon className="w-5 h-5 mr-2" />
-                  Use This Template
+                  <FileText className="w-5 h-5 mr-2" />
+                  Użyj tego szablonu
                 </button>
               </div>
             </motion.div>
@@ -639,19 +655,19 @@ export default function SmartTemplatesPage() {
         {showCreateModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <motion.div
-              className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+              className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
             >
-              <div className="px-6 py-4 border-b border-gray-200">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">Create Custom Template</h3>
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Utwórz niestandardowy szablon</h3>
                   <button
                     onClick={() => setShowCreateModal(false)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
                   >
-                    <XMarkIcon className="w-6 h-6" />
+                    <X className="w-6 h-6" />
                   </button>
                 </div>
               </div>
@@ -659,133 +675,133 @@ export default function SmartTemplatesPage() {
               <div className="p-6 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Template Name *
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Nazwa szablonu *
                     </label>
                     <input
                       type="text"
                       value={newTemplate.name}
                       onChange={(e) => setNewTemplate({ ...newTemplate, name: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                      placeholder="e.g., Marketing Campaign"
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                      placeholder="np. Kampania marketingowa"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Category
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                      Kategoria
                     </label>
                     <select
                       value={newTemplate.category}
                       onChange={(e) => setNewTemplate({ ...newTemplate, category: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                      className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                     >
-                      <option value="Business">Business</option>
-                      <option value="Personal">Personal</option>
-                      <option value="Professional">Professional</option>
-                      <option value="Leadership">Leadership</option>
+                      <option value="Biznes">Biznes</option>
+                      <option value="Osobiste">Osobiste</option>
+                      <option value="Zawodowe">Zawodowe</option>
+                      <option value="Przywództwo">Przywództwo</option>
                     </select>
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Opis
                   </label>
                   <input
                     type="text"
                     value={newTemplate.description}
                     onChange={(e) => setNewTemplate({ ...newTemplate, description: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="Brief description of this template"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                    placeholder="Krótki opis tego szablonu"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Goal Title Template
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Szablon tytułu celu
                   </label>
                   <input
                     type="text"
                     value={newTemplate.title}
                     onChange={(e) => setNewTemplate({ ...newTemplate, title: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="e.g., Launch [PRODUCT] and achieve [METRIC] by [DATE]"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                    placeholder="np. Uruchomić [PRODUKT] i osiągnąć [METRYKĘ] do [DATY]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Description Template
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Szablon opisu
                   </label>
                   <textarea
                     value={newTemplate.templateDescription}
                     onChange={(e) => setNewTemplate({ ...newTemplate, templateDescription: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                     rows={3}
-                    placeholder="Detailed template description with placeholders"
+                    placeholder="Szczegółowy szablon opisu z placeholderami"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Measurable Metrics (one per line)
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Mierzalne metryki (jedna na linię)
                   </label>
                   <textarea
                     value={newTemplate.metrics}
                     onChange={(e) => setNewTemplate({ ...newTemplate, metrics: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                     rows={4}
-                    placeholder="Revenue growth percentage&#10;Customer acquisition rate&#10;User engagement metrics"
+                    placeholder={"Procentowy wzrost przychodów\nWskaźnik pozyskania klientów\nMetryki zaangażowania użytkowników"}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Key Milestones (one per line)
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Kluczowe kamienie milowe (jeden na linię)
                   </label>
                   <textarea
                     value={newTemplate.milestones}
                     onChange={(e) => setNewTemplate({ ...newTemplate, milestones: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                     rows={4}
-                    placeholder="Month 1: Complete initial planning&#10;Month 2: Launch beta version&#10;Month 3: Full rollout"
+                    placeholder={"Miesiąc 1: Ukończenie planowania\nMiesiąc 2: Uruchomienie wersji beta\nMiesiąc 3: Pełne wdrożenie"}
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Success Criteria (one per line)
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                    Kryteria sukcesu (jedno na linię)
                   </label>
                   <textarea
                     value={newTemplate.criteria}
                     onChange={(e) => setNewTemplate({ ...newTemplate, criteria: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                     rows={3}
-                    placeholder="Target metrics achieved&#10;Quality standards met&#10;Stakeholder satisfaction maintained"
+                    placeholder={"Docelowe metryki osiągnięte\nStandardy jakości spełnione\nSatysfakcja interesariuszy utrzymana"}
                   />
                 </div>
               </div>
 
-              <div className="px-6 py-4 border-t border-gray-200 flex space-x-3">
+              <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex space-x-3">
                 <button
                   onClick={() => setShowCreateModal(false)}
-                  className="btn btn-outline flex-1"
+                  className="flex-1 px-4 py-2 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
                 >
-                  Cancel
+                  Anuluj
                 </button>
                 <button
                   onClick={handleCreateTemplate}
-                  className="btn btn-primary flex-1"
+                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
                   disabled={!newTemplate.name.trim()}
                 >
-                  Create Template
+                  Utwórz szablon
                 </button>
               </div>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </PageShell>
   );
 }

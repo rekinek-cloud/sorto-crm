@@ -3,15 +3,15 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  CheckCircleIcon,
-  XCircleIcon,
-  ClockIcon,
-  SparklesIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-  DocumentTextIcon,
-  CpuChipIcon
-} from '@heroicons/react/24/outline';
+  CheckCircle,
+  XCircle,
+  Clock,
+  Sparkles,
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  Cpu
+} from 'lucide-react';
 
 interface AnalysisResult {
   ruleId: string;
@@ -79,7 +79,7 @@ export default function AnalysisResults({ results, module, itemId, onClose }: An
       <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <SparklesIcon className="w-8 h-8 text-purple-500" />
+            <Sparkles className="w-8 h-8 text-purple-500" />
             <div>
               <h3 className="text-lg font-semibold text-gray-900">
                 Wyniki analizy AI
@@ -94,7 +94,7 @@ export default function AnalysisResults({ results, module, itemId, onClose }: An
               onClick={onClose}
               className="text-gray-400 hover:text-gray-500"
             >
-              <XCircleIcon className="w-6 h-6" />
+              <XCircle className="w-6 h-6" />
             </button>
           )}
         </div>
@@ -126,7 +126,7 @@ export default function AnalysisResults({ results, module, itemId, onClose }: An
       <div className="max-h-96 overflow-y-auto">
         {results.length === 0 ? (
           <div className="px-6 py-8 text-center">
-            <SparklesIcon className="w-12 h-12 mx-auto text-gray-300 mb-4" />
+            <Sparkles className="w-12 h-12 mx-auto text-gray-300 mb-4" />
             <p className="text-gray-500">Brak wyników analizy</p>
           </div>
         ) : (
@@ -145,22 +145,22 @@ export default function AnalysisResults({ results, module, itemId, onClose }: An
                 >
                   <div className="flex items-center space-x-3">
                     {result.success ? (
-                      <CheckCircleIcon className="w-6 h-6 text-green-500" />
+                      <CheckCircle className="w-6 h-6 text-green-500" />
                     ) : (
-                      <XCircleIcon className="w-6 h-6 text-red-500" />
+                      <XCircle className="w-6 h-6 text-red-500" />
                     )}
                     <div>
                       <h4 className="font-medium text-gray-900">{result.ruleName}</h4>
                       <div className="flex items-center space-x-4 text-sm text-gray-500 mt-1">
                         <span className="flex items-center">
-                          <ClockIcon className="w-4 h-4 mr-1" />
+                          <Clock className="w-4 h-4 mr-1" />
                           {result.metadata.executionTime}ms
                         </span>
                         <span>Priorytet: {result.priority || 0}</span>
                         <span>{result.executedActions.length} akcji</span>
                         {result.aiResponses && result.aiResponses.length > 0 && (
                           <span className="flex items-center text-purple-600">
-                            <SparklesIcon className="w-4 h-4 mr-1" />
+                            <Sparkles className="w-4 h-4 mr-1" />
                             {result.aiResponses.length} AI
                           </span>
                         )}
@@ -169,9 +169,9 @@ export default function AnalysisResults({ results, module, itemId, onClose }: An
                   </div>
                   <div className="flex items-center space-x-2">
                     {expandedResults.has(result.ruleId) ? (
-                      <ChevronDownIcon className="w-5 h-5 text-gray-400" />
+                      <ChevronDown className="w-5 h-5 text-gray-400" />
                     ) : (
-                      <ChevronRightIcon className="w-5 h-5 text-gray-400" />
+                      <ChevronRight className="w-5 h-5 text-gray-400" />
                     )}
                   </div>
                 </div>
@@ -224,7 +224,7 @@ export default function AnalysisResults({ results, module, itemId, onClose }: An
                                   onClick={() => toggleAI(`${result.ruleId}_${index}`)}
                                 >
                                   <div className="flex items-center space-x-2">
-                                    <CpuChipIcon className="w-5 h-5 text-purple-500" />
+                                    <Cpu className="w-5 h-5 text-purple-500" />
                                     <span className="text-sm font-medium text-gray-900">
                                       {aiResponse.modelId}
                                     </span>
@@ -233,11 +233,11 @@ export default function AnalysisResults({ results, module, itemId, onClose }: An
                                     </span>
                                   </div>
                                   <div className="flex items-center space-x-1">
-                                    <DocumentTextIcon className="w-4 h-4 text-gray-400" />
+                                    <FileText className="w-4 h-4 text-gray-400" />
                                     {expandedAI.has(`${result.ruleId}_${index}`) ? (
-                                      <ChevronDownIcon className="w-4 h-4 text-gray-400" />
+                                      <ChevronDown className="w-4 h-4 text-gray-400" />
                                     ) : (
-                                      <ChevronRightIcon className="w-4 h-4 text-gray-400" />
+                                      <ChevronRight className="w-4 h-4 text-gray-400" />
                                     )}
                                   </div>
                                 </div>

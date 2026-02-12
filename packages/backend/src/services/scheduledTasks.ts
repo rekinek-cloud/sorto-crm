@@ -4,6 +4,8 @@ import { invoiceService } from './invoiceService';
 import { syncTasks, syncProjects, syncContacts, syncDeals, syncCompanies, syncKnowledge, syncMessages, vectorService } from '../routes/vectorSearch';
 import { emailPipeline } from './emailPipeline';
 import { RuleProcessingPipeline } from './ai/RuleProcessingPipeline';
+import { PipelineConfigLoader } from './ai/PipelineConfigLoader';
+import { DEFAULT_PIPELINE_CONFIG } from './ai/PipelineConfigDefaults';
 
 export class ScheduledTasksService {
   private intervals: Map<string, NodeJS.Timeout> = new Map();
@@ -36,7 +38,7 @@ export class ScheduledTasksService {
    */
   private startInvoiceSyncTask(): void {
     const taskName = 'invoice-sync';
-    const intervalMs = 30 * 60 * 1000; // 30 minutes
+    const intervalMs = DEFAULT_PIPELINE_CONFIG.scheduling.invoiceSyncInterval;
 
     const task = async () => {
       try {
@@ -69,8 +71,8 @@ export class ScheduledTasksService {
             logger.info(`Syncing invoices for organization: ${org.name} (${org.id})`);
             
             const result = await invoiceService.bulkSyncInvoices(org.id, {
-              batchSize: 3, // Smaller batches for scheduled tasks
-              delayBetweenBatches: 2000, // 2 second delay
+              batchSize: DEFAULT_PIPELINE_CONFIG.scheduling.invoiceBatchSize,
+              delayBetweenBatches: DEFAULT_PIPELINE_CONFIG.scheduling.invoiceBatchDelay,
               syncOnlyAutoSync: true
             });
 
@@ -83,7 +85,7 @@ export class ScheduledTasksService {
 
             // Add delay between organizations
             if (organizations.indexOf(org) < organizations.length - 1) {
-              await new Promise(resolve => setTimeout(resolve, 5000)); // 5 second delay
+              await new Promise(resolve => setTimeout(resolve, DEFAULT_PIPELINE_CONFIG.scheduling.invoiceOrgDelay));
             }
 
           } catch (error: any) {
@@ -166,7 +168,7 @@ export class ScheduledTasksService {
 
               // Delay between organizations
               if (organizations.indexOf(org) < organizations.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 10000)); // 10 second delay
+                await new Promise(resolve => setTimeout(resolve, DEFAULT_PIPELINE_CONFIG.scheduling.importOrgDelay));
               }
 
             } catch (error: any) {
@@ -248,7 +250,7 @@ export class ScheduledTasksService {
    */
   private startRAGReindexTask(): void {
     const taskName = 'rag-reindex';
-    const intervalMs = 6 * 60 * 60 * 1000; // 6 hours
+    const intervalMs = DEFAULT_PIPELINE_CONFIG.scheduling.ragReindexInterval;
 
     const task = async () => {
       try {
@@ -300,12 +302,12 @@ export class ScheduledTasksService {
       }
     };
 
-    // First run after 2 minutes (let server fully start)
+    // First run after startup delay (let server fully start)
     setTimeout(() => {
       task().catch(error => {
         logger.error('Error in initial RAG reindex run:', { error: error.message });
       });
-    }, 2 * 60 * 1000);
+    }, DEFAULT_PIPELINE_CONFIG.scheduling.ragStartupDelay);
 
     const interval = setInterval(task, intervalMs);
     this.intervals.set(taskName, interval);
@@ -319,7 +321,7 @@ export class ScheduledTasksService {
    */
   private startEmailProcessingTask(): void {
     const taskName = 'email-processing';
-    const intervalMs = 5 * 60 * 1000; // 5 minutes
+    const intervalMs = DEFAULT_PIPELINE_CONFIG.scheduling.emailProcessingInterval;
 
     const task = async () => {
       try {
@@ -336,7 +338,7 @@ export class ScheduledTasksService {
                 pipelineProcessed: false
               },
               orderBy: { receivedAt: 'desc' },
-              take: 50
+              take: DEFAULT_PIPELINE_CONFIG.scheduling.emailBatchSize
             });
 
             if (unprocessed.length === 0) continue;
@@ -438,12 +440,12 @@ export class ScheduledTasksService {
       }
     };
 
-    // First run after 3 minutes (let server start)
+    // First run after startup delay (let server start)
     setTimeout(() => {
       task().catch(error => {
         logger.error('[EmailProcessing] Initial run error:', { error: error.message });
       });
-    }, 3 * 60 * 1000);
+    }, DEFAULT_PIPELINE_CONFIG.scheduling.emailStartupDelay);
 
     const interval = setInterval(task, intervalMs);
     this.intervals.set(taskName, interval);

@@ -7,17 +7,17 @@
 
 import React, { useState } from 'react';
 import {
-  XMarkIcon,
-  InboxIcon,
-  CheckCircleIcon,
-  ClockIcon,
-  SnowflakeIcon,
-  FolderIcon,
-  Squares2X2Icon,
-  ChartBarIcon,
-  ArchiveBoxIcon,
-  InformationCircleIcon
-} from '@heroicons/react/24/outline';
+  X,
+  Inbox,
+  CheckCircle,
+  Clock,
+  Snowflake,
+  Folder,
+  LayoutGrid,
+  BarChart3,
+  Archive,
+  Info
+} from 'lucide-react';
 import { GTDRole, StreamType } from '@/types/gtd';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
@@ -64,28 +64,28 @@ const STREAM_ROLES = [
     value: 'INBOX',
     label: 'Źródło',
     description: 'Pojedynczy punkt wejścia dla wszystkich nowych elementów do przetworzenia',
-    icon: <InboxIcon className="w-5 h-5" />,
+    icon: <Inbox className="w-5 h-5" />,
     color: '#8B5CF6'
   },
   {
     value: 'PROJECTS',
     label: 'Strumień projektowy',
     description: 'Strumień dla konkretnego projektu z określonym końcem',
-    icon: <FolderIcon className="w-5 h-5" />,
+    icon: <Folder className="w-5 h-5" />,
     color: '#3B82F6'
   },
   {
     value: 'AREAS',
     label: 'Strumień ciągły',
     description: 'Obszar odpowiedzialności bez określonego końca (np. zdrowie, finanse)',
-    icon: <ChartBarIcon className="w-5 h-5" />,
+    icon: <BarChart3 className="w-5 h-5" />,
     color: '#14B8A6'
   },
   {
     value: 'REFERENCE',
     label: 'Strumień referencyjny',
     description: 'Materiały informacyjne, dokumentacja, zasoby',
-    icon: <ArchiveBoxIcon className="w-5 h-5" />,
+    icon: <Archive className="w-5 h-5" />,
     color: '#6B7280'
   },
   {
@@ -99,21 +99,21 @@ const STREAM_ROLES = [
     value: 'NEXT_ACTIONS',
     label: 'Strumień zadań',
     description: 'Konkretne zadania do wykonania (Płynie)',
-    icon: <CheckCircleIcon className="w-5 h-5" />,
+    icon: <CheckCircle className="w-5 h-5" />,
     color: '#10B981'
   },
   {
     value: 'WAITING_FOR',
     label: 'Strumień oczekujący',
     description: 'Elementy delegowane lub oczekujące na zewnętrzne działanie',
-    icon: <ClockIcon className="w-5 h-5" />,
+    icon: <Clock className="w-5 h-5" />,
     color: '#F59E0B'
   },
   {
     value: 'CUSTOM',
     label: 'Niestandardowy',
     description: 'Własny typ strumienia dopasowany do potrzeb',
-    icon: <Squares2X2Icon className="w-5 h-5" />,
+    icon: <LayoutGrid className="w-5 h-5" />,
     color: '#6366F1'
   }
 ];
@@ -234,7 +234,7 @@ const GTDStreamForm: React.FC<GTDStreamFormProps> = ({
             onClick={onClose}
             className="text-gray-400 hover:text-gray-500"
           >
-            <XMarkIcon className="w-5 h-5" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
@@ -361,7 +361,7 @@ const GTDStreamForm: React.FC<GTDStreamFormProps> = ({
           {/* Informacja o strumieniu */}
           <div className="bg-gray-50 rounded-lg p-4">
             <div className="flex items-start space-x-2">
-              <InformationCircleIcon className="w-5 h-5 text-blue-500 mt-0.5" />
+              <Info className="w-5 h-5 text-blue-500 mt-0.5" />
               <div className="text-sm">
                 <div className="font-medium text-gray-900 mb-1">Informacje o strumieniu</div>
                 <ul className="space-y-1 text-gray-600">

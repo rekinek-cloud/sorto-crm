@@ -6,15 +6,15 @@ import { dealsApi } from '@/lib/api/deals';
 import { motion } from 'framer-motion';
 import { logger } from '@/lib/logger';
 import {
-  ChartBarIcon,
-  ArrowUpIcon,
-  ArrowDownIcon,
-  ClockIcon,
-  CurrencyDollarIcon,
-  FunnelIcon,
-  CalendarIcon,
-  ArrowPathIcon,
-} from '@heroicons/react/24/outline';
+  BarChart3,
+  ArrowUp,
+  ArrowDown,
+  Clock,
+  DollarSign,
+  Filter,
+  Calendar,
+  RefreshCw,
+} from 'lucide-react';
 
 interface PipelineMetrics {
   totalDeals: number;
@@ -178,11 +178,11 @@ export default function PipelineAnalytics({ deals }: PipelineAnalyticsProps) {
 
   const getMetricTrend = (value: number, threshold: number) => {
     if (value > threshold) {
-      return { icon: ArrowUpIcon, color: 'text-green-600', bg: 'bg-green-100' };
+      return { icon: ArrowUp, color: 'text-green-600', bg: 'bg-green-100' };
     } else if (value < threshold * 0.8) {
-      return { icon: ArrowDownIcon, color: 'text-red-600', bg: 'bg-red-100' };
+      return { icon: ArrowDown, color: 'text-red-600', bg: 'bg-red-100' };
     } else {
-      return { icon: ChartBarIcon, color: 'text-gray-600', bg: 'bg-gray-100' };
+      return { icon: BarChart3, color: 'text-gray-600', bg: 'bg-gray-100' };
     }
   };
 
@@ -237,7 +237,7 @@ export default function PipelineAnalytics({ deals }: PipelineAnalyticsProps) {
         >
           <div className="flex items-center">
             <div className="p-2 bg-blue-100 rounded-lg">
-              <CurrencyDollarIcon className="w-6 h-6 text-blue-600" />
+              <DollarSign className="w-6 h-6 text-blue-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Pipeline Value</p>
@@ -254,7 +254,7 @@ export default function PipelineAnalytics({ deals }: PipelineAnalyticsProps) {
         >
           <div className="flex items-center">
             <div className="p-2 bg-green-100 rounded-lg">
-              <FunnelIcon className="w-6 h-6 text-green-600" />
+              <Filter className="w-6 h-6 text-green-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Conversion Rate</p>
@@ -271,7 +271,7 @@ export default function PipelineAnalytics({ deals }: PipelineAnalyticsProps) {
         >
           <div className="flex items-center">
             <div className="p-2 bg-orange-100 rounded-lg">
-              <ChartBarIcon className="w-6 h-6 text-orange-600" />
+              <BarChart3 className="w-6 h-6 text-orange-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Average Deal Size</p>
@@ -288,7 +288,7 @@ export default function PipelineAnalytics({ deals }: PipelineAnalyticsProps) {
         >
           <div className="flex items-center">
             <div className="p-2 bg-purple-100 rounded-lg">
-              <ClockIcon className="w-6 h-6 text-purple-600" />
+              <Clock className="w-6 h-6 text-purple-600" />
             </div>
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Avg. Cycle Time</p>

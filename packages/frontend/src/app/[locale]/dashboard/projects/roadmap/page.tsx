@@ -8,25 +8,39 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/lib/auth/context';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 import {
-  ChevronLeftIcon,
-  PlusIcon,
-  ClockIcon,
-  CalendarDaysIcon,
-  MapIcon,
-  FlagIcon,
-  ArrowTrendingUpIcon,
-  ArrowRightIcon,
-  CheckCircleIcon,
-  ExclamationCircleIcon,
-  PlayCircleIcon,
-  PauseCircleIcon,
-  ChartBarIcon,
-  CogIcon,
-  UsersIcon,
-  DocumentTextIcon,
-  BeakerIcon,
-} from '@heroicons/react/24/outline';
+  ChevronLeft,
+  Plus,
+  Clock,
+  CalendarDays,
+  Map,
+  Flag,
+  TrendingUp,
+  ArrowRight,
+  CheckCircle,
+  AlertCircle,
+  PlayCircle,
+  PauseCircle,
+  BarChart3,
+  Settings,
+  Users,
+  FileText,
+  FlaskConical,
+  Search,
+  ClipboardList,
+  Zap,
+  Rocket,
+  Wrench,
+  Monitor,
+  Briefcase,
+  Building2,
+  Megaphone,
+  Cog,
+  Wallet,
+  Banknote,
+} from 'lucide-react';
 
 interface ProjectRoadmapItem {
   id: string;
@@ -73,7 +87,7 @@ interface RoadmapPhase {
   duration: string;
   color: string;
   bgColor: string;
-  icon: string;
+  icon: React.ReactNode;
   order: number;
 }
 
@@ -85,7 +99,7 @@ const ROADMAP_PHASES: RoadmapPhase[] = [
     duration: '2-4 tygodnie',
     color: '#8B5CF6',
     bgColor: '#F3F4F6',
-    icon: '🔍',
+    icon: <Search className="w-5 h-5" />,
     order: 1
   },
   {
@@ -95,7 +109,7 @@ const ROADMAP_PHASES: RoadmapPhase[] = [
     duration: '1-3 tygodnie',
     color: '#3B82F6',
     bgColor: '#EFF6FF',
-    icon: '📋',
+    icon: <ClipboardList className="w-5 h-5" />,
     order: 2
   },
   {
@@ -105,7 +119,7 @@ const ROADMAP_PHASES: RoadmapPhase[] = [
     duration: '4-12 tygodni',
     color: '#F59E0B',
     bgColor: '#FFFBEB',
-    icon: '⚡',
+    icon: <Zap className="w-5 h-5" />,
     order: 3
   },
   {
@@ -115,7 +129,7 @@ const ROADMAP_PHASES: RoadmapPhase[] = [
     duration: '1-2 tygodnie',
     color: '#10B981',
     bgColor: '#ECFDF5',
-    icon: '🚀',
+    icon: <Rocket className="w-5 h-5" />,
     order: 4
   },
   {
@@ -125,18 +139,18 @@ const ROADMAP_PHASES: RoadmapPhase[] = [
     duration: 'Ciągłe',
     color: '#6B7280',
     bgColor: '#F9FAFB',
-    icon: '🔧',
+    icon: <Wrench className="w-5 h-5" />,
     order: 5
   }
 ];
 
 const PROJECT_CATEGORIES = [
-  { id: 'DEVELOPMENT', name: 'Development', icon: '💻', color: '#3B82F6' },
-  { id: 'BUSINESS', name: 'Business', icon: '💼', color: '#8B5CF6' },
-  { id: 'INFRASTRUCTURE', name: 'Infrastructure', icon: '🏗️', color: '#6B7280' },
-  { id: 'RESEARCH', name: 'Research', icon: '🔬', color: '#EC4899' },
-  { id: 'MARKETING', name: 'Marketing', icon: '📢', color: '#10B981' },
-  { id: 'OPERATIONS', name: 'Operations', icon: '⚙️', color: '#F59E0B' }
+  { id: 'DEVELOPMENT', name: 'Development', icon: <Monitor className="w-4 h-4" />, color: '#3B82F6' },
+  { id: 'BUSINESS', name: 'Business', icon: <Briefcase className="w-4 h-4" />, color: '#8B5CF6' },
+  { id: 'INFRASTRUCTURE', name: 'Infrastructure', icon: <Building2 className="w-4 h-4" />, color: '#6B7280' },
+  { id: 'RESEARCH', name: 'Research', icon: <FlaskConical className="w-4 h-4" />, color: '#EC4899' },
+  { id: 'MARKETING', name: 'Marketing', icon: <Megaphone className="w-4 h-4" />, color: '#10B981' },
+  { id: 'OPERATIONS', name: 'Operations', icon: <Cog className="w-4 h-4" />, color: '#F59E0B' }
 ];
 
 interface SortableProjectProps {
@@ -147,12 +161,12 @@ interface SortableProjectProps {
   onProgressChange: (projectId: string, progress: number) => void;
 }
 
-const SortableProject: React.FC<SortableProjectProps> = ({ 
-  project, 
-  phase, 
-  onEdit, 
-  onStatusChange, 
-  onProgressChange 
+const SortableProject: React.FC<SortableProjectProps> = ({
+  project,
+  phase,
+  onEdit,
+  onStatusChange,
+  onProgressChange
 }) => {
   const {
     attributes,
@@ -171,39 +185,39 @@ const SortableProject: React.FC<SortableProjectProps> = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'PLANNING': return 'bg-blue-100 text-blue-700';
-      case 'ACTIVE': return 'bg-green-100 text-green-700';
-      case 'ON_HOLD': return 'bg-yellow-100 text-yellow-700';
-      case 'COMPLETED': return 'bg-purple-100 text-purple-700';
-      case 'CANCELLED': return 'bg-red-100 text-red-700';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'PLANNING': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300';
+      case 'ACTIVE': return 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300';
+      case 'ON_HOLD': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300';
+      case 'COMPLETED': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300';
+      case 'CANCELLED': return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
+      default: return 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case 'LOW': return 'bg-gray-100 text-gray-700';
-      case 'MEDIUM': return 'bg-yellow-100 text-yellow-700';
-      case 'HIGH': return 'bg-orange-100 text-orange-700';
-      case 'CRITICAL': return 'bg-red-100 text-red-700';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'LOW': return 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
+      case 'MEDIUM': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300';
+      case 'HIGH': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300';
+      case 'CRITICAL': return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
+      default: return 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
     }
   };
 
   const getComplexityColor = (complexity: string) => {
     switch (complexity) {
-      case 'SIMPLE': return 'bg-green-100 text-green-700';
-      case 'MODERATE': return 'bg-blue-100 text-blue-700';
-      case 'COMPLEX': return 'bg-orange-100 text-orange-700';
-      case 'EPIC': return 'bg-purple-100 text-purple-700';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'SIMPLE': return 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300';
+      case 'MODERATE': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300';
+      case 'COMPLEX': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300';
+      case 'EPIC': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300';
+      default: return 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
     }
   };
 
   const category = PROJECT_CATEGORIES.find(c => c.id === project.category);
   const completedMilestones = project.milestones.filter(m => m.status === 'COMPLETED').length;
   const totalMilestones = project.milestones.length;
-  
+
   const daysRemaining = Math.ceil(
     (new Date(project.targetEndDate).getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24)
   );
@@ -214,15 +228,15 @@ const SortableProject: React.FC<SortableProjectProps> = ({
       style={style}
       {...attributes}
       {...listeners}
-      className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
+      className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4 cursor-grab active:cursor-grabbing hover:shadow-md transition-shadow"
     >
       {/* Header */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center space-x-2">
-          <span style={{ color: category?.color }} className="text-lg">
+          <span style={{ color: category?.color }}>
             {category?.icon}
           </span>
-          <div className="text-xs text-gray-500">
+          <div className="text-xs text-slate-500 dark:text-slate-400">
             {category?.name}
           </div>
         </div>
@@ -235,17 +249,17 @@ const SortableProject: React.FC<SortableProjectProps> = ({
 
       {/* Project Name and Description */}
       <div className="mb-3">
-        <h4 className="font-medium text-gray-900 mb-1">{project.name}</h4>
-        <p className="text-sm text-gray-600 line-clamp-2">{project.description}</p>
+        <h4 className="font-medium text-slate-900 dark:text-slate-100 mb-1">{project.name}</h4>
+        <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">{project.description}</p>
       </div>
 
       {/* Progress */}
       <div className="mb-3">
         <div className="flex items-center justify-between text-sm mb-1">
-          <span className="text-gray-600">Postęp</span>
-          <span className="font-medium text-gray-900">{project.progress}%</span>
+          <span className="text-slate-600 dark:text-slate-400">Postęp</span>
+          <span className="font-medium text-slate-900 dark:text-slate-100">{project.progress}%</span>
         </div>
-        <div className="w-full bg-gray-200 rounded-full h-2">
+        <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2">
           <div
             className="bg-blue-600 h-2 rounded-full transition-all duration-300"
             style={{ width: `${project.progress}%` }}
@@ -255,7 +269,7 @@ const SortableProject: React.FC<SortableProjectProps> = ({
 
       {/* Milestones */}
       <div className="mb-3">
-        <div className="flex items-center justify-between text-xs text-gray-600 mb-2">
+        <div className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-400 mb-2">
           <span>Kamienie milowe</span>
           <span>{completedMilestones}/{totalMilestones}</span>
         </div>
@@ -265,47 +279,47 @@ const SortableProject: React.FC<SortableProjectProps> = ({
               milestone.status === 'COMPLETED' ? 'bg-green-500' :
               milestone.status === 'IN_PROGRESS' ? 'bg-blue-500' :
               milestone.status === 'OVERDUE' ? 'bg-red-500' :
-              'bg-gray-300'
+              'bg-slate-300 dark:bg-slate-600'
             }`}></div>
             <span className={`text-xs ${
-              milestone.status === 'COMPLETED' ? 'text-green-700 line-through' : 'text-gray-600'
+              milestone.status === 'COMPLETED' ? 'text-green-700 dark:text-green-400 line-through' : 'text-slate-600 dark:text-slate-400'
             }`}>
               {milestone.title}
             </span>
             {milestone.criticalPath && (
-              <span className="text-xs bg-red-100 text-red-700 px-1 rounded">CP</span>
+              <span className="text-xs bg-red-100 dark:bg-red-900/40 text-red-700 dark:text-red-300 px-1 rounded">CP</span>
             )}
           </div>
         ))}
         {project.milestones.length > 3 && (
-          <div className="text-xs text-gray-500">+{project.milestones.length - 3} więcej...</div>
+          <div className="text-xs text-slate-500 dark:text-slate-400">+{project.milestones.length - 3} więcej...</div>
         )}
       </div>
 
       {/* Team and Timeline */}
       <div className="mb-3 space-y-2">
-        <div className="flex items-center space-x-2 text-xs text-gray-600">
-          <UsersIcon className="w-3 h-3" />
+        <div className="flex items-center space-x-2 text-xs text-slate-600 dark:text-slate-400">
+          <Users className="w-3 h-3" />
           <span>{project.assignedTeam.length} członków zespołu</span>
         </div>
-        <div className="flex items-center space-x-2 text-xs text-gray-600">
-          <CalendarDaysIcon className="w-3 h-3" />
+        <div className="flex items-center space-x-2 text-xs text-slate-600 dark:text-slate-400">
+          <CalendarDays className="w-3 h-3" />
           <span>
-            {daysRemaining > 0 ? `${daysRemaining} dni do końca` : 
-             daysRemaining === 0 ? 'Kończy się dziś' : 
+            {daysRemaining > 0 ? `${daysRemaining} dni do końca` :
+             daysRemaining === 0 ? 'Kończy się dziś' :
              `${Math.abs(daysRemaining)} dni po terminie`}
           </span>
         </div>
         {project.budget && (
-          <div className="flex items-center space-x-2 text-xs text-gray-600">
-            <span>💰</span>
+          <div className="flex items-center space-x-2 text-xs text-slate-600 dark:text-slate-400">
+            <Wallet className="w-3 h-3" />
             <span>Budżet: {project.budget.toLocaleString()} PLN</span>
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+      <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-700">
         <div className="flex items-center space-x-2">
           <span className={`px-1.5 py-0.5 text-xs font-medium rounded ${getComplexityColor(project.complexity)}`}>
             {project.complexity}
@@ -314,10 +328,10 @@ const SortableProject: React.FC<SortableProjectProps> = ({
             {project.status}
           </span>
         </div>
-        
+
         {project.dependencies.length > 0 && (
-          <div className="text-xs text-gray-500 flex items-center">
-            <ArrowRightIcon className="w-3 h-3 mr-1" />
+          <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center">
+            <ArrowRight className="w-3 h-3 mr-1" />
             {project.dependencies.length} zależności
           </div>
         )}
@@ -331,9 +345,9 @@ const SortableProject: React.FC<SortableProjectProps> = ({
           max="100"
           value={project.progress}
           onChange={(e) => onProgressChange(project.id, parseInt(e.target.value))}
-          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+          className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer"
           style={{
-            background: `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${project.progress}%, #E5E7EB ${project.progress}%, #E5E7EB 100%)`
+            background: `linear-gradient(to right, #3B82F6 0%, #3B82F6 ${project.progress}%, #E2E8F0 ${project.progress}%, #E2E8F0 100%)`
           }}
           onClick={(e) => e.stopPropagation()}
         />
@@ -344,7 +358,7 @@ const SortableProject: React.FC<SortableProjectProps> = ({
         <select
           value={project.status}
           onChange={(e) => onStatusChange(project.id, e.target.value as ProjectRoadmapItem['status'])}
-          className="text-xs border border-gray-300 rounded px-2 py-1 w-full"
+          className="text-xs border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded px-2 py-1 w-full"
           onClick={(e) => e.stopPropagation()}
         >
           <option value="PLANNING">Planowanie</option>
@@ -761,14 +775,14 @@ export default function ProjectsRoadmapPage() {
 
     // Find which phase the project was dropped in
     const newPhase = over.id as string;
-    
+
     if (ROADMAP_PHASES.some(phase => phase.id === newPhase)) {
       setProjects(prev => prev.map(project =>
         project.id === activeProject.id
           ? { ...project, phase: newPhase as ProjectRoadmapItem['phase'] }
           : project
       ));
-      
+
       toast.success(`Projekt przeniesiony do fazy: ${ROADMAP_PHASES.find(p => p.id === newPhase)?.title}`);
     }
   };
@@ -787,15 +801,15 @@ export default function ProjectsRoadmapPage() {
 
   const getFilteredProjects = () => {
     let filtered = projects;
-    
+
     if (selectedCategory !== 'ALL') {
       filtered = filtered.filter(project => project.category === selectedCategory);
     }
-    
+
     if (selectedPriority !== 'ALL') {
       filtered = filtered.filter(project => project.priority === selectedPriority);
     }
-    
+
     return filtered;
   };
 
@@ -811,331 +825,329 @@ export default function ProjectsRoadmapPage() {
     const onHold = filtered.filter(p => p.status === 'ON_HOLD').length;
     const totalBudget = filtered.reduce((sum, p) => sum + (p.budget || 0), 0);
     const totalCost = filtered.reduce((sum, p) => sum + (p.actualCost || 0), 0);
-    const avgProgress = filtered.length > 0 ? 
+    const avgProgress = filtered.length > 0 ?
       Math.round(filtered.reduce((sum, p) => sum + p.progress, 0) / filtered.length) : 0;
-    
+
     return { total, active, completed, onHold, totalBudget, totalCost, avgProgress };
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
+      <PageShell>
+        <div className="flex justify-center items-center h-96">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
+        </div>
+      </PageShell>
     );
   }
 
   const stats = getProjectStats();
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => router.back()}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-          >
-            <ChevronLeftIcon className="w-5 h-5 text-gray-600" />
-          </button>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-              <MapIcon className="w-6 h-6 mr-2 text-blue-600" />
-              Roadmap Projektów
-            </h1>
-            <p className="text-gray-600">Zarządzanie projektami według faz rozwoju z kamieniami milowymi</p>
-          </div>
-        </div>
+    <PageShell>
+      <PageHeader
+        title="Roadmap Projektów"
+        subtitle="Zarządzanie projektami według faz rozwoju z kamieniami milowymi"
+        icon={Map}
+        iconColor="text-blue-600"
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Projekty', href: '/dashboard/projects' },
+          { label: 'Roadmap' },
+        ]}
+        actions={
+          <div className="flex items-center space-x-3">
+            {/* View Mode Toggle */}
+            <div className="flex rounded-lg border border-slate-300 dark:border-slate-600">
+              <button
+                onClick={() => setViewMode('roadmap')}
+                className={`px-3 py-2 text-sm rounded-l-lg ${
+                  viewMode === 'roadmap'
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-white/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                <Map className="w-4 h-4 mr-1 inline" />
+                Roadmap
+              </button>
+              <button
+                onClick={() => setViewMode('gantt')}
+                className={`px-3 py-2 text-sm ${
+                  viewMode === 'gantt'
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-white/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                <BarChart3 className="w-4 h-4 mr-1 inline" />
+                Gantt
+              </button>
+              <button
+                onClick={() => setViewMode('timeline')}
+                className={`px-3 py-2 text-sm rounded-r-lg ${
+                  viewMode === 'timeline'
+                    ? 'bg-primary-600 text-white'
+                    : 'bg-white/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                }`}
+              >
+                <Clock className="w-4 h-4 mr-1 inline" />
+                Timeline
+              </button>
+            </div>
 
-        <div className="flex items-center space-x-3">
-          {/* View Mode Toggle */}
-          <div className="flex rounded-lg border border-gray-300">
-            <button
-              onClick={() => setViewMode('roadmap')}
-              className={`px-3 py-2 text-sm rounded-l-lg ${
-                viewMode === 'roadmap' 
-                  ? 'bg-primary-600 text-white' 
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <MapIcon className="w-4 h-4 mr-1 inline" />
-              Roadmap
+            {/* Add New Project */}
+            <button className="btn btn-primary">
+              <Plus className="w-4 h-4 mr-2" />
+              Nowy projekt
             </button>
-            <button
-              onClick={() => setViewMode('gantt')}
-              className={`px-3 py-2 text-sm ${
-                viewMode === 'gantt' 
-                  ? 'bg-primary-600 text-white' 
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <ChartBarIcon className="w-4 h-4 mr-1 inline" />
-              Gantt
-            </button>
-            <button
-              onClick={() => setViewMode('timeline')}
-              className={`px-3 py-2 text-sm rounded-r-lg ${
-                viewMode === 'timeline' 
-                  ? 'bg-primary-600 text-white' 
-                  : 'bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <ClockIcon className="w-4 h-4 mr-1 inline" />
-              Timeline
-            </button>
           </div>
+        }
+      />
 
-          {/* Add New Project */}
-          <button className="btn btn-primary">
-            <PlusIcon className="w-4 h-4 mr-2" />
-            Nowy projekt
-          </button>
-        </div>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-4">
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <FlagIcon className="w-5 h-5 text-blue-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Wszystkie</p>
-              <p className="text-xl font-semibold text-gray-900">{stats.total}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <PlayCircleIcon className="w-5 h-5 text-green-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Aktywne</p>
-              <p className="text-xl font-semibold text-gray-900">{stats.active}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <CheckCircleIcon className="w-5 h-5 text-purple-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Ukończone</p>
-              <p className="text-xl font-semibold text-gray-900">{stats.completed}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-yellow-100 rounded-lg">
-              <PauseCircleIcon className="w-5 h-5 text-yellow-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Wstrzymane</p>
-              <p className="text-xl font-semibold text-gray-900">{stats.onHold}</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-indigo-100 rounded-lg">
-              <ArrowTrendingUpIcon className="w-5 h-5 text-indigo-600" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Śr. postęp</p>
-              <p className="text-xl font-semibold text-gray-900">{stats.avgProgress}%</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <span className="text-green-600 font-semibold">💰</span>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Budżet</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {(stats.totalBudget / 1000).toFixed(0)}K
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg p-4 border border-gray-200">
-          <div className="flex items-center">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <span className="text-orange-600 font-semibold">💸</span>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-600">Wydane</p>
-              <p className="text-lg font-semibold text-gray-900">
-                {(stats.totalCost / 1000).toFixed(0)}K
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white rounded-lg p-4 border border-gray-200">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="flex items-center space-x-2">
-            <span className="text-sm font-medium text-gray-700">Filtruj:</span>
-          </div>
-          
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="text-sm border border-gray-300 rounded-md px-3 py-1"
-          >
-            <option value="ALL">Wszystkie kategorie</option>
-            {PROJECT_CATEGORIES.map(category => (
-              <option key={category.id} value={category.id}>
-                {category.icon} {category.name}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={selectedPriority}
-            onChange={(e) => setSelectedPriority(e.target.value)}
-            className="text-sm border border-gray-300 rounded-md px-3 py-1"
-          >
-            <option value="ALL">Wszystkie priorytety</option>
-            <option value="LOW">Niski</option>
-            <option value="MEDIUM">Średni</option>
-            <option value="HIGH">Wysoki</option>
-            <option value="CRITICAL">Krytyczny</option>
-          </select>
-
-          <div className="flex items-center space-x-2">
-            <span className="text-xs text-gray-500">
-              Pokazano: {getFilteredProjects().length} z {projects.length} projektów
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Roadmap View */}
-      {viewMode === 'roadmap' && (
-        <DndContext
-          sensors={sensors}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        >
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            {ROADMAP_PHASES.map(phase => {
-              const phaseProjects = getProjectsByPhase(phase.id);
-              
-              return (
-                <div
-                  key={phase.id}
-                  className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
-                >
-                  {/* Phase Header */}
-                  <div 
-                    className="p-4 text-white"
-                    style={{ backgroundColor: phase.color }}
-                  >
-                    <div className="flex items-center space-x-2 mb-2">
-                      <span className="text-xl">{phase.icon}</span>
-                      <h3 className="font-semibold text-sm">{phase.title}</h3>
-                    </div>
-                    <p className="text-xs opacity-90">{phase.description}</p>
-                    <div className="flex items-center justify-between mt-3 text-xs">
-                      <span>{phase.duration}</span>
-                      <span className="bg-white bg-opacity-20 px-2 py-1 rounded">
-                        {phaseProjects.length} projektów
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Projects Container */}
-                  <div 
-                    className="p-4 space-y-3 min-h-[500px]"
-                    style={{ backgroundColor: phase.bgColor }}
-                  >
-                    <SortableContext items={phaseProjects.map(p => p.id)} strategy={verticalListSortingStrategy}>
-                      {phaseProjects.map(project => (
-                        <SortableProject
-                          key={project.id}
-                          project={project}
-                          phase={phase}
-                          onEdit={(project) => console.log('Edit project:', project)}
-                          onStatusChange={handleStatusChange}
-                          onProgressChange={handleProgressChange}
-                        />
-                      ))}
-                    </SortableContext>
-                    
-                    {phaseProjects.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
-                        <div className="text-2xl mb-2">{phase.icon}</div>
-                        <div className="text-sm">Brak projektów w tej fazie</div>
-                        <div className="text-xs mt-1">Przeciągnij projekty tutaj</div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          <DragOverlay>
-            {activeProject ? (
-              <div className="bg-white rounded-lg shadow-lg border-2 border-blue-500 p-4 opacity-90 transform rotate-3">
-                <div className="font-medium text-gray-900">{activeProject.name}</div>
-                <div className="text-sm text-gray-600 mt-1">{activeProject.description}</div>
-                <div className="text-xs text-gray-500 mt-2">
-                  {activeProject.progress}% • {activeProject.milestones.length} kamieni milowych
-                </div>
+      <div className="space-y-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-4">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <div className="flex items-center">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/40 rounded-lg">
+                <Flag className="w-5 h-5 text-blue-600 dark:text-blue-400" />
               </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
-      )}
+              <div className="ml-3">
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Wszystkie</p>
+                <p className="text-xl font-semibold text-slate-900 dark:text-slate-100">{stats.total}</p>
+              </div>
+            </div>
+          </div>
 
-      {/* Gantt View Placeholder */}
-      {viewMode === 'gantt' && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-          <div className="text-center">
-            <ChartBarIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Widok Gantt</h3>
-            <p className="text-gray-600 mb-4">
-              Zaawansowany widok Gantt z zależnościami projektów i kamieniami milowymi
-            </p>
-            <button className="btn btn-primary">
-              <CogIcon className="w-4 h-4 mr-2" />
-              Konfiguruj widok Gantt
-            </button>
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-lg">
+                <PlayCircle className="w-5 h-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Aktywne</p>
+                <p className="text-xl font-semibold text-slate-900 dark:text-slate-100">{stats.active}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <div className="flex items-center">
+              <div className="p-2 bg-purple-100 dark:bg-purple-900/40 rounded-lg">
+                <CheckCircle className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Ukończone</p>
+                <p className="text-xl font-semibold text-slate-900 dark:text-slate-100">{stats.completed}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <div className="flex items-center">
+              <div className="p-2 bg-yellow-100 dark:bg-yellow-900/40 rounded-lg">
+                <PauseCircle className="w-5 h-5 text-yellow-600 dark:text-yellow-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Wstrzymane</p>
+                <p className="text-xl font-semibold text-slate-900 dark:text-slate-100">{stats.onHold}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <div className="flex items-center">
+              <div className="p-2 bg-indigo-100 dark:bg-indigo-900/40 rounded-lg">
+                <TrendingUp className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Śr. postęp</p>
+                <p className="text-xl font-semibold text-slate-900 dark:text-slate-100">{stats.avgProgress}%</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <div className="flex items-center">
+              <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-lg">
+                <Wallet className="w-5 h-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Budżet</p>
+                <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  {(stats.totalBudget / 1000).toFixed(0)}K
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+            <div className="flex items-center">
+              <div className="p-2 bg-orange-100 dark:bg-orange-900/40 rounded-lg">
+                <Banknote className="w-5 h-5 text-orange-600 dark:text-orange-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Wydane</p>
+                <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  {(stats.totalCost / 1000).toFixed(0)}K
+                </p>
+              </div>
+            </div>
           </div>
         </div>
-      )}
 
-      {/* Timeline View Placeholder */}
-      {viewMode === 'timeline' && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-          <div className="text-center">
-            <ClockIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Widok Timeline</h3>
-            <p className="text-gray-600 mb-4">
-              Chronologiczny widok projektów z kamieniami milowymi i kluczowymi wydarzeniami
-            </p>
-            <button className="btn btn-primary">
-              <CalendarDaysIcon className="w-4 h-4 mr-2" />
-              Konfiguruj timeline
-            </button>
+        {/* Filters */}
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Filtruj:</span>
+            </div>
+
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="text-sm border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-md px-3 py-1"
+            >
+              <option value="ALL">Wszystkie kategorie</option>
+              {PROJECT_CATEGORIES.map(category => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={selectedPriority}
+              onChange={(e) => setSelectedPriority(e.target.value)}
+              className="text-sm border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-md px-3 py-1"
+            >
+              <option value="ALL">Wszystkie priorytety</option>
+              <option value="LOW">Niski</option>
+              <option value="MEDIUM">Średni</option>
+              <option value="HIGH">Wysoki</option>
+              <option value="CRITICAL">Krytyczny</option>
+            </select>
+
+            <div className="flex items-center space-x-2">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                Pokazano: {getFilteredProjects().length} z {projects.length} projektów
+              </span>
+            </div>
           </div>
         </div>
-      )}
-    </div>
+
+        {/* Roadmap View */}
+        {viewMode === 'roadmap' && (
+          <DndContext
+            sensors={sensors}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+          >
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+              {ROADMAP_PHASES.map(phase => {
+                const phaseProjects = getProjectsByPhase(phase.id);
+
+                return (
+                  <div
+                    key={phase.id}
+                    className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm overflow-hidden"
+                  >
+                    {/* Phase Header */}
+                    <div
+                      className="p-4 text-white"
+                      style={{ backgroundColor: phase.color }}
+                    >
+                      <div className="flex items-center space-x-2 mb-2">
+                        <span className="text-xl">{phase.icon}</span>
+                        <h3 className="font-semibold text-sm">{phase.title}</h3>
+                      </div>
+                      <p className="text-xs opacity-90">{phase.description}</p>
+                      <div className="flex items-center justify-between mt-3 text-xs">
+                        <span>{phase.duration}</span>
+                        <span className="bg-white bg-opacity-20 px-2 py-1 rounded">
+                          {phaseProjects.length} projektów
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Projects Container */}
+                    <div
+                      className="p-4 space-y-3 min-h-[500px] dark:bg-slate-900/50"
+                      style={{ backgroundColor: phase.bgColor }}
+                    >
+                      <SortableContext items={phaseProjects.map(p => p.id)} strategy={verticalListSortingStrategy}>
+                        {phaseProjects.map(project => (
+                          <SortableProject
+                            key={project.id}
+                            project={project}
+                            phase={phase}
+                            onEdit={(project) => console.log('Edit project:', project)}
+                            onStatusChange={handleStatusChange}
+                            onProgressChange={handleProgressChange}
+                          />
+                        ))}
+                      </SortableContext>
+
+                      {phaseProjects.length === 0 && (
+                        <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                          <div className="text-2xl mb-2">{phase.icon}</div>
+                          <div className="text-sm">Brak projektów w tej fazie</div>
+                          <div className="text-xs mt-1">Przeciągnij projekty tutaj</div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <DragOverlay>
+              {activeProject ? (
+                <div className="bg-white/90 dark:bg-slate-800/90 rounded-2xl shadow-lg border-2 border-blue-500 p-4 opacity-90 transform rotate-3">
+                  <div className="font-medium text-slate-900 dark:text-slate-100">{activeProject.name}</div>
+                  <div className="text-sm text-slate-600 dark:text-slate-400 mt-1">{activeProject.description}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-2">
+                    {activeProject.progress}% | {activeProject.milestones.length} kamieni milowych
+                  </div>
+                </div>
+              ) : null}
+            </DragOverlay>
+          </DndContext>
+        )}
+
+        {/* Gantt View Placeholder */}
+        {viewMode === 'gantt' && (
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-8">
+            <div className="text-center">
+              <BarChart3 className="w-16 h-16 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Widok Gantt</h3>
+              <p className="text-slate-600 dark:text-slate-400 mb-4">
+                Zaawansowany widok Gantt z zależnościami projektów i kamieniami milowymi
+              </p>
+              <button className="btn btn-primary">
+                <Settings className="w-4 h-4 mr-2" />
+                Konfiguruj widok Gantt
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Timeline View Placeholder */}
+        {viewMode === 'timeline' && (
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-8">
+            <div className="text-center">
+              <Clock className="w-16 h-16 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Widok Timeline</h3>
+              <p className="text-slate-600 dark:text-slate-400 mb-4">
+                Chronologiczny widok projektów z kamieniami milowymi i kluczowymi wydarzeniami
+              </p>
+              <button className="btn btn-primary">
+                <CalendarDays className="w-4 h-4 mr-2" />
+                Konfiguruj timeline
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </PageShell>
   );
 }

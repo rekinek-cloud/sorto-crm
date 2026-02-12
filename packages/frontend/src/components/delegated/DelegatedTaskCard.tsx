@@ -5,17 +5,17 @@ import { motion } from 'framer-motion';
 import { DelegatedTask } from '@/lib/api/delegated';
 import { delegatedApi } from '@/lib/api/delegated';
 import {
-  UserIcon,
-  CalendarIcon,
-  ClockIcon,
-  ExclamationTriangleIcon,
-  EllipsisHorizontalIcon,
-  CheckCircleIcon,
-  XMarkIcon,
-  PlayIcon,
-  PauseIcon,
-  LinkIcon,
-} from '@heroicons/react/24/outline';
+  User,
+  Calendar,
+  Clock,
+  AlertTriangle,
+  MoreHorizontal,
+  CheckCircle,
+  X,
+  Play,
+  Pause,
+  Link,
+} from 'lucide-react';
 
 interface DelegatedTaskCardProps {
   task: DelegatedTask;
@@ -64,7 +64,7 @@ export default function DelegatedTaskCard({
               </span>
               {isOverdue && (
                 <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                  <ExclamationTriangleIcon className="w-3 h-3 mr-1" />
+                  <AlertTriangle className="w-3 h-3 mr-1" />
                   Overdue
                 </span>
               )}
@@ -74,7 +74,7 @@ export default function DelegatedTaskCard({
           
           <div className="relative group">
             <button className="p-1 text-gray-400 hover:text-gray-600 rounded-md">
-              <EllipsisHorizontalIcon className="w-5 h-5" />
+              <MoreHorizontal className="w-5 h-5" />
             </button>
             <div className="absolute right-0 top-8 bg-white rounded-md shadow-lg border border-gray-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
               <button
@@ -152,7 +152,7 @@ export default function DelegatedTaskCard({
         {task.followUpDate && (
           <div className="mb-4">
             <div className="flex items-center space-x-2">
-              <CalendarIcon className="w-4 h-4 text-gray-400" />
+              <Calendar className="w-4 h-4 text-gray-400" />
               <span className={`text-sm font-medium ${isOverdue ? 'text-red-600' : 'text-gray-700'}`}>
                 {followUpText}
               </span>
@@ -164,7 +164,7 @@ export default function DelegatedTaskCard({
         {task.task && (
           <div className="mb-4 p-3 bg-gray-50 rounded-md">
             <div className="flex items-center space-x-2">
-              <LinkIcon className="w-4 h-4 text-gray-400" />
+              <Link className="w-4 h-4 text-gray-400" />
               <span className="text-sm font-medium text-gray-700">Related Task:</span>
             </div>
             <p className="text-sm text-gray-600 mt-1">{task.task.title}</p>
@@ -196,7 +196,7 @@ export default function DelegatedTaskCard({
               onClick={() => handleStatusChange('IN_PROGRESS')}
               className="flex items-center space-x-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm font-medium"
             >
-              <PlayIcon className="w-4 h-4" />
+              <Play className="w-4 h-4" />
               <span>Start</span>
             </button>
           </div>
@@ -208,14 +208,14 @@ export default function DelegatedTaskCard({
               onClick={() => handleStatusChange('COMPLETED')}
               className="flex items-center space-x-1 px-3 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors text-sm font-medium"
             >
-              <CheckCircleIcon className="w-4 h-4" />
+              <CheckCircle className="w-4 h-4" />
               <span>Complete</span>
             </button>
             <button
               onClick={() => handleStatusChange('ON_HOLD')}
               className="flex items-center space-x-1 px-3 py-2 bg-yellow-100 text-yellow-700 rounded-md hover:bg-yellow-200 transition-colors text-sm font-medium"
             >
-              <PauseIcon className="w-4 h-4" />
+              <Pause className="w-4 h-4" />
               <span>Hold</span>
             </button>
           </div>
@@ -227,7 +227,7 @@ export default function DelegatedTaskCard({
               onClick={() => handleStatusChange('IN_PROGRESS')}
               className="flex items-center space-x-1 px-3 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors text-sm font-medium"
             >
-              <PlayIcon className="w-4 h-4" />
+              <Play className="w-4 h-4" />
               <span>Resume</span>
             </button>
           </div>
@@ -236,7 +236,7 @@ export default function DelegatedTaskCard({
         {/* Footer */}
         <div className="flex items-center justify-between text-sm text-gray-500 pt-4 border-t border-gray-200">
           <div className="flex items-center space-x-1">
-            <ClockIcon className="w-4 h-4" />
+            <Clock className="w-4 h-4" />
             <span>Delegated {timeSince}</span>
           </div>
           

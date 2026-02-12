@@ -13,13 +13,13 @@ import { Badge } from '@/components/ui/Badge';
 import apiClient from '@/lib/api/client';
 import toast from 'react-hot-toast';
 import {
-  XMarkIcon,
-  EyeIcon,
-  CheckCircleIcon,
-  ExclamationTriangleIcon,
-  InformationCircleIcon,
-  CogIcon
-} from '@heroicons/react/24/outline';
+  X,
+  Eye,
+  CheckCircle,
+  AlertTriangle,
+  Info,
+  Settings as CogIcon
+} from 'lucide-react';
 import {
   Cog,
   Mail,
@@ -455,14 +455,14 @@ const UniversalRuleForm: React.FC<UniversalRuleFormProps> = ({
 
         {field.description && (
           <p className="text-xs text-gray-500 flex items-center gap-1">
-            <InformationCircleIcon className="h-3 w-3" />
+            <Info className="h-3 w-3" />
             {field.description}
           </p>
         )}
         
         {error && (
           <p className="text-xs text-red-500 flex items-center gap-1">
-            <ExclamationTriangleIcon className="h-3 w-3" />
+            <AlertTriangle className="h-3 w-3" />
             {error}
           </p>
         )}
@@ -503,7 +503,7 @@ const UniversalRuleForm: React.FC<UniversalRuleFormProps> = ({
                   onClick={() => setShowJsonPreview(!showJsonPreview)}
                   className="flex items-center gap-2"
                 >
-                  <EyeIcon className="h-4 w-4" />
+                  <Eye className="h-4 w-4" />
                   {showJsonPreview ? 'Ukryj' : 'Podgląd'} JSON
                 </Button>
                 <Button
@@ -511,7 +511,7 @@ const UniversalRuleForm: React.FC<UniversalRuleFormProps> = ({
                   variant="outline"
                   onClick={onCancel}
                 >
-                  <XMarkIcon className="h-4 w-4" />
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -730,7 +730,7 @@ const UniversalRuleForm: React.FC<UniversalRuleFormProps> = ({
                 {isLoading ? (
                   <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
                 ) : (
-                  <CheckCircleIcon className="h-4 w-4" />
+                  <CheckCircle className="h-4 w-4" />
                 )}
                 {isEditing ? 'Zapisz Zmiany' : 'Utwórz Regułę'}
               </Button>
@@ -743,7 +743,7 @@ const UniversalRuleForm: React.FC<UniversalRuleFormProps> = ({
           <div className="w-96 border-l bg-gray-50 overflow-y-auto">
             <div className="p-4">
               <h3 className="font-medium text-gray-900 mb-3 flex items-center gap-2">
-                <EyeIcon className="h-4 w-4" />
+                <Eye className="h-4 w-4" />
                 Podgląd JSON
               </h3>
               <div className="bg-white rounded border p-3">

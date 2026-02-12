@@ -4,11 +4,11 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { AreaOfResponsibility } from '@/lib/api/areas';
 import {
-  ChartBarIcon,
-  EllipsisHorizontalIcon,
-  ClockIcon,
-  FlagIcon,
-} from '@heroicons/react/24/outline';
+  BarChart3,
+  MoreHorizontal,
+  Clock,
+  Flag,
+} from 'lucide-react';
 
 interface AreaCardProps {
   area: AreaOfResponsibility;
@@ -52,7 +52,7 @@ export default function AreaCard({ area, onEdit, onDelete }: AreaCardProps) {
           
           <div className="relative group">
             <button className="p-1 text-gray-400 hover:text-gray-600 rounded-md">
-              <EllipsisHorizontalIcon className="w-5 h-5" />
+              <MoreHorizontal className="w-5 h-5" />
             </button>
             <div className="absolute right-0 top-8 bg-white rounded-md shadow-lg border border-gray-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
               <button
@@ -88,7 +88,7 @@ export default function AreaCard({ area, onEdit, onDelete }: AreaCardProps) {
         {area.currentFocus && (
           <div className="mb-4">
             <div className="flex items-center space-x-2 mb-1">
-              <FlagIcon className="w-4 h-4 text-amber-500" />
+              <Flag className="w-4 h-4 text-amber-500" />
               <h4 className="text-sm font-medium text-gray-700">Current Focus</h4>
             </div>
             <p className="text-sm text-gray-600">{area.currentFocus}</p>
@@ -132,7 +132,7 @@ export default function AreaCard({ area, onEdit, onDelete }: AreaCardProps) {
         {/* Footer */}
         <div className="flex items-center justify-between text-sm text-gray-500">
           <div className="flex items-center space-x-1">
-            <ChartBarIcon className="w-4 h-4" />
+            <BarChart3 className="w-4 h-4" />
             <span>
               {hasProjects 
                 ? `${projectCount} active project${projectCount !== 1 ? 's' : ''}` 
@@ -142,7 +142,7 @@ export default function AreaCard({ area, onEdit, onDelete }: AreaCardProps) {
           </div>
           
           <div className="flex items-center space-x-1">
-            <ClockIcon className="w-4 h-4" />
+            <Clock className="w-4 h-4" />
             <span>
               {new Date(area.updatedAt).toLocaleDateString('en-US', {
                 month: 'short',

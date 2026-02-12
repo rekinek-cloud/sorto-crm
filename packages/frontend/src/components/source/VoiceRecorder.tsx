@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { MicrophoneIcon, StopIcon, PlayIcon, PauseIcon, TrashIcon } from '@heroicons/react/24/solid';
+import { Mic, Square, Play, Pause, Trash2 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
 interface VoiceRecorderProps {
@@ -151,7 +151,7 @@ export default function VoiceRecorder({
             className="w-16 h-16 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-colors shadow-lg"
             title="Rozpocznij nagrywanie"
           >
-            <MicrophoneIcon className="w-8 h-8" />
+            <Mic className="w-8 h-8" />
           </button>
         )}
 
@@ -174,7 +174,7 @@ export default function VoiceRecorder({
               className="w-12 h-12 rounded-full bg-red-500 hover:bg-red-600 text-white flex items-center justify-center transition-colors shadow-lg"
               title="Zatrzymaj nagrywanie"
             >
-              <StopIcon className="w-6 h-6" />
+              <Square className="w-6 h-6" />
             </button>
           </div>
         )}
@@ -188,7 +188,7 @@ export default function VoiceRecorder({
                 className="w-12 h-12 rounded-full bg-green-500 hover:bg-green-600 text-white flex items-center justify-center transition-colors shadow-lg"
                 title="Odtworz"
               >
-                <PlayIcon className="w-6 h-6" />
+                <Play className="w-6 h-6" />
               </button>
             ) : (
               <button
@@ -196,14 +196,14 @@ export default function VoiceRecorder({
                 className="w-12 h-12 rounded-full bg-orange-500 hover:bg-orange-600 text-white flex items-center justify-center transition-colors shadow-lg"
                 title="Pauza"
               >
-                <PauseIcon className="w-6 h-6" />
+                <Pause className="w-6 h-6" />
               </button>
             )}
 
             {/* Duration */}
             <div className="flex-1">
               <div className="flex items-center gap-2">
-                <MicrophoneIcon className="w-5 h-5 text-gray-500" />
+                <Mic className="w-5 h-5 text-gray-500" />
                 <span className="text-gray-700 font-medium">Nagranie glosowe</span>
               </div>
               <span className="text-sm text-gray-500">Dlugosc: {formatTime(duration)}</span>
@@ -215,7 +215,7 @@ export default function VoiceRecorder({
               className="w-10 h-10 rounded-full bg-gray-200 hover:bg-red-100 text-gray-600 hover:text-red-600 flex items-center justify-center transition-colors"
               title="Usun nagranie"
             >
-              <TrashIcon className="w-5 h-5" />
+              <Trash2 className="w-5 h-5" />
             </button>
           </div>
         )}

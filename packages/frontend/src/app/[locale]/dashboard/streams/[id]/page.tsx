@@ -9,7 +9,9 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Badge } from '@/components/ui/Badge';
 import { AIInsightsPanel } from '@/components/ai/AIInsightsPanel';
 import { CommunicationHub } from '@/components/ai/CommunicationHub';
-import { 
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import {
   Waves,
   Calendar,
   Users,
@@ -24,7 +26,8 @@ import {
   CheckCircle,
   Building,
   DollarSign,
-  MessageSquare
+  MessageSquare,
+  ArrowLeft
 } from 'lucide-react';
 
 interface StreamData {
@@ -111,11 +114,11 @@ export default function EnhancedStreamPage() {
       // Użyj apiClient z automatyczną autoryzacją i interceptorami
       const response = await apiClient.get(`/streams/${streamId}`);
       console.log('Stream data received:', response.data);
-      
+
       // Sprawdź strukturę danych - może być w response.data lub response.data.data
       const rawStreamData = response.data.data || response.data;
       console.log('Raw stream data:', rawStreamData);
-      
+
       // Konwertuj dane stream na format oczekiwany przez interface StreamData
       const convertedData: StreamData = {
         id: rawStreamData.id,
@@ -139,11 +142,11 @@ export default function EnhancedStreamPage() {
           activeDealValue: 0 // TODO: Calculate
         }
       };
-      
+
       setStreamData(convertedData);
     } catch (error: any) {
       console.error('Failed to load stream data:', error);
-      
+
       // Sprawdź czy to błąd 404 (stream nie znaleziony lub brak dostępu)
       if (error.response?.status === 404) {
         console.error('Stream not found or access denied');
@@ -167,60 +170,62 @@ export default function EnhancedStreamPage() {
       case 'active': return 'bg-green-500';
       case 'planning': return 'bg-blue-500';
       case 'on_hold': return 'bg-yellow-500';
-      case 'completed': return 'bg-gray-500';
-      default: return 'bg-gray-400';
+      case 'completed': return 'bg-slate-500';
+      default: return 'bg-slate-400';
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority.toLowerCase()) {
-      case 'high': return 'text-red-600';
-      case 'medium': return 'text-yellow-600';
-      case 'low': return 'text-green-600';
-      default: return 'text-gray-600';
+      case 'high': return 'text-red-600 dark:text-red-400';
+      case 'medium': return 'text-yellow-600 dark:text-yellow-400';
+      case 'low': return 'text-green-600 dark:text-green-400';
+      default: return 'text-slate-600 dark:text-slate-400';
     }
   };
 
   if (loading) {
     return (
-      <div className="container mx-auto p-6">
+      <PageShell>
         <LoadingSpinner text="Loading stream details..." />
-      </div>
+      </PageShell>
     );
   }
 
   if (!streamData) {
     return (
-      <div className="container mx-auto p-6">
+      <PageShell>
         <div className="text-center py-12">
-          <Waves className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Stream nie został znaleziony</h2>
-          <p className="text-gray-600 mb-4">Żądany stream nie został znaleziony lub wystąpił błąd podczas ładowania.</p>
+          <Waves className="h-16 w-16 mx-auto mb-4 text-slate-400 dark:text-slate-500" />
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">Stream nie został znaleziony</h2>
+          <p className="text-slate-600 dark:text-slate-400 mb-4">Żądany stream nie został znaleziony lub wystąpił błąd podczas ładowania.</p>
           <button
             onClick={() => window.location.href = '/dashboard/streams/'}
-            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700"
+            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600"
           >
-            ← Powrót do Streamów GTD
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Powrot do Streamow GTD
           </button>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
+    <PageShell>
       {/* Back Button */}
       <div className="mb-4">
         <button
           onClick={() => window.location.href = '/dashboard/streams/'}
-          className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+          className="inline-flex items-center px-3 py-2 border border-slate-300 dark:border-slate-600 shadow-sm text-sm leading-4 font-medium rounded-md text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
         >
-          ← Powrót do Streamów GTD
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Powrot do Streamow GTD
         </button>
       </div>
 
       {/* Stream Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-6">
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl p-6 mb-6">
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
@@ -273,7 +278,7 @@ export default function EnhancedStreamPage() {
         {/* Progress Bar */}
         <div className="mt-4">
           <div className="bg-blue-800 rounded-full h-3">
-            <div 
+            <div
               className="bg-white rounded-full h-3 transition-all duration-500"
               style={{ width: `${streamData.progress}%` }}
             />
@@ -294,7 +299,7 @@ export default function EnhancedStreamPage() {
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex gap-2 border-b">
+      <div className="flex gap-2 border-b border-slate-200 dark:border-slate-700 mb-6">
         {[
           { id: 'overview', label: 'Overview', icon: BarChart3 },
           { id: 'tasks', label: 'Tasks', icon: CheckCircle },
@@ -309,8 +314,8 @@ export default function EnhancedStreamPage() {
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex items-center gap-2 px-4 py-2 border-b-2 font-medium transition-colors ${
                 activeTab === tab.id
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
               }`}
             >
               <Icon className="h-4 w-4" />
@@ -327,33 +332,33 @@ export default function EnhancedStreamPage() {
           {activeTab === 'overview' && (
             <>
               {/* Tasks Overview */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+              <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+                <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                     <CheckCircle className="h-5 w-5" />
                     Active Tasks ({streamData.tasks.filter(t => t.status !== 'COMPLETED').length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+                  </h3>
+                </div>
+                <div className="p-4">
                   <div className="space-y-3">
                     {streamData.tasks.filter(t => t.status !== 'COMPLETED').slice(0, 5).map((task) => (
-                      <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div key={task.id} className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 rounded-lg bg-white/50 dark:bg-slate-800/50">
                         <div className="flex-1">
-                          <h4 className="font-medium">{task.title}</h4>
+                          <h4 className="font-medium text-slate-900 dark:text-slate-100">{task.title}</h4>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge variant="outline">{task.status}</Badge>
                             <span className={`text-sm ${getPriorityColor(task.priority)}`}>
                               {task.priority}
                             </span>
                             {task.assignee && (
-                              <span className="text-sm text-gray-500">
+                              <span className="text-sm text-slate-500 dark:text-slate-400">
                                 → {task.assignee.firstName} {task.assignee.lastName}
                               </span>
                             )}
                           </div>
                         </div>
                         {task.dueDate && (
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-slate-500 dark:text-slate-400">
                             <Clock className="h-4 w-4 inline mr-1" />
                             {new Date(task.dueDate).toLocaleDateString()}
                           </div>
@@ -361,26 +366,26 @@ export default function EnhancedStreamPage() {
                       </div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               {/* Projects Overview */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+              <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+                <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                     <Target className="h-5 w-5" />
                     Projects ({streamData.projects.length})
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+                  </h3>
+                </div>
+                <div className="p-4">
                   <div className="grid md:grid-cols-2 gap-4">
                     {streamData.projects.map((project) => (
-                      <div key={project.id} className="p-4 border rounded-lg">
+                      <div key={project.id} className="p-4 border border-slate-200 dark:border-slate-700 rounded-lg bg-white/50 dark:bg-slate-800/50">
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-medium">
-                            <a 
+                            <a
                               href={`/crm/dashboard/projects/${project.id}`}
-                              className="text-gray-900 hover:text-blue-600 transition-colors"
+                              className="text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                             >
                               {project.name}
                             </a>
@@ -389,18 +394,18 @@ export default function EnhancedStreamPage() {
                         </div>
                         <div className="mb-3">
                           <div className="flex justify-between text-sm mb-1">
-                            <span>Progress</span>
-                            <span>{project.progress}%</span>
+                            <span className="text-slate-600 dark:text-slate-400">Progress</span>
+                            <span className="text-slate-900 dark:text-slate-100">{project.progress}%</span>
                           </div>
-                          <div className="bg-gray-200 rounded-full h-2">
-                            <div 
+                          <div className="bg-slate-200 dark:bg-slate-700 rounded-full h-2">
+                            <div
                               className="bg-blue-500 rounded-full h-2 transition-all"
                               style={{ width: `${project.progress}%` }}
                             />
                           </div>
                         </div>
                         {project.assignee && (
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-slate-500 dark:text-slate-400">
                             <Users className="h-4 w-4 inline mr-1" />
                             {project.assignee.firstName} {project.assignee.lastName}
                           </div>
@@ -408,31 +413,31 @@ export default function EnhancedStreamPage() {
                       </div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </>
           )}
 
           {activeTab === 'tasks' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>All Tasks</CardTitle>
-              </CardHeader>
-              <CardContent>
+            <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+              <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100">All Tasks</h3>
+              </div>
+              <div className="p-4">
                 <div className="space-y-3">
                   {streamData.tasks.map((task) => (
-                    <div key={task.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div key={task.id} className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 rounded-lg bg-white/50 dark:bg-slate-800/50">
                       <div className="flex items-center gap-3">
                         {task.status === 'COMPLETED' ? (
-                          <CheckCircle className="h-5 w-5 text-green-500" />
+                          <CheckCircle className="h-5 w-5 text-green-500 dark:text-green-400" />
                         ) : (
-                          <div className="h-5 w-5 border-2 border-gray-300 rounded" />
+                          <div className="h-5 w-5 border-2 border-slate-300 dark:border-slate-600 rounded" />
                         )}
                         <div>
-                          <h4 className={`font-medium ${task.status === 'COMPLETED' ? 'line-through text-gray-500' : ''}`}>
-                            <a 
+                          <h4 className={`font-medium ${task.status === 'COMPLETED' ? 'line-through text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-slate-100'}`}>
+                            <a
                               href={`/crm/dashboard/tasks/${task.id}`}
-                              className="text-gray-900 hover:text-blue-600 transition-colors"
+                              className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                             >
                               {task.title}
                             </a>
@@ -447,12 +452,12 @@ export default function EnhancedStreamPage() {
                       </div>
                       <div className="text-right">
                         {task.assignee && (
-                          <div className="text-sm font-medium">
+                          <div className="text-sm font-medium text-slate-900 dark:text-slate-100">
                             {task.assignee.firstName} {task.assignee.lastName}
                           </div>
                         )}
                         {task.dueDate && (
-                          <div className="text-sm text-gray-500">
+                          <div className="text-sm text-slate-500 dark:text-slate-400">
                             {new Date(task.dueDate).toLocaleDateString()}
                           </div>
                         )}
@@ -460,29 +465,29 @@ export default function EnhancedStreamPage() {
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
 
           {activeTab === 'crm' && (
             <div className="space-y-6">
               {/* Companies */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+              <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+                <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                     <Building className="h-5 w-5" />
                     Connected Companies
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+                  </h3>
+                </div>
+                <div className="p-4">
                   <div className="grid md:grid-cols-2 gap-4">
                     {streamData.crmContext.companies.map((company) => (
-                      <div key={company.id} className="p-3 border rounded-lg">
+                      <div key={company.id} className="p-3 border border-slate-200 dark:border-slate-700 rounded-lg bg-white/50 dark:bg-slate-800/50">
                         <div className="flex items-center justify-between">
                           <h4 className="font-medium">
-                            <a 
+                            <a
                               href={`/crm/dashboard/companies/${company.id}`}
-                              className="text-gray-900 hover:text-blue-600 transition-colors"
+                              className="text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                             >
                               {company.name}
                             </a>
@@ -492,26 +497,26 @@ export default function EnhancedStreamPage() {
                       </div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               {/* Deals */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+              <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+                <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                     <DollarSign className="h-5 w-5" />
                     Active Deals
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+                  </h3>
+                </div>
+                <div className="p-4">
                   <div className="space-y-3">
                     {streamData.crmContext.deals.map((deal) => (
-                      <div key={deal.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div key={deal.id} className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 rounded-lg bg-white/50 dark:bg-slate-800/50">
                         <div>
                           <h4 className="font-medium">
-                            <a 
+                            <a
                               href={`/crm/dashboard/deals/${deal.id}`}
-                              className="text-gray-900 hover:text-blue-600 transition-colors"
+                              className="text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                             >
                               {deal.title}
                             </a>
@@ -519,51 +524,51 @@ export default function EnhancedStreamPage() {
                           <div className="flex items-center gap-2 mt-1">
                             <Badge variant="outline">{deal.stage}</Badge>
                             {deal.company && (
-                              <span className="text-sm text-gray-500">{deal.company}</span>
+                              <span className="text-sm text-slate-500 dark:text-slate-400">{deal.company}</span>
                             )}
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="font-bold text-green-600">
+                          <div className="font-bold text-green-600 dark:text-green-400">
                             ${deal.value.toLocaleString()}
                           </div>
                         </div>
                       </div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
               {/* Contacts */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
+              <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+                <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-100 flex items-center gap-2">
                     <Users className="h-5 w-5" />
                     Connected Contacts
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+                  </h3>
+                </div>
+                <div className="p-4">
                   <div className="grid md:grid-cols-2 gap-4">
                     {streamData.crmContext.contacts.map((contact) => (
-                      <div key={contact.id} className="p-3 border rounded-lg">
+                      <div key={contact.id} className="p-3 border border-slate-200 dark:border-slate-700 rounded-lg bg-white/50 dark:bg-slate-800/50">
                         <div className="flex items-center justify-between">
                           <h4 className="font-medium">
-                            <a 
+                            <a
                               href={`/crm/dashboard/contacts/${contact.id}`}
-                              className="text-gray-900 hover:text-blue-600 transition-colors"
+                              className="text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                             >
                               {contact.firstName} {contact.lastName}
                             </a>
                           </h4>
                           {contact.company && (
-                            <span className="text-sm text-gray-500">{contact.company}</span>
+                            <span className="text-sm text-slate-500 dark:text-slate-400">{contact.company}</span>
                           )}
                         </div>
                       </div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
           )}
 
@@ -575,39 +580,39 @@ export default function EnhancedStreamPage() {
         {/* AI Insights Sidebar */}
         <div className="space-y-6">
           <AIInsightsPanel streamId={streamId} scope="stream" />
-          
+
           {/* Quick Stats */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Stats</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100">Quick Stats</h3>
+            </div>
+            <div className="p-4 space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm">Completion Rate</span>
-                <span className="font-bold">
+                <span className="text-sm text-slate-600 dark:text-slate-400">Completion Rate</span>
+                <span className="font-bold text-slate-900 dark:text-slate-100">
                   {Math.round((streamData.stats.completedTasks / streamData.stats.totalTasks) * 100)}%
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm">Team Members</span>
-                <span className="font-bold">{streamData.members.length}</span>
+                <span className="text-sm text-slate-600 dark:text-slate-400">Team Members</span>
+                <span className="font-bold text-slate-900 dark:text-slate-100">{streamData.members.length}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm">Active Projects</span>
-                <span className="font-bold">
+                <span className="text-sm text-slate-600 dark:text-slate-400">Active Projects</span>
+                <span className="font-bold text-slate-900 dark:text-slate-100">
                   {streamData.projects.filter(p => p.status === 'ACTIVE').length}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm">Deal Pipeline</span>
-                <span className="font-bold text-green-600">
+                <span className="text-sm text-slate-600 dark:text-slate-400">Deal Pipeline</span>
+                <span className="font-bold text-green-600 dark:text-green-400">
                   ${streamData.stats.activeDealValue.toLocaleString()}
                 </span>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

@@ -5,24 +5,29 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'react-hot-toast';
 import { communicationApi, type CommunicationChannel as ApiChannel } from '@/lib/api/communication';
 import {
-  PlusIcon,
-  XMarkIcon,
-  EnvelopeIcon,
-  ChatBubbleLeftRightIcon,
-  UserGroupIcon,
-  DevicePhoneMobileIcon,
-  SignalIcon,
-  CheckCircleIcon,
-  ExclamationCircleIcon,
-  PencilIcon,
-  TrashIcon,
-  ArrowPathIcon,
-  WifiIcon,
-  EyeIcon,
-  ClockIcon,
-  CalendarIcon,
-  Cog6ToothIcon,
-} from '@heroicons/react/24/outline';
+  Plus,
+  X,
+  Mail,
+  MessageSquare,
+  Users,
+  Smartphone,
+  Radio,
+  CheckCircle2,
+  AlertCircle,
+  Pencil,
+  Trash2,
+  RefreshCw,
+  Wifi,
+  Eye,
+  Clock,
+  Calendar,
+  Settings,
+  Search,
+} from 'lucide-react';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+
+const GLASS_CARD = 'bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm';
 
 interface ChannelConfig {
   // Email config
@@ -125,12 +130,12 @@ export default function ChannelsPage() {
       const matchesSearch = channel.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            (channel.emailAddress && channel.emailAddress.toLowerCase().includes(searchTerm.toLowerCase())) ||
                            (channel.displayName && channel.displayName.toLowerCase().includes(searchTerm.toLowerCase()));
-      
+
       const matchesType = typeFilter === 'all' || channel.type === typeFilter;
-      const matchesStatus = statusFilter === 'all' || 
+      const matchesStatus = statusFilter === 'all' ||
                            (statusFilter === 'active' && channel.active) ||
                            (statusFilter === 'inactive' && !channel.active);
-      
+
       return matchesSearch && matchesType && matchesStatus;
     });
 
@@ -139,7 +144,7 @@ export default function ChannelsPage() {
 
   const handleCreateChannel = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!formData.name.trim()) {
       toast.error('Nazwa kanału jest wymagana');
       return;
@@ -156,7 +161,7 @@ export default function ChannelsPage() {
       setShowCreateModal(false);
       resetForm();
       toast.success('Kanał został utworzony pomyślnie');
-      
+
       // Optionally trigger initial sync for email channels
       if (formData.type === 'EMAIL' && formData.autoProcess) {
         toast('Uruchamiam początkową synchronizację...', { duration: 3000 });
@@ -173,7 +178,7 @@ export default function ChannelsPage() {
 
   const handleUpdateChannel = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!selectedChannel) return;
 
     try {
@@ -217,18 +222,18 @@ export default function ChannelsPage() {
 
   const handleTestConnection = async (channel: CommunicationChannel) => {
     setTestingConnection(channel.id);
-    
+
     try {
       if (channel.type === 'EMAIL') {
-        const response = await apiClient.post('/communication/channels/test-email', channel.config);
-        if (response.data.valid) {
+        const response = await (window as any).apiClient?.post('/communication/channels/test-email', channel.config);
+        if (response?.data?.valid) {
           toast.success('Test połączenia email zakończony sukcesem');
         } else {
           toast.error('Test połączenia nieudany - sprawdź konfigurację email');
         }
       } else if (channel.type === 'SLACK') {
-        const response = await apiClient.post('/communication/channels/test-slack', channel.config);
-        if (response.data.valid) {
+        const response = await (window as any).apiClient?.post('/communication/channels/test-slack', channel.config);
+        if (response?.data?.valid) {
           toast.success('Test połączenia Slack zakończony sukcesem');
         } else {
           toast.error('Test połączenia nieudany - sprawdź konfigurację Slack');
@@ -248,11 +253,11 @@ export default function ChannelsPage() {
     try {
       console.log('Starting sync for channel:', channel.id, channel.name, channel.type);
       toast('Synchronizuję wiadomości...', { duration: 3000 });
-      
+
       const { syncedCount, errors, message } = await communicationApi.syncChannel(channel.id);
-      
+
       console.log('Sync response:', { syncedCount, errors, message });
-      
+
       if (errors && errors.length > 0) {
         console.warn('Sync completed with errors:', errors);
         toast.error(`Synchronizacja zakończona z błędami: ${errors.join(', ')}`);
@@ -260,7 +265,7 @@ export default function ChannelsPage() {
         console.log(`Sync successful: ${syncedCount} messages synced`);
         toast.success(`Zsynchronizowano ${syncedCount} wiadomości z kanału ${channel.type}`);
       }
-      
+
       // Reload channels to update message counts
       await loadChannels();
     } catch (error: any) {
@@ -322,12 +327,12 @@ export default function ChannelsPage() {
 
   const getChannelIcon = (type: string) => {
     switch (type) {
-      case 'EMAIL': return <EnvelopeIcon className="w-6 h-6 text-blue-600" />;
-      case 'SLACK': return <ChatBubbleLeftRightIcon className="w-6 h-6 text-purple-600" />;
-      case 'TEAMS': return <UserGroupIcon className="w-6 h-6 text-blue-500" />;
-      case 'WHATSAPP': return <DevicePhoneMobileIcon className="w-6 h-6 text-green-600" />;
-      case 'SMS': return <DevicePhoneMobileIcon className="w-6 h-6 text-orange-600" />;
-      default: return <SignalIcon className="w-6 h-6 text-gray-600" />;
+      case 'EMAIL': return <Mail className="w-6 h-6 text-blue-600" />;
+      case 'SLACK': return <MessageSquare className="w-6 h-6 text-purple-600" />;
+      case 'TEAMS': return <Users className="w-6 h-6 text-blue-500" />;
+      case 'WHATSAPP': return <Smartphone className="w-6 h-6 text-green-600" />;
+      case 'SMS': return <Smartphone className="w-6 h-6 text-orange-600" />;
+      default: return <Radio className="w-6 h-6 text-slate-600 dark:text-slate-400" />;
     }
   };
 
@@ -343,7 +348,9 @@ export default function ChannelsPage() {
   };
 
   const getStatusColor = (active: boolean) => {
-    return active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+    return active
+      ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+      : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400';
   };
 
   const formatDate = (dateString: string) => {
@@ -351,9 +358,9 @@ export default function ChannelsPage() {
   };
 
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString('pl-PL', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
+    return new Date(dateString).toLocaleTimeString('pl-PL', {
+      hour: '2-digit',
+      minute: '2-digit'
     });
   };
 
@@ -361,49 +368,52 @@ export default function ChannelsPage() {
     const now = new Date();
     const date = new Date(dateString);
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-    
+
     if (diffInMinutes < 1) return 'Przed chwilą';
     if (diffInMinutes < 60) return `${diffInMinutes} min temu`;
-    
+
     const diffInHours = Math.floor(diffInMinutes / 60);
     if (diffInHours < 24) return `${diffInHours} godz. temu`;
-    
+
     const diffInDays = Math.floor(diffInHours / 24);
     return `${diffInDays} dni temu`;
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600"></div>
-      </div>
+      <PageShell>
+        <div className="flex justify-center items-center h-96">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+        </div>
+      </PageShell>
     );
   }
 
   return (
-    <motion.div
-      className="space-y-6"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Kanały komunikacji</h1>
-          <p className="text-gray-600">Zarządzaj kanałami email, Slack i innych platform komunikacyjnych</p>
-        </div>
-        <button 
-          onClick={() => setShowCreateModal(true)}
-          className="btn btn-primary"
-        >
-          <PlusIcon className="w-5 h-5 mr-2" />
-          Dodaj kanał
-        </button>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Kanały komunikacji"
+        subtitle="Zarządzaj kanałami email, Slack i innych platform komunikacyjnych"
+        icon={Radio}
+        iconColor="text-blue-600"
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Komunikacja', href: '/dashboard/communication' },
+          { label: 'Kanały' },
+        ]}
+        actions={
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium text-sm shadow-sm"
+          >
+            <Plus className="w-5 h-5" />
+            Dodaj kanał
+          </button>
+        }
+      />
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+      <div className={`${GLASS_CARD} p-4 mb-6`}>
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
             <div className="relative">
@@ -412,15 +422,15 @@ export default function ChannelsPage() {
                 placeholder="Szukaj kanałów..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg text-sm"
+                className="pl-10 pr-4 py-2 border border-slate-300 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <SignalIcon className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
             </div>
 
             <select
               value={typeFilter}
               onChange={(e) => setTypeFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
             >
               <option value="all">Wszystkie typy</option>
               <option value="EMAIL">Email</option>
@@ -433,7 +443,7 @@ export default function ChannelsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg text-sm"
+              className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl text-sm bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
             >
               <option value="all">Wszystkie statusy</option>
               <option value="active">Aktywne</option>
@@ -441,62 +451,62 @@ export default function ChannelsPage() {
             </select>
           </div>
 
-          <div className="text-sm text-gray-500">
+          <div className="text-sm text-slate-500 dark:text-slate-400">
             Znaleziono: {filteredChannels.length} z {channels.length}
           </div>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div className={`${GLASS_CARD} p-6`}>
           <div className="flex items-center">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <SignalIcon className="w-6 h-6 text-blue-600" />
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-xl">
+              <Radio className="w-6 h-6 text-blue-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Łącznie kanałów</p>
-              <p className="text-2xl font-semibold text-gray-900">{channels.length}</p>
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Łącznie kanałów</p>
+              <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">{channels.length}</p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className={`${GLASS_CARD} p-6`}>
           <div className="flex items-center">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <CheckCircleIcon className="w-6 h-6 text-green-600" />
+            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-xl">
+              <CheckCircle2 className="w-6 h-6 text-green-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Aktywne</p>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Aktywne</p>
+              <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
                 {channels.filter(c => c.active).length}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className={`${GLASS_CARD} p-6`}>
           <div className="flex items-center">
-            <div className="p-2 bg-orange-100 rounded-lg">
-              <EnvelopeIcon className="w-6 h-6 text-orange-600" />
+            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-xl">
+              <Mail className="w-6 h-6 text-orange-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Nieprzeczytane</p>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Nieprzeczytane</p>
+              <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
                 {channels.reduce((sum, c) => sum + c.unreadCount, 0)}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+        <div className={`${GLASS_CARD} p-6`}>
           <div className="flex items-center">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Cog6ToothIcon className="w-6 h-6 text-purple-600" />
+            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-xl">
+              <Settings className="w-6 h-6 text-purple-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-gray-600">Auto-tworzenie zadań</p>
-              <p className="text-2xl font-semibold text-gray-900">
+              <p className="text-sm font-medium text-slate-600 dark:text-slate-400">Auto-tworzenie zadań</p>
+              <p className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
                 {channels.filter(c => c.createTasks).length}
               </p>
             </div>
@@ -505,103 +515,105 @@ export default function ChannelsPage() {
       </div>
 
       {/* Channels Grid */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">
+      <div className={GLASS_CARD}>
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
             Kanały komunikacji ({filteredChannels.length})
           </h3>
         </div>
 
         {filteredChannels.length === 0 ? (
           <div className="p-12 text-center">
-            <div className="text-6xl mb-4">📡</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Brak kanałów komunikacji</h3>
-            <p className="text-gray-600">Połącz swoje konta email, Slack lub inne platformy komunikacyjne</p>
+            <div className="flex justify-center mb-4">
+              <Radio className="w-16 h-16 text-slate-300 dark:text-slate-600" />
+            </div>
+            <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-2">Brak kanałów komunikacji</h3>
+            <p className="text-slate-600 dark:text-slate-400">Połącz swoje konta email, Slack lub inne platformy komunikacyjne</p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-slate-200 dark:divide-slate-700">
             {filteredChannels.map((channel, index) => (
               <motion.div
                 key={channel.id}
-                className="p-6 hover:bg-gray-50 transition-colors"
+                className="p-6 hover:bg-slate-50/50 dark:hover:bg-slate-700/30 transition-colors"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: index * 0.05 }}
               >
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-4 flex-1">
-                    <div className="p-2 bg-gray-50 rounded-lg">
+                    <div className="p-2 bg-slate-50 dark:bg-slate-700 rounded-xl">
                       {getChannelIcon(channel.type)}
                     </div>
-                    
+
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-3 mb-2">
-                        <h4 className="font-medium text-gray-900">{channel.name}</h4>
+                        <h4 className="font-medium text-slate-900 dark:text-slate-100">{channel.name}</h4>
                         <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(channel.active)}`}>
                           {channel.active ? 'Aktywny' : 'Nieaktywny'}
                         </span>
-                        <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded-full">
+                        <span className="px-2 py-1 text-xs bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-full">
                           {getChannelTypeName(channel.type)}
                         </span>
                       </div>
 
                       {channel.displayName && (
-                        <p className="text-sm text-gray-600 mb-1">{channel.displayName}</p>
+                        <p className="text-sm text-slate-600 dark:text-slate-400 mb-1">{channel.displayName}</p>
                       )}
 
                       {channel.emailAddress && (
-                        <p className="text-sm text-gray-500 mb-3">{channel.emailAddress}</p>
+                        <p className="text-sm text-slate-500 dark:text-slate-500 mb-3">{channel.emailAddress}</p>
                       )}
 
                       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
                         <div className="flex items-center">
-                          <EnvelopeIcon className="w-4 h-4 text-blue-500 mr-2" />
-                          <span className="text-gray-600">Nieprzeczytane:</span>
-                          <span className="font-medium ml-1">{channel.unreadCount}</span>
+                          <Mail className="w-4 h-4 text-blue-500 mr-2" />
+                          <span className="text-slate-600 dark:text-slate-400">Nieprzeczytane:</span>
+                          <span className="font-medium ml-1 text-slate-900 dark:text-slate-100">{channel.unreadCount}</span>
                         </div>
-                        
+
                         <div className="flex items-center">
-                          <Cog6ToothIcon className="w-4 h-4 text-green-500 mr-2" />
-                          <span className="text-gray-600">Auto-przetwarzanie:</span>
-                          <span className={`font-medium ml-1 ${channel.autoProcess ? 'text-green-600' : 'text-gray-500'}`}>
+                          <Settings className="w-4 h-4 text-green-500 mr-2" />
+                          <span className="text-slate-600 dark:text-slate-400">Auto-przetwarzanie:</span>
+                          <span className={`font-medium ml-1 ${channel.autoProcess ? 'text-green-600 dark:text-green-400' : 'text-slate-500 dark:text-slate-500'}`}>
                             {channel.autoProcess ? 'Tak' : 'Nie'}
                           </span>
                         </div>
 
                         <div className="flex items-center">
-                          <CheckCircleIcon className="w-4 h-4 text-purple-500 mr-2" />
-                          <span className="text-gray-600">Tworzenie zadań:</span>
-                          <span className={`font-medium ml-1 ${channel.createTasks ? 'text-green-600' : 'text-gray-500'}`}>
+                          <CheckCircle2 className="w-4 h-4 text-purple-500 mr-2" />
+                          <span className="text-slate-600 dark:text-slate-400">Tworzenie zadań:</span>
+                          <span className={`font-medium ml-1 ${channel.createTasks ? 'text-green-600 dark:text-green-400' : 'text-slate-500 dark:text-slate-500'}`}>
                             {channel.createTasks ? 'Tak' : 'Nie'}
                           </span>
                         </div>
 
                         <div className="flex items-center">
-                          <CalendarIcon className="w-4 h-4 text-orange-500 mr-2" />
-                          <span className="text-gray-600">Utworzony:</span>
-                          <span className="font-medium ml-1">{formatDate(channel.createdAt)}</span>
+                          <Calendar className="w-4 h-4 text-orange-500 mr-2" />
+                          <span className="text-slate-600 dark:text-slate-400">Utworzony:</span>
+                          <span className="font-medium ml-1 text-slate-900 dark:text-slate-100">{formatDate(channel.createdAt)}</span>
                         </div>
                       </div>
 
                       {channel.lastMessage && (
-                        <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center text-xs text-gray-500 mb-1">
-                            <ClockIcon className="w-3 h-3 mr-1" />
+                        <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-700/50 rounded-xl">
+                          <div className="flex items-center text-xs text-slate-500 dark:text-slate-400 mb-1">
+                            <Clock className="w-3 h-3 mr-1" />
                             Ostatnia wiadomość: {channel.lastMessageAt && getTimeAgo(channel.lastMessageAt)}
                           </div>
-                          <p className="text-sm text-gray-700 truncate">{channel.lastMessage}</p>
+                          <p className="text-sm text-slate-700 dark:text-slate-300 truncate">{channel.lastMessage}</p>
                         </div>
                       )}
 
                       {channel.type === 'EMAIL' && (
-                        <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                        <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl">
                           <div className="flex items-center justify-between text-xs">
-                            <div className="flex items-center text-blue-600">
-                              <ArrowPathIcon className="w-3 h-3 mr-1" />
+                            <div className="flex items-center text-blue-600 dark:text-blue-400">
+                              <RefreshCw className="w-3 h-3 mr-1" />
                               Ostatnia synchronizacja: {channel.lastSyncAt ? getTimeAgo(channel.lastSyncAt) : 'Nigdy'}
                             </div>
                             {channel.config && (
-                              <div className="text-gray-500">
+                              <div className="text-slate-500 dark:text-slate-400">
                                 Interwał: {(channel.config as any).syncInterval || 5} min
                               </div>
                             )}
@@ -615,52 +627,52 @@ export default function ChannelsPage() {
                     <button
                       onClick={() => handleTestConnection(channel)}
                       disabled={testingConnection === channel.id}
-                      className="p-2 text-gray-400 hover:text-blue-600 disabled:opacity-50"
+                      className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 disabled:opacity-50 transition-colors"
                       title="Testuj połączenie"
                     >
                       {testingConnection === channel.id ? (
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                       ) : (
-                        <WifiIcon className="w-4 h-4" />
+                        <Wifi className="w-4 h-4" />
                       )}
                     </button>
-                    
+
                     {(channel.type === 'SLACK' || channel.type === 'EMAIL') && (
                       <button
                         onClick={() => handleSyncChannel(channel)}
-                        className="p-2 text-gray-400 hover:text-purple-600"
+                        className="p-2 text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
                         title="Synchronizuj"
                       >
-                        <ArrowPathIcon className="w-4 h-4" />
+                        <RefreshCw className="w-4 h-4" />
                       </button>
                     )}
 
                     <button
                       onClick={() => toggleChannelStatus(channel.id)}
-                      className={`p-2 ${
+                      className={`p-2 transition-colors ${
                         channel.active
-                          ? 'text-gray-400 hover:text-orange-600'
-                          : 'text-gray-400 hover:text-green-600'
+                          ? 'text-slate-400 hover:text-orange-600 dark:hover:text-orange-400'
+                          : 'text-slate-400 hover:text-green-600 dark:hover:text-green-400'
                       }`}
                       title={channel.active ? 'Dezaktywuj' : 'Aktywuj'}
                     >
-                      <CheckCircleIcon className="w-4 h-4" />
+                      <CheckCircle2 className="w-4 h-4" />
                     </button>
-                    
+
                     <button
                       onClick={() => openEditModal(channel)}
-                      className="p-2 text-gray-400 hover:text-blue-600"
+                      className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                       title="Edytuj kanał"
                     >
-                      <PencilIcon className="w-4 h-4" />
+                      <Pencil className="w-4 h-4" />
                     </button>
-                    
+
                     <button
                       onClick={() => handleDeleteChannel(channel.id)}
-                      className="p-2 text-gray-400 hover:text-red-600"
+                      className="p-2 text-slate-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
                       title="Usuń kanał"
                     >
-                      <TrashIcon className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
@@ -673,16 +685,17 @@ export default function ChannelsPage() {
       {/* Create/Edit Channel Modal */}
       <AnimatePresence>
         {(showCreateModal || showEditModal) && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
             <motion.div
-              className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto"
+              className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full mx-4 border border-slate-200 dark:border-slate-700 overflow-y-auto"
+              style={{ maxWidth: '42rem', maxHeight: '90vh' }}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
             >
-              <div className="px-6 py-4 border-b border-gray-200">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                     {showCreateModal ? 'Dodaj kanał komunikacji' : 'Edytuj kanał komunikacji'}
                   </h3>
                   <button
@@ -692,9 +705,9 @@ export default function ChannelsPage() {
                       setSelectedChannel(null);
                       resetForm();
                     }}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
                   >
-                    <XMarkIcon className="w-6 h-6" />
+                    <X className="w-6 h-6" />
                   </button>
                 </div>
               </div>
@@ -702,27 +715,27 @@ export default function ChannelsPage() {
             <form onSubmit={showCreateModal ? handleCreateChannel : handleUpdateChannel} className="p-6">
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Nazwa kanału *
                   </label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                     placeholder="np. Gmail - Główne konto"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Typ kanału *
                   </label>
                   <select
                     value={formData.type}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                     required
                   >
                     <option value="EMAIL">Email (IMAP/SMTP)</option>
@@ -736,28 +749,28 @@ export default function ChannelsPage() {
                 {formData.type === 'EMAIL' && (
                   <>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Adres email *
                       </label>
                       <input
                         type="email"
                         value={formData.emailAddress}
                         onChange={(e) => setFormData({ ...formData, emailAddress: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         placeholder="twoj@email.com"
                         required
                       />
                     </div>
 
-                    <div className="col-span-2 border-t pt-4 mt-2">
-                      <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                        <EnvelopeIcon className="w-4 h-4 mr-2" />
+                    <div className="col-span-2 border-t border-slate-200 dark:border-slate-700 pt-4 mt-2">
+                      <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center">
+                        <Mail className="w-4 h-4 mr-2" />
                         Konfiguracja IMAP (odbieranie)
                       </h4>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Serwer IMAP *
                       </label>
                       <input
@@ -768,14 +781,14 @@ export default function ChannelsPage() {
                           config: { ...formData.config, imapHost: e.target.value, host: e.target.value }
                         })}
                         placeholder="imap.gmail.com"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         required
                       />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                           Port IMAP
                         </label>
                         <input
@@ -785,7 +798,7 @@ export default function ChannelsPage() {
                             ...formData,
                             config: { ...formData.config, imapPort: parseInt(e.target.value), port: parseInt(e.target.value) }
                           })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         />
                       </div>
                       <div className="flex items-center pt-6">
@@ -797,23 +810,23 @@ export default function ChannelsPage() {
                             ...formData,
                             config: { ...formData.config, imapSecure: e.target.checked, useSSL: e.target.checked }
                           })}
-                          className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600 rounded"
                         />
-                        <label htmlFor="imapSSL" className="ml-2 block text-sm text-gray-900">
+                        <label htmlFor="imapSSL" className="ml-2 block text-sm text-slate-900 dark:text-slate-100">
                           SSL/TLS
                         </label>
                       </div>
                     </div>
 
-                    <div className="col-span-2 border-t pt-4 mt-2">
-                      <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                        <ArrowPathIcon className="w-4 h-4 mr-2" />
+                    <div className="col-span-2 border-t border-slate-200 dark:border-slate-700 pt-4 mt-2">
+                      <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center">
+                        <RefreshCw className="w-4 h-4 mr-2" />
                         Konfiguracja SMTP (wysyłanie)
                       </h4>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Serwer SMTP
                       </label>
                       <input
@@ -824,13 +837,13 @@ export default function ChannelsPage() {
                           config: { ...formData.config, smtpHost: e.target.value }
                         })}
                         placeholder="smtp.gmail.com"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                       />
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                           Port SMTP
                         </label>
                         <input
@@ -840,7 +853,7 @@ export default function ChannelsPage() {
                             ...formData,
                             config: { ...formData.config, smtpPort: parseInt(e.target.value) }
                           })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         />
                       </div>
                       <div className="flex items-center pt-6">
@@ -852,23 +865,23 @@ export default function ChannelsPage() {
                             ...formData,
                             config: { ...formData.config, smtpSecure: e.target.checked }
                           })}
-                          className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600 rounded"
                         />
-                        <label htmlFor="smtpSSL" className="ml-2 block text-sm text-gray-900">
+                        <label htmlFor="smtpSSL" className="ml-2 block text-sm text-slate-900 dark:text-slate-100">
                           SSL/TLS
                         </label>
                       </div>
                     </div>
 
-                    <div className="col-span-2 border-t pt-4 mt-2">
-                      <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                        <CheckCircleIcon className="w-4 h-4 mr-2" />
+                    <div className="col-span-2 border-t border-slate-200 dark:border-slate-700 pt-4 mt-2">
+                      <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center">
+                        <CheckCircle2 className="w-4 h-4 mr-2" />
                         Dane dostępowe
                       </h4>
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Nazwa użytkownika *
                       </label>
                       <input
@@ -878,14 +891,14 @@ export default function ChannelsPage() {
                           ...formData,
                           config: { ...formData.config, username: e.target.value }
                         })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         placeholder="twoj@email.com"
                         required
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Hasło *
                       </label>
                       <input
@@ -895,25 +908,25 @@ export default function ChannelsPage() {
                           ...formData,
                           config: { ...formData.config, password: e.target.value }
                         })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         placeholder="Hasło do konta email"
                         required
                       />
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                         Dla Gmail z 2FA użyj App Password
                       </p>
                     </div>
 
-                    <div className="col-span-2 border-t pt-4 mt-2">
-                      <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                        <Cog6ToothIcon className="w-4 h-4 mr-2" />
+                    <div className="col-span-2 border-t border-slate-200 dark:border-slate-700 pt-4 mt-2">
+                      <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center">
+                        <Settings className="w-4 h-4 mr-2" />
                         Synchronizacja
                       </h4>
                     </div>
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                           Interwał sync (min)
                         </label>
                         <select
@@ -922,7 +935,7 @@ export default function ChannelsPage() {
                             ...formData,
                             config: { ...formData.config, syncInterval: parseInt(e.target.value) }
                           })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         >
                           <option value={1}>1 minuta</option>
                           <option value={5}>5 minut</option>
@@ -932,7 +945,7 @@ export default function ChannelsPage() {
                         </select>
                       </div>
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                           Max wiadomości
                         </label>
                         <select
@@ -941,7 +954,7 @@ export default function ChannelsPage() {
                             ...formData,
                             config: { ...formData.config, maxMessages: parseInt(e.target.value) }
                           })}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                          className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         >
                           <option value={100}>100</option>
                           <option value={500}>500</option>
@@ -953,7 +966,7 @@ export default function ChannelsPage() {
                     </div>
 
                     <div className="col-span-2">
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Foldery do synchronizacji
                       </label>
                       <input
@@ -963,10 +976,10 @@ export default function ChannelsPage() {
                           ...formData,
                           config: { ...formData.config, syncFolders: e.target.value }
                         })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         placeholder="INBOX, Sent, Drafts"
                       />
-                      <p className="text-xs text-gray-500 mt-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                         Rozdziel foldery przecinkami
                       </p>
                     </div>
@@ -976,7 +989,7 @@ export default function ChannelsPage() {
                 {formData.type === 'SLACK' && (
                   <>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Token bota *
                       </label>
                       <input
@@ -987,12 +1000,12 @@ export default function ChannelsPage() {
                           config: { ...formData.config, token: e.target.value }
                         })}
                         placeholder="xoxb-..."
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Signing Secret
                       </label>
                       <input
@@ -1002,13 +1015,13 @@ export default function ChannelsPage() {
                           ...formData,
                           config: { ...formData.config, signingSecret: e.target.value }
                         })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                         placeholder="Podpisywanie wiadomości"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                      <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                         Nazwa workspace
                       </label>
                       <input
@@ -1019,21 +1032,21 @@ export default function ChannelsPage() {
                           config: { ...formData.config, workspace: e.target.value }
                         })}
                         placeholder="nazwa-workspace"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                       />
                     </div>
                   </>
                 )}
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                     Nazwa wyświetlana
                   </label>
                   <input
                     type="text"
                     value={formData.displayName}
                     onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
+                    className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
                     placeholder="Przyjazna nazwa kanału"
                   />
                 </div>
@@ -1045,9 +1058,9 @@ export default function ChannelsPage() {
                       id="autoProcess"
                       checked={formData.autoProcess}
                       onChange={(e) => setFormData({ ...formData, autoProcess: e.target.checked })}
-                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600 rounded"
                     />
-                    <label htmlFor="autoProcess" className="ml-2 block text-sm text-gray-900">
+                    <label htmlFor="autoProcess" className="ml-2 block text-sm text-slate-900 dark:text-slate-100">
                       Automatyczne przetwarzanie wiadomości
                     </label>
                   </div>
@@ -1058,16 +1071,16 @@ export default function ChannelsPage() {
                       id="createTasks"
                       checked={formData.createTasks}
                       onChange={(e) => setFormData({ ...formData, createTasks: e.target.checked })}
-                      className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 dark:border-slate-600 rounded"
                     />
-                    <label htmlFor="createTasks" className="ml-2 block text-sm text-gray-900">
+                    <label htmlFor="createTasks" className="ml-2 block text-sm text-slate-900 dark:text-slate-100">
                       Automatyczne tworzenie zadań z wiadomości
                     </label>
                   </div>
                 </div>
               </div>
 
-              <div className="px-6 py-4 border-t border-gray-200 flex space-x-3">
+              <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex space-x-3 mt-6 -mx-6 -mb-6">
                 <button
                   type="button"
                   onClick={() => {
@@ -1076,13 +1089,13 @@ export default function ChannelsPage() {
                     setSelectedChannel(null);
                     resetForm();
                   }}
-                  className="btn btn-outline flex-1"
+                  className="flex-1 px-4 py-2.5 border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors font-medium text-sm"
                 >
                   Anuluj
                 </button>
                 <button
                   type="submit"
-                  className="btn btn-primary flex-1"
+                  className="flex-1 px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-colors font-medium text-sm"
                 >
                   {showCreateModal ? 'Dodaj kanał' : 'Aktualizuj kanał'}
                 </button>
@@ -1092,6 +1105,6 @@ export default function ChannelsPage() {
           </div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </PageShell>
   );
 }

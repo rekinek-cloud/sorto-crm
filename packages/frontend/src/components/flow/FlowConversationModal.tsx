@@ -2,16 +2,16 @@
 
 import React, { useState, useEffect } from 'react';
 import {
-  SparklesIcon,
-  XMarkIcon,
-  CheckIcon,
-  ArrowPathIcon,
-  PlusIcon,
-  TrashIcon,
-  PencilIcon,
-  ExclamationTriangleIcon,
-  AcademicCapIcon,
-} from '@heroicons/react/24/outline';
+  Sparkles,
+  X,
+  Check,
+  RefreshCw,
+  Plus,
+  Trash2,
+  Pencil,
+  AlertTriangle,
+  GraduationCap,
+} from 'lucide-react';
 import { flowApi, FlowAction, FlowConversation, FlowPendingItem, FlowAIMetadata, FLOW_ACTION_LABELS } from '@/lib/api/flow';
 import { toast } from 'react-hot-toast';
 
@@ -466,14 +466,14 @@ export default function FlowConversationModal({ item, streams, projects = [], go
           {/* Header */}
           <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white px-6 py-4 flex items-center justify-between rounded-t-xl">
             <div className="flex items-center gap-3">
-              <PencilIcon className="w-6 h-6" />
+              <Pencil className="w-6 h-6" />
               <div>
                 <h2 className="text-lg font-bold">Korygowanie sugestii AI</h2>
                 <p className="text-sm text-amber-100">Twoje decyzje zawsze wygrywają</p>
               </div>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-              <XMarkIcon className="w-5 h-5" />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
@@ -490,7 +490,7 @@ export default function FlowConversationModal({ item, streams, projects = [], go
               {/* LEFT: AI Proposal (read-only) */}
               <div className="col-span-2 border-r bg-indigo-50/50 p-5 space-y-4 overflow-auto">
                 <div className="flex items-center gap-2 mb-3">
-                  <SparklesIcon className="w-5 h-5 text-indigo-600" />
+                  <Sparkles className="w-5 h-5 text-indigo-600" />
                   <h3 className="font-bold text-indigo-900 text-sm uppercase tracking-wide">Propozycja AI</h3>
                 </div>
 
@@ -592,7 +592,7 @@ export default function FlowConversationModal({ item, streams, projects = [], go
                 {/* Loading indicator for background conversation */}
                 {!conversation && (
                   <div className="flex items-center gap-2 text-xs text-indigo-400 pt-2">
-                    <ArrowPathIcon className="w-3.5 h-3.5 animate-spin" />
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
                     Ładowanie szczegółów...
                   </div>
                 )}
@@ -601,7 +601,7 @@ export default function FlowConversationModal({ item, streams, projects = [], go
               {/* RIGHT: User's Decision (editable) */}
               <div className="col-span-3 p-5 space-y-4 overflow-auto">
                 <div className="flex items-center gap-2 mb-3">
-                  <AcademicCapIcon className="w-5 h-5 text-amber-600" />
+                  <GraduationCap className="w-5 h-5 text-amber-600" />
                   <h3 className="font-bold text-gray-900 text-sm uppercase tracking-wide">Twoja decyzja</h3>
                 </div>
 
@@ -719,7 +719,7 @@ export default function FlowConversationModal({ item, streams, projects = [], go
                           <input type="date" value={task.dueDate || ''} onChange={(e) => updateTaskDate(task.id, e.target.value)}
                             className="w-36 border border-gray-300 rounded px-2 py-1.5 text-xs" />
                           <button onClick={() => removeTask(task.id)} className="p-1 text-red-400 hover:text-red-600">
-                            <TrashIcon className="w-4 h-4" />
+                            <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       ))}
@@ -729,7 +729,7 @@ export default function FlowConversationModal({ item, streams, projects = [], go
                           className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm" placeholder="Nowe zadanie..." />
                         <button onClick={addTask} disabled={!newTaskTitle.trim()}
                           className="p-1.5 bg-amber-500 text-white rounded hover:bg-amber-600 disabled:bg-gray-300">
-                          <PlusIcon className="w-4 h-4" />
+                          <Plus className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -759,7 +759,7 @@ export default function FlowConversationModal({ item, streams, projects = [], go
                       {tags.map((tag) => (
                         <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-700 text-xs rounded-full">
                           #{tag}
-                          <button onClick={() => removeTag(tag)} className="hover:text-red-500"><XMarkIcon className="w-3 h-3" /></button>
+                          <button onClick={() => removeTag(tag)} className="hover:text-red-500"><X className="w-3 h-3" /></button>
                         </span>
                       ))}
                     </div>
@@ -769,7 +769,7 @@ export default function FlowConversationModal({ item, streams, projects = [], go
                         className="flex-1 border border-gray-300 rounded px-2 py-1.5 text-sm" placeholder="Dodaj tag..." />
                       <button onClick={addTag} disabled={!newTag.trim()}
                         className="p-1.5 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 disabled:opacity-50">
-                        <PlusIcon className="w-4 h-4" />
+                        <Plus className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -797,7 +797,7 @@ export default function FlowConversationModal({ item, streams, projects = [], go
           <div className="border-t px-6 py-4 bg-gray-50 rounded-b-xl">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-xs text-gray-500">
-                <AcademicCapIcon className="w-4 h-4" />
+                <GraduationCap className="w-4 h-4" />
                 AI się uczy z Twoich korekt
               </div>
               <div className="flex items-center gap-3">
@@ -810,11 +810,11 @@ export default function FlowConversationModal({ item, streams, projects = [], go
                   className="px-6 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-lg hover:from-amber-600 hover:to-orange-600 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed transition-all flex items-center gap-2"
                 >
                   {executing ? (
-                    <><ArrowPathIcon className="w-5 h-5 animate-spin" /> Wykonywanie...</>
+                    <><RefreshCw className="w-5 h-5 animate-spin" /> Wykonywanie...</>
                   ) : !conversation ? (
-                    <><ArrowPathIcon className="w-5 h-5 animate-spin" /> Przygotowywanie...</>
+                    <><RefreshCw className="w-5 h-5 animate-spin" /> Przygotowywanie...</>
                   ) : (
-                    <><CheckIcon className="w-5 h-5" /> Zatwierdź korektę</>
+                    <><Check className="w-5 h-5" /> Zatwierdź korektę</>
                   )}
                 </button>
               </div>
@@ -834,21 +834,21 @@ export default function FlowConversationModal({ item, streams, projects = [], go
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-4 flex items-center justify-between rounded-t-xl">
           <div className="flex items-center gap-3">
-            <SparklesIcon className="w-6 h-6" />
+            <Sparkles className="w-6 h-6" />
             <div>
               <h2 className="text-lg font-bold">Przetwarzanie elementu</h2>
               <p className="text-sm text-indigo-200">Zmodyfikuj i zatwierdz</p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 hover:bg-white/10 rounded-lg transition-colors">
-            <XMarkIcon className="w-5 h-5" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 
         {loading ? (
           <div className="flex-1 flex items-center justify-center p-12">
             <div className="text-center">
-              <ArrowPathIcon className="w-12 h-12 text-indigo-500 animate-spin mx-auto mb-4" />
+              <RefreshCw className="w-12 h-12 text-indigo-500 animate-spin mx-auto mb-4" />
               <p className="text-gray-600 font-medium">Analizuje element...</p>
             </div>
           </div>
@@ -865,7 +865,7 @@ export default function FlowConversationModal({ item, streams, projects = [], go
               <div className="px-6 py-4 border-b bg-indigo-50">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="font-semibold text-indigo-900 flex items-center gap-2">
-                    <SparklesIcon className="w-4 h-4" />
+                    <Sparkles className="w-4 h-4" />
                     Analiza AI
                   </h3>
                   {aiMetadata.confidence && (
@@ -888,7 +888,7 @@ export default function FlowConversationModal({ item, streams, projects = [], go
                   {aiMetadata.analysis?.missingInfo && aiMetadata.analysis.missingInfo.length > 0 && (
                     <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
                       <div className="flex items-start gap-2">
-                        <ExclamationTriangleIcon className="w-4 h-4 text-amber-600 mt-0.5" />
+                        <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5" />
                         <div>
                           <p className="font-medium text-amber-800 text-xs mb-1">Brakujace informacje:</p>
                           <ul className="text-amber-700 text-xs space-y-0.5">
@@ -986,7 +986,7 @@ export default function FlowConversationModal({ item, streams, projects = [], go
                               className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
                               title="Usun zadanie"
                             >
-                              <TrashIcon className="w-4 h-4" />
+                              <Trash2 className="w-4 h-4" />
                             </button>
                           </div>
                           <div className="flex items-center gap-2">
@@ -1017,7 +1017,7 @@ export default function FlowConversationModal({ item, streams, projects = [], go
                           className="p-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                           title="Dodaj zadanie"
                         >
-                          <PlusIcon className="w-4 h-4" />
+                          <Plus className="w-4 h-4" />
                         </button>
                       </div>
                     </div>
@@ -1092,7 +1092,7 @@ export default function FlowConversationModal({ item, streams, projects = [], go
                             onClick={() => removeTag(tag)}
                             className="hover:text-red-500 transition-colors"
                           >
-                            <XMarkIcon className="w-3 h-3" />
+                            <X className="w-3 h-3" />
                           </button>
                         </span>
                       ))}
@@ -1112,7 +1112,7 @@ export default function FlowConversationModal({ item, streams, projects = [], go
                         className="p-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         title="Dodaj tag"
                       >
-                        <PlusIcon className="w-4 h-4" />
+                        <Plus className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -1312,17 +1312,17 @@ export default function FlowConversationModal({ item, streams, projects = [], go
               >
                 {executing ? (
                   <>
-                    <ArrowPathIcon className="w-5 h-5 animate-spin" />
+                    <RefreshCw className="w-5 h-5 animate-spin" />
                     Wykonywanie...
                   </>
                 ) : !conversation ? (
                   <>
-                    <ArrowPathIcon className="w-5 h-5 animate-spin" />
+                    <RefreshCw className="w-5 h-5 animate-spin" />
                     Przygotowywanie...
                   </>
                 ) : (
                   <>
-                    <CheckIcon className="w-5 h-5" />
+                    <Check className="w-5 h-5" />
                     Zatwierdz
                   </>
                 )}

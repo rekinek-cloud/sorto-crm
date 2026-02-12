@@ -8,27 +8,30 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/lib/auth/context';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 import {
-  ChevronLeftIcon,
-  PlusIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
-  FolderIcon,
-  DocumentIcon,
-  ClockIcon,
-  UserIcon,
-  TagIcon,
-  CalendarIcon,
-  ExclamationTriangleIcon,
-  CheckCircleIcon,
-  PlayCircleIcon,
-  PauseCircleIcon,
-  XCircleIcon,
-  EyeIcon,
-  PencilIcon,
-  TrashIcon,
-  DocumentDuplicateIcon,
-} from '@heroicons/react/24/outline';
+  ChevronLeft,
+  Plus,
+  ChevronDown,
+  ChevronRight,
+  Folder,
+  FileText,
+  Clock,
+  User,
+  Tag,
+  Calendar,
+  AlertTriangle,
+  CheckCircle,
+  PlayCircle,
+  PauseCircle,
+  XCircle,
+  Eye,
+  Pencil,
+  Trash2,
+  Copy,
+  FolderTree,
+} from 'lucide-react';
 
 interface WBSTemplate {
   id: string;
@@ -56,11 +59,11 @@ interface WBSTemplate {
 
 interface WBSNode {
   id: string;
-  code: string; // 1.0, 1.1, 1.1.1
+  code: string;
   title: string;
   description?: string;
   type: 'PHASE' | 'DELIVERABLE' | 'WORK_PACKAGE' | 'ACTIVITY';
-  level: number; // 0, 1, 2, 3
+  level: number;
   estimatedHours?: number;
   estimatedDays?: number;
   priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
@@ -89,11 +92,11 @@ interface SortableWBSNodeProps {
 // Helper function extracted to module level for reuse
 const getTypeIcon = (type: WBSNode['type']) => {
   switch (type) {
-    case 'PHASE': return <FolderIcon className="w-4 h-4 text-blue-600" />;
-    case 'DELIVERABLE': return <DocumentIcon className="w-4 h-4 text-green-600" />;
-    case 'WORK_PACKAGE': return <TagIcon className="w-4 h-4 text-purple-600" />;
-    case 'ACTIVITY': return <PlayCircleIcon className="w-4 h-4 text-orange-600" />;
-    default: return <DocumentIcon className="w-4 h-4 text-gray-600" />;
+    case 'PHASE': return <Folder className="w-4 h-4 text-blue-600 dark:text-blue-400" />;
+    case 'DELIVERABLE': return <FileText className="w-4 h-4 text-green-600 dark:text-green-400" />;
+    case 'WORK_PACKAGE': return <Tag className="w-4 h-4 text-purple-600 dark:text-purple-400" />;
+    case 'ACTIVITY': return <PlayCircle className="w-4 h-4 text-orange-600 dark:text-orange-400" />;
+    default: return <FileText className="w-4 h-4 text-slate-600 dark:text-slate-400" />;
   }
 };
 
@@ -122,11 +125,11 @@ const SortableWBSNode: React.FC<SortableWBSNodeProps> = ({
 
   const getPriorityColor = (priority: WBSNode['priority']) => {
     switch (priority) {
-      case 'CRITICAL': return 'bg-red-100 text-red-700 border-red-200';
-      case 'HIGH': return 'bg-orange-100 text-orange-700 border-orange-200';
-      case 'MEDIUM': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      case 'LOW': return 'bg-gray-100 text-gray-700 border-gray-200';
-      default: return 'bg-gray-100 text-gray-700 border-gray-200';
+      case 'CRITICAL': return 'bg-red-100 text-red-700 border-red-200 dark:bg-red-900/40 dark:text-red-300 dark:border-red-700';
+      case 'HIGH': return 'bg-orange-100 text-orange-700 border-orange-200 dark:bg-orange-900/40 dark:text-orange-300 dark:border-orange-700';
+      case 'MEDIUM': return 'bg-yellow-100 text-yellow-700 border-yellow-200 dark:bg-yellow-900/40 dark:text-yellow-300 dark:border-yellow-700';
+      case 'LOW': return 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600';
+      default: return 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-700 dark:text-slate-300 dark:border-slate-600';
     }
   };
 
@@ -134,25 +137,25 @@ const SortableWBSNode: React.FC<SortableWBSNodeProps> = ({
 
   return (
     <div ref={setNodeRef} style={style} {...attributes}>
-      <div 
-        className="flex items-center p-3 bg-white border border-gray-200 rounded-lg hover:shadow-sm transition-shadow"
+      <div
+        className="flex items-center p-3 bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl hover:shadow-sm transition-shadow"
         style={{ marginLeft: `${paddingLeft}px` }}
       >
         {/* Drag Handle */}
         <div {...listeners} className="mr-3 cursor-grab hover:cursor-grabbing">
-          <svg className="w-4 h-4 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+          <svg className="w-4 h-4 text-slate-400 dark:text-slate-500" fill="currentColor" viewBox="0 0 20 20">
             <path d="M7 2a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM7 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM7 14a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM17 2a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM17 8a2 2 0 1 1-4 0 2 2 0 0 1 4 0zM17 14a2 2 0 1 1-4 0 2 2 0 0 1 4 0z" />
           </svg>
         </div>
 
         {/* Expand/Collapse Button */}
-        <button 
+        <button
           onClick={() => onToggleExpand(node.id)}
-          className="mr-2 p-1 hover:bg-gray-100 rounded"
+          className="mr-2 p-1 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
           disabled={node.children.length === 0}
         >
           {node.children.length > 0 ? (
-            node.isExpanded ? <ChevronDownIcon className="w-4 h-4" /> : <ChevronRightIcon className="w-4 h-4" />
+            node.isExpanded ? <ChevronDown className="w-4 h-4 text-slate-600 dark:text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-600 dark:text-slate-400" />
           ) : (
             <div className="w-4 h-4" />
           )}
@@ -165,7 +168,7 @@ const SortableWBSNode: React.FC<SortableWBSNodeProps> = ({
 
         {/* WBS Code */}
         <div className="min-w-0 mr-3">
-          <span className="text-sm font-mono text-gray-500 bg-gray-100 px-2 py-1 rounded">
+          <span className="text-sm font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded">
             {node.code}
           </span>
         </div>
@@ -174,11 +177,11 @@ const SortableWBSNode: React.FC<SortableWBSNodeProps> = ({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
             <div className="flex-1 min-w-0">
-              <h4 className="text-sm font-medium text-gray-900 truncate">
+              <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
                 {node.title}
               </h4>
               {node.description && (
-                <p className="text-xs text-gray-600 mt-1 truncate">
+                <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 truncate">
                   {node.description}
                 </p>
               )}
@@ -192,16 +195,16 @@ const SortableWBSNode: React.FC<SortableWBSNodeProps> = ({
 
               {/* Estimated Time */}
               {node.estimatedHours && (
-                <div className="flex items-center text-xs text-gray-500">
-                  <ClockIcon className="w-3 h-3 mr-1" />
+                <div className="flex items-center text-xs text-slate-500 dark:text-slate-400">
+                  <Clock className="w-3 h-3 mr-1" />
                   {node.estimatedHours}h
                 </div>
               )}
 
               {/* Skills Count */}
               {node.skills.length > 0 && (
-                <div className="flex items-center text-xs text-gray-500">
-                  <UserIcon className="w-3 h-3 mr-1" />
+                <div className="flex items-center text-xs text-slate-500 dark:text-slate-400">
+                  <User className="w-3 h-3 mr-1" />
                   {node.skills.length}
                 </div>
               )}
@@ -210,21 +213,21 @@ const SortableWBSNode: React.FC<SortableWBSNodeProps> = ({
               <div className="flex items-center space-x-1">
                 <button
                   onClick={() => onEdit(node)}
-                  className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"
+                  className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded"
                 >
-                  <PencilIcon className="w-3 h-3" />
+                  <Pencil className="w-3 h-3" />
                 </button>
                 <button
                   onClick={() => onDuplicate(node)}
-                  className="p-1 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded"
+                  className="p-1 text-slate-400 hover:text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded"
                 >
-                  <DocumentDuplicateIcon className="w-3 h-3" />
+                  <Copy className="w-3 h-3" />
                 </button>
                 <button
                   onClick={() => onDelete(node.id)}
-                  className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"
+                  className="p-1 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded"
                 >
-                  <TrashIcon className="w-3 h-3" />
+                  <Trash2 className="w-3 h-3" />
                 </button>
               </div>
             </div>
@@ -232,15 +235,15 @@ const SortableWBSNode: React.FC<SortableWBSNodeProps> = ({
 
           {/* Extended Info */}
           {node.isExpanded && (
-            <div className="mt-3 p-3 bg-gray-50 rounded-lg text-xs">
+            <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg text-xs">
               <div className="grid grid-cols-2 gap-4">
                 {/* Dependencies */}
                 {node.dependencies.length > 0 && (
                   <div>
-                    <span className="font-medium text-gray-700">Dependencies:</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">Dependencies:</span>
                     <div className="mt-1 space-y-1">
                       {node.dependencies.map((dep, idx) => (
-                        <span key={idx} className="inline-block bg-blue-100 text-blue-700 px-2 py-1 rounded mr-1">
+                        <span key={idx} className="inline-block bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-1 rounded mr-1">
                           {dep}
                         </span>
                       ))}
@@ -251,11 +254,11 @@ const SortableWBSNode: React.FC<SortableWBSNodeProps> = ({
                 {/* Deliverables */}
                 {node.deliverables.length > 0 && (
                   <div>
-                    <span className="font-medium text-gray-700">Deliverables:</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">Deliverables:</span>
                     <ul className="mt-1 space-y-1">
                       {node.deliverables.map((deliverable, idx) => (
-                        <li key={idx} className="flex items-center">
-                          <CheckCircleIcon className="w-3 h-3 text-green-600 mr-1 flex-shrink-0" />
+                        <li key={idx} className="flex items-center text-slate-700 dark:text-slate-300">
+                          <CheckCircle className="w-3 h-3 text-green-600 dark:text-green-400 mr-1 flex-shrink-0" />
                           {deliverable}
                         </li>
                       ))}
@@ -266,10 +269,10 @@ const SortableWBSNode: React.FC<SortableWBSNodeProps> = ({
                 {/* Skills */}
                 {node.skills.length > 0 && (
                   <div>
-                    <span className="font-medium text-gray-700">Required Skills:</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">Required Skills:</span>
                     <div className="mt-1 space-y-1">
                       {node.skills.map((skill, idx) => (
-                        <span key={idx} className="inline-block bg-purple-100 text-purple-700 px-2 py-1 rounded mr-1">
+                        <span key={idx} className="inline-block bg-purple-100 dark:bg-purple-900/40 text-purple-700 dark:text-purple-300 px-2 py-1 rounded mr-1">
                           {skill}
                         </span>
                       ))}
@@ -280,16 +283,16 @@ const SortableWBSNode: React.FC<SortableWBSNodeProps> = ({
                 {/* Templates */}
                 {node.templates && (
                   <div>
-                    <span className="font-medium text-gray-700">Templates:</span>
+                    <span className="font-medium text-slate-700 dark:text-slate-300">Templates:</span>
                     <div className="mt-1">
                       {node.templates.checklist.length > 0 && (
                         <div className="mb-1">
-                          <span className="text-gray-600">Checklist:</span> {node.templates.checklist.join(', ')}
+                          <span className="text-slate-600 dark:text-slate-400">Checklist:</span> {node.templates.checklist.join(', ')}
                         </div>
                       )}
                       {node.templates.documents.length > 0 && (
                         <div className="mb-1">
-                          <span className="text-gray-600">Documents:</span> {node.templates.documents.join(', ')}
+                          <span className="text-slate-600 dark:text-slate-400">Documents:</span> {node.templates.documents.join(', ')}
                         </div>
                       )}
                     </div>
@@ -299,9 +302,9 @@ const SortableWBSNode: React.FC<SortableWBSNodeProps> = ({
 
               {/* Notes */}
               {node.notes && (
-                <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded">
-                  <span className="font-medium text-yellow-800">Notes:</span>
-                  <p className="text-yellow-700 mt-1">{node.notes}</p>
+                <div className="mt-3 p-2 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded">
+                  <span className="font-medium text-yellow-800 dark:text-yellow-300">Notes:</span>
+                  <p className="text-yellow-700 dark:text-yellow-400 mt-1">{node.notes}</p>
                 </div>
               )}
             </div>
@@ -553,7 +556,6 @@ const WBSTemplatesPage: React.FC = () => {
     const { active, over } = event;
     if (!over || !activeTemplate) return;
 
-    // Handle reordering logic here
     toast.success('Node reordered successfully');
     setDraggedNode(null);
   };
@@ -614,311 +616,303 @@ const WBSTemplatesPage: React.FC = () => {
 
   const getCategoryColor = (category: WBSTemplate['category']) => {
     switch (category) {
-      case 'SOFTWARE': return 'bg-blue-100 text-blue-700';
-      case 'MARKETING': return 'bg-green-100 text-green-700';
-      case 'BUSINESS': return 'bg-purple-100 text-purple-700';
-      case 'RESEARCH': return 'bg-orange-100 text-orange-700';
-      case 'OPERATIONS': return 'bg-red-100 text-red-700';
-      case 'PERSONAL': return 'bg-gray-100 text-gray-700';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'SOFTWARE': return 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300';
+      case 'MARKETING': return 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300';
+      case 'BUSINESS': return 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300';
+      case 'RESEARCH': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300';
+      case 'OPERATIONS': return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
+      case 'PERSONAL': return 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
+      default: return 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
     }
   };
 
   const getComplexityColor = (complexity: WBSTemplate['complexity']) => {
     switch (complexity) {
-      case 'SIMPLE': return 'bg-green-100 text-green-700';
-      case 'MODERATE': return 'bg-yellow-100 text-yellow-700';
-      case 'COMPLEX': return 'bg-orange-100 text-orange-700';
-      case 'ENTERPRISE': return 'bg-red-100 text-red-700';
-      default: return 'bg-gray-100 text-gray-700';
+      case 'SIMPLE': return 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300';
+      case 'MODERATE': return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300';
+      case 'COMPLEX': return 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300';
+      case 'ENTERPRISE': return 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300';
+      default: return 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300';
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
-              <button
-                onClick={() => router.back()}
-                className="flex items-center text-gray-600 hover:text-gray-900"
-              >
-                <ChevronLeftIcon className="w-5 h-5 mr-2" />
-                Back to Projects
-              </button>
-              <div className="h-6 border-l border-gray-300" />
-              <h1 className="text-xl font-semibold text-gray-900">WBS Templates</h1>
+    <PageShell>
+      <PageHeader
+        title="Szablony WBS"
+        subtitle="Biblioteka szablonów struktury podziału pracy"
+        icon={FolderTree}
+        iconColor="text-indigo-600"
+        breadcrumbs={[
+          { label: 'Dashboard', href: '/dashboard' },
+          { label: 'Projekty', href: '/dashboard/projects' },
+          { label: 'Szablony WBS' },
+        ]}
+        actions={
+          <div className="flex items-center space-x-3">
+            <button className="btn btn-outline btn-sm">
+              <Plus className="w-4 h-4 mr-2" />
+              Nowy szablon
+            </button>
+            <button className="btn btn-primary btn-sm">
+              <Copy className="w-4 h-4 mr-2" />
+              Importuj szablon
+            </button>
+          </div>
+        }
+      />
+
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        {/* Templates Sidebar */}
+        <div className="lg:col-span-1">
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">Biblioteka szablonów</h3>
+
+              {/* Search & Filters */}
+              <div className="mt-4 space-y-3">
+                <input
+                  type="text"
+                  placeholder="Szukaj szablonów..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-md text-sm"
+                />
+
+                <select
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-md text-sm"
+                >
+                  <option value="ALL">Wszystkie kategorie</option>
+                  <option value="SOFTWARE">Software</option>
+                  <option value="MARKETING">Marketing</option>
+                  <option value="BUSINESS">Business</option>
+                  <option value="RESEARCH">Research</option>
+                  <option value="OPERATIONS">Operations</option>
+                  <option value="PERSONAL">Personal</option>
+                </select>
+
+                <select
+                  value={filterComplexity}
+                  onChange={(e) => setFilterComplexity(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-slate-200 rounded-md text-sm"
+                >
+                  <option value="ALL">Wszystkie złożoności</option>
+                  <option value="SIMPLE">Simple</option>
+                  <option value="MODERATE">Moderate</option>
+                  <option value="COMPLEX">Complex</option>
+                  <option value="ENTERPRISE">Enterprise</option>
+                </select>
+              </div>
             </div>
 
-            <div className="flex items-center space-x-3">
-              <button className="btn btn-outline btn-sm">
-                <PlusIcon className="w-4 h-4 mr-2" />
-                New Template
-              </button>
-              <button className="btn btn-primary btn-sm">
-                <DocumentDuplicateIcon className="w-4 h-4 mr-2" />
-                Import Template
-              </button>
+            <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
+              {filteredTemplates.map((template) => (
+                <div
+                  key={template.id}
+                  onClick={() => setActiveTemplate(template)}
+                  className={`p-3 rounded-lg border cursor-pointer transition-colors ${
+                    activeTemplate?.id === template.id
+                      ? 'border-blue-200 bg-blue-50 dark:border-blue-700 dark:bg-blue-900/30'
+                      : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                        {template.name}
+                      </h4>
+                      <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-2">
+                        {template.description}
+                      </p>
+
+                      <div className="flex items-center space-x-2 mt-2">
+                        <span className={`px-2 py-1 text-xs font-medium rounded ${getCategoryColor(template.category)}`}>
+                          {template.category}
+                        </span>
+                        <span className={`px-2 py-1 text-xs font-medium rounded ${getComplexityColor(template.complexity)}`}>
+                          {template.complexity}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center mt-2 text-xs text-slate-500 dark:text-slate-400">
+                        <Clock className="w-3 h-3 mr-1" />
+                        {template.estimatedDuration}
+                        <span className="mx-2">|</span>
+                        <User className="w-3 h-3 mr-1" />
+                        {template.resources.teamSize}
+                        <span className="mx-2">|</span>
+                        <span>Użyto {template.metadata.usageCount}x</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-          {/* Templates Sidebar */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-4 border-b border-gray-200">
-                <h3 className="text-lg font-medium text-gray-900">Templates Library</h3>
-                
-                {/* Search & Filters */}
-                <div className="mt-4 space-y-3">
-                  <input
-                    type="text"
-                    placeholder="Search templates..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  />
-                  
-                  <select
-                    value={filterCategory}
-                    onChange={(e) => setFilterCategory(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  >
-                    <option value="ALL">All Categories</option>
-                    <option value="SOFTWARE">Software</option>
-                    <option value="MARKETING">Marketing</option>
-                    <option value="BUSINESS">Business</option>
-                    <option value="RESEARCH">Research</option>
-                    <option value="OPERATIONS">Operations</option>
-                    <option value="PERSONAL">Personal</option>
-                  </select>
+        {/* Main Content */}
+        <div className="lg:col-span-3">
+          {activeTemplate ? (
+            <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+              {/* Template Header */}
+              <div className="p-6 border-b border-slate-200 dark:border-slate-700">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">{activeTemplate.name}</h2>
+                    <p className="text-slate-600 dark:text-slate-400 mt-1">{activeTemplate.description}</p>
 
-                  <select
-                    value={filterComplexity}
-                    onChange={(e) => setFilterComplexity(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  >
-                    <option value="ALL">All Complexity</option>
-                    <option value="SIMPLE">Simple</option>
-                    <option value="MODERATE">Moderate</option>
-                    <option value="COMPLEX">Complex</option>
-                    <option value="ENTERPRISE">Enterprise</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="p-4 space-y-3 max-h-96 overflow-y-auto">
-                {filteredTemplates.map((template) => (
-                  <div
-                    key={template.id}
-                    onClick={() => setActiveTemplate(template)}
-                    className={`p-3 rounded-lg border cursor-pointer transition-colors ${
-                      activeTemplate?.id === template.id
-                        ? 'border-blue-200 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-gray-900 truncate">
-                          {template.name}
-                        </h4>
-                        <p className="text-xs text-gray-600 mt-1 line-clamp-2">
-                          {template.description}
-                        </p>
-                        
-                        <div className="flex items-center space-x-2 mt-2">
-                          <span className={`px-2 py-1 text-xs font-medium rounded ${getCategoryColor(template.category)}`}>
-                            {template.category}
-                          </span>
-                          <span className={`px-2 py-1 text-xs font-medium rounded ${getComplexityColor(template.complexity)}`}>
-                            {template.complexity}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center mt-2 text-xs text-gray-500">
-                          <ClockIcon className="w-3 h-3 mr-1" />
-                          {template.estimatedDuration}
-                          <span className="mx-2">•</span>
-                          <UserIcon className="w-3 h-3 mr-1" />
-                          {template.resources.teamSize}
-                          <span className="mx-2">•</span>
-                          <span>Used {template.metadata.usageCount}x</span>
-                        </div>
+                    <div className="flex items-center space-x-4 mt-3">
+                      <span className={`px-3 py-1 text-sm font-medium rounded-md ${getCategoryColor(activeTemplate.category)}`}>
+                        {activeTemplate.category}
+                      </span>
+                      <span className={`px-3 py-1 text-sm font-medium rounded-md ${getComplexityColor(activeTemplate.complexity)}`}>
+                        {activeTemplate.complexity}
+                      </span>
+                      <div className="flex items-center text-sm text-slate-500 dark:text-slate-400">
+                        <Clock className="w-4 h-4 mr-1" />
+                        {activeTemplate.estimatedDuration}
+                      </div>
+                      <div className="flex items-center text-sm text-slate-500 dark:text-slate-400">
+                        <User className="w-4 h-4 mr-1" />
+                        Team: {activeTemplate.resources.teamSize}
                       </div>
                     </div>
                   </div>
-                ))}
+
+                  <div className="flex items-center space-x-2">
+                    <button className="btn btn-outline btn-sm">
+                      <Eye className="w-4 h-4 mr-2" />
+                      Podgląd
+                    </button>
+                    <button className="btn btn-primary btn-sm">
+                      <Plus className="w-4 h-4 mr-2" />
+                      Użyj szablonu
+                    </button>
+                  </div>
+                </div>
+
+                {/* Template Metadata */}
+                <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400">Wersja:</span>
+                    <span className="ml-2 font-medium text-slate-900 dark:text-slate-100">{activeTemplate.metadata.version}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400">Autor:</span>
+                    <span className="ml-2 font-medium text-slate-900 dark:text-slate-100">{activeTemplate.metadata.author}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400">Utworzony:</span>
+                    <span className="ml-2 font-medium text-slate-900 dark:text-slate-100">{activeTemplate.metadata.created}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400">Użyto:</span>
+                    <span className="ml-2 font-medium text-slate-900 dark:text-slate-100">{activeTemplate.metadata.usageCount} razy</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* WBS Structure */}
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100">Struktura podziału pracy</h3>
+
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setViewMode('tree')}
+                      className={`px-3 py-2 text-sm rounded-md ${
+                        viewMode === 'tree' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                      }`}
+                    >
+                      Widok drzewa
+                    </button>
+                    <button
+                      onClick={() => setViewMode('list')}
+                      className={`px-3 py-2 text-sm rounded-md ${
+                        viewMode === 'list' ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                      }`}
+                    >
+                      Widok listy
+                    </button>
+                  </div>
+                </div>
+
+                {/* WBS Tree */}
+                <DndContext
+                  sensors={sensors}
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                >
+                  <SortableContext items={activeTemplate.structure.map(n => n.id)} strategy={verticalListSortingStrategy}>
+                    <div className="space-y-3">
+                      {renderWBSTree(activeTemplate.structure)}
+                    </div>
+                  </SortableContext>
+
+                  <DragOverlay>
+                    {draggedNode ? (
+                      <div className="p-3 bg-white/90 dark:bg-slate-800/90 border border-slate-300 dark:border-slate-600 rounded-lg shadow-lg opacity-95">
+                        <div className="flex items-center">
+                          {getTypeIcon(draggedNode.type)}
+                          <span className="ml-2 font-medium text-slate-900 dark:text-slate-100">{draggedNode.title}</span>
+                        </div>
+                      </div>
+                    ) : null}
+                  </DragOverlay>
+                </DndContext>
+              </div>
+
+              {/* Template Resources */}
+              <div className="p-6 border-t border-slate-200 dark:border-slate-700">
+                <h4 className="text-md font-medium text-slate-900 dark:text-slate-100 mb-4">Wymagane zasoby</h4>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h5 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Wymagane umiejętności</h5>
+                    <div className="space-y-1">
+                      {activeTemplate.resources.requiredSkills.map((skill, idx) => (
+                        <span key={idx} className="inline-block bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 px-2 py-1 rounded text-xs mr-1 mb-1">
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h5 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Wymagane narzędzia</h5>
+                    <div className="space-y-1">
+                      {activeTemplate.resources.toolsRequired.map((tool, idx) => (
+                        <span key={idx} className="inline-block bg-green-100 dark:bg-green-900/40 text-green-700 dark:text-green-300 px-2 py-1 rounded text-xs mr-1 mb-1">
+                          {tool}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {activeTemplate.resources.estimatedBudget && (
+                  <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-600 dark:text-slate-400">Szacowany budżet:</span>
+                      <span className="font-medium text-slate-900 dark:text-slate-100">${activeTemplate.resources.estimatedBudget.toLocaleString()}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            {activeTemplate ? (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-                {/* Template Header */}
-                <div className="p-6 border-b border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-xl font-semibold text-gray-900">{activeTemplate.name}</h2>
-                      <p className="text-gray-600 mt-1">{activeTemplate.description}</p>
-                      
-                      <div className="flex items-center space-x-4 mt-3">
-                        <span className={`px-3 py-1 text-sm font-medium rounded-md ${getCategoryColor(activeTemplate.category)}`}>
-                          {activeTemplate.category}
-                        </span>
-                        <span className={`px-3 py-1 text-sm font-medium rounded-md ${getComplexityColor(activeTemplate.complexity)}`}>
-                          {activeTemplate.complexity}
-                        </span>
-                        <div className="flex items-center text-sm text-gray-500">
-                          <ClockIcon className="w-4 h-4 mr-1" />
-                          {activeTemplate.estimatedDuration}
-                        </div>
-                        <div className="flex items-center text-sm text-gray-500">
-                          <UserIcon className="w-4 h-4 mr-1" />
-                          Team: {activeTemplate.resources.teamSize}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <button className="btn btn-outline btn-sm">
-                        <EyeIcon className="w-4 h-4 mr-2" />
-                        Preview
-                      </button>
-                      <button className="btn btn-primary btn-sm">
-                        <PlusIcon className="w-4 h-4 mr-2" />
-                        Use Template
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Template Metadata */}
-                  <div className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-500">Version:</span>
-                      <span className="ml-2 font-medium">{activeTemplate.metadata.version}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Author:</span>
-                      <span className="ml-2 font-medium">{activeTemplate.metadata.author}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Created:</span>
-                      <span className="ml-2 font-medium">{activeTemplate.metadata.created}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Used:</span>
-                      <span className="ml-2 font-medium">{activeTemplate.metadata.usageCount} times</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* WBS Structure */}
-                <div className="p-6">
-                  <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-lg font-medium text-gray-900">Work Breakdown Structure</h3>
-                    
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => setViewMode('tree')}
-                        className={`px-3 py-2 text-sm rounded-md ${
-                          viewMode === 'tree' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
-                        }`}
-                      >
-                        Tree View
-                      </button>
-                      <button
-                        onClick={() => setViewMode('list')}
-                        className={`px-3 py-2 text-sm rounded-md ${
-                          viewMode === 'list' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:text-gray-900'
-                        }`}
-                      >
-                        List View
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* WBS Tree */}
-                  <DndContext
-                    sensors={sensors}
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <SortableContext items={activeTemplate.structure.map(n => n.id)} strategy={verticalListSortingStrategy}>
-                      <div className="space-y-3">
-                        {renderWBSTree(activeTemplate.structure)}
-                      </div>
-                    </SortableContext>
-
-                    <DragOverlay>
-                      {draggedNode ? (
-                        <div className="p-3 bg-white border border-gray-300 rounded-lg shadow-lg opacity-95">
-                          <div className="flex items-center">
-                            {getTypeIcon(draggedNode.type)}
-                            <span className="ml-2 font-medium">{draggedNode.title}</span>
-                          </div>
-                        </div>
-                      ) : null}
-                    </DragOverlay>
-                  </DndContext>
-                </div>
-
-                {/* Template Resources */}
-                <div className="p-6 border-t border-gray-200">
-                  <h4 className="text-md font-medium text-gray-900 mb-4">Required Resources</h4>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <h5 className="text-sm font-medium text-gray-700 mb-2">Skills Required</h5>
-                      <div className="space-y-1">
-                        {activeTemplate.resources.requiredSkills.map((skill, idx) => (
-                          <span key={idx} className="inline-block bg-blue-100 text-blue-700 px-2 py-1 rounded text-xs mr-1 mb-1">
-                            {skill}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div>
-                      <h5 className="text-sm font-medium text-gray-700 mb-2">Tools Required</h5>
-                      <div className="space-y-1">
-                        {activeTemplate.resources.toolsRequired.map((tool, idx) => (
-                          <span key={idx} className="inline-block bg-green-100 text-green-700 px-2 py-1 rounded text-xs mr-1 mb-1">
-                            {tool}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  {activeTemplate.resources.estimatedBudget && (
-                    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-600">Estimated Budget:</span>
-                        <span className="font-medium">${activeTemplate.resources.estimatedBudget.toLocaleString()}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ) : (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center">
-                <FolderIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Template</h3>
-                <p className="text-gray-600">Choose a WBS template from the sidebar to view its structure</p>
-              </div>
-            )}
-          </div>
+          ) : (
+            <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-12 text-center">
+              <Folder className="w-12 h-12 text-slate-400 dark:text-slate-500 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-slate-900 dark:text-slate-100 mb-2">Wybierz szablon</h3>
+              <p className="text-slate-600 dark:text-slate-400">Wybierz szablon WBS z panelu bocznego aby zobaczyć jego strukturę</p>
+            </div>
+          )}
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 };
 

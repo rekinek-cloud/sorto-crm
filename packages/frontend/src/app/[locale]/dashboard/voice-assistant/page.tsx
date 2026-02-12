@@ -1,11 +1,22 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import { VoiceResponseInterface } from '@/components/voice/VoiceResponseInterface';
 import { VoiceAnalyticsDashboard } from '@/components/voice/VoiceAnalyticsDashboard';
 import { VoiceResponseAPI, ABTestConfig, VoiceResponseData } from '@/lib/api/voice-response';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '@/lib/auth/context';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import {
+  Mic,
+  BarChart3,
+  Settings,
+  FlaskConical,
+  Activity,
+  X
+} from 'lucide-react';
 
 const VoiceAssistantPage: React.FC = () => {
   const { user } = useAuth();
@@ -25,7 +36,6 @@ const VoiceAssistantPage: React.FC = () => {
       setUserPreferences(preferences);
     } catch (error: any) {
       console.error('Failed to load user preferences:', error);
-      // Set default preferences
       setUserPreferences({
         voiceSpeed: 'normal',
         formality: 'professional',
@@ -36,7 +46,6 @@ const VoiceAssistantPage: React.FC = () => {
   };
 
   const loadVoiceEngine = () => {
-    // Load voice response engine scripts
     const scripts = [
       '/voice-response-engine/voice-response-engine.js',
       '/voice-response-engine/response-handlers.js',
@@ -67,7 +76,7 @@ const VoiceAssistantPage: React.FC = () => {
       toast.success('Preferencje zaktualizowane!');
     } catch (error: any) {
       console.error('Failed to update preferences:', error);
-      toast.error('Błąd aktualizacji preferencji');
+      toast.error('Blad aktualizacji preferencji');
     }
   };
 
@@ -78,155 +87,181 @@ const VoiceAssistantPage: React.FC = () => {
       setShowABTestModal(false);
     } catch (error: any) {
       console.error('Failed to create A/B test:', error);
-      toast.error('Błąd tworzenia testu A/B');
+      toast.error('Blad tworzenia testu A/B');
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div>
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            🎤 Asystent Głosowy STREAMS
-          </h1>
-          <p className="text-gray-600">
-            Inteligentny system głosowej obsługi strumieni, zadań i celów
-          </p>
-        </div>
+  const tabs = [
+    { id: 'assistant', label: 'Asystent', icon: Mic, desc: 'Glosowy interfejs' },
+    { id: 'analytics', label: 'Analityka', icon: BarChart3, desc: 'Statystyki i wydajnosc' },
+    { id: 'settings', label: 'Ustawienia', icon: Settings, desc: 'Preferencje i konfiguracja' }
+  ];
 
+  return (
+    <PageShell>
+      <PageHeader
+        title="Asystent glosowy"
+        subtitle="Steruj aplikacja glosem"
+        icon={Mic}
+        iconColor="text-rose-600"
+        breadcrumbs={[{ label: 'Asystent glosowy' }]}
+      />
+
+      <div className="space-y-6">
         {/* Navigation Tabs */}
-        <div className="flex space-x-1 mb-6">
-          {[
-            { id: 'assistant', label: '🎤 Asystent', desc: 'Głosowy interfejs' },
-            { id: 'analytics', label: '📊 Analityka', desc: 'Statystyki i wydajność' },
-            { id: 'settings', label: '⚙️ Ustawienia', desc: 'Preferencje i konfiguracja' }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center px-6 py-4 rounded-lg font-medium transition-all ${
-                activeTab === tab.id
-                  ? 'bg-white shadow-md text-blue-600 border-2 border-blue-200'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              <span className="text-lg">{tab.label}</span>
-              <span className="text-xs text-gray-500 mt-1">{tab.desc}</span>
-            </button>
-          ))}
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="flex justify-center"
+        >
+          <div className="inline-flex bg-white/80 backdrop-blur-xl rounded-2xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 p-1.5">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex flex-col items-center px-6 py-3 rounded-xl font-medium transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                  }`}
+                >
+                  <Icon className="h-5 w-5 mb-1" />
+                  <span className="text-sm">{tab.label}</span>
+                  <span className={`text-xs mt-0.5 ${activeTab === tab.id ? 'text-blue-200' : 'text-slate-400 dark:text-slate-500'}`}>{tab.desc}</span>
+                </button>
+              );
+            })}
+          </div>
+        </motion.div>
 
         {/* Content */}
-        <div className="space-y-6">
-          {/* Assistant Tab */}
-          {activeTab === 'assistant' && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Main Voice Interface */}
-              <div className="lg:col-span-2">
-                <VoiceResponseInterface
-                  onResponse={handleResponse}
-                  context={{
-                    userId: user?.id,
-                    productivity: 0.8,
-                    emotionalState: 'focused',
-                    userPreferences
-                  }}
-                />
-              </div>
+        {/* Assistant Tab */}
+        {activeTab === 'assistant' && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="grid grid-cols-1 lg:grid-cols-3 gap-6"
+          >
+            {/* Main Voice Interface */}
+            <div className="lg:col-span-2">
+              <VoiceResponseInterface
+                onResponse={handleResponse}
+                context={{
+                  userId: user?.id,
+                  productivity: 0.8,
+                  emotionalState: 'focused',
+                  userPreferences
+                }}
+              />
+            </div>
 
-              {/* Sidebar */}
-              <div className="space-y-4">
-                {/* Quick Stats */}
-                <div className="bg-white rounded-lg shadow-lg p-4">
-                  <h3 className="font-semibold text-gray-900 mb-3">Szybkie statystyki</h3>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Ostatnie odpowiedzi:</span>
-                      <span className="font-semibold">{recentResponses.length}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Użytkownik:</span>
-                      <span className="font-semibold">{user?.firstName ? `${user.firstName} ${user.lastName}` : 'Anonim'}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-600">Tryb głosu:</span>
-                      <span className="font-semibold">
-                        {userPreferences?.voiceSpeed || 'normalny'}
-                      </span>
-                    </div>
+            {/* Sidebar */}
+            <div className="space-y-4">
+              {/* Quick Stats */}
+              <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">Szybkie statystyki</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">Ostatnie odpowiedzi:</span>
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">{recentResponses.length}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">Uzytkownik:</span>
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">{user?.firstName ? `${user.firstName} ${user.lastName}` : 'Anonim'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500 dark:text-slate-400">Tryb glosu:</span>
+                    <span className="font-semibold text-slate-900 dark:text-slate-100">
+                      {userPreferences?.voiceSpeed || 'normalny'}
+                    </span>
                   </div>
                 </div>
+              </div>
 
-                {/* Recent Responses */}
-                {recentResponses.length > 0 && (
-                  <div className="bg-white rounded-lg shadow-lg p-4">
-                    <h3 className="font-semibold text-gray-900 mb-3">Ostatnie odpowiedzi</h3>
-                    <div className="space-y-2">
-                      {recentResponses.map((response, index) => (
-                        <div key={response.id} className="text-sm p-2 bg-gray-50 rounded">
-                          <div className="font-medium text-gray-900">
-                            {response.responseType}
-                          </div>
-                          <div className="text-gray-600 truncate">
-                            {response.text.substring(0, 80)}...
-                          </div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            {response.emotionalContext.primaryEmotion} • 
-                            {response.generationTime}ms
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Quick Actions */}
-                <div className="bg-white rounded-lg shadow-lg p-4">
-                  <h3 className="font-semibold text-gray-900 mb-3">Szybkie akcje</h3>
+              {/* Recent Responses */}
+              {recentResponses.length > 0 && (
+                <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">Ostatnie odpowiedzi</h3>
                   <div className="space-y-2">
-                    <button
-                      onClick={() => setShowABTestModal(true)}
-                      className="w-full text-left px-3 py-2 text-sm bg-blue-50 hover:bg-blue-100 text-blue-700 rounded transition-colors"
-                    >
-                      🧪 Utwórz test A/B
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('analytics')}
-                      className="w-full text-left px-3 py-2 text-sm bg-green-50 hover:bg-green-100 text-green-700 rounded transition-colors"
-                    >
-                      📊 Zobacz analitykę
-                    </button>
-                    <button
-                      onClick={() => setActiveTab('settings')}
-                      className="w-full text-left px-3 py-2 text-sm bg-gray-50 hover:bg-gray-100 text-gray-700 rounded transition-colors"
-                    >
-                      ⚙️ Dostosuj ustawienia
-                    </button>
+                    {recentResponses.map((response, index) => (
+                      <div key={response.id} className="text-sm p-2 bg-slate-50 dark:bg-slate-700/50 rounded-lg">
+                        <div className="font-medium text-slate-900 dark:text-slate-100">
+                          {response.responseType}
+                        </div>
+                        <div className="text-slate-500 dark:text-slate-400 truncate">
+                          {response.text.substring(0, 80)}...
+                        </div>
+                        <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                          {response.emotionalContext.primaryEmotion} /
+                          {response.generationTime}ms
+                        </div>
+                      </div>
+                    ))}
                   </div>
+                </div>
+              )}
+
+              {/* Quick Actions */}
+              <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+                <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-3">Szybkie akcje</h3>
+                <div className="space-y-2">
+                  <button
+                    onClick={() => setShowABTestModal(true)}
+                    className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-xl transition-colors"
+                  >
+                    <FlaskConical className="h-4 w-4" />
+                    Utworz test A/B
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('analytics')}
+                    className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm bg-green-50 dark:bg-green-900/20 hover:bg-green-100 dark:hover:bg-green-900/30 text-green-700 dark:text-green-400 rounded-xl transition-colors"
+                  >
+                    <BarChart3 className="h-4 w-4" />
+                    Zobacz analityke
+                  </button>
+                  <button
+                    onClick={() => setActiveTab('settings')}
+                    className="w-full flex items-center gap-2 text-left px-3 py-2 text-sm bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-xl transition-colors"
+                  >
+                    <Settings className="h-4 w-4" />
+                    Dostosuj ustawienia
+                  </button>
                 </div>
               </div>
             </div>
-          )}
+          </motion.div>
+        )}
 
-          {/* Analytics Tab */}
-          {activeTab === 'analytics' && (
+        {/* Analytics Tab */}
+        {activeTab === 'analytics' && (
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
             <VoiceAnalyticsDashboard />
-          )}
+          </motion.div>
+        )}
 
-          {/* Settings Tab */}
-          {activeTab === 'settings' && userPreferences && (
-            <div className="bg-white rounded-lg shadow-lg p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-6">⚙️ Ustawienia asystenta głosowego</h2>
-              
+        {/* Settings Tab */}
+        {activeTab === 'settings' && userPreferences && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6">
+              <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100 mb-6 flex items-center gap-2">
+                <Settings className="h-5 w-5 text-slate-500" />
+                Ustawienia asystenta glosowego
+              </h2>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Voice Preferences */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Preferencje głosu</h3>
-                  
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Preferencje glosu</h3>
+
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Prędkość mowy
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                      Predkosc mowy
                     </label>
                     <select
                       value={userPreferences.voiceSpeed || 'normal'}
@@ -234,7 +269,7 @@ const VoiceAssistantPage: React.FC = () => {
                         ...userPreferences,
                         voiceSpeed: e.target.value
                       })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                      className="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2"
                     >
                       <option value="slow">Wolno</option>
                       <option value="normal">Normalnie</option>
@@ -243,7 +278,7 @@ const VoiceAssistantPage: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                       Styl komunikacji
                     </label>
                     <select
@@ -252,7 +287,7 @@ const VoiceAssistantPage: React.FC = () => {
                         ...userPreferences,
                         formality: e.target.value
                       })}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2"
+                      className="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2"
                     >
                       <option value="casual">Nieformalny</option>
                       <option value="professional">Profesjonalny</option>
@@ -268,18 +303,18 @@ const VoiceAssistantPage: React.FC = () => {
                         ...userPreferences,
                         motivation: e.target.checked
                       })}
-                      className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                      className="h-4 w-4 text-blue-600 border-slate-300 dark:border-slate-600 rounded"
                     />
-                    <label htmlFor="motivation" className="ml-2 text-sm text-gray-700">
-                      Włącz motywacyjne frazy
+                    <label htmlFor="motivation" className="ml-2 text-sm text-slate-700 dark:text-slate-300">
+                      Wlacz motywacyjne frazy
                     </label>
                   </div>
                 </div>
 
                 {/* Analytics Preferences */}
                 <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Preferencje analityki</h3>
-                  
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Preferencje analityki</h3>
+
                   <div className="flex items-center">
                     <input
                       type="checkbox"
@@ -289,10 +324,10 @@ const VoiceAssistantPage: React.FC = () => {
                         ...userPreferences,
                         analytics: e.target.checked
                       })}
-                      className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                      className="h-4 w-4 text-blue-600 border-slate-300 dark:border-slate-600 rounded"
                     />
-                    <label htmlFor="analytics" className="ml-2 text-sm text-gray-700">
-                      Śledź użycie i satysfakcję
+                    <label htmlFor="analytics" className="ml-2 text-sm text-slate-700 dark:text-slate-300">
+                      Sledz uzycie i satysfakcje
                     </label>
                   </div>
 
@@ -305,50 +340,50 @@ const VoiceAssistantPage: React.FC = () => {
                         ...userPreferences,
                         abTesting: e.target.checked
                       })}
-                      className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                      className="h-4 w-4 text-blue-600 border-slate-300 dark:border-slate-600 rounded"
                     />
-                    <label htmlFor="abTesting" className="ml-2 text-sm text-gray-700">
-                      Uczestnic w testach A/B
+                    <label htmlFor="abTesting" className="ml-2 text-sm text-slate-700 dark:text-slate-300">
+                      Uczestnicz w testach A/B
                     </label>
                   </div>
                 </div>
               </div>
 
               {/* System Info */}
-              <div className="mt-8 pt-6 border-t border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Informacje systemowe</h3>
+              <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+                <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Informacje systemowe</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-gray-600">Rozpoznawanie mowy:</span>
+                    <span className="text-slate-500 dark:text-slate-400">Rozpoznawanie mowy:</span>
                     <span className={`ml-2 ${
-                      'webkitSpeechRecognition' in window || 'SpeechRecognition' in window
-                        ? 'text-green-600' : 'text-red-600'
+                      typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)
+                        ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                     }`}>
-                      {'webkitSpeechRecognition' in window || 'SpeechRecognition' in window
-                        ? 'Dostępne' : 'Niedostępne'}
+                      {typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)
+                        ? 'Dostepne' : 'Niedostepne'}
                     </span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Synteza mowy:</span>
+                    <span className="text-slate-500 dark:text-slate-400">Synteza mowy:</span>
                     <span className={`ml-2 ${
-                      'speechSynthesis' in window ? 'text-green-600' : 'text-red-600'
+                      typeof window !== 'undefined' && 'speechSynthesis' in window ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                     }`}>
-                      {'speechSynthesis' in window ? 'Dostępne' : 'Niedostępne'}
+                      {typeof window !== 'undefined' && 'speechSynthesis' in window ? 'Dostepne' : 'Niedostepne'}
                     </span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Voice Engine:</span>
-                    <span className="ml-2 text-blue-600">v1.0</span>
+                    <span className="text-slate-500 dark:text-slate-400">Voice Engine:</span>
+                    <span className="ml-2 text-blue-600 dark:text-blue-400">v1.0</span>
                   </div>
                   <div>
-                    <span className="text-gray-600">Język:</span>
-                    <span className="ml-2 text-blue-600">Polski (pl-PL)</span>
+                    <span className="text-slate-500 dark:text-slate-400">Jezyk:</span>
+                    <span className="ml-2 text-blue-600 dark:text-blue-400">Polski (pl-PL)</span>
                   </div>
                 </div>
               </div>
             </div>
-          )}
-        </div>
+          </motion.div>
+        )}
       </div>
 
       {/* A/B Test Creation Modal */}
@@ -358,7 +393,7 @@ const VoiceAssistantPage: React.FC = () => {
           onSubmit={createABTest}
         />
       )}
-    </div>
+    </PageShell>
   );
 };
 
@@ -390,32 +425,41 @@ const ABTestModal: React.FC<ABTestModalProps> = ({ onClose, onSubmit }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
-        <h3 className="text-lg font-semibold mb-4">Utwórz test A/B</h3>
-        
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="bg-white/90 backdrop-blur-xl dark:bg-slate-800/90 border border-white/20 dark:border-slate-700/30 rounded-2xl p-6 w-full max-w-md mx-4 shadow-xl"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Utworz test A/B</h3>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
+            <X className="h-5 w-5 text-slate-500 dark:text-slate-400" />
+          </button>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Nazwa testu
             </label>
             <input
               type="text"
               value={config.name || ''}
               onChange={(e) => setConfig({ ...config, name: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              className="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Typ odpowiedzi
             </label>
             <select
               value={config.responseType || 'TASK'}
               onChange={(e) => setConfig({ ...config, responseType: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              className="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2"
             >
               <option value="TASK">Zadania</option>
               <option value="CLIENT">Klienci</option>
@@ -425,34 +469,34 @@ const ABTestModal: React.FC<ABTestModalProps> = ({ onClose, onSubmit }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
               Opis (opcjonalny)
             </label>
             <textarea
               value={config.description || ''}
               onChange={(e) => setConfig({ ...config, description: e.target.value })}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2"
+              className="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2"
               rows={2}
             />
           </div>
 
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-700 py-2 px-4 rounded-lg transition-colors"
+              className="flex-1 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 py-2 px-4 rounded-xl transition-colors"
             >
               Anuluj
             </button>
             <button
               type="submit"
-              className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded-lg transition-colors"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-xl transition-colors"
             >
-              Utwórz test
+              Utworz test
             </button>
           </div>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 };

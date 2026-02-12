@@ -1,9 +1,12 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { UserIcon, CameraIcon, KeyIcon, BellIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
+import { User, Camera, Key, Bell, ShieldCheck } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import apiClient from '@/lib/api/client';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
 
 export default function ProfileSettingsPage() {
   const [loading, setLoading] = useState(false);
@@ -75,78 +78,75 @@ export default function ProfileSettingsPage() {
 
   if (initialLoading) {
     return (
-      <div className="flex justify-center items-center h-48">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
+      <PageShell>
+        <SkeletonPage />
+      </PageShell>
     );
   }
 
   return (
-    <div className="p-6 max-w-4xl">
-      {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-blue-100 rounded-lg">
-          <UserIcon className="h-6 w-6 text-blue-600" />
-        </div>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Profil</h1>
-          <p className="text-sm text-gray-600">Zarządzaj swoimi danymi osobowymi</p>
-        </div>
-      </div>
+    <PageShell>
+      <PageHeader
+        title="Profil"
+        subtitle="Zarządzaj swoimi danymi osobowymi"
+        icon={User}
+        iconColor="text-blue-600"
+        breadcrumbs={[{ label: 'Ustawienia', href: '/dashboard/settings' }, { label: 'Profil' }]}
+      />
 
       {/* Profile Form */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Dane podstawowe</h2>
+      <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-6 mb-6">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">Dane podstawowe</h2>
 
         {/* Avatar */}
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center">
-            <UserIcon className="h-10 w-10 text-gray-400" />
+          <div className="w-20 h-20 bg-slate-200 dark:bg-slate-700 rounded-full flex items-center justify-center">
+            <User className="h-10 w-10 text-slate-400 dark:text-slate-500" />
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-            <CameraIcon className="h-4 w-4" />
+          <button className="flex items-center gap-2 px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors text-slate-700 dark:text-slate-300">
+            <Camera className="h-4 w-4" />
             Zmień zdjęcie
           </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Imię</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Imię</label>
             <input
               type="text"
               value={profile.firstName}
               onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100"
               placeholder="Jan"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nazwisko</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Nazwisko</label>
             <input
               type="text"
               value={profile.lastName}
               onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100"
               placeholder="Kowalski"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Email</label>
             <input
               type="email"
               value={profile.email}
               disabled
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400"
               placeholder="jan@example.com"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Telefon</label>
+            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Telefon</label>
             <input
               type="tel"
               value={profile.phone}
               onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:bg-slate-700 dark:text-slate-100"
               placeholder="+48 123 456 789"
             />
           </div>
@@ -165,40 +165,40 @@ export default function ProfileSettingsPage() {
 
       {/* Quick Links */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-amber-100 rounded-lg">
-              <KeyIcon className="h-5 w-5 text-amber-600" />
+            <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg">
+              <Key className="h-5 w-5 text-amber-600 dark:text-amber-400" />
             </div>
             <div>
-              <h3 className="font-medium text-gray-900">Bezpieczeństwo</h3>
-              <p className="text-sm text-gray-600">Zmień hasło</p>
+              <h3 className="font-medium text-slate-900 dark:text-slate-100">Bezpieczeństwo</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Zmień hasło</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <BellIcon className="h-5 w-5 text-purple-600" />
+            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+              <Bell className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
-              <h3 className="font-medium text-gray-900">Powiadomienia</h3>
-              <p className="text-sm text-gray-600">Konfiguruj alerty</p>
+              <h3 className="font-medium text-slate-900 dark:text-slate-100">Powiadomienia</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Konfiguruj alerty</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-xl border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer">
+        <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4 hover:shadow-md transition-shadow cursor-pointer">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <ShieldCheckIcon className="h-5 w-5 text-green-600" />
+            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <ShieldCheck className="h-5 w-5 text-green-600 dark:text-green-400" />
             </div>
             <div>
-              <h3 className="font-medium text-gray-900">Prywatność</h3>
-              <p className="text-sm text-gray-600">Ustawienia danych</p>
+              <h3 className="font-medium text-slate-900 dark:text-slate-100">Prywatność</h3>
+              <p className="text-sm text-slate-600 dark:text-slate-400">Ustawienia danych</p>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </PageShell>
   );
 }

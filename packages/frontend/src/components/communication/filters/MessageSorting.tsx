@@ -3,15 +3,15 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
 import {
-  ArrowsUpDownIcon,
-  ChevronUpIcon,
-  ChevronDownIcon,
-  ClockIcon,
-  UserIcon,
-  ExclamationTriangleIcon,
-  EyeIcon,
-  TagIcon
-} from '@heroicons/react/24/outline'
+  ArrowUpDown,
+  ChevronUp,
+  ChevronDown,
+  Clock,
+  User,
+  AlertTriangle,
+  Eye,
+  Tag
+} from 'lucide-react'
 
 export interface SortConfig {
   field: string
@@ -28,37 +28,37 @@ const SORT_OPTIONS = [
   { 
     value: 'receivedAt', 
     label: 'Data otrzymania', 
-    icon: ClockIcon 
+    icon: Clock 
   },
   { 
     value: 'sentAt', 
     label: 'Data wysłania', 
-    icon: ClockIcon 
+    icon: Clock 
   },
   { 
     value: 'subject', 
     label: 'Temat', 
-    icon: TagIcon 
+    icon: Tag 
   },
   { 
     value: 'fromName', 
     label: 'Nadawca', 
-    icon: UserIcon 
+    icon: User 
   },
   { 
     value: 'urgencyScore', 
     label: 'Pilność', 
-    icon: ExclamationTriangleIcon 
+    icon: AlertTriangle 
   },
   { 
     value: 'priority', 
     label: 'Priorytet', 
-    icon: ExclamationTriangleIcon 
+    icon: AlertTriangle 
   },
   { 
     value: 'isRead', 
     label: 'Status przeczytania', 
-    icon: EyeIcon 
+    icon: Eye 
   }
 ]
 
@@ -84,7 +84,7 @@ export function MessageSorting({ sortConfig, onSortChange, totalMessages }: Mess
   }
 
   const currentOption = SORT_OPTIONS.find(opt => opt.value === sortConfig.field)
-  const IconComponent = currentOption?.icon || ArrowsUpDownIcon
+  const IconComponent = currentOption?.icon || ArrowUpDown
 
   return (
     <div className="relative">
@@ -92,14 +92,14 @@ export function MessageSorting({ sortConfig, onSortChange, totalMessages }: Mess
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center space-x-2 px-3 py-2 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors"
       >
-        <ArrowsUpDownIcon className="h-4 w-4 text-gray-500" />
+        <ArrowUpDown className="h-4 w-4 text-gray-500" />
         <span className="text-sm text-gray-700">
           {currentOption?.label || 'Sortuj'}
         </span>
         {sortConfig.direction === 'asc' ? (
-          <ChevronUpIcon className="h-4 w-4 text-indigo-600" />
+          <ChevronUp className="h-4 w-4 text-indigo-600" />
         ) : (
-          <ChevronDownIcon className="h-4 w-4 text-indigo-600" />
+          <ChevronDown className="h-4 w-4 text-indigo-600" />
         )}
         <div className="text-xs text-gray-500 ml-2">
           ({totalMessages})
@@ -148,12 +148,12 @@ export function MessageSorting({ sortConfig, onSortChange, totalMessages }: Mess
                       <div className="flex items-center space-x-1">
                         {sortConfig.direction === 'asc' ? (
                           <>
-                            <ChevronUpIcon className="h-3 w-3 text-indigo-600" />
+                            <ChevronUp className="h-3 w-3 text-indigo-600" />
                             <span className="text-xs text-indigo-600">A-Z</span>
                           </>
                         ) : (
                           <>
-                            <ChevronDownIcon className="h-3 w-3 text-indigo-600" />
+                            <ChevronDown className="h-3 w-3 text-indigo-600" />
                             <span className="text-xs text-indigo-600">Z-A</span>
                           </>
                         )}

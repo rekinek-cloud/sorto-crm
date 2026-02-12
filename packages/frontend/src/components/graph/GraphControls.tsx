@@ -1,13 +1,13 @@
 import React from 'react';
 import { Button } from '../ui/Button';
-import { 
-  MinusIcon, 
-  PlusIcon,
-  EyeIcon,
-  EyeSlashIcon,
-  SparklesIcon,
-  PauseIcon
-} from '@heroicons/react/24/outline';
+import {
+  Minus,
+  Plus,
+  Eye,
+  EyeOff,
+  Sparkles,
+  Pause
+} from 'lucide-react';
 
 interface GraphControlsProps {
   depth: number;
@@ -64,7 +64,7 @@ export function GraphControls({
             size="sm"
             disabled={depth <= 1}
           >
-            <MinusIcon className="w-3 h-3" />
+            <Minus className="w-3 h-3" />
           </Button>
           <span className="font-medium w-8 text-center">{depth}</span>
           <Button
@@ -73,7 +73,7 @@ export function GraphControls({
             size="sm"
             disabled={depth >= 5}
           >
-            <PlusIcon className="w-3 h-3" />
+            <Plus className="w-3 h-3" />
           </Button>
         </div>
 
@@ -87,12 +87,12 @@ export function GraphControls({
         >
           {showLabels ? (
             <>
-              <EyeIcon className="w-3 h-3" />
+              <Eye className="w-3 h-3" />
               <span>Ukryj etykiety</span>
             </>
           ) : (
             <>
-              <EyeSlashIcon className="w-3 h-3" />
+              <EyeOff className="w-3 h-3" />
               <span>Pokaż etykiety</span>
             </>
           )}
@@ -106,12 +106,12 @@ export function GraphControls({
         >
           {physics ? (
             <>
-              <SparklesIcon className="w-3 h-3" />
+              <Sparkles className="w-3 h-3" />
               <span>Wyłącz fizykę</span>
             </>
           ) : (
             <>
-              <PauseIcon className="w-3 h-3" />
+              <Pause className="w-3 h-3" />
               <span>Włącz fizykę</span>
             </>
           )}

@@ -3,12 +3,12 @@
 import React from 'react';
 import { ErrorBoundary as BaseErrorBoundary } from '@/lib/errorTracker';
 import { motion } from 'framer-motion';
-import { 
-  ExclamationTriangleIcon, 
-  ArrowPathIcon,
-  HomeIcon,
-  BugAntIcon
-} from '@heroicons/react/24/outline';
+import {
+  AlertTriangle,
+  RefreshCw,
+  Home,
+  Bug
+} from 'lucide-react';
 
 interface ComponentErrorFallbackProps {
   error: Error;
@@ -31,7 +31,7 @@ function ComponentErrorFallback({ error, resetError, componentName = 'Component'
           animate={{ rotate: 360 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <ExclamationTriangleIcon />
+          <AlertTriangle />
         </motion.div>
         
         <h3 className="text-lg font-semibold text-gray-900 mb-2">
@@ -64,7 +64,7 @@ function ComponentErrorFallback({ error, resetError, componentName = 'Component'
             onClick={resetError}
             className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
           >
-            <ArrowPathIcon className="w-4 h-4 mr-2" />
+            <RefreshCw className="w-4 h-4 mr-2" />
             Try Again
           </button>
           
@@ -72,7 +72,7 @@ function ComponentErrorFallback({ error, resetError, componentName = 'Component'
             onClick={() => window.location.href = '/dashboard/'}
             className="inline-flex items-center px-3 py-2 border border-gray-300 text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-colors"
           >
-            <HomeIcon className="w-4 h-4 mr-2" />
+            <Home className="w-4 h-4 mr-2" />
             Go Home
           </button>
         </div>

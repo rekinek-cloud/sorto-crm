@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import { Meeting } from '@/lib/api/meetings';
 import { meetingsApi } from '@/lib/api/meetings';
 import { contactsApi } from '@/lib/api/contacts';
-import { XMarkIcon, VideoCameraIcon, MapPinIcon } from '@heroicons/react/24/outline';
+import { X, Video, MapPin } from 'lucide-react';
 
 interface MeetingFormProps {
   meeting?: Meeting;
@@ -174,7 +174,7 @@ export default function MeetingForm({ meeting, onSubmit, onCancel }: MeetingForm
             onClick={onCancel}
             className="text-gray-400 hover:text-gray-600 transition-colors"
           >
-            <XMarkIcon className="w-6 h-6" />
+            <X className="w-6 h-6" />
           </button>
         </div>
 
@@ -262,7 +262,7 @@ export default function MeetingForm({ meeting, onSubmit, onCancel }: MeetingForm
                     : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                <VideoCameraIcon className="w-4 h-4" />
+                <Video className="w-4 h-4" />
                 <span>Online</span>
               </button>
               <button
@@ -274,7 +274,7 @@ export default function MeetingForm({ meeting, onSubmit, onCancel }: MeetingForm
                     : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
                 }`}
               >
-                <MapPinIcon className="w-4 h-4" />
+                <MapPin className="w-4 h-4" />
                 <span>In-person</span>
               </button>
               <button

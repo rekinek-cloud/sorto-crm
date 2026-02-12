@@ -1,18 +1,47 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Milestone as MilestoneIcon,
+  Plus,
+  Trash2,
+  CheckCircle2,
+  Clock,
+  AlertTriangle,
+  Flag,
+  CalendarDays,
+  User,
+  ListChecks,
+  FolderKanban,
+  ChevronDown,
+  RefreshCw,
+  Target,
+} from 'lucide-react';
 import apiClient from '@/lib/api/client';
 import { milestonesApi, CreateMilestoneRequest } from '@/lib/api/milestones';
-import { Milestone, Project, User } from '@/types/gtd';
+import { Milestone, Project, User as UserType } from '@/types/gtd';
+
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { FilterBar } from '@/components/ui/FilterBar';
+import { StatCard } from '@/components/ui/StatCard';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ActionButton } from '@/components/ui/ActionButton';
+import { FormModal } from '@/components/ui/FormModal';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
 
 // ─── Status config ───────────────────────────────────────────────────
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  PENDING:     { label: 'Oczekuje',    color: 'bg-gray-100 text-gray-700' },
-  IN_PROGRESS: { label: 'W trakcie',   color: 'bg-blue-100 text-blue-700' },
-  COMPLETED:   { label: 'Ukonczone',   color: 'bg-green-100 text-green-700' },
-  DELAYED:     { label: 'Opoznione',   color: 'bg-red-100 text-red-700' },
-  BLOCKED:     { label: 'Zablokowane', color: 'bg-yellow-100 text-yellow-700' },
+type StatusVariant = 'neutral' | 'info' | 'success' | 'error' | 'warning';
+
+const STATUS_CONFIG: Record<string, { label: string; variant: StatusVariant }> = {
+  PENDING:     { label: 'Oczekuje',    variant: 'neutral' },
+  IN_PROGRESS: { label: 'W trakcie',   variant: 'info' },
+  COMPLETED:   { label: 'Ukonczone',   variant: 'success' },
+  DELAYED:     { label: 'Opoznione',   variant: 'error' },
+  BLOCKED:     { label: 'Zablokowane', variant: 'warning' },
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────
@@ -27,19 +56,37 @@ function daysUntil(d?: string | null): number | null {
   return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
+// ─── Animation variants ─────────────────────────────────────────────
+const listVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.06 } },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: 'easeOut' } },
+};
+
 // ─── Page ────────────────────────────────────────────────────────────
 export default function MilestonesPage() {
   // State
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
   const [milestones, setMilestones] = useState<Milestone[]>([]);
-  const [teamMembers, setTeamMembers] = useState<User[]>([]);
+  const [teamMembers, setTeamMembers] = useState<UserType[]>([]);
   const [loading, setLoading] = useState(false);
   const [projectsLoading, setProjectsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Filters
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+
   // Detail view
   const [selectedMilestone, setSelectedMilestone] = useState<Milestone | null>(null);
+
+  // Delete confirmation
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   // Create form
   const [showForm, setShowForm] = useState(false);
@@ -110,6 +157,23 @@ export default function MilestonesPage() {
     }
   }, [selectedProjectId, loadMilestones]);
 
+  // ─── Filtered milestones ──────────────────────────────────────────
+  const filteredMilestones = useMemo(() => {
+    let result = milestones;
+    if (statusFilter && statusFilter !== 'all') {
+      result = result.filter((m) => m.status === statusFilter);
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(
+        (m) =>
+          m.name.toLowerCase().includes(q) ||
+          m.description?.toLowerCase().includes(q)
+      );
+    }
+    return result;
+  }, [milestones, statusFilter, search]);
+
   // ─── Create milestone ──────────────────────────────────────────────
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,10 +205,10 @@ export default function MilestonesPage() {
 
   // ─── Delete milestone ──────────────────────────────────────────────
   const handleDelete = async (id: string) => {
-    if (!confirm('Czy na pewno chcesz usunac ten kamien milowy?')) return;
     try {
       await milestonesApi.deleteMilestone(id);
       toast.success('Kamien milowy usuniety');
+      setDeleteId(null);
       loadMilestones(selectedProjectId);
       if (selectedMilestone?.id === id) setSelectedMilestone(null);
     } catch {
@@ -172,353 +236,526 @@ export default function MilestonesPage() {
 
   // ─── Render ───────────────────────────────────────────────────────
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Kamienie milowe</h1>
-          <p className="text-sm text-gray-500 mt-1">Sledz postep kluczowych etapow projektow</p>
-        </div>
-        {selectedProjectId && (
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-            Nowy kamien milowy
-          </button>
-        )}
-      </div>
+    <PageShell>
+      <div className="max-w-7xl mx-auto">
+        <PageHeader
+          title="Kamienie milowe"
+          subtitle="Sledz postep kluczowych etapow projektow"
+          icon={MilestoneIcon}
+          iconColor="text-violet-600"
+          breadcrumbs={[
+            { label: 'Panel', href: '/dashboard' },
+            { label: 'Kamienie milowe' },
+          ]}
+          actions={
+            selectedProjectId ? (
+              <ActionButton icon={Plus} onClick={() => setShowForm(true)}>
+                Nowy kamien milowy
+              </ActionButton>
+            ) : undefined
+          }
+        />
 
-      {/* Project selector */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Wybierz projekt</label>
-        {projectsLoading ? (
-          <div className="h-10 bg-gray-100 rounded-lg animate-pulse" />
-        ) : (
-          <select
-            value={selectedProjectId}
-            onChange={(e) => {
-              setSelectedProjectId(e.target.value);
-              setSelectedMilestone(null);
-            }}
-            className="w-full max-w-md px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-          >
-            <option value="">-- Wybierz projekt --</option>
-            {projects.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
-
-      {/* No project selected */}
-      {!selectedProjectId && !projectsLoading && (
-        <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
-          <svg className="mx-auto h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>
-          <p className="mt-3 text-gray-500">Wybierz projekt, aby zobaczyc kamienie milowe</p>
-        </div>
-      )}
-
-      {/* Loading */}
-      {loading && (
-        <div className="flex items-center justify-center py-16">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-          <span className="ml-3 text-gray-500">Ladowanie...</span>
-        </div>
-      )}
-
-      {/* Error */}
-      {error && !loading && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
-          {error}
-          <button onClick={() => loadMilestones(selectedProjectId)} className="ml-3 underline">
-            Sprobuj ponownie
-          </button>
-        </div>
-      )}
-
-      {/* Milestones list */}
-      {!loading && !error && selectedProjectId && (
-        <div className="space-y-4">
-          {milestones.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-              <p className="text-gray-500">Brak kamieni milowych w tym projekcie</p>
-              <button
-                onClick={() => setShowForm(true)}
-                className="mt-3 text-blue-600 hover:text-blue-700 text-sm font-medium"
-              >
-                Dodaj pierwszy kamien milowy
-              </button>
-            </div>
+        {/* Project selector */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-6"
+        >
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+            Wybierz projekt
+          </label>
+          {projectsLoading ? (
+            <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse max-w-md" />
           ) : (
-            <>
-              {/* Summary stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-2">
-                <div className="bg-white rounded-xl border border-gray-200 p-4">
-                  <div className="text-2xl font-bold text-gray-900">{milestones.length}</div>
-                  <div className="text-xs text-gray-500">Razem</div>
-                </div>
-                <div className="bg-white rounded-xl border border-gray-200 p-4">
-                  <div className="text-2xl font-bold text-green-600">
-                    {milestones.filter((m) => m.status === 'COMPLETED').length}
-                  </div>
-                  <div className="text-xs text-gray-500">Ukonczone</div>
-                </div>
-                <div className="bg-white rounded-xl border border-gray-200 p-4">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {milestones.filter((m) => m.status === 'IN_PROGRESS').length}
-                  </div>
-                  <div className="text-xs text-gray-500">W trakcie</div>
-                </div>
-                <div className="bg-white rounded-xl border border-gray-200 p-4">
-                  <div className="text-2xl font-bold text-red-600">
-                    {milestones.filter((m) => m.isCritical).length}
-                  </div>
-                  <div className="text-xs text-gray-500">Krytyczne</div>
-                </div>
-              </div>
-
-              {/* Timeline list */}
-              <div className="relative">
-                {/* vertical line */}
-                <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200" />
-
-                {milestones.map((m, idx) => {
-                  const progress = getProgress(m);
-                  const days = daysUntil(m.dueDate);
-                  const isOverdue = days !== null && days < 0 && m.status !== 'COMPLETED';
-                  const sc = STATUS_CONFIG[m.status] || STATUS_CONFIG.PENDING;
-
-                  return (
-                    <div key={m.id} className="relative pl-14 pb-6">
-                      {/* Circle on timeline */}
-                      <div
-                        className={`absolute left-4 w-5 h-5 rounded-full border-2 bg-white z-10 ${
-                          m.status === 'COMPLETED'
-                            ? 'border-green-500 bg-green-500'
-                            : m.isCritical
-                            ? 'border-red-500'
-                            : 'border-gray-300'
-                        }`}
-                      >
-                        {m.status === 'COMPLETED' && (
-                          <svg className="h-3 w-3 text-white m-auto mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </div>
-
-                      {/* Card */}
-                      <div
-                        className={`bg-white rounded-xl border p-4 cursor-pointer hover:shadow-md transition-shadow ${
-                          m.isCritical ? 'border-red-300 ring-1 ring-red-100' : 'border-gray-200'
-                        } ${selectedMilestone?.id === m.id ? 'ring-2 ring-blue-300' : ''}`}
-                        onClick={() => setSelectedMilestone(selectedMilestone?.id === m.id ? null : m)}
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="font-semibold text-gray-900 truncate">{m.name}</h3>
-                              {m.isCritical && (
-                                <span className="text-xs px-1.5 py-0.5 bg-red-100 text-red-700 rounded font-medium">
-                                  KRYTYCZNY
-                                </span>
-                              )}
-                              <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${sc.color}`}>
-                                {sc.label}
-                              </span>
-                            </div>
-                            {m.description && (
-                              <p className="text-sm text-gray-500 mt-1 line-clamp-2">{m.description}</p>
-                            )}
-                            <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
-                              <span>Termin: {formatDate(m.dueDate)}</span>
-                              {days !== null && m.status !== 'COMPLETED' && (
-                                <span className={isOverdue ? 'text-red-500 font-medium' : 'text-gray-400'}>
-                                  {isOverdue ? `${Math.abs(days)} dni po terminie` : `${days} dni do terminu`}
-                                </span>
-                              )}
-                              {m.responsible && (
-                                <span>
-                                  Odpowiedzialny: {m.responsible.firstName} {m.responsible.lastName}
-                                </span>
-                              )}
-                              {progress && (
-                                <span>
-                                  Zadania: {progress.done}/{progress.total}
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Progress bar */}
-                            {progress && (
-                              <div className="mt-2">
-                                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                  <div
-                                    className="h-full bg-blue-500 rounded-full transition-all"
-                                    style={{ width: `${progress.pct}%` }}
-                                  />
-                                </div>
-                                <span className="text-xs text-gray-400 mt-0.5">{progress.pct}%</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Actions */}
-                          <div className="flex items-center gap-1 shrink-0">
-                            <select
-                              value={m.status}
-                              onClick={(e) => e.stopPropagation()}
-                              onChange={(e) => {
-                                e.stopPropagation();
-                                handleStatusChange(m.id, e.target.value);
-                              }}
-                              className="text-xs border border-gray-200 rounded px-1.5 py-1 bg-white focus:ring-1 focus:ring-blue-400"
-                            >
-                              {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-                                <option key={k} value={k}>{v.label}</option>
-                              ))}
-                            </select>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDelete(m.id);
-                              }}
-                              className="p-1.5 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 transition-colors"
-                              title="Usun"
-                            >
-                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Expanded detail */}
-                        {selectedMilestone?.id === m.id && m.tasks && m.tasks.length > 0 && (
-                          <div className="mt-4 pt-3 border-t border-gray-100">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">Zadania ({m.tasks.length})</h4>
-                            <div className="space-y-1">
-                              {m.tasks.map((t) => (
-                                <div key={t.id} className="flex items-center gap-2 text-sm">
-                                  <span
-                                    className={`h-2 w-2 rounded-full shrink-0 ${
-                                      t.status === 'COMPLETED' ? 'bg-green-400' : t.status === 'IN_PROGRESS' ? 'bg-blue-400' : 'bg-gray-300'
-                                    }`}
-                                  />
-                                  <span className={t.status === 'COMPLETED' ? 'line-through text-gray-400' : 'text-gray-700'}>
-                                    {t.title}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* ─── Create Form Modal ────────────────────────────────────── */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">Nowy kamien milowy</h2>
-              <button onClick={() => setShowForm(false)} className="p-1 hover:bg-gray-100 rounded-lg">
-                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
+            <div className="relative max-w-md">
+              <FolderKanban className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <select
+                value={selectedProjectId}
+                onChange={(e) => {
+                  setSelectedProjectId(e.target.value);
+                  setSelectedMilestone(null);
+                }}
+                className="w-full pl-10 pr-10 py-2.5 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-slate-900 dark:text-slate-100 appearance-none transition-colors"
+              >
+                <option value="">-- Wybierz projekt --</option>
+                {projects.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             </div>
-            <form onSubmit={handleCreate} className="p-6 space-y-4">
-              {/* Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nazwa *</label>
-                <input
-                  type="text"
-                  value={form.name}
-                  onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  placeholder="np. Wdrozenie modulu CRM"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  required
-                />
-              </div>
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Opis</label>
-                <textarea
-                  value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
-                  placeholder="Opis kamienia milowego..."
-                />
-              </div>
-              {/* Due Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Termin *</label>
-                <input
-                  type="date"
-                  value={form.dueDate}
-                  onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  required
-                />
-              </div>
-              {/* Responsible */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Osoba odpowiedzialna</label>
-                <select
-                  value={form.responsibleId}
-                  onChange={(e) => setForm({ ...form, responsibleId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                >
-                  <option value="">-- Brak --</option>
-                  {teamMembers.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.firstName} {u.lastName}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              {/* Is Critical */}
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={form.isCritical}
-                  onChange={(e) => setForm({ ...form, isCritical: e.target.checked })}
-                  className="rounded border-gray-300 text-red-600 focus:ring-red-500"
-                />
-                <span className="text-sm text-gray-700">Oznacz jako krytyczny</span>
-              </label>
-              {/* Actions */}
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  Anuluj
-                </button>
-                <button
-                  type="submit"
-                  disabled={formLoading}
-                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium"
-                >
-                  {formLoading ? 'Tworzenie...' : 'Utworz'}
-                </button>
-              </div>
-            </form>
+          )}
+        </motion.div>
+
+        {/* No project selected */}
+        {!selectedProjectId && !projectsLoading && (
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+            <EmptyState
+              icon={FolderKanban}
+              title="Wybierz projekt"
+              description="Wybierz projekt, aby zobaczyc jego kamienie milowe"
+            />
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {/* Loading */}
+        {loading && (
+          <SkeletonPage />
+        )}
+
+        {/* Error */}
+        {error && !loading && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-2xl p-4 text-red-700 dark:text-red-400 text-sm flex items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              {error}
+            </div>
+            <ActionButton
+              variant="ghost"
+              size="sm"
+              icon={RefreshCw}
+              onClick={() => loadMilestones(selectedProjectId)}
+            >
+              Sprobuj ponownie
+            </ActionButton>
+          </motion.div>
+        )}
+
+        {/* Milestones list */}
+        {!loading && !error && selectedProjectId && (
+          <div className="space-y-5">
+            {milestones.length === 0 ? (
+              <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+                <EmptyState
+                  icon={Target}
+                  title="Brak kamieni milowych"
+                  description="W tym projekcie nie ma jeszcze kamieni milowych"
+                  action={
+                    <ActionButton icon={Plus} onClick={() => setShowForm(true)} size="sm">
+                      Dodaj pierwszy kamien milowy
+                    </ActionButton>
+                  }
+                />
+              </div>
+            ) : (
+              <>
+                {/* Summary stats */}
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15 }}
+                  className="grid grid-cols-2 md:grid-cols-4 gap-4"
+                >
+                  <StatCard
+                    label="Razem"
+                    value={milestones.length}
+                    icon={MilestoneIcon}
+                    iconColor="text-violet-600 bg-violet-50 dark:bg-violet-900/30 dark:text-violet-400"
+                  />
+                  <StatCard
+                    label="Ukonczone"
+                    value={milestones.filter((m) => m.status === 'COMPLETED').length}
+                    icon={CheckCircle2}
+                    iconColor="text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400"
+                  />
+                  <StatCard
+                    label="W trakcie"
+                    value={milestones.filter((m) => m.status === 'IN_PROGRESS').length}
+                    icon={Clock}
+                    iconColor="text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"
+                  />
+                  <StatCard
+                    label="Krytyczne"
+                    value={milestones.filter((m) => m.isCritical).length}
+                    icon={AlertTriangle}
+                    iconColor="text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400"
+                  />
+                </motion.div>
+
+                {/* Filter bar */}
+                <FilterBar
+                  search={search}
+                  onSearchChange={setSearch}
+                  searchPlaceholder="Szukaj kamienia milowego..."
+                  filters={[
+                    {
+                      key: 'status',
+                      label: 'Wszystkie statusy',
+                      options: Object.entries(STATUS_CONFIG).map(([k, v]) => ({
+                        value: k,
+                        label: v.label,
+                      })),
+                    },
+                  ]}
+                  filterValues={{ status: statusFilter }}
+                  onFilterChange={(key, value) => {
+                    if (key === 'status') setStatusFilter(value);
+                  }}
+                />
+
+                {/* Filtered empty */}
+                {filteredMilestones.length === 0 && (
+                  <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+                    <EmptyState
+                      icon={MilestoneIcon}
+                      title="Brak wynikow"
+                      description="Zmien filtry aby zobaczyc kamienie milowe"
+                    />
+                  </div>
+                )}
+
+                {/* Timeline list */}
+                {filteredMilestones.length > 0 && (
+                  <div className="relative">
+                    {/* vertical line */}
+                    <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-slate-200 dark:bg-slate-700" />
+
+                    <motion.div
+                      variants={listVariants}
+                      initial="hidden"
+                      animate="visible"
+                    >
+                      {filteredMilestones.map((m) => {
+                        const progress = getProgress(m);
+                        const days = daysUntil(m.dueDate);
+                        const isOverdue = days !== null && days < 0 && m.status !== 'COMPLETED';
+                        const sc = STATUS_CONFIG[m.status] || STATUS_CONFIG.PENDING;
+
+                        return (
+                          <motion.div
+                            key={m.id}
+                            variants={itemVariants}
+                            className="relative pl-14 pb-6"
+                          >
+                            {/* Circle on timeline */}
+                            <div
+                              className={`absolute left-[14px] w-5 h-5 rounded-full border-2 z-10 flex items-center justify-center transition-colors ${
+                                m.status === 'COMPLETED'
+                                  ? 'border-emerald-500 bg-emerald-500 dark:border-emerald-400 dark:bg-emerald-400'
+                                  : m.isCritical
+                                  ? 'border-red-500 bg-white dark:bg-slate-900 dark:border-red-400'
+                                  : 'border-slate-300 bg-white dark:bg-slate-900 dark:border-slate-600'
+                              }`}
+                            >
+                              {m.status === 'COMPLETED' && (
+                                <CheckCircle2 className="w-3 h-3 text-white" />
+                              )}
+                            </div>
+
+                            {/* Card */}
+                            <motion.div
+                              whileHover={{ scale: 1.005, y: -1 }}
+                              className={`bg-white/80 backdrop-blur-xl border rounded-2xl p-4 cursor-pointer shadow-sm transition-all duration-300 ${
+                                m.isCritical
+                                  ? 'border-red-200 dark:border-red-800/40 ring-1 ring-red-100 dark:ring-red-900/30'
+                                  : 'border-white/20 dark:border-slate-700/30'
+                              } dark:bg-slate-800/80 ${
+                                selectedMilestone?.id === m.id
+                                  ? 'ring-2 ring-blue-400 dark:ring-blue-500'
+                                  : ''
+                              } hover:shadow-md`}
+                              onClick={() =>
+                                setSelectedMilestone(
+                                  selectedMilestone?.id === m.id ? null : m
+                                )
+                              }
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <h3 className="font-semibold text-slate-900 dark:text-slate-100 truncate">
+                                      {m.name}
+                                    </h3>
+                                    {m.isCritical && (
+                                      <StatusBadge variant="error" dot>
+                                        KRYTYCZNY
+                                      </StatusBadge>
+                                    )}
+                                    <StatusBadge variant={sc.variant} dot>
+                                      {sc.label}
+                                    </StatusBadge>
+                                  </div>
+                                  {m.description && (
+                                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
+                                      {m.description}
+                                    </p>
+                                  )}
+                                  <div className="flex items-center gap-4 mt-2 text-xs text-slate-400 dark:text-slate-500 flex-wrap">
+                                    <span className="flex items-center gap-1">
+                                      <CalendarDays className="w-3.5 h-3.5" />
+                                      Termin: {formatDate(m.dueDate)}
+                                    </span>
+                                    {days !== null && m.status !== 'COMPLETED' && (
+                                      <span
+                                        className={`flex items-center gap-1 ${
+                                          isOverdue
+                                            ? 'text-red-500 dark:text-red-400 font-medium'
+                                            : 'text-slate-400 dark:text-slate-500'
+                                        }`}
+                                      >
+                                        <Clock className="w-3.5 h-3.5" />
+                                        {isOverdue
+                                          ? `${Math.abs(days)} dni po terminie`
+                                          : `${days} dni do terminu`}
+                                      </span>
+                                    )}
+                                    {m.responsible && (
+                                      <span className="flex items-center gap-1">
+                                        <User className="w-3.5 h-3.5" />
+                                        {m.responsible.firstName} {m.responsible.lastName}
+                                      </span>
+                                    )}
+                                    {progress && (
+                                      <span className="flex items-center gap-1">
+                                        <ListChecks className="w-3.5 h-3.5" />
+                                        Zadania: {progress.done}/{progress.total}
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  {/* Progress bar */}
+                                  {progress && (
+                                    <div className="mt-2.5">
+                                      <div className="h-1.5 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                                        <motion.div
+                                          initial={{ width: 0 }}
+                                          animate={{ width: `${progress.pct}%` }}
+                                          transition={{ duration: 0.8, ease: 'easeOut' }}
+                                          className="h-full bg-blue-500 dark:bg-blue-400 rounded-full"
+                                        />
+                                      </div>
+                                      <span className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
+                                        {progress.pct}%
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+
+                                {/* Actions */}
+                                <div className="flex items-center gap-1 shrink-0">
+                                  <select
+                                    value={m.status}
+                                    onClick={(e) => e.stopPropagation()}
+                                    onChange={(e) => {
+                                      e.stopPropagation();
+                                      handleStatusChange(m.id, e.target.value);
+                                    }}
+                                    className="text-xs border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-blue-400 transition-colors"
+                                  >
+                                    {Object.entries(STATUS_CONFIG).map(([k, v]) => (
+                                      <option key={k} value={k}>
+                                        {v.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setDeleteId(m.id);
+                                    }}
+                                    className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                                    title="Usun"
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              </div>
+
+                              {/* Expanded detail */}
+                              <AnimatePresence>
+                                {selectedMilestone?.id === m.id &&
+                                  m.tasks &&
+                                  m.tasks.length > 0 && (
+                                    <motion.div
+                                      initial={{ opacity: 0, height: 0 }}
+                                      animate={{ opacity: 1, height: 'auto' }}
+                                      exit={{ opacity: 0, height: 0 }}
+                                      transition={{ duration: 0.25 }}
+                                      className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-700 overflow-hidden"
+                                    >
+                                      <h4 className="text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                                        Zadania ({m.tasks.length})
+                                      </h4>
+                                      <div className="space-y-1.5">
+                                        {m.tasks.map((t) => (
+                                          <div
+                                            key={t.id}
+                                            className="flex items-center gap-2 text-sm"
+                                          >
+                                            <span
+                                              className={`h-2 w-2 rounded-full shrink-0 ${
+                                                t.status === 'COMPLETED'
+                                                  ? 'bg-emerald-400 dark:bg-emerald-500'
+                                                  : t.status === 'IN_PROGRESS'
+                                                  ? 'bg-blue-400 dark:bg-blue-500'
+                                                  : 'bg-slate-300 dark:bg-slate-600'
+                                              }`}
+                                            />
+                                            <span
+                                              className={
+                                                t.status === 'COMPLETED'
+                                                  ? 'line-through text-slate-400 dark:text-slate-500'
+                                                  : 'text-slate-700 dark:text-slate-300'
+                                              }
+                                            >
+                                              {t.title}
+                                            </span>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </motion.div>
+                                  )}
+                              </AnimatePresence>
+                            </motion.div>
+                          </motion.div>
+                        );
+                      })}
+                    </motion.div>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ─── Create Form Modal ────────────────────────────────────── */}
+        <FormModal
+          isOpen={showForm}
+          onClose={() => setShowForm(false)}
+          title="Nowy kamien milowy"
+          subtitle="Dodaj nowy etap do projektu"
+          position="center"
+          footer={
+            <>
+              <ActionButton variant="secondary" onClick={() => setShowForm(false)}>
+                Anuluj
+              </ActionButton>
+              <ActionButton
+                loading={formLoading}
+                icon={Plus}
+                onClick={(e) => {
+                  const formEl = document.getElementById('milestone-form') as HTMLFormElement;
+                  if (formEl) formEl.requestSubmit();
+                }}
+              >
+                Utworz
+              </ActionButton>
+            </>
+          }
+        >
+          <form id="milestone-form" onSubmit={handleCreate} className="space-y-4">
+            {/* Name */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                Nazwa *
+              </label>
+              <input
+                type="text"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                placeholder="np. Wdrozenie modulu CRM"
+                className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 transition-colors"
+                required
+              />
+            </div>
+            {/* Description */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                Opis
+              </label>
+              <textarea
+                value={form.description}
+                onChange={(e) => setForm({ ...form, description: e.target.value })}
+                rows={3}
+                className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 resize-none transition-colors"
+                placeholder="Opis kamienia milowego..."
+              />
+            </div>
+            {/* Due Date */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                Termin *
+              </label>
+              <input
+                type="date"
+                value={form.dueDate}
+                onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
+                className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-slate-900 dark:text-slate-100 transition-colors"
+                required
+              />
+            </div>
+            {/* Responsible */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                Osoba odpowiedzialna
+              </label>
+              <select
+                value={form.responsibleId}
+                onChange={(e) => setForm({ ...form, responsibleId: e.target.value })}
+                className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-slate-900 dark:text-slate-100 transition-colors"
+              >
+                <option value="">-- Brak --</option>
+                {teamMembers.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.firstName} {u.lastName}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* Is Critical */}
+            <label className="flex items-center gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={form.isCritical}
+                onChange={(e) => setForm({ ...form, isCritical: e.target.checked })}
+                className="rounded border-slate-300 dark:border-slate-600 text-red-600 focus:ring-red-500"
+              />
+              <span className="text-sm text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+                <Flag className="w-4 h-4 text-red-500" />
+                Oznacz jako krytyczny
+              </span>
+            </label>
+          </form>
+        </FormModal>
+
+        {/* ─── Delete Confirmation Toast ──────────────────────────── */}
+        <AnimatePresence>
+          {deleteId && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-2xl px-5 py-4 flex items-center gap-4"
+            >
+              <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
+              <p className="text-sm text-slate-700 dark:text-slate-300">
+                Czy na pewno chcesz usunac ten kamien milowy?
+              </p>
+              <div className="flex items-center gap-2">
+                <ActionButton variant="secondary" size="sm" onClick={() => setDeleteId(null)}>
+                  Anuluj
+                </ActionButton>
+                <ActionButton
+                  variant="danger"
+                  size="sm"
+                  icon={Trash2}
+                  onClick={() => handleDelete(deleteId)}
+                >
+                  Usun
+                </ActionButton>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </PageShell>
   );
 }

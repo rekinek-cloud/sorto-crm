@@ -1,0 +1,134 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg14
+    container_name: crm-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: crm_gtd_prod
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-StrongPassword123!}
+    volumes:
+      - /data/databases/sorto-crm/postgres:/var/lib/postgresql/data
+    networks:
+      - crm-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: crm-redis
+    restart: unless-stopped
+    volumes:
+      - /data/databases/sorto-crm/redis:/data
+    networks:
+      - crm-net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./packages/backend
+      dockerfile: Dockerfile
+    container_name: crm-backend
+    restart: unless-stopped
+    ports:
+      - "3005:3001"
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:-StrongPassword123!}@postgres:5432/crm_gtd_prod
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-key-min-32-chars}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your-super-secret-refresh-key-min-32}
+      BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      NEXT_PUBLIC_APP_URL: https://crm.dev.sorto.ai
+    volumes:
+      - /home/dev/apps:/home/dev/apps:rw
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /root/.config/gh:/root/.config/gh:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - crm-net
+      - proxy-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.crm-api.entrypoints=websecure"
+      - "traefik.http.routers.crm-api.rule=Host(`crm.dev.sorto.ai`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.crm-api.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.crm-api.priority=100"
+      - "traefik.http.routers.crm-api2.entrypoints=websecure"
+      - "traefik.http.routers.crm-api2.rule=Host(`crm.dev.sorto.ai`) && PathPrefix(`/crm/api`)"
+      - "traefik.http.routers.crm-api2.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.crm-api2.priority=110"
+      - "traefik.http.routers.crm-api2.middlewares=strip-crm-prefix"
+      - "traefik.http.middlewares.strip-crm-prefix.stripprefix.prefixes=/crm"
+      - "traefik.http.services.crm-api.loadbalancer.server.port=3001"
+      # WebSocket for terminal
+      - "traefik.http.routers.crm-ws.entrypoints=websecure"
+      - "traefik.http.routers.crm-ws.rule=Host(`crm.dev.sorto.ai`) && PathPrefix(`/ws`)"
+      - "traefik.http.routers.crm-ws.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.crm-ws.priority=120"
+      - "traefik.http.routers.crm-ws.service=crm-api"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  frontend:
+    build:
+      context: ./packages/frontend
+      dockerfile: Dockerfile
+    container_name: crm-frontend
+    restart: unless-stopped
+    ports:
+      - "3008:3000"
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: https://crm.dev.sorto.ai/api
+      NEXT_PUBLIC_APP_URL: https://crm.dev.sorto.ai
+    depends_on:
+      - backend
+    networks:
+      - crm-net
+      - proxy-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.crm.entrypoints=websecure"
+      - "traefik.http.routers.crm.rule=Host(`crm.dev.sorto.ai`)"
+      - "traefik.http.routers.crm.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.crm.middlewares=crm-chain"
+      - "traefik.http.middlewares.crm-chain.chain.middlewares=crm-redirect,crm-locale-redirect"
+      - "traefik.http.middlewares.crm-redirect.redirectregex.regex=^https://crm.dev.sorto.ai/?$$"
+      - "traefik.http.middlewares.crm-redirect.redirectregex.replacement=https://crm.dev.sorto.ai/crm/pl"
+      - "traefik.http.middlewares.crm-redirect.redirectregex.permanent=false"
+      - "traefik.http.middlewares.crm-locale-redirect.redirectregex.regex=^https://crm.dev.sorto.ai/crm/?$$"
+      - "traefik.http.middlewares.crm-locale-redirect.redirectregex.replacement=https://crm.dev.sorto.ai/crm/pl"
+      - "traefik.http.middlewares.crm-locale-redirect.redirectregex.permanent=false"
+      - "traefik.http.services.crm.loadbalancer.server.port=3000"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:3000/crm/pl"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  crm-net:
+    driver: bridge
+  proxy-network:
+    external: true

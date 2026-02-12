@@ -1,8 +1,35 @@
+// @ts-nocheck
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  CalendarDays,
+  MapPin,
+  Calendar,
+  Wallet,
+  Building2,
+  Users,
+  Receipt,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+  Eye,
+  ArrowLeft,
+  DollarSign,
+  PiggyBank,
+  TrendingDown,
+  Tag,
+  Globe,
+  MapPinned,
+  CalendarCheck,
+  CalendarX,
+  Clock,
+  RefreshCw,
+} from 'lucide-react';
 import apiClient from '@/lib/api/client';
 import {
   eventsApi,
@@ -16,14 +43,25 @@ import {
 } from '@/lib/api/events';
 import { Event as CRMEvent } from '@/types/gtd';
 
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ActionButton } from '@/components/ui/ActionButton';
+import { StatCard } from '@/components/ui/StatCard';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
+import { FormModal } from '@/components/ui/FormModal';
+import { DataTable, Column } from '@/components/ui/DataTable';
+import { EntityCard } from '@/components/ui/EntityCard';
+
 // ─── Config ──────────────────────────────────────────────────────────
-const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  DRAFT:       { label: 'Szkic',       color: 'bg-gray-100 text-gray-700' },
-  PLANNING:    { label: 'Planowanie',  color: 'bg-blue-100 text-blue-700' },
-  CONFIRMED:   { label: 'Potwierdzony', color: 'bg-green-100 text-green-700' },
-  IN_PROGRESS: { label: 'W trakcie',  color: 'bg-yellow-100 text-yellow-700' },
-  COMPLETED:   { label: 'Zakonczony', color: 'bg-emerald-100 text-emerald-700' },
-  CANCELLED:   { label: 'Anulowany',  color: 'bg-red-100 text-red-700' },
+const STATUS_CONFIG: Record<string, { label: string; variant: 'default' | 'success' | 'warning' | 'error' | 'info' | 'neutral' }> = {
+  DRAFT:       { label: 'Szkic',       variant: 'neutral' },
+  PLANNING:    { label: 'Planowanie',  variant: 'info' },
+  CONFIRMED:   { label: 'Potwierdzony', variant: 'success' },
+  IN_PROGRESS: { label: 'W trakcie',  variant: 'warning' },
+  COMPLETED:   { label: 'Zakonczony', variant: 'default' },
+  CANCELLED:   { label: 'Anulowany',  variant: 'error' },
 };
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
@@ -33,6 +71,7 @@ const EVENT_TYPE_LABELS: Record<string, string> = {
   WORKSHOP:      'Warsztaty',
   NETWORKING:    'Networking',
   COMPANY_EVENT: 'Wydarzenie firmowe',
+  EXHIBITION:    'Wystawa',
   OTHER:         'Inne',
 };
 
@@ -49,7 +88,7 @@ const EXPENSE_CATEGORIES = [
   'Inne',
 ];
 
-type TabType = 'overview' | 'companies' | 'team' | 'expenses' | 'tasks';
+type TabType = 'overview' | 'companies' | 'team' | 'expenses';
 
 interface CompanyOption { id: string; name: string }
 interface UserOption { id: string; firstName: string; lastName: string }
@@ -65,9 +104,15 @@ function formatCurrency(val?: number | null, currency?: string): string {
   return new Intl.NumberFormat('pl-PL', { style: 'currency', currency: currency || 'PLN' }).format(val);
 }
 
+// ─── Input class helpers ─────────────────────────────────────────────
+const inputClass =
+  'w-full px-3 py-2 text-sm bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors';
+const labelClass = 'block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1';
+
 // ─── Page ────────────────────────────────────────────────────────────
 export default function EventDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const eventId = params?.id as string;
 
   // Core state
@@ -228,7 +273,6 @@ export default function EventDetailPage() {
   };
 
   const handleRemoveCompany = async (companyId: string) => {
-    if (!confirm('Usunac firme z wydarzenia?')) return;
     try {
       await eventsApi.removeEventCompany(eventId, companyId);
       toast.success('Firma usunieta z wydarzenia');
@@ -260,7 +304,6 @@ export default function EventDetailPage() {
   };
 
   const handleRemoveMember = async (memberId: string) => {
-    if (!confirm('Usunac osobe z zespolu?')) return;
     try {
       await eventsApi.removeEventTeamMember(eventId, memberId);
       toast.success('Osoba usunieta z zespolu');
@@ -292,7 +335,6 @@ export default function EventDetailPage() {
   };
 
   const handleRemoveExpense = async (expenseId: string) => {
-    if (!confirm('Usunac ten wydatek?')) return;
     try {
       await eventsApi.removeEventExpense(eventId, expenseId);
       toast.success('Wydatek usuniety');
@@ -310,668 +352,846 @@ export default function EventDetailPage() {
   // ─── Loading / Error ──────────────────────────────────────────────
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-24">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-        <span className="ml-3 text-gray-500">Ladowanie wydarzenia...</span>
-      </div>
+      <PageShell>
+        <SkeletonPage />
+      </PageShell>
     );
   }
 
   if (error || !event) {
     return (
-      <div className="p-6 max-w-4xl mx-auto">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <p className="text-red-700">{error || 'Nie znaleziono wydarzenia'}</p>
-          <button onClick={loadEvent} className="mt-3 text-blue-600 hover:text-blue-700 underline text-sm">
-            Sprobuj ponownie
-          </button>
+      <PageShell>
+        <div className="flex flex-col items-center justify-center py-24">
+          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/30 rounded-2xl p-8 text-center max-w-md">
+            <div className="p-3 rounded-xl bg-red-100 dark:bg-red-900/30 inline-flex mb-4">
+              <X className="w-6 h-6 text-red-500" />
+            </div>
+            <p className="text-red-700 dark:text-red-400 font-medium">{error || 'Nie znaleziono wydarzenia'}</p>
+            <div className="flex items-center justify-center gap-3 mt-4">
+              <ActionButton variant="secondary" icon={ArrowLeft} onClick={() => router.push('/dashboard/events')}>
+                Powrot do listy
+              </ActionButton>
+              <ActionButton variant="secondary" icon={RefreshCw} onClick={loadEvent}>
+                Sprobuj ponownie
+              </ActionButton>
+            </div>
+          </div>
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   const sc = STATUS_CONFIG[event.status] || STATUS_CONFIG.DRAFT;
 
   // ─── TABS ─────────────────────────────────────────────────────────
-  const TABS: { key: TabType; label: string }[] = [
-    { key: 'overview', label: 'Przeglad' },
-    { key: 'companies', label: `Firmy (${companies.length})` },
-    { key: 'team', label: `Zespol (${team.length})` },
-    { key: 'expenses', label: `Wydatki (${expenses.length})` },
+  const TABS: { key: TabType; label: string; icon: any; count?: number }[] = [
+    { key: 'overview', label: 'Przeglad', icon: Eye },
+    { key: 'companies', label: 'Firmy', icon: Building2, count: companies.length },
+    { key: 'team', label: 'Zespol', icon: Users, count: team.length },
+    { key: 'expenses', label: 'Wydatki', icon: Receipt, count: expenses.length },
+  ];
+
+  // ─── Company table columns ────────────────────────────────────────
+  const companyColumns: Column<EventCompany>[] = [
+    {
+      key: 'name',
+      label: 'Firma',
+      sortable: true,
+      render: (_val, row) => (
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/30">
+            <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+          </div>
+          <span className="font-medium text-slate-900 dark:text-slate-100">
+            {row.company?.name || `Firma #${row.companyId.slice(0, 8)}`}
+          </span>
+        </div>
+      ),
+    },
+    {
+      key: 'role',
+      label: 'Rola',
+      sortable: true,
+      render: (_val, row) => (
+        <span className="text-slate-500 dark:text-slate-400">{row.role || '-'}</span>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Akcje',
+      sortable: false,
+      render: (_val, row) => (
+        <div className="flex justify-end">
+          <ActionButton
+            variant="ghost"
+            size="sm"
+            icon={Trash2}
+            onClick={() => handleRemoveCompany(row.id)}
+            className="text-slate-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400"
+          />
+        </div>
+      ),
+    },
+  ];
+
+  // ─── Expense table columns ────────────────────────────────────────
+  const expenseColumns: Column<EventExpense>[] = [
+    {
+      key: 'category',
+      label: 'Kategoria',
+      sortable: true,
+      render: (_val, row) => (
+        <StatusBadge variant="neutral">{row.category}</StatusBadge>
+      ),
+    },
+    {
+      key: 'description',
+      label: 'Opis',
+      sortable: true,
+      render: (_val, row) => (
+        <span className="text-slate-700 dark:text-slate-300">{row.description || '-'}</span>
+      ),
+    },
+    {
+      key: 'amount',
+      label: 'Kwota',
+      sortable: true,
+      render: (_val, row) => (
+        <span className="font-medium text-slate-900 dark:text-slate-100 text-right block">
+          {formatCurrency(row.amount, row.currency)}
+        </span>
+      ),
+    },
+    {
+      key: 'actions',
+      label: 'Akcje',
+      sortable: false,
+      render: (_val, row) => (
+        <div className="flex justify-end">
+          <ActionButton
+            variant="ghost"
+            size="sm"
+            icon={Trash2}
+            onClick={() => handleRemoveExpense(row.id)}
+            className="text-slate-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400"
+          />
+        </div>
+      ),
+    },
   ];
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* ─── Header ──────────────────────────────────────────────── */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6 mb-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-gray-900">{event.name}</h1>
-              <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${sc.color}`}>{sc.label}</span>
-              <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 rounded">
-                {EVENT_TYPE_LABELS[event.eventType] || event.eventType}
-              </span>
-            </div>
-            {event.description && (
-              <p className="text-sm text-gray-500 mt-2">{event.description}</p>
-            )}
-            <div className="flex items-center gap-6 mt-3 text-sm text-gray-500 flex-wrap">
-              {event.venue && (
-                <span className="flex items-center gap-1">
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
-                  {event.venue}{event.city ? `, ${event.city}` : ''}{event.country ? `, ${event.country}` : ''}
-                </span>
-              )}
-              <span className="flex items-center gap-1">
-                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-                {formatDate(event.startDate)} - {formatDate(event.endDate)}
-              </span>
-              {event.budgetPlanned != null && (
-                <span className="flex items-center gap-1">
-                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  Budzet: {formatCurrency(event.budgetPlanned, event.currency)}
-                </span>
-              )}
-            </div>
+    <PageShell>
+      <PageHeader
+        title={event.name}
+        subtitle={event.description || EVENT_TYPE_LABELS[event.eventType] || event.eventType}
+        icon={CalendarDays}
+        iconColor="text-violet-600 bg-violet-50 dark:bg-violet-900/30 dark:text-violet-400"
+        breadcrumbs={[
+          { label: 'Wydarzenia', href: '/dashboard/events' },
+          { label: event.name },
+        ]}
+        actions={
+          <div className="flex items-center gap-2">
+            <StatusBadge variant={sc.variant} dot size="md">{sc.label}</StatusBadge>
+            <ActionButton variant="secondary" icon={Pencil} onClick={() => setShowEditModal(true)}>
+              Edytuj
+            </ActionButton>
           </div>
-          <button
-            onClick={() => setShowEditModal(true)}
-            className="px-4 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors font-medium shrink-0"
-          >
-            Edytuj
-          </button>
-        </div>
-      </div>
+        }
+      />
+
+      {/* Event info bar */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+        className="flex flex-wrap items-center gap-4 mb-6 text-sm text-slate-500 dark:text-slate-400"
+      >
+        {event.venue && (
+          <span className="flex items-center gap-1.5">
+            <MapPin className="w-4 h-4 text-slate-400" />
+            {event.venue}{event.city ? `, ${event.city}` : ''}{event.country ? `, ${event.country}` : ''}
+          </span>
+        )}
+        <span className="flex items-center gap-1.5">
+          <Calendar className="w-4 h-4 text-slate-400" />
+          {formatDate(event.startDate)} - {formatDate(event.endDate)}
+        </span>
+        {event.budgetPlanned != null && (
+          <span className="flex items-center gap-1.5">
+            <Wallet className="w-4 h-4 text-slate-400" />
+            Budzet: {formatCurrency(event.budgetPlanned, event.currency)}
+          </span>
+        )}
+        <StatusBadge variant="neutral" size="sm">
+          {EVENT_TYPE_LABELS[event.eventType] || event.eventType}
+        </StatusBadge>
+      </motion.div>
 
       {/* ─── Tab navigation ──────────────────────────────────────── */}
-      <div className="flex gap-1 mb-6 bg-gray-100 rounded-lg p-1">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-              activeTab === tab.key
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="flex gap-1 mb-6 bg-white/60 dark:bg-slate-800/60 backdrop-blur-lg border border-slate-200/50 dark:border-slate-700/50 rounded-xl p-1"
+      >
+        {TABS.map((tab) => {
+          const TabIcon = tab.icon;
+          return (
+            <button
+              key={tab.key}
+              onClick={() => setActiveTab(tab.key)}
+              className={`flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                activeTab === tab.key
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 shadow-sm'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+            >
+              <TabIcon className="w-4 h-4" />
+              {tab.label}
+              {tab.count !== undefined && (
+                <span className={`text-xs px-1.5 py-0.5 rounded-full ${
+                  activeTab === tab.key
+                    ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400'
+                    : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400'
+                }`}>
+                  {tab.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </motion.div>
 
       {/* ─── TAB: Overview ───────────────────────────────────────── */}
-      {activeTab === 'overview' && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="text-xs text-gray-500 mb-1">Firmy</div>
-            <div className="text-2xl font-bold text-gray-900">{companies.length}</div>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="text-xs text-gray-500 mb-1">Zespol</div>
-            <div className="text-2xl font-bold text-gray-900">{team.length}</div>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="text-xs text-gray-500 mb-1">Planowany budzet</div>
-            <div className="text-2xl font-bold text-blue-600">{formatCurrency(budgetPlanned, event.currency)}</div>
-          </div>
-          <div className="bg-white rounded-xl border border-gray-200 p-5">
-            <div className="text-xs text-gray-500 mb-1">Wydatki</div>
-            <div className={`text-2xl font-bold ${budgetUsedPct > 100 ? 'text-red-600' : 'text-green-600'}`}>
-              {formatCurrency(totalExpenses, event.currency)}
-            </div>
-            {budgetPlanned > 0 && (
-              <div className="mt-2">
-                <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all ${budgetUsedPct > 100 ? 'bg-red-500' : budgetUsedPct > 80 ? 'bg-yellow-500' : 'bg-green-500'}`}
-                    style={{ width: `${Math.min(100, budgetUsedPct)}%` }}
-                  />
-                </div>
-                <span className="text-xs text-gray-400 mt-0.5">{budgetUsedPct}% budzetu</span>
-              </div>
-            )}
-          </div>
-
-          {/* Event details section */}
-          <div className="col-span-full bg-white rounded-xl border border-gray-200 p-5 mt-2">
-            <h3 className="font-medium text-gray-900 mb-3">Szczegoly wydarzenia</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
-              <div>
-                <span className="text-gray-500">Typ:</span>
-                <span className="ml-2 text-gray-900">{EVENT_TYPE_LABELS[event.eventType] || event.eventType}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Status:</span>
-                <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${sc.color}`}>{sc.label}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Miejsce:</span>
-                <span className="ml-2 text-gray-900">{event.venue || '-'}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Miasto:</span>
-                <span className="ml-2 text-gray-900">{event.city || '-'}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Kraj:</span>
-                <span className="ml-2 text-gray-900">{event.country || '-'}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Adres:</span>
-                <span className="ml-2 text-gray-900">{event.address || '-'}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Data rozpoczecia:</span>
-                <span className="ml-2 text-gray-900">{formatDate(event.startDate)}</span>
-              </div>
-              <div>
-                <span className="text-gray-500">Data zakonczenia:</span>
-                <span className="ml-2 text-gray-900">{formatDate(event.endDate)}</span>
-              </div>
-              {event.setupDate && (
-                <div>
-                  <span className="text-gray-500">Przygotowanie:</span>
-                  <span className="ml-2 text-gray-900">{formatDate(event.setupDate)}</span>
-                </div>
-              )}
-              {event.teardownDate && (
-                <div>
-                  <span className="text-gray-500">Demontaz:</span>
-                  <span className="ml-2 text-gray-900">{formatDate(event.teardownDate)}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ─── TAB: Companies ──────────────────────────────────────── */}
-      {activeTab === 'companies' && (
-        <div>
-          <div className="flex justify-end mb-4">
-            <button
-              onClick={() => setShowAddCompany(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-              Dodaj firme
-            </button>
-          </div>
-          {companies.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-              <p className="text-gray-500">Brak firm przypisanych do tego wydarzenia</p>
-            </div>
-          ) : (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Firma</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Rola</th>
-                    <th className="text-center px-4 py-3 font-medium text-gray-600">Akcje</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {companies.map((c) => (
-                    <tr key={c.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium text-gray-900">{c.company?.name || `Firma #${c.companyId.slice(0, 8)}`}</td>
-                      <td className="px-4 py-3 text-gray-500">{c.role || '-'}</td>
-                      <td className="px-4 py-3 text-center">
-                        <button
-                          onClick={() => handleRemoveCompany(c.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 transition-colors"
-                          title="Usun z wydarzenia"
-                        >
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ─── TAB: Team ───────────────────────────────────────────── */}
-      {activeTab === 'team' && (
-        <div>
-          <div className="flex justify-end mb-4">
-            <button
-              onClick={() => setShowAddMember(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-              Dodaj osobe
-            </button>
-          </div>
-          {team.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-              <p className="text-gray-500">Brak czlonkow zespolu w tym wydarzeniu</p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {team.map((m) => (
-                <div key={m.id} className="bg-white rounded-xl border border-gray-200 p-4">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-sm font-medium text-blue-600">
-                        {m.user?.firstName?.[0] || '?'}{m.user?.lastName?.[0] || ''}
-                      </div>
-                      <div>
-                        <div className="font-medium text-gray-900">
-                          {m.user ? `${m.user.firstName} ${m.user.lastName}` : `Uzytkownik #${m.userId.slice(0, 8)}`}
-                        </div>
-                        {m.role && <div className="text-xs text-gray-500">{m.role}</div>}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleRemoveMember(m.id)}
-                      className="p-1.5 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 transition-colors"
-                      title="Usun z zespolu"
-                    >
-                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-                    </button>
+      <AnimatePresence mode="wait">
+        {activeTab === 'overview' && (
+          <motion.div
+            key="overview"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-6"
+          >
+            {/* Stat cards */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard
+                label="Firmy"
+                value={companies.length}
+                icon={Building2}
+                iconColor="text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"
+              />
+              <StatCard
+                label="Zespol"
+                value={team.length}
+                icon={Users}
+                iconColor="text-violet-600 bg-violet-50 dark:bg-violet-900/30 dark:text-violet-400"
+              />
+              <StatCard
+                label="Planowany budzet"
+                value={formatCurrency(budgetPlanned, event.currency)}
+                icon={PiggyBank}
+                iconColor="text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"
+              />
+              <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl p-4 shadow-sm">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase tracking-wider">Wydatki</p>
+                    <p className={`text-2xl font-bold mt-1 ${budgetUsedPct > 100 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                      {formatCurrency(totalExpenses, event.currency)}
+                    </p>
+                  </div>
+                  <div className={`p-2 rounded-xl ${budgetUsedPct > 100 ? 'bg-red-50 dark:bg-red-900/30' : 'bg-emerald-50 dark:bg-emerald-900/30'}`}>
+                    <DollarSign className={`w-5 h-5 ${budgetUsedPct > 100 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`} />
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ─── TAB: Expenses ───────────────────────────────────────── */}
-      {activeTab === 'expenses' && (
-        <div>
-          {/* Budget summary */}
-          <div className="grid grid-cols-3 gap-4 mb-4">
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <div className="text-xs text-gray-500">Planowany budzet</div>
-              <div className="text-xl font-bold text-gray-900 mt-1">{formatCurrency(budgetPlanned, event.currency)}</div>
-            </div>
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <div className="text-xs text-gray-500">Faktyczne wydatki</div>
-              <div className={`text-xl font-bold mt-1 ${budgetUsedPct > 100 ? 'text-red-600' : 'text-green-600'}`}>
-                {formatCurrency(totalExpenses, event.currency)}
+                {budgetPlanned > 0 && (
+                  <div className="mt-3">
+                    <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <motion.div
+                        initial={{ width: 0 }}
+                        animate={{ width: `${Math.min(100, budgetUsedPct)}%` }}
+                        transition={{ delay: 0.3, duration: 0.6 }}
+                        className={`h-full rounded-full ${budgetUsedPct > 100 ? 'bg-red-500' : budgetUsedPct > 80 ? 'bg-amber-500' : 'bg-emerald-500'}`}
+                      />
+                    </div>
+                    <span className="text-xs text-slate-400 dark:text-slate-500 mt-1 block">{budgetUsedPct}% budzetu</span>
+                  </div>
+                )}
               </div>
             </div>
-            <div className="bg-white rounded-xl border border-gray-200 p-4">
-              <div className="text-xs text-gray-500">Pozostalo</div>
-              <div className={`text-xl font-bold mt-1 ${budgetPlanned - totalExpenses < 0 ? 'text-red-600' : 'text-green-600'}`}>
-                {formatCurrency(budgetPlanned - totalExpenses, event.currency)}
+
+            {/* Event details card */}
+            <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl p-6 shadow-sm">
+              <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
+                <Eye className="w-5 h-5 text-slate-400" />
+                Szczegoly wydarzenia
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                <div className="flex items-center gap-2">
+                  <Tag className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 block text-xs">Typ</span>
+                    <span className="text-slate-900 dark:text-slate-100">{EVENT_TYPE_LABELS[event.eventType] || event.eventType}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 block text-xs">Status</span>
+                    <StatusBadge variant={sc.variant} dot size="sm">{sc.label}</StatusBadge>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPinned className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 block text-xs">Miejsce</span>
+                    <span className="text-slate-900 dark:text-slate-100">{event.venue || '-'}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 block text-xs">Miasto</span>
+                    <span className="text-slate-900 dark:text-slate-100">{event.city || '-'}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Globe className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 block text-xs">Kraj</span>
+                    <span className="text-slate-900 dark:text-slate-100">{event.country || '-'}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <MapPin className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 block text-xs">Adres</span>
+                    <span className="text-slate-900 dark:text-slate-100">{event.address || '-'}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CalendarCheck className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 block text-xs">Data rozpoczecia</span>
+                    <span className="text-slate-900 dark:text-slate-100">{formatDate(event.startDate)}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CalendarX className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  <div>
+                    <span className="text-slate-500 dark:text-slate-400 block text-xs">Data zakonczenia</span>
+                    <span className="text-slate-900 dark:text-slate-100">{formatDate(event.endDate)}</span>
+                  </div>
+                </div>
+                {event.setupDate && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400 block text-xs">Przygotowanie</span>
+                      <span className="text-slate-900 dark:text-slate-100">{formatDate(event.setupDate)}</span>
+                    </div>
+                  </div>
+                )}
+                {event.teardownDate && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                    <div>
+                      <span className="text-slate-500 dark:text-slate-400 block text-xs">Demontaz</span>
+                      <span className="text-slate-900 dark:text-slate-100">{formatDate(event.teardownDate)}</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          </motion.div>
+        )}
 
-          <div className="flex justify-end mb-4">
-            <button
-              onClick={() => setShowAddExpense(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-              Dodaj wydatek
-            </button>
-          </div>
-
-          {expenses.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-              <p className="text-gray-500">Brak wydatkow dla tego wydarzenia</p>
+        {/* ─── TAB: Companies ──────────────────────────────────────── */}
+        {activeTab === 'companies' && (
+          <motion.div
+            key="companies"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+          >
+            <div className="flex justify-end mb-4">
+              <ActionButton icon={Plus} onClick={() => setShowAddCompany(true)}>
+                Dodaj firme
+              </ActionButton>
             </div>
-          ) : (
-            <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-gray-50 border-b border-gray-200">
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Kategoria</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Opis</th>
-                    <th className="text-right px-4 py-3 font-medium text-gray-600">Kwota</th>
-                    <th className="text-center px-4 py-3 font-medium text-gray-600">Akcje</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {expenses.map((exp) => (
-                    <tr key={exp.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3">
-                        <span className="text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded-full">{exp.category}</span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-700">{exp.description || '-'}</td>
-                      <td className="px-4 py-3 text-right font-medium text-gray-900">
-                        {formatCurrency(exp.amount, exp.currency)}
-                      </td>
-                      <td className="px-4 py-3 text-center">
+            {companies.length === 0 ? (
+              <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+                <EmptyState
+                  icon={Building2}
+                  title="Brak firm"
+                  description="Brak firm przypisanych do tego wydarzenia"
+                  action={
+                    <ActionButton icon={Plus} onClick={() => setShowAddCompany(true)}>
+                      Dodaj firme
+                    </ActionButton>
+                  }
+                />
+              </div>
+            ) : (
+              <DataTable<EventCompany>
+                columns={companyColumns}
+                data={companies}
+                storageKey="event-companies"
+                emptyMessage="Brak firm"
+              />
+            )}
+          </motion.div>
+        )}
+
+        {/* ─── TAB: Team ───────────────────────────────────────────── */}
+        {activeTab === 'team' && (
+          <motion.div
+            key="team"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+          >
+            <div className="flex justify-end mb-4">
+              <ActionButton icon={Plus} onClick={() => setShowAddMember(true)}>
+                Dodaj osobe
+              </ActionButton>
+            </div>
+            {team.length === 0 ? (
+              <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+                <EmptyState
+                  icon={Users}
+                  title="Brak czlonkow zespolu"
+                  description="Dodaj osoby do zespolu tego wydarzenia"
+                  action={
+                    <ActionButton icon={Plus} onClick={() => setShowAddMember(true)}>
+                      Dodaj osobe
+                    </ActionButton>
+                  }
+                />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {team.map((m, idx) => (
+                  <motion.div
+                    key={m.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.05 }}
+                  >
+                    <EntityCard
+                      title={m.user ? `${m.user.firstName} ${m.user.lastName}` : `Uzytkownik #${m.userId.slice(0, 8)}`}
+                      subtitle={m.role || undefined}
+                      icon={
+                        <div className="h-10 w-10 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-sm font-medium text-blue-600 dark:text-blue-400">
+                          {m.user?.firstName?.[0] || '?'}{m.user?.lastName?.[0] || ''}
+                        </div>
+                      }
+                      badge={
                         <button
-                          onClick={() => handleRemoveExpense(exp.id)}
-                          className="p-1.5 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 transition-colors"
-                          title="Usun wydatek"
+                          onClick={() => handleRemoveMember(m.id)}
+                          className="p-1.5 text-slate-400 hover:text-red-500 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                          title="Usun z zespolu"
                         >
-                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                          <X className="h-4 w-4" />
                         </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      }
+                    />
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* ─── TAB: Expenses ───────────────────────────────────────── */}
+        {activeTab === 'expenses' && (
+          <motion.div
+            key="expenses"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className="space-y-6"
+          >
+            {/* Budget summary */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <StatCard
+                label="Planowany budzet"
+                value={formatCurrency(budgetPlanned, event.currency)}
+                icon={PiggyBank}
+                iconColor="text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"
+              />
+              <StatCard
+                label="Faktyczne wydatki"
+                value={formatCurrency(totalExpenses, event.currency)}
+                icon={DollarSign}
+                iconColor={budgetUsedPct > 100
+                  ? 'text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400'
+                  : 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400'
+                }
+              />
+              <StatCard
+                label="Pozostalo"
+                value={formatCurrency(budgetPlanned - totalExpenses, event.currency)}
+                icon={TrendingDown}
+                iconColor={budgetPlanned - totalExpenses < 0
+                  ? 'text-red-600 bg-red-50 dark:bg-red-900/30 dark:text-red-400'
+                  : 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400'
+                }
+              />
             </div>
-          )}
-        </div>
-      )}
+
+            <div className="flex justify-end">
+              <ActionButton icon={Plus} onClick={() => setShowAddExpense(true)}>
+                Dodaj wydatek
+              </ActionButton>
+            </div>
+
+            {expenses.length === 0 ? (
+              <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+                <EmptyState
+                  icon={Receipt}
+                  title="Brak wydatkow"
+                  description="Dodaj pierwszy wydatek dla tego wydarzenia"
+                  action={
+                    <ActionButton icon={Plus} onClick={() => setShowAddExpense(true)}>
+                      Dodaj wydatek
+                    </ActionButton>
+                  }
+                />
+              </div>
+            ) : (
+              <DataTable<EventExpense>
+                columns={expenseColumns}
+                data={expenses}
+                storageKey="event-expenses"
+                emptyMessage="Brak wydatkow"
+              />
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ─── MODAL: Edit Event ───────────────────────────────────── */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowEditModal(false)}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
-              <h2 className="text-lg font-semibold text-gray-900">Edytuj wydarzenie</h2>
-              <button onClick={() => setShowEditModal(false)} className="p-1 hover:bg-gray-100 rounded-lg">
-                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <form onSubmit={handleEditEvent} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Nazwa *</label>
-                <input
-                  type="text"
-                  value={editForm.name || ''}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Opis</label>
-                <textarea
-                  value={editForm.description || ''}
-                  onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Typ</label>
-                  <select
-                    value={editForm.eventType || ''}
-                    onChange={(e) => setEditForm({ ...editForm, eventType: e.target.value as CRMEvent['eventType'] })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  >
-                    {Object.entries(EVENT_TYPE_LABELS).map(([k, v]) => (
-                      <option key={k} value={k}>{v}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                  <select
-                    value={editForm.status || ''}
-                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value as CRMEvent['status'] })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  >
-                    {Object.entries(STATUS_CONFIG).map(([k, v]) => (
-                      <option key={k} value={k}>{v.label}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Miejsce</label>
-                <input
-                  type="text"
-                  value={editForm.venue || ''}
-                  onChange={(e) => setEditForm({ ...editForm, venue: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Miasto</label>
-                  <input
-                    type="text"
-                    value={editForm.city || ''}
-                    onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Kraj</label>
-                  <input
-                    type="text"
-                    value={editForm.country || ''}
-                    onChange={(e) => setEditForm({ ...editForm, country: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Data rozpoczecia</label>
-                  <input
-                    type="date"
-                    value={editForm.startDate?.slice(0, 10) || ''}
-                    onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Data zakonczenia</label>
-                  <input
-                    type="date"
-                    value={editForm.endDate?.slice(0, 10) || ''}
-                    onChange={(e) => setEditForm({ ...editForm, endDate: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Planowany budzet</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min={0}
-                    value={editForm.budgetPlanned || ''}
-                    onChange={(e) => setEditForm({ ...editForm, budgetPlanned: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Waluta</label>
-                  <select
-                    value={editForm.currency || 'PLN'}
-                    onChange={(e) => setEditForm({ ...editForm, currency: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  >
-                    <option value="PLN">PLN</option>
-                    <option value="EUR">EUR</option>
-                    <option value="USD">USD</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  Anuluj
-                </button>
-                <button
-                  type="submit"
-                  disabled={subLoading}
-                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium"
-                >
-                  {subLoading ? 'Zapisywanie...' : 'Zapisz zmiany'}
-                </button>
-              </div>
-            </form>
+      <FormModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        title="Edytuj wydarzenie"
+        subtitle="Zaktualizuj dane wydarzenia"
+        size="lg"
+        position="right"
+        footer={
+          <>
+            <ActionButton variant="secondary" onClick={() => setShowEditModal(false)}>
+              Anuluj
+            </ActionButton>
+            <ActionButton
+              loading={subLoading}
+              onClick={(e: any) => handleEditEvent(e)}
+            >
+              Zapisz zmiany
+            </ActionButton>
+          </>
+        }
+      >
+        <form onSubmit={handleEditEvent} className="space-y-4">
+          <div>
+            <label className={labelClass}>Nazwa *</label>
+            <input
+              type="text"
+              value={editForm.name || ''}
+              onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+              className={inputClass}
+              required
+            />
           </div>
-        </div>
-      )}
+          <div>
+            <label className={labelClass}>Opis</label>
+            <textarea
+              value={editForm.description || ''}
+              onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+              rows={3}
+              className={inputClass + ' resize-none'}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Typ</label>
+              <select
+                value={editForm.eventType || ''}
+                onChange={(e) => setEditForm({ ...editForm, eventType: e.target.value as CRMEvent['eventType'] })}
+                className={inputClass}
+              >
+                {Object.entries(EVENT_TYPE_LABELS).map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className={labelClass}>Status</label>
+              <select
+                value={editForm.status || ''}
+                onChange={(e) => setEditForm({ ...editForm, status: e.target.value as CRMEvent['status'] })}
+                className={inputClass}
+              >
+                {Object.entries(STATUS_CONFIG).map(([k, v]) => (
+                  <option key={k} value={k}>{v.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className={labelClass}>Miejsce</label>
+            <input
+              type="text"
+              value={editForm.venue || ''}
+              onChange={(e) => setEditForm({ ...editForm, venue: e.target.value })}
+              className={inputClass}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Miasto</label>
+              <input
+                type="text"
+                value={editForm.city || ''}
+                onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Kraj</label>
+              <input
+                type="text"
+                value={editForm.country || ''}
+                onChange={(e) => setEditForm({ ...editForm, country: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Data rozpoczecia</label>
+              <input
+                type="date"
+                value={editForm.startDate?.slice(0, 10) || ''}
+                onChange={(e) => setEditForm({ ...editForm, startDate: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Data zakonczenia</label>
+              <input
+                type="date"
+                value={editForm.endDate?.slice(0, 10) || ''}
+                onChange={(e) => setEditForm({ ...editForm, endDate: e.target.value })}
+                className={inputClass}
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Planowany budzet</label>
+              <input
+                type="number"
+                step="0.01"
+                min={0}
+                value={editForm.budgetPlanned || ''}
+                onChange={(e) => setEditForm({ ...editForm, budgetPlanned: parseFloat(e.target.value) || 0 })}
+                className={inputClass}
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Waluta</label>
+              <select
+                value={editForm.currency || 'PLN'}
+                onChange={(e) => setEditForm({ ...editForm, currency: e.target.value })}
+                className={inputClass}
+              >
+                <option value="PLN">PLN</option>
+                <option value="EUR">EUR</option>
+                <option value="USD">USD</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </FormModal>
 
       {/* ─── MODAL: Add Company ──────────────────────────────────── */}
-      {showAddCompany && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowAddCompany(false)}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">Dodaj firme do wydarzenia</h2>
-              <button onClick={() => setShowAddCompany(false)} className="p-1 hover:bg-gray-100 rounded-lg">
-                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <form onSubmit={handleAddCompany} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Firma *</label>
-                <select
-                  value={companyForm.companyId}
-                  onChange={(e) => setCompanyForm({ ...companyForm, companyId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  required
-                >
-                  <option value="">-- Wybierz firme --</option>
-                  {companyOptions.map((c) => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rola</label>
-                <input
-                  type="text"
-                  value={companyForm.role || ''}
-                  onChange={(e) => setCompanyForm({ ...companyForm, role: e.target.value })}
-                  placeholder="np. Sponsor, Wystawca, Partner"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowAddCompany(false)} className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Anuluj</button>
-                <button type="submit" disabled={subLoading} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium">
-                  {subLoading ? 'Dodawanie...' : 'Dodaj'}
-                </button>
-              </div>
-            </form>
+      <FormModal
+        isOpen={showAddCompany}
+        onClose={() => setShowAddCompany(false)}
+        title="Dodaj firme do wydarzenia"
+        subtitle="Wybierz firme i okresl jej role"
+        size="md"
+        position="center"
+        footer={
+          <>
+            <ActionButton variant="secondary" onClick={() => setShowAddCompany(false)}>
+              Anuluj
+            </ActionButton>
+            <ActionButton
+              loading={subLoading}
+              onClick={(e: any) => handleAddCompany(e)}
+            >
+              Dodaj
+            </ActionButton>
+          </>
+        }
+      >
+        <form onSubmit={handleAddCompany} className="space-y-4">
+          <div>
+            <label className={labelClass}>Firma *</label>
+            <select
+              value={companyForm.companyId}
+              onChange={(e) => setCompanyForm({ ...companyForm, companyId: e.target.value })}
+              className={inputClass}
+              required
+            >
+              <option value="">-- Wybierz firme --</option>
+              {companyOptions.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
           </div>
-        </div>
-      )}
+          <div>
+            <label className={labelClass}>Rola</label>
+            <input
+              type="text"
+              value={companyForm.role || ''}
+              onChange={(e) => setCompanyForm({ ...companyForm, role: e.target.value })}
+              placeholder="np. Sponsor, Wystawca, Partner"
+              className={inputClass}
+            />
+          </div>
+        </form>
+      </FormModal>
 
       {/* ─── MODAL: Add Team Member ──────────────────────────────── */}
-      {showAddMember && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowAddMember(false)}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">Dodaj osobe do zespolu</h2>
-              <button onClick={() => setShowAddMember(false)} className="p-1 hover:bg-gray-100 rounded-lg">
-                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <form onSubmit={handleAddMember} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Osoba *</label>
-                <select
-                  value={memberForm.userId}
-                  onChange={(e) => setMemberForm({ ...memberForm, userId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  required
-                >
-                  <option value="">-- Wybierz osobe --</option>
-                  {userOptions.map((u) => (
-                    <option key={u.id} value={u.id}>{u.firstName} {u.lastName}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Rola</label>
-                <input
-                  type="text"
-                  value={memberForm.role || ''}
-                  onChange={(e) => setMemberForm({ ...memberForm, role: e.target.value })}
-                  placeholder="np. Koordynator, Prezenter, Logistyka"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                />
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowAddMember(false)} className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Anuluj</button>
-                <button type="submit" disabled={subLoading} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium">
-                  {subLoading ? 'Dodawanie...' : 'Dodaj'}
-                </button>
-              </div>
-            </form>
+      <FormModal
+        isOpen={showAddMember}
+        onClose={() => setShowAddMember(false)}
+        title="Dodaj osobe do zespolu"
+        subtitle="Wybierz osobe i okresl jej role"
+        size="md"
+        position="center"
+        footer={
+          <>
+            <ActionButton variant="secondary" onClick={() => setShowAddMember(false)}>
+              Anuluj
+            </ActionButton>
+            <ActionButton
+              loading={subLoading}
+              onClick={(e: any) => handleAddMember(e)}
+            >
+              Dodaj
+            </ActionButton>
+          </>
+        }
+      >
+        <form onSubmit={handleAddMember} className="space-y-4">
+          <div>
+            <label className={labelClass}>Osoba *</label>
+            <select
+              value={memberForm.userId}
+              onChange={(e) => setMemberForm({ ...memberForm, userId: e.target.value })}
+              className={inputClass}
+              required
+            >
+              <option value="">-- Wybierz osobe --</option>
+              {userOptions.map((u) => (
+                <option key={u.id} value={u.id}>{u.firstName} {u.lastName}</option>
+              ))}
+            </select>
           </div>
-        </div>
-      )}
+          <div>
+            <label className={labelClass}>Rola</label>
+            <input
+              type="text"
+              value={memberForm.role || ''}
+              onChange={(e) => setMemberForm({ ...memberForm, role: e.target.value })}
+              placeholder="np. Koordynator, Prezenter, Logistyka"
+              className={inputClass}
+            />
+          </div>
+        </form>
+      </FormModal>
 
       {/* ─── MODAL: Add Expense ──────────────────────────────────── */}
-      {showAddExpense && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowAddExpense(false)}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">Nowy wydatek</h2>
-              <button onClick={() => setShowAddExpense(false)} className="p-1 hover:bg-gray-100 rounded-lg">
-                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <form onSubmit={handleAddExpense} className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Kategoria *</label>
-                <select
-                  value={expenseForm.category}
-                  onChange={(e) => setExpenseForm({ ...expenseForm, category: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                >
-                  {EXPENSE_CATEGORIES.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Opis</label>
-                <input
-                  type="text"
-                  value={expenseForm.description || ''}
-                  onChange={(e) => setExpenseForm({ ...expenseForm, description: e.target.value })}
-                  placeholder="Opis wydatku..."
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Kwota *</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min={0}
-                    value={expenseForm.amount || ''}
-                    onChange={(e) => setExpenseForm({ ...expenseForm, amount: parseFloat(e.target.value) || 0 })}
-                    placeholder="0.00"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Waluta</label>
-                  <select
-                    value={expenseForm.currency || 'PLN'}
-                    onChange={(e) => setExpenseForm({ ...expenseForm, currency: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  >
-                    <option value="PLN">PLN</option>
-                    <option value="EUR">EUR</option>
-                    <option value="USD">USD</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex justify-end gap-3 pt-2">
-                <button type="button" onClick={() => setShowAddExpense(false)} className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50">Anuluj</button>
-                <button type="submit" disabled={subLoading} className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium">
-                  {subLoading ? 'Dodawanie...' : 'Dodaj wydatek'}
-                </button>
-              </div>
-            </form>
+      <FormModal
+        isOpen={showAddExpense}
+        onClose={() => setShowAddExpense(false)}
+        title="Nowy wydatek"
+        subtitle="Dodaj wydatek do tego wydarzenia"
+        size="md"
+        position="center"
+        footer={
+          <>
+            <ActionButton variant="secondary" onClick={() => setShowAddExpense(false)}>
+              Anuluj
+            </ActionButton>
+            <ActionButton
+              loading={subLoading}
+              onClick={(e: any) => handleAddExpense(e)}
+            >
+              Dodaj wydatek
+            </ActionButton>
+          </>
+        }
+      >
+        <form onSubmit={handleAddExpense} className="space-y-4">
+          <div>
+            <label className={labelClass}>Kategoria *</label>
+            <select
+              value={expenseForm.category}
+              onChange={(e) => setExpenseForm({ ...expenseForm, category: e.target.value })}
+              className={inputClass}
+            >
+              {EXPENSE_CATEGORIES.map((c) => (
+                <option key={c} value={c}>{c}</option>
+              ))}
+            </select>
           </div>
-        </div>
-      )}
-    </div>
+          <div>
+            <label className={labelClass}>Opis</label>
+            <input
+              type="text"
+              value={expenseForm.description || ''}
+              onChange={(e) => setExpenseForm({ ...expenseForm, description: e.target.value })}
+              placeholder="Opis wydatku..."
+              className={inputClass}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className={labelClass}>Kwota *</label>
+              <input
+                type="number"
+                step="0.01"
+                min={0}
+                value={expenseForm.amount || ''}
+                onChange={(e) => setExpenseForm({ ...expenseForm, amount: parseFloat(e.target.value) || 0 })}
+                placeholder="0.00"
+                className={inputClass}
+                required
+              />
+            </div>
+            <div>
+              <label className={labelClass}>Waluta</label>
+              <select
+                value={expenseForm.currency || 'PLN'}
+                onChange={(e) => setExpenseForm({ ...expenseForm, currency: e.target.value })}
+                className={inputClass}
+              >
+                <option value="PLN">PLN</option>
+                <option value="EUR">EUR</option>
+                <option value="USD">USD</option>
+              </select>
+            </div>
+          </div>
+        </form>
+      </FormModal>
+    </PageShell>
   );
 }

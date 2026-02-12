@@ -6,22 +6,31 @@
  * Metodologia: SORTO Streams v3.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import {
-  PlusIcon,
-  FunnelIcon,
-  Squares2X2Icon,
-  ListBulletIcon,
-  ArrowPathIcon,
-  ChartBarIcon,
-  CogIcon
-} from '@heroicons/react/24/outline';
-// import { FiFolder } from 'react-icons/fi'; // Tymczasowo wyłączone
-import { FolderIcon as FiFolder } from '@heroicons/react/24/outline';
+  Plus,
+  RefreshCw,
+  LayoutGrid,
+  List,
+  Waves,
+  Folder,
+  Snowflake,
+  CheckCircle2,
+  ListTodo,
+  Activity,
+} from 'lucide-react';
 import { toast } from 'react-hot-toast';
-import Button from '../ui/Button';
-import LoadingSpinner from '../ui/LoadingSpinner';
+
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { FilterBar } from '@/components/ui/FilterBar';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ActionButton } from '@/components/ui/ActionButton';
+import { StatCard } from '@/components/ui/StatCard';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
+
 import GTDStreamCard from './GTDStreamCard';
 import GTDStreamForm from './GTDStreamForm';
 import GTDConfigModal from './GTDConfigModal';
@@ -62,6 +71,27 @@ interface GTDStats {
   unconfiguredStreams: number;
 }
 
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.06,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.3, ease: 'easeOut' },
+  },
+};
+
 const GTDStreamManager: React.FC = () => {
   const router = useRouter();
   const [streams, setStreams] = useState<GTDStream[]>([]);
@@ -71,7 +101,8 @@ const GTDStreamManager: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<GTDRole | 'all'>('all');
   const [selectedType, setSelectedType] = useState<StreamType | 'all'>('all');
   const [showOnlyGTD, setShowOnlyGTD] = useState(false);
-  
+  const [searchQuery, setSearchQuery] = useState('');
+
   // Modals
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -84,11 +115,11 @@ const GTDStreamManager: React.FC = () => {
   const fetchStreams = async () => {
     try {
       setLoading(true);
-      
+
       // Fetch GTD streams
       const response = await apiClient.get('/gtd-streams');
       const gtdStreams = response.data.data || [];
-      
+
       // Fetch regular streams if needed
       if (!showOnlyGTD) {
         try {
@@ -104,10 +135,10 @@ const GTDStreamManager: React.FC = () => {
       } else {
         setStreams(gtdStreams);
       }
-      
+
     } catch (error: any) {
       console.error('Error fetching streams:', error);
-      toast.error('Nie udało się pobrać streamów');
+      toast.error('Nie udalo sie pobrac strumieni');
     } finally {
       setLoading(false);
     }
@@ -128,27 +159,44 @@ const GTDStreamManager: React.FC = () => {
     fetchStats();
   }, [showOnlyGTD]);
 
+  // Computed stats from streams
+  const computedStats = useMemo(() => {
+    const active = streams.filter(s => s.status === 'ACTIVE').length;
+    const frozen = streams.filter(s => s.status === 'FROZEN' || s.status === 'SOMEDAY_MAYBE').length;
+    const completed = streams.filter(s => s.status === 'COMPLETED' || s.status === 'ARCHIVED').length;
+    const totalTasks = streams.reduce((sum, s) => sum + (s._count?.tasks || 0), 0);
+    return { active, frozen, completed, totalTasks };
+  }, [streams]);
+
   // Filter streams
-  const filteredStreams = streams.filter(stream => {
-    if (selectedRole !== 'all' && stream.gtdRole !== selectedRole) return false;
-    if (selectedType !== 'all' && stream.streamType !== selectedType) return false;
-    if (showOnlyGTD && !stream.gtdRole) return false;
-    return true;
-  });
+  const filteredStreams = useMemo(() => {
+    return streams.filter(stream => {
+      if (selectedRole !== 'all' && stream.gtdRole !== selectedRole) return false;
+      if (selectedType !== 'all' && stream.streamType !== selectedType) return false;
+      if (showOnlyGTD && !stream.gtdRole) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const nameMatch = stream.name.toLowerCase().includes(q);
+        const descMatch = stream.description?.toLowerCase().includes(q);
+        if (!nameMatch && !descMatch) return false;
+      }
+      return true;
+    });
+  }, [streams, selectedRole, selectedType, showOnlyGTD, searchQuery]);
 
   // Handle stream creation
   const handleCreateStream = async (streamData: any) => {
     try {
       await apiClient.post('/gtd-streams', streamData);
-      
-      toast.success('Stream został utworzony');
-      
+
+      toast.success('Strumien zostal utworzony');
+
       setShowCreateModal(false);
       fetchStreams();
       fetchStats();
     } catch (error: any) {
       console.error('Error creating stream:', error);
-      toast.error('Nie udało się utworzyć streama');
+      toast.error('Nie udalo sie utworzyc strumienia');
     }
   };
 
@@ -168,7 +216,7 @@ const GTDStreamManager: React.FC = () => {
         await apiClient.put(`/gtd-streams/${selectedStream.id}/role`, { gtdRole });
       }
 
-      toast.success('Stream został zaktualizowany');
+      toast.success('Strumien zostal zaktualizowany');
 
       setShowEditModal(false);
       setSelectedStream(null);
@@ -176,24 +224,24 @@ const GTDStreamManager: React.FC = () => {
       fetchStats();
     } catch (error: any) {
       console.error('Error updating stream:', error);
-      toast.error('Nie udało się zaktualizować streama');
+      toast.error('Nie udalo sie zaktualizowac strumienia');
     }
   };
 
   // Handle stream deletion
   const handleDeleteStream = async (streamId: string) => {
-    if (!confirm('Czy na pewno chcesz usunąć ten stream?')) return;
-    
+    if (!confirm('Czy na pewno chcesz usunac ten strumien?')) return;
+
     try {
       await apiClient.delete(`/streams/${streamId}`);
-      
-      toast.success('Stream został usunięty');
-      
+
+      toast.success('Strumien zostal usuniety');
+
       fetchStreams();
       fetchStats();
     } catch (error: any) {
       console.error('Error deleting stream:', error);
-      toast.error('Nie udało się usunąć streama');
+      toast.error('Nie udalo sie usunac strumienia');
     }
   };
 
@@ -201,14 +249,14 @@ const GTDStreamManager: React.FC = () => {
   const handleUpdateConfig = async (streamId: string, config: any) => {
     try {
       await apiClient.put(`/gtd-streams/${streamId}/config`, { config });
-      
-      toast.success('Konfiguracja została zaktualizowana');
-      
+
+      toast.success('Konfiguracja zostala zaktualizowana');
+
       setShowConfigModal(false);
       fetchStreams();
     } catch (error: any) {
       console.error('Error updating config:', error);
-      toast.error('Nie udało się zaktualizować konfiguracji');
+      toast.error('Nie udalo sie zaktualizowac konfiguracji');
     }
   };
 
@@ -216,24 +264,20 @@ const GTDStreamManager: React.FC = () => {
   const handleMigrate = async (streamId: string, gtdRole: GTDRole, streamType: StreamType) => {
     try {
       await apiClient.post(`/gtd-streams/${streamId}/migrate`, { gtdRole, streamType });
-      
-      toast.success('Stream został zmigrowany');
-      
+
+      toast.success('Strumien zostal zmigrowany');
+
       setShowMigrationModal(false);
       fetchStreams();
       fetchStats();
     } catch (error: any) {
       console.error('Error migrating stream:', error);
-      toast.error('Nie udało się zmigrować streama');
+      toast.error('Nie udalo sie zmigrowac strumienia');
     }
   };
 
   // Handle stream open
   const handleOpenStream = (streamId: string) => {
-    console.log('Opening stream:', streamId);
-    console.log('Target URL:', `/crm/dashboard/streams/${streamId}`);
-
-    // Bezpośrednio używaj router.push jak w CompanyItem
     router.push(`/crm/dashboard/streams/${streamId}`);
   };
 
@@ -241,12 +285,12 @@ const GTDStreamManager: React.FC = () => {
   const handleFreezeStream = async (streamId: string) => {
     try {
       await apiClient.post(`/gtd-streams/${streamId}/freeze`);
-      toast.success('Strumień został zamrożony');
+      toast.success('Strumien zostal zamrozony');
       fetchStreams();
       fetchStats();
     } catch (error: any) {
       console.error('Error freezing stream:', error);
-      toast.error('Nie udało się zamrozić strumienia');
+      toast.error('Nie udalo sie zamrozic strumienia');
     }
   };
 
@@ -254,205 +298,241 @@ const GTDStreamManager: React.FC = () => {
   const handleUnfreezeStream = async (streamId: string) => {
     try {
       await apiClient.put(`/streams/${streamId}`, { status: 'ACTIVE' });
-      toast.success('Strumień został odmrożony');
+      toast.success('Strumien zostal odmrozony');
       fetchStreams();
       fetchStats();
     } catch (error: any) {
       console.error('Error unfreezing stream:', error);
-      toast.error('Nie udało się odmrozić strumienia');
+      toast.error('Nie udalo sie odmrozic strumienia');
     }
   };
 
+  // Handle filter change
+  const handleFilterChange = (key: string, value: string) => {
+    if (key === 'role') {
+      setSelectedRole(value as GTDRole | 'all');
+    } else if (key === 'type') {
+      setSelectedType(value as StreamType | 'all');
+    } else if (key === 'configured') {
+      setShowOnlyGTD(value === 'configured');
+    }
+  };
+
+  // Loading state
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <LoadingSpinner size="lg" />
-      </div>
+      <PageShell>
+        <SkeletonPage />
+      </PageShell>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <PageShell>
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">STRUMIENIE</h1>
-          <p className="text-gray-600 mt-1">
-            Zarządzaj swoimi strumieniami pracy
-          </p>
-        </div>
-        
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => window.location.href = '/dashboard/gtd-streams/scrum'}
-            className="px-4 py-2 text-sm border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center"
-          >
-            <Squares2X2Icon className="w-4 h-4 mr-2" />
-            Scrum Board
-          </button>
-          
-          <Button
-            variant="outline"
-            onClick={() => {
-              fetchStreams();
-              fetchStats();
-            }}
-          >
-            <ArrowPathIcon className="w-4 h-4 mr-2" />
-            Odśwież
-          </Button>
-          
-          <Button
-            variant="default"
-            onClick={() => setShowCreateModal(true)}
-          >
-            <PlusIcon className="w-4 h-4 mr-2" />
-            Nowy strumień
-          </Button>
-        </div>
-      </div>
+      <PageHeader
+        title="Strumienie"
+        subtitle="Zarzadzaj strumieniami pracy i produktywnosci"
+        icon={Waves}
+        iconColor="text-violet-600"
+        breadcrumbs={[{ label: 'Strumienie' }]}
+        actions={
+          <div className="flex items-center gap-2">
+            <ActionButton
+              variant="secondary"
+              icon={RefreshCw}
+              onClick={() => {
+                fetchStreams();
+                fetchStats();
+              }}
+            >
+              Odswiez
+            </ActionButton>
+            <ActionButton
+              variant="primary"
+              icon={Plus}
+              onClick={() => setShowCreateModal(true)}
+            >
+              Nowy strumien
+            </ActionButton>
+          </div>
+        }
+      />
 
       {/* Statistics */}
-      {stats && (
-        <div className="grid grid-cols-5 gap-4">
-          <div className="bg-white rounded-lg p-4 border">
-            <div className="text-3xl font-bold text-gray-900">{stats.totalStreams}</div>
-            <div className="text-sm text-gray-600">Wszystkie strumienie</div>
-          </div>
-          <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-            <div className="text-3xl font-bold text-blue-600">{stats.configuredStreams}</div>
-            <div className="text-sm text-blue-600">Płynące</div>
-          </div>
-          <div className="bg-cyan-50 rounded-lg p-4 border border-cyan-200">
-            <div className="text-3xl font-bold text-cyan-600">{stats.unconfiguredStreams}</div>
-            <div className="text-sm text-cyan-600">Zamrożone</div>
-          </div>
-          <div className="bg-green-50 rounded-lg p-4 border border-green-200">
-            <div className="text-3xl font-bold text-green-600">
-              {stats.streamsByRole['PROJECTS'] || 0}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6"
+      >
+        <StatCard
+          label="Aktywne"
+          value={computedStats.active}
+          icon={Activity}
+          iconColor="text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400"
+        />
+        <StatCard
+          label="Zamrozone"
+          value={computedStats.frozen}
+          icon={Snowflake}
+          iconColor="text-sky-600 bg-sky-50 dark:bg-sky-900/30 dark:text-sky-400"
+        />
+        <StatCard
+          label="Zakonczone"
+          value={computedStats.completed}
+          icon={CheckCircle2}
+          iconColor="text-violet-600 bg-violet-50 dark:bg-violet-900/30 dark:text-violet-400"
+        />
+        <StatCard
+          label="Zadania lacznie"
+          value={computedStats.totalTasks}
+          icon={ListTodo}
+          iconColor="text-amber-600 bg-amber-50 dark:bg-amber-900/30 dark:text-amber-400"
+        />
+      </motion.div>
+
+      {/* Filter Bar */}
+      <div className="mb-6">
+        <FilterBar
+          search={searchQuery}
+          onSearchChange={setSearchQuery}
+          searchPlaceholder="Szukaj strumieni..."
+          filters={[
+            {
+              key: 'role',
+              label: 'Wszystkie role',
+              options: [
+                { value: 'INBOX', label: 'Zrodlo' },
+                { value: 'PROJECTS', label: 'Projektowe' },
+                { value: 'AREAS', label: 'Ciagle' },
+                { value: 'REFERENCE', label: 'Referencyjne' },
+                { value: 'SOMEDAY_MAYBE', label: 'Zamrozone' },
+                { value: 'NEXT_ACTIONS', label: 'Zadania' },
+                { value: 'WAITING_FOR', label: 'Oczekujace' },
+                { value: 'CUSTOM', label: 'Wlasne' },
+              ],
+            },
+            {
+              key: 'type',
+              label: 'Wszystkie kategorie',
+              options: [
+                { value: 'WORKSPACE', label: 'Glowne' },
+                { value: 'PROJECT', label: 'Projekty' },
+                { value: 'AREA', label: 'Obszary' },
+                { value: 'CONTEXT', label: 'Konteksty' },
+                { value: 'CUSTOM', label: 'Wlasne' },
+              ],
+            },
+            {
+              key: 'configured',
+              label: 'Wszystkie',
+              options: [
+                { value: 'configured', label: 'Tylko skonfigurowane' },
+              ],
+            },
+          ]}
+          filterValues={{
+            role: selectedRole,
+            type: selectedType,
+            configured: showOnlyGTD ? 'configured' : 'all',
+          }}
+          onFilterChange={handleFilterChange}
+          actions={
+            <div className="flex items-center gap-1 ml-auto">
+              <button
+                className={`p-2 rounded-lg transition-colors ${
+                  viewMode === 'grid'
+                    ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-100'
+                    : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300'
+                }`}
+                onClick={() => setViewMode('grid')}
+                title="Widok siatki"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                className={`p-2 rounded-lg transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-slate-100'
+                    : 'text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300'
+                }`}
+                onClick={() => setViewMode('list')}
+                title="Widok listy"
+              >
+                <List className="w-4 h-4" />
+              </button>
             </div>
-            <div className="text-sm text-green-600">Projektowe</div>
-          </div>
-          <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
-            <div className="text-3xl font-bold text-purple-600">
-              {stats.streamsByRole['INBOX'] || 0}
-            </div>
-            <div className="text-sm text-purple-600">Źródło</div>
-          </div>
-        </div>
-      )}
-
-      {/* Filters and View Controls */}
-      <div className="bg-white rounded-lg p-4 border flex justify-between items-center">
-        <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <FunnelIcon className="w-4 h-4 text-gray-500" />
-            <span className="text-sm text-gray-600">Filtry:</span>
-          </div>
-
-          <select
-            className="text-sm border rounded-md px-3 py-1"
-            value={selectedRole}
-            onChange={(e) => setSelectedRole(e.target.value as GTDRole | 'all')}
-          >
-            <option value="all">Wszystkie typy</option>
-            <option value="INBOX">Źródło</option>
-            <option value="PROJECTS">Projektowe</option>
-            <option value="AREAS">Ciągłe</option>
-            <option value="REFERENCE">Referencyjne</option>
-            <option value="SOMEDAY_MAYBE">Zamrożone</option>
-            <option value="NEXT_ACTIONS">Zadania</option>
-            <option value="WAITING_FOR">Oczekujące</option>
-            <option value="CUSTOM">Własne</option>
-          </select>
-
-          <select
-            className="text-sm border rounded-md px-3 py-1"
-            value={selectedType}
-            onChange={(e) => setSelectedType(e.target.value as StreamType | 'all')}
-          >
-            <option value="all">Wszystkie kategorie</option>
-            <option value="WORKSPACE">Główne</option>
-            <option value="PROJECT">Projekty</option>
-            <option value="AREA">Obszary</option>
-            <option value="CONTEXT">Konteksty</option>
-            <option value="CUSTOM">Własne</option>
-          </select>
-
-          <label className="flex items-center space-x-2">
-            <input
-              type="checkbox"
-              checked={showOnlyGTD}
-              onChange={(e) => setShowOnlyGTD(e.target.checked)}
-              className="rounded"
-            />
-            <span className="text-sm text-gray-600">Tylko skonfigurowane</span>
-          </label>
-        </div>
-        
-        <div className="flex items-center space-x-2">
-          <button
-            className={`p-2 rounded ${viewMode === 'grid' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
-            onClick={() => setViewMode('grid')}
-          >
-            <Squares2X2Icon className="w-4 h-4" />
-          </button>
-          <button
-            className={`p-2 rounded ${viewMode === 'list' ? 'bg-gray-200' : 'hover:bg-gray-100'}`}
-            onClick={() => setViewMode('list')}
-          >
-            <ListBulletIcon className="w-4 h-4" />
-          </button>
-        </div>
+          }
+        />
       </div>
 
       {/* Streams Grid/List */}
-      <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-4'}>
-        {filteredStreams.map(stream => (
-          <GTDStreamCard
-            key={stream.id}
-            stream={stream}
-            onEdit={(id) => {
-              setSelectedStream(stream);
-              setShowEditModal(true);
-            }}
-            onDelete={handleDeleteStream}
-            onOpenConfig={(id) => {
-              setSelectedStream(stream);
-              setShowConfigModal(true);
-            }}
-            onViewHierarchy={(id) => {
-              console.log('Opening hierarchy modal for stream:', stream.name, 'ID:', stream.id);
-              setSelectedStream(stream);
-              setShowHierarchyModal(true);
-              console.log('Modal state set to true, selectedStream:', stream);
-            }}
-            onMigrate={(id) => {
-              setSelectedStream(stream);
-              setShowMigrationModal(true);
-            }}
-            onOpen={handleOpenStream}
-            onFreeze={handleFreezeStream}
-            onUnfreeze={handleUnfreezeStream}
-          />
-        ))}
-      </div>
-
-      {/* Empty state */}
-      {filteredStreams.length === 0 && (
-        <div className="text-center py-12 bg-gray-50 rounded-lg">
-          <FiFolder className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            Brak strumieni do wyświetlenia
-          </h3>
-          <p className="text-gray-600 mb-4">
-            {showOnlyGTD ? 'Nie masz jeszcze skonfigurowanych strumieni.' : 'Zmień filtry lub utwórz nowy strumień.'}
-          </p>
-          <Button onClick={() => setShowCreateModal(true)}>
-            <PlusIcon className="w-4 h-4 mr-2" />
-            Utwórz pierwszy strumień
-          </Button>
-        </div>
+      {filteredStreams.length > 0 ? (
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className={
+            viewMode === 'grid'
+              ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'
+              : 'space-y-4'
+          }
+        >
+          {filteredStreams.map(stream => (
+            <motion.div
+              key={stream.id}
+              variants={itemVariants}
+              className="cursor-pointer"
+              onClick={() => handleOpenStream(stream.id)}
+            >
+              <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-sm dark:bg-slate-800/80 dark:border-slate-700/30 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-300">
+                <GTDStreamCard
+                  stream={stream}
+                  onEdit={(id) => {
+                    setSelectedStream(stream);
+                    setShowEditModal(true);
+                  }}
+                  onDelete={handleDeleteStream}
+                  onOpenConfig={(id) => {
+                    setSelectedStream(stream);
+                    setShowConfigModal(true);
+                  }}
+                  onViewHierarchy={(id) => {
+                    setSelectedStream(stream);
+                    setShowHierarchyModal(true);
+                  }}
+                  onMigrate={(id) => {
+                    setSelectedStream(stream);
+                    setShowMigrationModal(true);
+                  }}
+                  onOpen={handleOpenStream}
+                  onFreeze={handleFreezeStream}
+                  onUnfreeze={handleUnfreezeStream}
+                />
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      ) : (
+        <EmptyState
+          icon={Folder}
+          title="Brak strumieni do wyswietlenia"
+          description={
+            showOnlyGTD
+              ? 'Nie masz jeszcze skonfigurowanych strumieni.'
+              : 'Zmien filtry lub utworz nowy strumien.'
+          }
+          action={
+            <ActionButton
+              variant="primary"
+              icon={Plus}
+              onClick={() => setShowCreateModal(true)}
+            >
+              Utworz pierwszy strumien
+            </ActionButton>
+          }
+        />
       )}
 
       {/* Modals */}
@@ -475,7 +555,7 @@ const GTDStreamManager: React.FC = () => {
           onSubmit={handleUpdateStream}
         />
       )}
-      
+
       {showConfigModal && selectedStream && (
         <GTDConfigModal
           stream={selectedStream}
@@ -486,22 +566,18 @@ const GTDStreamManager: React.FC = () => {
           onSave={(config) => handleUpdateConfig(selectedStream.id, config)}
         />
       )}
-      
+
       {showHierarchyModal && selectedStream && (
-        <>
-          {console.log('Rendering hierarchy modal for:', selectedStream.name)}
-          <StreamHierarchyModal
-            isOpen={true}
-            stream={selectedStream as any}
-            onClose={() => {
-              console.log('Closing hierarchy modal');
-              setShowHierarchyModal(false);
-              setSelectedStream(null);
-            }}
-          />
-        </>
+        <StreamHierarchyModal
+          isOpen={true}
+          stream={selectedStream as any}
+          onClose={() => {
+            setShowHierarchyModal(false);
+            setSelectedStream(null);
+          }}
+        />
       )}
-      
+
       {showMigrationModal && selectedStream && (
         <GTDMigrationModal
           stream={selectedStream}
@@ -512,7 +588,7 @@ const GTDStreamManager: React.FC = () => {
           onMigrate={handleMigrate}
         />
       )}
-    </div>
+    </PageShell>
   );
 };
 

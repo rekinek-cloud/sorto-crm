@@ -3,13 +3,13 @@
 import React from 'react';
 import { UserWithHierarchy, userHierarchyApi } from '@/lib/api/userHierarchy';
 import {
-  UserIcon,
-  EnvelopeIcon,
-  ShieldCheckIcon,
-  UserGroupIcon,
-  CalendarIcon,
-  ShareIcon
-} from '@heroicons/react/24/outline';
+  User,
+  Mail,
+  ShieldCheck,
+  Users,
+  Calendar,
+  Share2
+} from 'lucide-react';
 
 interface UserCardProps {
   user: UserWithHierarchy;
@@ -75,7 +75,7 @@ export default function UserCard({
               {userHierarchyApi.formatUserName(user)}
             </h3>
             <div className="flex items-center gap-2 mt-1">
-              <EnvelopeIcon className="h-4 w-4 text-gray-400" />
+              <Mail className="h-4 w-4 text-gray-400" />
               <p className="text-sm text-gray-600">{user.email}</p>
             </div>
           </div>
@@ -98,7 +98,7 @@ export default function UserCard({
       {/* Hierarchy Stats */}
       <div className="grid grid-cols-2 gap-4 mb-4">
         <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg">
-          <UserGroupIcon className="h-5 w-5 text-blue-600" />
+          <Users className="h-5 w-5 text-blue-600" />
           <div>
             <p className="text-sm font-medium text-blue-900">Zarządza</p>
             <p className="text-lg font-semibold text-blue-600">{managedCount}</p>
@@ -106,7 +106,7 @@ export default function UserCard({
         </div>
         
         <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg">
-          <ShieldCheckIcon className="h-5 w-5 text-green-600" />
+          <ShieldCheck className="h-5 w-5 text-green-600" />
           <div>
             <p className="text-sm font-medium text-green-900">Raportuje</p>
             <p className="text-lg font-semibold text-green-600">{reportsToCount}</p>
@@ -145,7 +145,7 @@ export default function UserCard({
       {/* Last Login */}
       {user.lastLoginAt && (
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-          <CalendarIcon className="h-4 w-4" />
+          <Calendar className="h-4 w-4" />
           <span>Ostatnie logowanie: {new Date(user.lastLoginAt).toLocaleDateString()}</span>
         </div>
       )}
@@ -157,7 +157,7 @@ export default function UserCard({
             onClick={() => onViewHierarchy?.(user)}
             className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-indigo-600 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-colors"
           >
-            <ShareIcon className="h-4 w-4" />
+            <Share2 className="h-4 w-4" />
             Zobacz hierarchię
           </button>
         )}
@@ -166,7 +166,7 @@ export default function UserCard({
           onClick={() => onEditUser?.(user)}
           className="flex-1 flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
         >
-          <UserIcon className="h-4 w-4" />
+          <User className="h-4 w-4" />
           Edytuj
         </button>
       </div>

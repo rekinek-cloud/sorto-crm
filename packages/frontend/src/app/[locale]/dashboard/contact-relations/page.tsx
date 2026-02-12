@@ -1,22 +1,51 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  Users,
+  Plus,
+  Trash2,
+  AlertTriangle,
+  Link2,
+  Heart,
+  Zap,
+  ArrowRight,
+  ArrowLeftRight,
+  ChevronDown,
+  RefreshCw,
+  UserPlus,
+  StickyNote,
+  MapPin,
+} from 'lucide-react';
 import apiClient from '@/lib/api/client';
 import { contactRelationsApi, CreateContactRelationRequest } from '@/lib/api/contactRelations';
 import { ContactRelation } from '@/types/gtd';
 
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { FilterBar } from '@/components/ui/FilterBar';
+import { StatCard } from '@/components/ui/StatCard';
+import { StatusBadge } from '@/components/ui/StatusBadge';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { ActionButton } from '@/components/ui/ActionButton';
+import { FormModal } from '@/components/ui/FormModal';
+import { SkeletonPage } from '@/components/ui/SkeletonLoader';
+
 // ─── Relation type config ────────────────────────────────────────────
-const RELATION_TYPES: Record<string, { label: string; color: string }> = {
-  REPORTS_TO:       { label: 'Podlega',            color: 'bg-purple-100 text-purple-700' },
-  WORKS_WITH:       { label: 'Wspolpracuje',       color: 'bg-blue-100 text-blue-700' },
-  KNOWS:            { label: 'Zna',                 color: 'bg-gray-100 text-gray-700' },
-  REFERRED_BY:      { label: 'Polecony przez',      color: 'bg-teal-100 text-teal-700' },
-  FAMILY:           { label: 'Rodzina',             color: 'bg-pink-100 text-pink-700' },
-  TECHNICAL:        { label: 'Kontakt techniczny',  color: 'bg-indigo-100 text-indigo-700' },
-  FORMER_COLLEAGUE: { label: 'Byly wspolpracownik', color: 'bg-yellow-100 text-yellow-700' },
-  MENTOR:           { label: 'Mentor',              color: 'bg-amber-100 text-amber-700' },
-  PARTNER:          { label: 'Partner',             color: 'bg-green-100 text-green-700' },
+type BadgeVariant = 'default' | 'success' | 'warning' | 'error' | 'info' | 'neutral';
+
+const RELATION_TYPES: Record<string, { label: string; variant: BadgeVariant }> = {
+  REPORTS_TO:       { label: 'Podlega',            variant: 'info' },
+  WORKS_WITH:       { label: 'Wspolpracuje',       variant: 'default' },
+  KNOWS:            { label: 'Zna',                 variant: 'neutral' },
+  REFERRED_BY:      { label: 'Polecony przez',      variant: 'success' },
+  FAMILY:           { label: 'Rodzina',             variant: 'error' },
+  TECHNICAL:        { label: 'Kontakt techniczny',  variant: 'info' },
+  FORMER_COLLEAGUE: { label: 'Byly wspolpracownik', variant: 'warning' },
+  MENTOR:           { label: 'Mentor',              variant: 'warning' },
+  PARTNER:          { label: 'Partner',             variant: 'success' },
 };
 
 interface ContactOption {
@@ -35,13 +64,24 @@ function contactName(c?: { firstName: string; lastName: string } | null): string
 
 function strengthBar(strength: number) {
   const pct = Math.min(100, Math.max(0, strength));
-  let color = 'bg-gray-300';
-  if (pct >= 80) color = 'bg-green-500';
-  else if (pct >= 50) color = 'bg-blue-500';
-  else if (pct >= 25) color = 'bg-yellow-500';
-  else color = 'bg-red-400';
+  let color = 'bg-slate-300 dark:bg-slate-600';
+  if (pct >= 80) color = 'bg-emerald-500 dark:bg-emerald-400';
+  else if (pct >= 50) color = 'bg-blue-500 dark:bg-blue-400';
+  else if (pct >= 25) color = 'bg-amber-500 dark:bg-amber-400';
+  else color = 'bg-red-400 dark:bg-red-500';
   return { pct, color };
 }
+
+// ─── Animation variants ─────────────────────────────────────────────
+const cardVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.97 },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.35, ease: 'easeOut' } },
+};
+
+const gridVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.07 } },
+};
 
 // ─── Page ────────────────────────────────────────────────────────────
 export default function ContactRelationsPage() {
@@ -51,6 +91,13 @@ export default function ContactRelationsPage() {
   const [loading, setLoading] = useState(false);
   const [contactsLoading, setContactsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Filters
+  const [search, setSearch] = useState('');
+  const [typeFilter, setTypeFilter] = useState('all');
+
+  // Delete confirmation
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   // Form state
   const [showForm, setShowForm] = useState(false);
@@ -105,6 +152,24 @@ export default function ContactRelationsPage() {
     }
   }, [selectedContactId, loadRelations]);
 
+  // ─── Filtered relations ───────────────────────────────────────────
+  const filteredRelations = useMemo(() => {
+    let result = relations;
+    if (typeFilter && typeFilter !== 'all') {
+      result = result.filter((r) => r.relationType === typeFilter);
+    }
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((r) => {
+        const isFrom = r.fromContactId === selectedContactId;
+        const other = isFrom ? r.toContact : r.fromContact;
+        const name = contactName(other).toLowerCase();
+        return name.includes(q) || r.notes?.toLowerCase().includes(q);
+      });
+    }
+    return result;
+  }, [relations, typeFilter, search, selectedContactId]);
+
   // ─── Create relation ──────────────────────────────────────────────
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,10 +205,10 @@ export default function ContactRelationsPage() {
 
   // ─── Delete relation ──────────────────────────────────────────────
   const handleDelete = async (id: string) => {
-    if (!confirm('Czy na pewno chcesz usunac te relacje?')) return;
     try {
       await contactRelationsApi.deleteContactRelation(id);
       toast.success('Relacja usunieta');
+      setDeleteId(null);
       loadRelations(selectedContactId);
     } catch {
       toast.error('Nie udalo sie usunac relacji');
@@ -155,297 +220,436 @@ export default function ContactRelationsPage() {
 
   // ─── Render ───────────────────────────────────────────────────────
   return (
-    <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Relacje kontaktow</h1>
-          <p className="text-sm text-gray-500 mt-1">Mapuj powiazania i sile relacji miedzy kontaktami</p>
-        </div>
-        {selectedContactId && (
-          <button
-            onClick={() => setShowForm(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-          >
-            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
-            Dodaj relacje
-          </button>
-        )}
-      </div>
+    <PageShell>
+      <div className="max-w-7xl mx-auto">
+        <PageHeader
+          title="Relacje kontaktow"
+          subtitle="Mapuj powiazania i sile relacji miedzy kontaktami"
+          icon={Users}
+          iconColor="text-indigo-600"
+          breadcrumbs={[
+            { label: 'Panel', href: '/dashboard' },
+            { label: 'Relacje kontaktow' },
+          ]}
+          actions={
+            selectedContactId ? (
+              <ActionButton icon={Plus} onClick={() => setShowForm(true)}>
+                Dodaj relacje
+              </ActionButton>
+            ) : undefined
+          }
+        />
 
-      {/* Contact selector */}
-      <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-700 mb-1">Wybierz kontakt</label>
-        {contactsLoading ? (
-          <div className="h-10 bg-gray-100 rounded-lg animate-pulse" />
-        ) : (
-          <select
-            value={selectedContactId}
-            onChange={(e) => setSelectedContactId(e.target.value)}
-            className="w-full max-w-md px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-          >
-            <option value="">-- Wybierz kontakt --</option>
-            {contacts.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.firstName} {c.lastName} {c.email ? `(${c.email})` : ''}
-              </option>
-            ))}
-          </select>
-        )}
-      </div>
-
-      {/* No contact selected */}
-      {!selectedContactId && !contactsLoading && (
-        <div className="text-center py-16 bg-white rounded-xl border border-gray-200">
-          <svg className="mx-auto h-12 w-12 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128H9m6 0a5.97 5.97 0 01-.786-3.07M9 19.128v-.003c0-1.113.285-2.16.786-3.07m0 0a5.97 5.97 0 019.428 0M9.786 16.058A5.965 5.965 0 0112 15c1.042 0 2.022.266 2.876.734" /></svg>
-          <p className="mt-3 text-gray-500">Wybierz kontakt, aby zobaczyc jego relacje</p>
-        </div>
-      )}
-
-      {/* Loading */}
-      {loading && (
-        <div className="flex items-center justify-center py-16">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-          <span className="ml-3 text-gray-500">Ladowanie...</span>
-        </div>
-      )}
-
-      {/* Error */}
-      {error && !loading && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-700 text-sm">
-          {error}
-          <button onClick={() => loadRelations(selectedContactId)} className="ml-3 underline">
-            Sprobuj ponownie
-          </button>
-        </div>
-      )}
-
-      {/* Relations list */}
-      {!loading && !error && selectedContactId && (
-        <>
-          {/* Summary */}
-          {relations.length > 0 && (
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-              <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <div className="text-2xl font-bold text-gray-900">{relations.length}</div>
-                <div className="text-xs text-gray-500">Relacje razem</div>
-              </div>
-              <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <div className="text-2xl font-bold text-blue-600">
-                  {relations.length > 0
-                    ? Math.round(relations.reduce((s, r) => s + (r.strength || 0), 0) / relations.length)
-                    : 0}
-                </div>
-                <div className="text-xs text-gray-500">Srednia sila relacji</div>
-              </div>
-              <div className="bg-white rounded-xl border border-gray-200 p-4">
-                <div className="text-2xl font-bold text-green-600">
-                  {relations.filter((r) => (r.strength || 0) >= 70).length}
-                </div>
-                <div className="text-xs text-gray-500">Silne relacje (70+)</div>
-              </div>
+        {/* Contact selector */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="mb-6"
+        >
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+            Wybierz kontakt
+          </label>
+          {contactsLoading ? (
+            <div className="h-10 bg-slate-100 dark:bg-slate-800 rounded-xl animate-pulse max-w-md" />
+          ) : (
+            <div className="relative max-w-md">
+              <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <select
+                value={selectedContactId}
+                onChange={(e) => setSelectedContactId(e.target.value)}
+                className="w-full pl-10 pr-10 py-2.5 bg-white/80 dark:bg-slate-800/80 backdrop-blur-xl border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-slate-900 dark:text-slate-100 appearance-none transition-colors"
+              >
+                <option value="">-- Wybierz kontakt --</option>
+                {contacts.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.firstName} {c.lastName} {c.email ? `(${c.email})` : ''}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
             </div>
           )}
+        </motion.div>
 
-          {relations.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
-              <p className="text-gray-500">
-                {selectedContact
-                  ? `${contactName(selectedContact)} nie ma jeszcze zadnych relacji`
-                  : 'Brak relacji dla tego kontaktu'}
-              </p>
-              <button
-                onClick={() => setShowForm(true)}
-                className="mt-3 text-blue-600 hover:text-blue-700 text-sm font-medium"
-              >
-                Dodaj pierwsza relacje
-              </button>
+        {/* No contact selected */}
+        {!selectedContactId && !contactsLoading && (
+          <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+            <EmptyState
+              icon={Users}
+              title="Wybierz kontakt"
+              description="Wybierz kontakt, aby zobaczyc jego relacje"
+            />
+          </div>
+        )}
+
+        {/* Loading */}
+        {loading && (
+          <SkeletonPage />
+        )}
+
+        {/* Error */}
+        {error && !loading && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-2xl p-4 text-red-700 dark:text-red-400 text-sm flex items-center justify-between"
+          >
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              {error}
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {relations.map((r) => {
-                const tc = RELATION_TYPES[r.relationType] || RELATION_TYPES.KNOWS;
-                const sb = strengthBar(r.strength || 0);
-                // Determine which side is "the other" contact
-                const isFrom = r.fromContactId === selectedContactId;
-                const otherContact = isFrom ? r.toContact : r.fromContact;
-                const direction = isFrom ? 'do' : 'od';
+            <ActionButton
+              variant="ghost"
+              size="sm"
+              icon={RefreshCw}
+              onClick={() => loadRelations(selectedContactId)}
+            >
+              Sprobuj ponownie
+            </ActionButton>
+          </motion.div>
+        )}
 
-                return (
-                  <div key={r.id} className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        {/* Contact name & direction */}
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className="h-8 w-8 rounded-full bg-gray-100 flex items-center justify-center text-sm font-medium text-gray-600 shrink-0">
-                            {otherContact?.firstName?.[0] || '?'}{otherContact?.lastName?.[0] || ''}
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-gray-900 text-sm">{contactName(otherContact)}</h3>
-                            <span className="text-xs text-gray-400">Relacja {direction}</span>
-                          </div>
-                        </div>
+        {/* Relations list */}
+        {!loading && !error && selectedContactId && (
+          <div className="space-y-5">
+            {/* Summary */}
+            {relations.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="grid grid-cols-2 md:grid-cols-3 gap-4"
+              >
+                <StatCard
+                  label="Relacje razem"
+                  value={relations.length}
+                  icon={Link2}
+                  iconColor="text-indigo-600 bg-indigo-50 dark:bg-indigo-900/30 dark:text-indigo-400"
+                />
+                <StatCard
+                  label="Srednia sila relacji"
+                  value={
+                    relations.length > 0
+                      ? Math.round(
+                          relations.reduce((s, r) => s + (r.strength || 0), 0) / relations.length
+                        )
+                      : 0
+                  }
+                  icon={Zap}
+                  iconColor="text-blue-600 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400"
+                />
+                <StatCard
+                  label="Silne relacje (70+)"
+                  value={relations.filter((r) => (r.strength || 0) >= 70).length}
+                  icon={Heart}
+                  iconColor="text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30 dark:text-emerald-400"
+                />
+              </motion.div>
+            )}
 
-                        {/* Type badge */}
-                        <div className="flex items-center gap-2 mt-2">
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${tc.color}`}>
-                            {tc.label}
-                          </span>
-                          {r.isBidirectional && (
-                            <span className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded">
-                              Dwustronna
-                            </span>
+            {/* Filter bar (only when there are relations) */}
+            {relations.length > 0 && (
+              <FilterBar
+                search={search}
+                onSearchChange={setSearch}
+                searchPlaceholder="Szukaj po nazwie kontaktu..."
+                filters={[
+                  {
+                    key: 'type',
+                    label: 'Wszystkie typy',
+                    options: Object.entries(RELATION_TYPES).map(([k, v]) => ({
+                      value: k,
+                      label: v.label,
+                    })),
+                  },
+                ]}
+                filterValues={{ type: typeFilter }}
+                onFilterChange={(key, value) => {
+                  if (key === 'type') setTypeFilter(value);
+                }}
+              />
+            )}
+
+            {relations.length === 0 ? (
+              <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+                <EmptyState
+                  icon={UserPlus}
+                  title="Brak relacji"
+                  description={
+                    selectedContact
+                      ? `${contactName(selectedContact)} nie ma jeszcze zadnych relacji`
+                      : 'Brak relacji dla tego kontaktu'
+                  }
+                  action={
+                    <ActionButton icon={Plus} onClick={() => setShowForm(true)} size="sm">
+                      Dodaj pierwsza relacje
+                    </ActionButton>
+                  }
+                />
+              </div>
+            ) : filteredRelations.length === 0 ? (
+              <div className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm">
+                <EmptyState
+                  icon={Users}
+                  title="Brak wynikow"
+                  description="Zmien filtry aby zobaczyc relacje"
+                />
+              </div>
+            ) : (
+              <motion.div
+                variants={gridVariants}
+                initial="hidden"
+                animate="visible"
+                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+              >
+                {filteredRelations.map((r) => {
+                  const tc = RELATION_TYPES[r.relationType] || RELATION_TYPES.KNOWS;
+                  const sb = strengthBar(r.strength || 0);
+                  // Determine which side is "the other" contact
+                  const isFrom = r.fromContactId === selectedContactId;
+                  const otherContact = isFrom ? r.toContact : r.fromContact;
+                  const direction = isFrom ? 'do' : 'od';
+
+                  return (
+                    <motion.div
+                      key={r.id}
+                      variants={cardVariants}
+                      whileHover={{ scale: 1.01, y: -2 }}
+                      className="bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl p-5 shadow-sm transition-all duration-300 hover:shadow-md"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          {/* Contact name & direction */}
+                          <div className="flex items-center gap-2.5 mb-2">
+                            <div className="h-9 w-9 rounded-xl bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-sm font-semibold text-slate-600 dark:text-slate-300 shrink-0">
+                              {otherContact?.firstName?.[0] || '?'}
+                              {otherContact?.lastName?.[0] || ''}
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm">
+                                {contactName(otherContact)}
+                              </h3>
+                              <span className="text-xs text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                                <ArrowRight className="w-3 h-3" />
+                                Relacja {direction}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Type badge */}
+                          <div className="flex items-center gap-2 mt-2">
+                            <StatusBadge variant={tc.variant} dot>
+                              {tc.label}
+                            </StatusBadge>
+                            {r.isBidirectional && (
+                              <StatusBadge variant="neutral">
+                                <ArrowLeftRight className="w-3 h-3 mr-0.5" />
+                                Dwustronna
+                              </StatusBadge>
+                            )}
+                          </div>
+
+                          {/* Strength bar */}
+                          <div className="mt-3">
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-xs text-slate-500 dark:text-slate-400">
+                                Sila relacji
+                              </span>
+                              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                                {r.strength || 0}/100
+                              </span>
+                            </div>
+                            <div className="h-2 bg-slate-100 dark:bg-slate-700 rounded-full overflow-hidden">
+                              <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${sb.pct}%` }}
+                                transition={{ duration: 0.8, ease: 'easeOut' }}
+                                className={`h-full rounded-full transition-colors ${sb.color}`}
+                              />
+                            </div>
+                          </div>
+
+                          {/* Notes */}
+                          {r.notes && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-2.5 line-clamp-2 flex items-start gap-1">
+                              <StickyNote className="w-3 h-3 mt-0.5 shrink-0" />
+                              <span>{r.notes}</span>
+                            </p>
+                          )}
+                          {r.discoveredVia && (
+                            <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 flex items-center gap-1">
+                              <MapPin className="w-3 h-3 shrink-0" />
+                              {r.discoveredVia}
+                            </p>
                           )}
                         </div>
 
-                        {/* Strength bar */}
-                        <div className="mt-3">
-                          <div className="flex items-center justify-between mb-0.5">
-                            <span className="text-xs text-gray-500">Sila relacji</span>
-                            <span className="text-xs font-medium text-gray-700">{r.strength || 0}/100</span>
-                          </div>
-                          <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full transition-all ${sb.color}`} style={{ width: `${sb.pct}%` }} />
-                          </div>
-                        </div>
-
-                        {/* Notes */}
-                        {r.notes && (
-                          <p className="text-xs text-gray-500 mt-2 line-clamp-2">
-                            <span className="font-medium">Notatki:</span> {r.notes}
-                          </p>
-                        )}
-                        {r.discoveredVia && (
-                          <p className="text-xs text-gray-400 mt-1">
-                            Kontekst: {r.discoveredVia}
-                          </p>
-                        )}
+                        {/* Delete */}
+                        <button
+                          onClick={() => setDeleteId(r.id)}
+                          className="p-1.5 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors shrink-0"
+                          title="Usun relacje"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
                       </div>
-
-                      {/* Delete */}
-                      <button
-                        onClick={() => handleDelete(r.id)}
-                        className="p-1.5 text-gray-400 hover:text-red-500 rounded hover:bg-red-50 transition-colors shrink-0"
-                        title="Usun relacje"
-                      >
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </>
-      )}
-
-      {/* ─── Create Form Modal ────────────────────────────────────── */}
-      {showForm && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setShowForm(false)}>
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">Nowa relacja</h2>
-              <button onClick={() => setShowForm(false)} className="p-1 hover:bg-gray-100 rounded-lg">
-                <svg className="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <form onSubmit={handleCreate} className="p-6 space-y-4">
-              {/* To contact */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Kontakt docelowy *</label>
-                <select
-                  value={form.toContactId}
-                  onChange={(e) => setForm({ ...form, toContactId: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  required
-                >
-                  <option value="">-- Wybierz kontakt --</option>
-                  {contacts
-                    .filter((c) => c.id !== selectedContactId)
-                    .map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.firstName} {c.lastName} {c.email ? `(${c.email})` : ''}
-                      </option>
-                    ))}
-                </select>
-              </div>
-              {/* Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Typ relacji *</label>
-                <select
-                  value={form.type}
-                  onChange={(e) => setForm({ ...form, type: e.target.value as CreateContactRelationRequest['type'] })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                >
-                  {Object.entries(RELATION_TYPES).map(([k, v]) => (
-                    <option key={k} value={k}>{v.label}</option>
-                  ))}
-                </select>
-              </div>
-              {/* Strength slider */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Sila relacji: <span className="text-blue-600 font-semibold">{form.strength}</span>/100
-                </label>
-                <input
-                  type="range"
-                  min={0}
-                  max={100}
-                  step={5}
-                  value={form.strength}
-                  onChange={(e) => setForm({ ...form, strength: parseInt(e.target.value) })}
-                  className="w-full accent-blue-600"
-                />
-                <div className="flex justify-between text-xs text-gray-400">
-                  <span>Slaba</span>
-                  <span>Silna</span>
-                </div>
-              </div>
-              {/* Notes */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notatki</label>
-                <textarea
-                  value={form.notes}
-                  onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                  rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm resize-none"
-                  placeholder="Dodatkowe informacje o relacji..."
-                />
-              </div>
-              {/* Meeting Context */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Kontekst poznania</label>
-                <input
-                  type="text"
-                  value={form.meetingContext}
-                  onChange={(e) => setForm({ ...form, meetingContext: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                  placeholder="np. Konferencja IT 2025, Spotkanie networkingowe"
-                />
-              </div>
-              {/* Actions */}
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowForm(false)}
-                  className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
-                >
-                  Anuluj
-                </button>
-                <button
-                  type="submit"
-                  disabled={formLoading}
-                  className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium"
-                >
-                  {formLoading ? 'Tworzenie...' : 'Dodaj relacje'}
-                </button>
-              </div>
-            </form>
+                    </motion.div>
+                  );
+                })}
+              </motion.div>
+            )}
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {/* ─── Create Form Modal ────────────────────────────────────── */}
+        <FormModal
+          isOpen={showForm}
+          onClose={() => setShowForm(false)}
+          title="Nowa relacja"
+          subtitle="Dodaj powiazanie miedzy kontaktami"
+          position="center"
+          footer={
+            <>
+              <ActionButton variant="secondary" onClick={() => setShowForm(false)}>
+                Anuluj
+              </ActionButton>
+              <ActionButton
+                loading={formLoading}
+                icon={Plus}
+                onClick={() => {
+                  const formEl = document.getElementById('relation-form') as HTMLFormElement;
+                  if (formEl) formEl.requestSubmit();
+                }}
+              >
+                Dodaj relacje
+              </ActionButton>
+            </>
+          }
+        >
+          <form id="relation-form" onSubmit={handleCreate} className="space-y-4">
+            {/* To contact */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                Kontakt docelowy *
+              </label>
+              <select
+                value={form.toContactId}
+                onChange={(e) => setForm({ ...form, toContactId: e.target.value })}
+                className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-slate-900 dark:text-slate-100 transition-colors"
+                required
+              >
+                <option value="">-- Wybierz kontakt --</option>
+                {contacts
+                  .filter((c) => c.id !== selectedContactId)
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.firstName} {c.lastName} {c.email ? `(${c.email})` : ''}
+                    </option>
+                  ))}
+              </select>
+            </div>
+            {/* Type */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                Typ relacji *
+              </label>
+              <select
+                value={form.type}
+                onChange={(e) =>
+                  setForm({ ...form, type: e.target.value as CreateContactRelationRequest['type'] })
+                }
+                className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-slate-900 dark:text-slate-100 transition-colors"
+              >
+                {Object.entries(RELATION_TYPES).map(([k, v]) => (
+                  <option key={k} value={k}>
+                    {v.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {/* Strength slider */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                Sila relacji:{' '}
+                <span className="text-blue-600 dark:text-blue-400 font-semibold">
+                  {form.strength}
+                </span>
+                /100
+              </label>
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                value={form.strength}
+                onChange={(e) => setForm({ ...form, strength: parseInt(e.target.value) })}
+                className="w-full accent-blue-600"
+              />
+              <div className="flex justify-between text-xs text-slate-400 dark:text-slate-500 mt-1">
+                <span>Slaba</span>
+                <span>Silna</span>
+              </div>
+            </div>
+            {/* Notes */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                Notatki
+              </label>
+              <textarea
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                rows={2}
+                className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 resize-none transition-colors"
+                placeholder="Dodatkowe informacje o relacji..."
+              />
+            </div>
+            {/* Meeting Context */}
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                Kontekst poznania
+              </label>
+              <input
+                type="text"
+                value={form.meetingContext}
+                onChange={(e) => setForm({ ...form, meetingContext: e.target.value })}
+                className="w-full px-3 py-2.5 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 transition-colors"
+                placeholder="np. Konferencja IT 2025, Spotkanie networkingowe"
+              />
+            </div>
+          </form>
+        </FormModal>
+
+        {/* ─── Delete Confirmation Toast ──────────────────────────── */}
+        <AnimatePresence>
+          {deleteId && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
+              className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-xl rounded-2xl px-5 py-4 flex items-center gap-4"
+            >
+              <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0" />
+              <p className="text-sm text-slate-700 dark:text-slate-300">
+                Czy na pewno chcesz usunac te relacje?
+              </p>
+              <div className="flex items-center gap-2">
+                <ActionButton variant="secondary" size="sm" onClick={() => setDeleteId(null)}>
+                  Anuluj
+                </ActionButton>
+                <ActionButton
+                  variant="danger"
+                  size="sm"
+                  icon={Trash2}
+                  onClick={() => handleDelete(deleteId)}
+                >
+                  Usun
+                </ActionButton>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </PageShell>
   );
 }

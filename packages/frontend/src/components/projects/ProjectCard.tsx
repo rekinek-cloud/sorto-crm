@@ -5,11 +5,11 @@ import { motion } from 'framer-motion';
 import { Project } from '@/types/gtd';
 import { gtdHelpers } from '@/lib/api/gtd';
 import {
-  CalendarIcon,
-  UserIcon,
-  ChartBarIcon,
-  EllipsisHorizontalIcon,
-} from '@heroicons/react/24/outline';
+  Calendar,
+  User,
+  BarChart3,
+  MoreHorizontal,
+} from 'lucide-react';
 
 interface ProjectCardProps {
   project: Project;
@@ -59,7 +59,7 @@ export default function ProjectCard({ project, onEdit, onDelete, onOpen }: Proje
           
           <div className="relative group">
             <button className="p-1 text-gray-400 hover:text-gray-600 rounded-md">
-              <EllipsisHorizontalIcon className="w-5 h-5" />
+              <MoreHorizontal className="w-5 h-5" />
             </button>
             <div className="absolute right-0 top-8 bg-white rounded-md shadow-lg border border-gray-200 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
               <button
@@ -114,7 +114,7 @@ export default function ProjectCard({ project, onEdit, onDelete, onOpen }: Proje
           {/* Stream */}
           {project.stream && (
             <div className="flex items-center">
-              <ChartBarIcon className="w-4 h-4 mr-2" />
+              <BarChart3 className="w-4 h-4 mr-2" />
               <span>Stream: {project.stream.name}</span>
             </div>
           )}
@@ -122,7 +122,7 @@ export default function ProjectCard({ project, onEdit, onDelete, onOpen }: Proje
           {/* Assigned to */}
           {project.assignedTo && (
             <div className="flex items-center">
-              <UserIcon className="w-4 h-4 mr-2" />
+              <User className="w-4 h-4 mr-2" />
               <span>
                 {project.assignedTo.firstName} {project.assignedTo.lastName}
               </span>
@@ -132,7 +132,7 @@ export default function ProjectCard({ project, onEdit, onDelete, onOpen }: Proje
           {/* Due date */}
           {project.endDate && (
             <div className="flex items-center">
-              <CalendarIcon className="w-4 h-4 mr-2" />
+              <Calendar className="w-4 h-4 mr-2" />
               <span className={`${
                 new Date(project.endDate) < new Date() && project.status !== 'COMPLETED'
                   ? 'text-red-600 font-medium'

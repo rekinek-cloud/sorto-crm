@@ -10,13 +10,9 @@ import { companiesApi } from '@/lib/api/companies';
 import { contactsApi } from '@/lib/api/contacts';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import {
-  FunnelIcon,
-  ChartBarIcon,
-  Squares2X2Icon,
-  TableCellsIcon,
-  PlusIcon,
-} from '@heroicons/react/24/outline';
+import { Filter, BarChart3, LayoutGrid, Table, Plus } from 'lucide-react';
+import { PageShell } from '@/components/ui/PageShell';
+import { PageHeader } from '@/components/ui/PageHeader';
 
 export default function PipelinePage() {
   const [deals, setDeals] = useState<Deal[]>([]);
@@ -39,13 +35,13 @@ export default function PipelinePage() {
         companiesApi.getCompanies({ limit: 100 }),
         contactsApi.getContacts({ limit: 500 })
       ]);
-      
+
       setDeals(dealsResponse.deals);
       setCompanies(companiesResponse.companies);
       setContacts(contactsResponse.contacts);
     } catch (error: any) {
       console.error('Error fetching data:', error);
-      toast.error('Failed to load pipeline data');
+      toast.error('Nie udało się załadować danych pipeline');
     } finally {
       setIsLoading(false);
     }
@@ -56,42 +52,42 @@ export default function PipelinePage() {
       const newDeal = await dealsApi.createDeal(data);
       setDeals(prev => [newDeal, ...prev]);
       setIsFormOpen(false);
-      toast.success('Deal created successfully');
+      toast.success('Transakcja utworzona pomyślnie');
     } catch (error: any) {
       console.error('Error creating deal:', error);
-      toast.error('Failed to create deal');
+      toast.error('Nie udało się utworzyć transakcji');
       throw error;
     }
   };
 
   const handleUpdateDeal = async (data: any) => {
     if (!editingDeal) return;
-    
+
     try {
       const updatedDeal = await dealsApi.updateDeal(editingDeal.id, data);
-      setDeals(prev => prev.map(deal => 
+      setDeals(prev => prev.map(deal =>
         deal.id === editingDeal.id ? updatedDeal : deal
       ));
       setEditingDeal(undefined);
       setIsFormOpen(false);
-      toast.success('Deal updated successfully');
+      toast.success('Transakcja zaktualizowana pomyślnie');
     } catch (error: any) {
       console.error('Error updating deal:', error);
-      toast.error('Failed to update deal');
+      toast.error('Nie udało się zaktualizować transakcji');
       throw error;
     }
   };
 
   const handleDeleteDeal = async (id: string) => {
-    if (!confirm('Are you sure you want to delete this deal?')) return;
-    
+    if (!confirm('Czy na pewno chcesz usunąć tę transakcję?')) return;
+
     try {
       await dealsApi.deleteDeal(id);
       setDeals(prev => prev.filter(deal => deal.id !== id));
-      toast.success('Deal deleted successfully');
+      toast.success('Transakcja usunięta pomyślnie');
     } catch (error: any) {
       console.error('Error deleting deal:', error);
-      toast.error('Failed to delete deal');
+      toast.error('Nie udało się usunąć transakcji');
     }
   };
 
@@ -106,9 +102,9 @@ export default function PipelinePage() {
   };
 
   const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('pl-PL', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'PLN',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(value);
@@ -124,79 +120,76 @@ export default function PipelinePage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
-      </div>
+      <PageShell>
+        <div className="flex items-center justify-center py-12">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </PageShell>
     );
   }
 
   return (
-    <motion.div
-      className="space-y-6"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-    >
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Sales Pipeline</h1>
-          <p className="text-gray-600">Manage your deals and track sales performance</p>
-        </div>
-        
-        <div className="flex items-center space-x-4">
-          {/* Pipeline Summary */}
-          <div className="flex items-center space-x-6 text-sm">
-            <div className="text-center">
-              <div className="text-lg font-bold text-blue-600">{formatCurrency(totalPipelineValue)}</div>
-              <div className="text-gray-600">Pipeline Value</div>
+    <PageShell>
+      <PageHeader
+        title="Pipeline sprzedaży"
+        subtitle="Zarządzaj transakcjami i śledź wyniki sprzedaży"
+        icon={Filter}
+        iconColor="text-blue-600"
+        actions={
+          <div className="flex items-center space-x-4">
+            {/* Pipeline Summary */}
+            <div className="flex items-center space-x-6 text-sm">
+              <div className="text-center">
+                <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{formatCurrency(totalPipelineValue)}</div>
+                <div className="text-slate-600 dark:text-slate-400">Wartość pipeline</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-green-600 dark:text-green-400">{formatCurrency(wonValue)}</div>
+                <div className="text-slate-600 dark:text-slate-400">Wygrane</div>
+              </div>
+              <div className="text-center">
+                <div className="text-lg font-bold text-indigo-600 dark:text-indigo-400">{deals.length}</div>
+                <div className="text-slate-600 dark:text-slate-400">Transakcje</div>
+              </div>
             </div>
-            <div className="text-center">
-              <div className="text-lg font-bold text-green-600">{formatCurrency(wonValue)}</div>
-              <div className="text-gray-600">Won Revenue</div>
-            </div>
-            <div className="text-center">
-              <div className="text-lg font-bold text-primary-600">{deals.length}</div>
-              <div className="text-gray-600">Total Deals</div>
-            </div>
-          </div>
 
-          {/* View Toggle */}
-          <div className="flex bg-gray-100 rounded-lg p-1">
+            {/* View Toggle */}
+            <div className="flex bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('kanban')}
+                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  viewMode === 'kanban'
+                    ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <LayoutGrid className="w-4 h-4 mr-2" />
+                Kanban
+              </button>
+              <button
+                onClick={() => setViewMode('analytics')}
+                className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                  viewMode === 'analytics'
+                    ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+                }`}
+              >
+                <BarChart3 className="w-4 h-4 mr-2" />
+                Analityka
+              </button>
+            </div>
+
+            {/* Add Deal Button */}
             <button
-              onClick={() => setViewMode('kanban')}
-              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                viewMode === 'kanban' 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
+              onClick={() => setIsFormOpen(true)}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              <Squares2X2Icon className="w-4 h-4 mr-2" />
-              Kanban
-            </button>
-            <button
-              onClick={() => setViewMode('analytics')}
-              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                viewMode === 'analytics' 
-                  ? 'bg-white text-gray-900 shadow-sm' 
-                  : 'text-gray-600 hover:text-gray-900'
-              }`}
-            >
-              <ChartBarIcon className="w-4 h-4 mr-2" />
-              Analytics
+              <Plus className="w-5 h-5 mr-2" />
+              Nowa transakcja
             </button>
           </div>
-
-          {/* Add Deal Button */}
-          <button
-            onClick={() => setIsFormOpen(true)}
-            className="btn btn-primary flex items-center"
-          >
-            <PlusIcon className="w-5 h-5 mr-2" />
-            New Deal
-          </button>
-        </div>
-      </div>
+        }
+      />
 
       {/* Main Content */}
       {viewMode === 'kanban' ? (
@@ -222,6 +215,6 @@ export default function PipelinePage() {
           onCancel={handleCloseForm}
         />
       )}
-    </motion.div>
+    </PageShell>
   );
 }

@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { apiClient } from '@/lib/api/client';
 import { useAuth } from '@/lib/auth/context';
-import { XMarkIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { X, AlertTriangle } from 'lucide-react';
 
 interface BugReportModalProps {
   isOpen: boolean;
@@ -115,14 +115,14 @@ export default function BugReportModal({ isOpen, onClose, onSuccess }: BugReport
           <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div className="flex justify-between items-center mb-6">
               <div className="flex items-center space-x-2">
-                <ExclamationTriangleIcon className="h-5 w-5 text-orange-500" />
+                <AlertTriangle className="h-5 w-5 text-orange-500" />
                 <h3 className="text-lg font-medium text-gray-900">Zgłoś błąd</h3>
               </div>
               <button
                 onClick={onClose}
                 className="text-gray-400 hover:text-gray-600"
               >
-                <XMarkIcon className="h-6 w-6" />
+                <X className="h-6 w-6" />
               </button>
             </div>
 
@@ -130,7 +130,7 @@ export default function BugReportModal({ isOpen, onClose, onSuccess }: BugReport
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-md p-4">
               <div className="flex">
-                <XMarkIcon className="h-5 w-5 text-red-400" />
+                <X className="h-5 w-5 text-red-400" />
                 <div className="ml-3">
                   <p className="text-sm text-red-700">{error}</p>
                 </div>
