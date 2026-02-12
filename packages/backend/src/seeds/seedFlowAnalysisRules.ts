@@ -45,6 +45,7 @@ interface FlowRule {
   modelId: string;
   aiSystemPrompt: string;
   aiPrompt: string;
+  triggerConditions: Record<string, any>;
 }
 
 const FLOW_RULES: FlowRule[] = [
@@ -53,6 +54,18 @@ const FLOW_RULES: FlowRule[] = [
     description: 'Analiza przychodzących emaili — intent, pilność, action items, sentyment',
     dataType: 'EMAIL',
     modelId: 'qwen-max-2025-01-25',
+    triggerConditions: {
+      operator: 'AND',
+      conditions: [
+        { field: 'sourceType', operator: 'equals', value: 'EMAIL' },
+        { field: 'status', operator: 'equals', value: 'NEW' },
+        { operator: 'OR', conditions: [
+          { field: 'classification', operator: 'equals', value: 'BUSINESS' },
+          { field: 'classification', operator: 'equals', value: 'PERSONAL' },
+          { field: 'classification', operator: 'equals', value: 'UNKNOWN' },
+        ]},
+      ],
+    },
     aiSystemPrompt: SYSTEM_PROMPT_BASE + `
 
 Dodatkowe pola w extractedData dla emaili:
@@ -77,6 +90,16 @@ Treść:
     description: 'Analiza notatek ze spotkań — decyzje, action items, właściciele, deadliny',
     dataType: 'MEETING_NOTES',
     modelId: 'qwen-max-2025-01-25',
+    triggerConditions: {
+      operator: 'AND',
+      conditions: [
+        { field: 'status', operator: 'equals', value: 'NEW' },
+        { operator: 'OR', conditions: [
+          { field: 'sourceType', operator: 'equals', value: 'MEETING_NOTES' },
+          { field: 'matchedRule', operator: 'equals', value: 'Meeting Detection' },
+        ]},
+      ],
+    },
     aiSystemPrompt: SYSTEM_PROMPT_BASE + `
 
 Dodatkowe pola w extractedData dla notatek ze spotkań:
@@ -101,6 +124,13 @@ Treść notatek:
     description: 'Analiza pomysłów — koncept, wartość, wykonalność, powiązania',
     dataType: 'IDEA',
     modelId: 'qwen-max-2025-01-25',
+    triggerConditions: {
+      operator: 'AND',
+      conditions: [
+        { field: 'sourceType', operator: 'equals', value: 'IDEA' },
+        { field: 'status', operator: 'equals', value: 'NEW' },
+      ],
+    },
     aiSystemPrompt: SYSTEM_PROMPT_BASE + `
 
 Dodatkowe pola w extractedData dla pomysłów:
@@ -126,6 +156,16 @@ Opis pomysłu:
     description: 'Analiza faktur — dostawca, kwota, termin, warunki płatności',
     dataType: 'BILL_INVOICE',
     modelId: 'qwen-max-2025-01-25',
+    triggerConditions: {
+      operator: 'AND',
+      conditions: [
+        { field: 'status', operator: 'equals', value: 'NEW' },
+        { operator: 'OR', conditions: [
+          { field: 'sourceType', operator: 'equals', value: 'BILL_INVOICE' },
+          { field: 'matchedRule', operator: 'equals', value: 'Invoice Detection' },
+        ]},
+      ],
+    },
     aiSystemPrompt: SYSTEM_PROMPT_BASE + `
 
 Dodatkowe pola w extractedData dla faktur:
@@ -157,6 +197,13 @@ Treść:
     description: 'Analiza rozmów telefonicznych — rozmówca, temat, zobowiązania, follow-up',
     dataType: 'PHONE_CALL',
     modelId: 'qwen-max-2025-01-25',
+    triggerConditions: {
+      operator: 'AND',
+      conditions: [
+        { field: 'sourceType', operator: 'equals', value: 'PHONE_CALL' },
+        { field: 'status', operator: 'equals', value: 'NEW' },
+      ],
+    },
     aiSystemPrompt: SYSTEM_PROMPT_BASE + `
 
 Dodatkowe pola w extractedData dla rozmów telefonicznych:
@@ -183,6 +230,13 @@ Notatki z rozmowy:
     description: 'Analiza dokumentów — typ, kluczowe podmioty, streszczenie, action items',
     dataType: 'DOCUMENT',
     modelId: 'qwen-max-2025-01-25',
+    triggerConditions: {
+      operator: 'AND',
+      conditions: [
+        { field: 'sourceType', operator: 'equals', value: 'DOCUMENT' },
+        { field: 'status', operator: 'equals', value: 'NEW' },
+      ],
+    },
     aiSystemPrompt: SYSTEM_PROMPT_BASE + `
 
 Dodatkowe pola w extractedData dla dokumentów:
@@ -209,6 +263,16 @@ Treść dokumentu:
     description: 'Analiza artykułów — temat, kluczowe wnioski, relevancja, tagi',
     dataType: 'ARTICLE',
     modelId: 'qwen-plus',
+    triggerConditions: {
+      operator: 'AND',
+      conditions: [
+        { field: 'status', operator: 'equals', value: 'NEW' },
+        { operator: 'OR', conditions: [
+          { field: 'sourceType', operator: 'equals', value: 'ARTICLE' },
+          { field: 'classification', operator: 'equals', value: 'NEWSLETTER' },
+        ]},
+      ],
+    },
     aiSystemPrompt: SYSTEM_PROMPT_BASE + `
 
 Dodatkowe pola w extractedData dla artykułów:
@@ -234,6 +298,13 @@ Treść artykułu:
     description: 'Analiza notatek głosowych — kluczowe punkty, action items, kontekst',
     dataType: 'VOICE_MEMO',
     modelId: 'qwen-max-2025-01-25',
+    triggerConditions: {
+      operator: 'AND',
+      conditions: [
+        { field: 'sourceType', operator: 'equals', value: 'VOICE_MEMO' },
+        { field: 'status', operator: 'equals', value: 'NEW' },
+      ],
+    },
     aiSystemPrompt: SYSTEM_PROMPT_BASE + `
 
 Dodatkowe pola w extractedData dla notatek głosowych:
@@ -257,6 +328,13 @@ Transkrypcja:
     description: 'Analiza szybkich notatek — intent, kategoria, action items, priorytet',
     dataType: 'QUICK_CAPTURE',
     modelId: 'qwen-turbo',
+    triggerConditions: {
+      operator: 'AND',
+      conditions: [
+        { field: 'sourceType', operator: 'equals', value: 'QUICK_CAPTURE' },
+        { field: 'status', operator: 'equals', value: 'NEW' },
+      ],
+    },
     aiSystemPrompt: SYSTEM_PROMPT_BASE + `
 
 Dodatkowe pola w extractedData dla szybkich notatek:
@@ -279,6 +357,13 @@ Treść:
     description: 'Analiza zdjęć — opis treści, typ dokumentu, wyciąg tekstu',
     dataType: 'PHOTO',
     modelId: 'qwen-max-2025-01-25',
+    triggerConditions: {
+      operator: 'AND',
+      conditions: [
+        { field: 'sourceType', operator: 'equals', value: 'PHOTO' },
+        { field: 'status', operator: 'equals', value: 'NEW' },
+      ],
+    },
     aiSystemPrompt: SYSTEM_PROMPT_BASE + `
 
 Dodatkowe pola w extractedData dla zdjęć:
@@ -302,6 +387,16 @@ Opis/OCR:
     description: 'Ogólna analiza elementów — detekcja typu, streszczenie, kluczowe podmioty',
     dataType: 'OTHER',
     modelId: 'qwen-plus',
+    triggerConditions: {
+      operator: 'AND',
+      conditions: [
+        { field: 'status', operator: 'equals', value: 'NEW' },
+        { operator: 'OR', conditions: [
+          { field: 'sourceType', operator: 'equals', value: 'OTHER' },
+          { field: 'classification', operator: 'equals', value: 'UNKNOWN' },
+        ]},
+      ],
+    },
     aiSystemPrompt: SYSTEM_PROMPT_BASE + `
 
 To jest element ogólny — najpierw spróbuj rozpoznać jego właściwy typ, potem przeprowadź odpowiednią analizę.
@@ -411,13 +506,7 @@ export async function seedFlowAnalysisRules(prisma: any, organizationId: string)
           status: 'ACTIVE',
           priority: 100,
           triggerType: 'WEBHOOK',
-          triggerConditions: {
-            operator: 'AND',
-            conditions: [
-              { field: 'sourceType', operator: 'equals', value: rule.dataType },
-              { field: 'status', operator: 'equals', value: 'NEW' },
-            ],
-          },
+          triggerConditions: rule.triggerConditions,
           actions: { analyze: true, extractTasks: true, suggestCategory: true },
           aiPrompt: rule.aiPrompt,
           aiSystemPrompt: rule.aiSystemPrompt,
