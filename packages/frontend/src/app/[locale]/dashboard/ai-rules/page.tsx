@@ -82,6 +82,62 @@ const moduleTabIcons: Record<string, React.ElementType> = {
   communication: Mail,
 };
 
+// --- Helpers ---
+
+/**
+ * Normalize rule data from backend to expected frontend format.
+ * System rules use object-style actions/conditions, user rules use arrays.
+ */
+function normalizeRule(rule: any): AIRule {
+  // Normalize conditions: backend may return { operator, conditions: [...] } or array
+  let conditions: any[] = [];
+  if (Array.isArray(rule.conditions)) {
+    conditions = rule.conditions;
+  } else if (rule.conditions?.conditions && Array.isArray(rule.conditions.conditions)) {
+    const op = rule.conditions.operator || 'AND';
+    conditions = rule.conditions.conditions.map((c: any, i: number) => ({
+      id: c.id || `cond-${i}`,
+      field: c.field || '',
+      operator: c.operator || 'equals',
+      value: c.value || '',
+      logicalOperator: i > 0 ? op : undefined,
+    }));
+  }
+
+  // Normalize actions: backend may return object or array
+  let actions: any[] = [];
+  if (Array.isArray(rule.actions)) {
+    actions = rule.actions;
+  } else if (rule.actions && typeof rule.actions === 'object') {
+    const obj = rule.actions;
+    if (obj.forceClassification) {
+      actions.push({
+        id: 'sys-classify',
+        type: 'update-status',
+        config: { label: `Klasyfikacja: ${obj.forceClassification}` },
+      });
+    }
+    if (obj.rag?.enabled) {
+      actions.push({ id: 'sys-rag', type: 'ai-analysis', config: { label: 'Indeksuj w RAG' } });
+    }
+    if (obj.flow?.enabled) {
+      actions.push({ id: 'sys-flow', type: 'create-task', config: { label: 'Dodaj do Flow' } });
+    }
+    if (obj.list) {
+      actions.push({
+        id: 'sys-list',
+        type: 'add-tag',
+        config: { label: `Lista: ${obj.list.action} (${obj.list.target})` },
+      });
+    }
+    if (obj.notify?.enabled) {
+      actions.push({ id: 'sys-notify', type: 'send-notification', config: { label: 'Powiadom' } });
+    }
+  }
+
+  return { ...rule, conditions, actions };
+}
+
 // --- Component ---
 
 export default function AIRulesPage() {
@@ -122,7 +178,7 @@ export default function AIRulesPage() {
         }
         const { rules: loadedRules, pagination: paginationData } =
           await aiRulesApi.getRules(filters);
-        setRules(loadedRules);
+        setRules(loadedRules.map(normalizeRule));
         setPagination(paginationData);
       } catch (error: any) {
         toast.error('Blad podczas ladowania regul');
@@ -604,7 +660,7 @@ export default function AIRulesPage() {
                                       >
                                         <ActionIcon className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                                         <span className="text-slate-600 dark:text-slate-400">
-                                          {at?.label}
+                                          {action.config?.label || at?.label || action.type}
                                         </span>
                                         {action.type === 'ai-analysis' &&
                                           action.config.modelId && (
@@ -624,9 +680,9 @@ export default function AIRulesPage() {
                                   Prompt AI:
                                 </h4>
                                 <div className="bg-slate-50 dark:bg-slate-700/50 rounded-lg p-3 text-sm text-slate-600 dark:text-slate-400 font-mono">
-                                  {rule.actions.find(
-                                    (a) => a.type === 'ai-analysis'
-                                  )?.config.prompt || rule.aiPrompt}
+                                  {(Array.isArray(rule.actions) && rule.actions.find(
+                                    (a: any) => a.type === 'ai-analysis'
+                                  )?.config?.prompt) || rule.aiPrompt}
                                 </div>
                               </div>
                             )}
@@ -658,12 +714,13 @@ export default function AIRulesPage() {
           rule={editingRule || undefined}
           onSubmit={(rule) => {
             logger.userAction('AI rule submitted', { rule }, 'AIRulesPage');
+            const normalized = normalizeRule(rule);
             if (editingRule) {
               setRules((prev) =>
-                prev.map((r) => (r.id === rule.id ? rule : r))
+                prev.map((r) => (r.id === normalized.id ? normalized : r))
               );
             } else {
-              setRules((prev) => [rule, ...prev]);
+              setRules((prev) => [normalized, ...prev]);
             }
             setIsCreateModalOpen(false);
             setEditingRule(null);
