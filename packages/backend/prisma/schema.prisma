@@ -1623,6 +1623,11 @@ model Message {
   createdAt         DateTime                  @default(now())
   updatedAt         DateTime                  @updatedAt
   emailAccountId    String?
+  pipelineProcessed Boolean                   @default(false)
+  isSpam            Boolean                   @default(false)
+  category          String?
+  aiAnalyzed        Boolean                   @default(false)
+  pipelineResult    Json?
   emailHeaders      Json?
   imapFolder        String?
   imapUid           String?
