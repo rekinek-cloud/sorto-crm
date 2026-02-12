@@ -197,4 +197,115 @@ router.post('/batch',
   }
 );
 
+/**
+ * POST /api/v1/data-processing/correct
+ * Correct a classification and learn from it
+ */
+router.post('/correct',
+  authenticateToken,
+  requireRole(['OWNER', 'ADMIN', 'MANAGER']),
+  async (req, res) => {
+    try {
+      const { entityType, entityId, correctClass } = req.body;
+
+      if (!entityType || !entityId || !correctClass) {
+        throw new AppError('entityType, entityId i correctClass sa wymagane', 400);
+      }
+
+      const validClasses = ['BUSINESS', 'NEWSLETTER', 'SPAM', 'TRANSACTIONAL', 'PERSONAL', 'UNKNOWN'];
+      if (!validClasses.includes(correctClass)) {
+        throw new AppError(`correctClass musi byc jednym z: ${validClasses.join(', ')}`, 400);
+      }
+
+      const pipeline = new RuleProcessingPipeline(prisma);
+      const result = await pipeline.applyCorrection(
+        req.user!.organizationId,
+        entityType,
+        entityId,
+        correctClass,
+        req.user!.userId
+      );
+
+      if (!result.updated) {
+        throw new AppError('Rekord przetwarzania nie znaleziony', 404);
+      }
+
+      logger.info(`Classification corrected: ${entityType}/${entityId} -> ${correctClass} by ${req.user!.email}`);
+      res.json({ success: true, data: result });
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      logger.error('Failed to correct classification:', error);
+      throw new AppError('Nie udalo sie skorygowac klasyfikacji', 500);
+    }
+  }
+);
+
+/**
+ * POST /api/v1/data-processing/reprocess
+ * Reprocess completed entities (e.g., after rules change)
+ */
+router.post('/reprocess',
+  authenticateToken,
+  requireRole(['OWNER', 'ADMIN']),
+  async (req, res) => {
+    try {
+      const { entityType, limit = 50, status = 'COMPLETED' } = req.body;
+
+      if (!entityType) {
+        throw new AppError('entityType jest wymagany', 400);
+      }
+
+      const orgId = req.user!.organizationId;
+      const batchLimit = Math.min(Number(limit), 100);
+
+      // Reset status to PENDING for reprocessing
+      const updated = await prisma.data_processing.updateMany({
+        where: {
+          organizationId: orgId,
+          entityType: entityType.toUpperCase(),
+          status,
+        },
+        data: { status: 'PENDING' },
+      });
+
+      // Then process them
+      const pipeline = new RuleProcessingPipeline(prisma);
+      let processedCount = 0;
+      const errors: string[] = [];
+
+      const toReprocess = await prisma.data_processing.findMany({
+        where: {
+          organizationId: orgId,
+          entityType: entityType.toUpperCase(),
+          status: 'PENDING',
+        },
+        take: batchLimit,
+      });
+
+      for (const record of toReprocess) {
+        try {
+          await pipeline.processEntity(orgId, entityType, record.entityId, {});
+          processedCount++;
+        } catch (err: any) {
+          errors.push(`${record.entityId}: ${err.message}`);
+        }
+      }
+
+      res.json({
+        success: true,
+        data: {
+          reset: updated.count,
+          processed: processedCount,
+          errors: errors.length,
+          errorDetails: errors.slice(0, 10),
+        },
+      });
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      logger.error('Failed reprocessing:', error);
+      throw new AppError('Nie udalo sie ponownie przetworzyc', 500);
+    }
+  }
+);
+
 export default router;

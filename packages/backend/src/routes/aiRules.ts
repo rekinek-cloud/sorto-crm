@@ -486,7 +486,7 @@ router.get('/execution-history/:id',
 
       const executions = await prisma.ai_executions.findMany({
         where: { ruleId: id },
-        orderBy: { executedAt: 'desc' },
+        orderBy: { createdAt: 'desc' },
         take: Math.min(parseInt(limit as string), 100),
       });
 
@@ -494,11 +494,11 @@ router.get('/execution-history/:id',
         id: e.id,
         ruleId: e.ruleId,
         status: e.status,
-        executionTime: e.executionTimeMs,
-        timestamp: e.executedAt.toISOString(),
-        inputTokens: e.inputTokens,
-        outputTokens: e.outputTokens,
-        error: e.error,
+        executionTime: e.executionTime,
+        timestamp: e.createdAt.toISOString(),
+        tokensUsed: e.tokensUsed,
+        cost: e.cost,
+        error: e.errorMessage,
       }));
 
       res.json({ success: true, data: history });

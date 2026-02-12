@@ -10,6 +10,8 @@ import AIRuleForm from '@/components/ai/AIRuleForm';
 import { DomainListManager } from '@/components/ai-rules/DomainListManager';
 import { AIPromptsPanel } from '@/components/ai/AIPromptsPanel';
 import { AIProviderConfig } from '@/components/ai/AIProviderConfig';
+import { SuggestionCard } from '@/components/ai-rules/SuggestionCard';
+import { useAiSuggestions } from '@/hooks/useAiSuggestions';
 import {
   Plus,
   Pencil,
@@ -28,6 +30,7 @@ import {
   User,
   Mail,
   FileText,
+  Lightbulb,
 } from 'lucide-react';
 import { PageShell } from '@/components/ui/PageShell';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -146,6 +149,9 @@ export default function AIRulesPage() {
   const [activeTab, setActiveTab] = useState<TabType>(
     (searchParams?.get('tab') as TabType) || 'rules'
   );
+
+  // AI Suggestions
+  const { suggestions, accept: acceptSuggestion, reject: rejectSuggestion, loadSuggestions } = useAiSuggestions();
 
   // Rules state
   const [rules, setRules] = useState<AIRule[]>([]);
@@ -366,6 +372,57 @@ export default function AIRulesPage() {
           </div>
         </div>
       </div>
+
+      {/* AI Suggestions Panel */}
+      {suggestions.length > 0 && (
+        <div className="mt-6 bg-gradient-to-r from-purple-50/80 to-indigo-50/80 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200/50 dark:border-purple-700/30 rounded-2xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Lightbulb className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                Sugestie AI ({suggestions.length})
+              </h3>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {suggestions.map((s) => (
+              <SuggestionCard
+                key={s.id}
+                suggestion={{
+                  id: s.id,
+                  type: s.suggestionType || 'BLACKLIST_DOMAIN',
+                  title: s.title,
+                  description: s.description,
+                  confidence: typeof s.confidence === 'number' ? (s.confidence > 1 ? s.confidence / 100 : s.confidence) : undefined,
+                  reason: s.description,
+                  source: 'classification-pipeline',
+                  createdAt: s.createdAt,
+                }}
+                onAccept={async (id) => {
+                  try {
+                    await acceptSuggestion(id);
+                    toast.success('Sugestia zaakceptowana');
+                    // Reload domain list if on domains tab
+                    if (activeTab === 'domains') {
+                      loadSuggestions();
+                    }
+                  } catch {
+                    toast.error('Blad podczas akceptacji sugestii');
+                  }
+                }}
+                onReject={async (id) => {
+                  try {
+                    await rejectSuggestion(id);
+                    toast.success('Sugestia odrzucona');
+                  } catch {
+                    toast.error('Blad podczas odrzucania sugestii');
+                  }
+                }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Main Tab Navigation */}
       <div className="mt-6">
