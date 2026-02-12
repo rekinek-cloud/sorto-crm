@@ -8,6 +8,7 @@ import { Router } from 'express';
 import { prisma } from '../config/database';
 import { authenticateToken, AuthenticatedRequest } from '../shared/middleware/auth';
 import { emailPipeline } from '../services/emailPipeline';
+import { RuleProcessingPipeline } from '../services/ai/RuleProcessingPipeline';
 
 const router = Router();
 
@@ -21,19 +22,36 @@ router.get('/stats', authenticateToken, async (req: AuthenticatedRequest, res) =
     const since = new Date();
     since.setDate(since.getDate() - days);
 
+    const msgWhere = { organizationId, receivedAt: { gte: since } };
+
     const [
       totalMessages,
-      messagesByPriority
+      pipelineProcessed,
+      spamRejected,
+      aiAnalyzed,
+      messagesByPriority,
+      messagesByCategory
     ] = await Promise.all([
-      prisma.message.count({
-        where: { organizationId, receivedAt: { gte: since } }
-      }),
+      prisma.message.count({ where: msgWhere }),
+      prisma.message.count({ where: { ...msgWhere, pipelineProcessed: true } }),
+      prisma.message.count({ where: { ...msgWhere, isSpam: true } }),
+      prisma.message.count({ where: { ...msgWhere, aiAnalyzed: true } }),
       prisma.message.groupBy({
         by: ['priority'],
-        where: { organizationId, receivedAt: { gte: since } },
+        where: msgWhere,
+        _count: true
+      }),
+      prisma.message.groupBy({
+        by: ['category'],
+        where: { ...msgWhere, category: { not: null } },
         _count: true
       })
     ]);
+
+    const skippedAI = pipelineProcessed - aiAnalyzed;
+    const aiSavingsPercent = totalMessages > 0
+      ? Math.round((1 - aiAnalyzed / Math.max(1, totalMessages)) * 100)
+      : 0;
 
     res.json({
       success: true,
@@ -41,13 +59,16 @@ router.get('/stats', authenticateToken, async (req: AuthenticatedRequest, res) =
         period: `${days} days`,
         summary: {
           totalMessages,
-          spamRejected: 0,
-          skippedAI: 0,
-          aiAnalyzed: 0,
-          pipelineProcessed: 0,
-          aiSavingsPercent: 0
+          spamRejected,
+          skippedAI: Math.max(0, skippedAI),
+          aiAnalyzed,
+          pipelineProcessed,
+          aiSavingsPercent
         },
-        byCategory: {},
+        byCategory: messagesByCategory.reduce((acc, item) => {
+          if (item.category) acc[item.category] = item._count;
+          return acc;
+        }, {} as Record<string, number>),
         byPriority: messagesByPriority.reduce((acc, item) => {
           acc[item.priority] = item._count;
           return acc;
@@ -395,6 +416,7 @@ router.get('/messages', authenticateToken, async (req: AuthenticatedRequest, res
           priority: true,
           aiAnalyzed: true,
           sentiment: true,
+          pipelineResult: true,
         }
       }),
       prisma.message.count({ where })
@@ -475,6 +497,26 @@ router.post('/process-batch', authenticateToken, async (req: AuthenticatedReques
           }
         });
 
+        // Also run through RuleProcessingPipeline for classification + actions (RAG, Flow, blacklist)
+        let classificationResult: any = null;
+        try {
+          const rulePipeline = new RuleProcessingPipeline(prisma);
+          classificationResult = await rulePipeline.processEntity(
+            organizationId,
+            'EMAIL',
+            message.id,
+            {
+              subject: message.subject || '',
+              content: message.content || '',
+              senderEmail: message.fromAddress || '',
+              senderName: message.fromName || '',
+              receivedAt: message.receivedAt?.toISOString() || new Date().toISOString(),
+            }
+          );
+        } catch (classErr: any) {
+          console.error(`[EmailPipeline] RuleProcessingPipeline error for ${message.id}:`, classErr.message);
+        }
+
         results.push({
           id: message.id,
           subject: message.subject,
@@ -484,7 +526,11 @@ router.post('/process-batch', authenticateToken, async (req: AuthenticatedReques
             category: pipelineResult.category,
             priority: pipelineResult.priority,
             skipAI: pipelineResult.skipAI,
-            stage: pipelineResult.stage
+            stage: pipelineResult.stage,
+            classification: classificationResult?.finalClass,
+            confidence: classificationResult?.finalConfidence,
+            addedToRag: classificationResult?.addedToRag,
+            addedToFlow: classificationResult?.addedToFlow,
           }
         });
       } catch (err: any) {
@@ -577,6 +623,39 @@ router.post('/process-all', authenticateToken, async (req: AuthenticatedRequest,
             urgencyScore: pipelineResult.aiAnalysis?.urgency
           }
         });
+
+        // Also run through RuleProcessingPipeline for classification + actions
+        try {
+          const rulePipeline = new RuleProcessingPipeline(prisma);
+          const classResult = await rulePipeline.processEntity(
+            organizationId,
+            'EMAIL',
+            message.id,
+            {
+              subject: message.subject || '',
+              content: message.content || '',
+              senderEmail: message.fromAddress || '',
+              senderName: message.fromName || '',
+              receivedAt: message.receivedAt?.toISOString() || new Date().toISOString(),
+            }
+          );
+          // Save classification data back to pipelineResult
+          if (classResult) {
+            const merged = {
+              ...(pipelineResult as any),
+              classification: classResult.finalClass,
+              confidence: classResult.finalConfidence,
+              addedToRag: classResult.addedToRag,
+              addedToFlow: classResult.addedToFlow,
+            };
+            await prisma.message.update({
+              where: { id: message.id },
+              data: { pipelineResult: merged }
+            });
+          }
+        } catch (classErr: any) {
+          console.error(`[EmailPipeline] RuleProcessingPipeline error for ${message.id}:`, classErr.message);
+        }
 
         processed++;
         if (pipelineResult.isSpam) spam++;
