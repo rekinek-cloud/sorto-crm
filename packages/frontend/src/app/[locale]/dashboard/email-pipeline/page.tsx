@@ -18,7 +18,15 @@ import {
   AlertTriangle,
   BarChart3,
   Clock,
-  Cpu
+  Cpu,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Search,
+  Database,
+  Workflow,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { PageShell } from '@/components/ui/PageShell';
@@ -90,6 +98,10 @@ interface MessagesStats {
   processed: number;
 }
 
+interface CategoryCounts {
+  [key: string]: number;
+}
+
 interface ProcessingResult {
   processed: number;
   total: number;
@@ -159,12 +171,18 @@ export default function EmailPipelinePage() {
   // Bulk processing state
   const [messages, setMessages] = useState<MessageItem[]>([]);
   const [messagesStats, setMessagesStats] = useState<MessagesStats | null>(null);
+  const [categoryCounts, setCategoryCounts] = useState<CategoryCounts>({});
   const [messagesPage, setMessagesPage] = useState(1);
-  const [messagesFilter, setMessagesFilter] = useState<'all' | 'unprocessed' | 'processed'>('unprocessed');
+  const [messagesFilter, setMessagesFilter] = useState<'all' | 'unprocessed' | 'processed'>('all');
+  const [classificationFilter, setClassificationFilter] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState<string>('receivedAt');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [selectedMessages, setSelectedMessages] = useState<Set<string>>(new Set());
   const [processing, setProcessing] = useState(false);
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
   const [skipAIForBulk, setSkipAIForBulk] = useState(true);
+  const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
     fetchData();
@@ -174,24 +192,51 @@ export default function EmailPipelinePage() {
     if (activeTab === 'processing') {
       fetchMessages();
     }
-  }, [activeTab, messagesPage, messagesFilter]);
+  }, [activeTab, messagesPage, messagesFilter, classificationFilter, sortBy, sortDir, searchQuery]);
 
   const fetchMessages = async () => {
     const token = Cookies.get('access_token');
     if (!token) return;
 
     try {
-      const res = await fetch(`/api/v1/email-pipeline/messages?page=${messagesPage}&limit=50&filter=${messagesFilter}`, {
+      const params = new URLSearchParams({
+        page: String(messagesPage),
+        limit: '50',
+        filter: messagesFilter,
+        sortBy,
+        sortDir,
+      });
+      if (classificationFilter) params.set('classification', classificationFilter);
+      if (searchQuery) params.set('search', searchQuery);
+
+      const res = await fetch(`/api/v1/email-pipeline/messages?${params}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
         const data = await res.json();
         setMessages(data.data.messages || []);
         setMessagesStats(data.data.stats);
+        setCategoryCounts(data.data.categoryCounts || {});
+        setTotalPages(data.data.pagination?.pages || 1);
       }
     } catch (error) {
       console.error('Error fetching messages:', error);
     }
+  };
+
+  const toggleSort = (field: string) => {
+    if (sortBy === field) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(field);
+      setSortDir('desc');
+    }
+    setMessagesPage(1);
+  };
+
+  const SortIcon = ({ field }: { field: string }) => {
+    if (sortBy !== field) return <ArrowUpDown className="w-3 h-3 opacity-30" />;
+    return sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
   };
 
   const processSelected = async () => {
@@ -620,48 +665,114 @@ export default function EmailPipelinePage() {
             </div>
           )}
 
-          {/* Actions */}
+          {/* Classification breakdown */}
+          {Object.keys(categoryCounts).length > 0 && (
+            <div className={`${GLASS_CARD} p-4`}>
+              <div className="text-xs font-medium text-slate-500 dark:text-slate-400 uppercase mb-2">Klasyfikacja</div>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(categoryCounts).sort((a, b) => b[1] - a[1]).map(([cat, count]) => (
+                  <button
+                    key={cat}
+                    onClick={() => { setClassificationFilter(classificationFilter === cat ? '' : cat); setMessagesPage(1); }}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 ${
+                      classificationFilter === cat
+                        ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-slate-800'
+                        : ''
+                    } ${
+                      cat === 'BUSINESS' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                      cat === 'NEWSLETTER' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                      cat === 'SPAM' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                      cat === 'TRANSACTIONAL' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                      cat === 'INVOICE' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' :
+                      cat === 'COOPERATION' ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400' :
+                      cat === 'OFFER' ? 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400' :
+                      cat === 'AUTO_REPLY' ? 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400' :
+                      'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
+                    }`}
+                  >
+                    {cat}
+                    <span className="opacity-70">{count}</span>
+                  </button>
+                ))}
+                {classificationFilter && (
+                  <button
+                    onClick={() => { setClassificationFilter(''); setMessagesPage(1); }}
+                    className="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors"
+                  >
+                    Wyczyść filtr
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Actions + Search Bar */}
           <div className={`${GLASS_CARD} p-4`}>
             <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-2">
+              {/* Search */}
+              <div className="relative flex-1 min-w-[200px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                 <input
-                  type="checkbox"
-                  id="skipAI"
-                  checked={skipAIForBulk}
-                  onChange={(e) => setSkipAIForBulk(e.target.checked)}
-                  className="rounded border-slate-300 dark:border-slate-600"
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => { setSearchQuery(e.target.value); setMessagesPage(1); }}
+                  placeholder="Szukaj po nadawcy lub temacie..."
+                  className="w-full pl-9 pr-3 py-2 border border-slate-300 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-sm text-slate-900 dark:text-slate-100"
                 />
-                <label htmlFor="skipAI" className="text-sm text-slate-700 dark:text-slate-300">
-                  Pomiń AI (szybsze, tylko kategoryzacja)
-                </label>
               </div>
-              <button
-                onClick={processAll}
-                disabled={processing || !messagesStats || messagesStats.unprocessed === 0}
-                className="px-4 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 flex items-center gap-2 text-sm font-medium transition-colors"
-              >
-                {processing ? (
-                  <>
-                    <RefreshCw className="w-5 h-5 animate-spin" />
-                    Przetwarzanie...
-                  </>
-                ) : (
-                  <>
-                    <Zap className="w-5 h-5" />
-                    Przetwórz wszystkie ({messagesStats?.unprocessed || 0})
-                  </>
-                )}
-              </button>
-              {selectedMessages.size > 0 && (
+
+              {/* Status filter */}
+              <div className="flex gap-1">
+                {(['all', 'unprocessed', 'processed'] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => { setMessagesFilter(f); setMessagesPage(1); }}
+                    className={`px-3 py-2 rounded-xl text-xs font-medium transition-colors ${
+                      messagesFilter === f
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                    }`}
+                  >
+                    {f === 'all' ? 'Wszystkie' : f === 'unprocessed' ? 'Nowe' : 'Przetworzone'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Bulk actions */}
+              <div className="flex items-center gap-2 ml-auto">
+                <div className="flex items-center gap-1">
+                  <input
+                    type="checkbox"
+                    id="skipAI"
+                    checked={skipAIForBulk}
+                    onChange={(e) => setSkipAIForBulk(e.target.checked)}
+                    className="rounded border-slate-300 dark:border-slate-600"
+                  />
+                  <label htmlFor="skipAI" className="text-xs text-slate-600 dark:text-slate-400">
+                    Pomiń AI
+                  </label>
+                </div>
                 <button
-                  onClick={processSelected}
-                  disabled={processing}
-                  className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:opacity-50 flex items-center gap-2 text-sm font-medium transition-colors"
+                  onClick={processAll}
+                  disabled={processing || !messagesStats || messagesStats.unprocessed === 0}
+                  className="px-3 py-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 disabled:opacity-50 flex items-center gap-1.5 text-xs font-medium transition-colors"
                 >
-                  <Play className="w-5 h-5" />
-                  Przetwórz wybrane ({selectedMessages.size})
+                  {processing ? (
+                    <><RefreshCw className="w-4 h-4 animate-spin" /> Przetwarzanie...</>
+                  ) : (
+                    <><Zap className="w-4 h-4" /> Przetwórz ({messagesStats?.unprocessed || 0})</>
+                  )}
                 </button>
-              )}
+                {selectedMessages.size > 0 && (
+                  <button
+                    onClick={processSelected}
+                    disabled={processing}
+                    className="px-3 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 disabled:opacity-50 flex items-center gap-1.5 text-xs font-medium transition-colors"
+                  >
+                    <Play className="w-4 h-4" /> Wybrane ({selectedMessages.size})
+                  </button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -704,29 +815,12 @@ export default function EmailPipelinePage() {
             </div>
           )}
 
-          {/* Filter */}
-          <div className="flex gap-2">
-            {(['all', 'unprocessed', 'processed'] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => { setMessagesFilter(f); setMessagesPage(1); }}
-                className={`px-3 py-1 rounded-xl text-sm transition-colors ${
-                  messagesFilter === f
-                    ? 'bg-blue-600 text-white'
-                    : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
-                }`}
-              >
-                {f === 'all' ? 'Wszystkie' : f === 'unprocessed' ? 'Nieprzetworzne' : 'Przetworzne'}
-              </button>
-            ))}
-          </div>
-
           {/* Messages Table */}
           <div className={`${GLASS_CARD} overflow-hidden`}>
             <table className="min-w-full divide-y divide-slate-200 dark:divide-slate-700">
               <thead className="bg-slate-50/50 dark:bg-slate-700/50">
                 <tr>
-                  <th className="w-8 px-4 py-3">
+                  <th className="w-8 px-3 py-3">
                     <input
                       type="checkbox"
                       checked={selectedMessages.size === messages.length && messages.length > 0}
@@ -734,83 +828,146 @@ export default function EmailPipelinePage() {
                       className="rounded border-slate-300 dark:border-slate-600"
                     />
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Od</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Temat</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Data</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Kategoria</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">Klasyfikacja</th>
+                  <th
+                    className="px-3 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase cursor-pointer hover:text-slate-700 dark:hover:text-slate-200 select-none"
+                    onClick={() => toggleSort('fromAddress')}
+                  >
+                    <span className="flex items-center gap-1">Od <SortIcon field="fromAddress" /></span>
+                  </th>
+                  <th
+                    className="px-3 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase cursor-pointer hover:text-slate-700 dark:hover:text-slate-200 select-none"
+                    onClick={() => toggleSort('subject')}
+                  >
+                    <span className="flex items-center gap-1">Temat <SortIcon field="subject" /></span>
+                  </th>
+                  <th
+                    className="px-3 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase cursor-pointer hover:text-slate-700 dark:hover:text-slate-200 select-none"
+                    onClick={() => toggleSort('receivedAt')}
+                  >
+                    <span className="flex items-center gap-1">Data <SortIcon field="receivedAt" /></span>
+                  </th>
+                  <th
+                    className="px-3 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase cursor-pointer hover:text-slate-700 dark:hover:text-slate-200 select-none"
+                    onClick={() => toggleSort('category')}
+                  >
+                    <span className="flex items-center gap-1">Klasyfikacja <SortIcon field="category" /></span>
+                  </th>
+                  <th
+                    className="px-3 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase cursor-pointer hover:text-slate-700 dark:hover:text-slate-200 select-none"
+                    onClick={() => toggleSort('priority')}
+                  >
+                    <span className="flex items-center gap-1">Priorytet <SortIcon field="priority" /></span>
+                  </th>
+                  <th className="px-3 py-3 text-left text-xs font-medium text-slate-500 dark:text-slate-400 uppercase">
+                    Akcje
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                {messages.map((msg) => (
-                  <tr key={msg.id} className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${selectedMessages.has(msg.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
-                    <td className="px-4 py-3">
-                      <input
-                        type="checkbox"
-                        checked={selectedMessages.has(msg.id)}
-                        onChange={() => toggleMessageSelection(msg.id)}
-                        className="rounded border-slate-300 dark:border-slate-600"
-                      />
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      <div className="font-medium text-slate-900 dark:text-slate-100">{msg.fromName || msg.fromAddress}</div>
-                      {msg.fromName && <div className="text-slate-500 dark:text-slate-400 text-xs">{msg.fromAddress}</div>}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-slate-900 dark:text-slate-100 max-w-xs truncate">{msg.subject}</td>
-                    <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">
-                      {new Date(msg.receivedAt).toLocaleDateString('pl')}
-                    </td>
-                    <td className="px-4 py-3">
-                      {msg.pipelineProcessed ? (
-                        <span className="flex items-center gap-1 text-green-600 dark:text-green-400 text-sm">
-                          <CheckCircle2 className="w-4 h-4" />
-                          {msg.isSpam ? 'Spam' : msg.aiAnalyzed ? 'AI' : 'Sklasyfikowano'}
+                {messages.map((msg) => {
+                  const pr = msg.pipelineResult as any;
+                  const classification = pr?.classification || msg.category;
+                  const matchedRule = pr?.matchedRule;
+
+                  return (
+                    <tr key={msg.id} className={`hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${selectedMessages.has(msg.id) ? 'bg-blue-50 dark:bg-blue-900/20' : ''}`}>
+                      <td className="px-3 py-2.5">
+                        <input
+                          type="checkbox"
+                          checked={selectedMessages.has(msg.id)}
+                          onChange={() => toggleMessageSelection(msg.id)}
+                          className="rounded border-slate-300 dark:border-slate-600"
+                        />
+                      </td>
+                      <td className="px-3 py-2.5 text-sm">
+                        <div className="font-medium text-slate-900 dark:text-slate-100 truncate max-w-[180px]">
+                          {msg.fromName || msg.fromAddress}
+                        </div>
+                        {msg.fromName && <div className="text-slate-400 dark:text-slate-500 text-[11px] truncate max-w-[180px]">{msg.fromAddress}</div>}
+                      </td>
+                      <td className="px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 max-w-[280px] truncate">
+                        {msg.subject || '(brak tematu)'}
+                      </td>
+                      <td className="px-3 py-2.5 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                        {new Date(msg.receivedAt).toLocaleDateString('pl', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                        <br />
+                        <span className="text-[10px] opacity-60">
+                          {new Date(msg.receivedAt).toLocaleTimeString('pl', { hour: '2-digit', minute: '2-digit' })}
                         </span>
-                      ) : (
-                        <span className="flex items-center gap-1 text-orange-600 dark:text-orange-400 text-sm">
-                          <Clock className="w-4 h-4" />
-                          Oczekuje
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {msg.category && (
-                        <span className={`px-2 py-0.5 rounded text-xs ${
-                          msg.isSpam ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
-                        }`}>
-                          {msg.category}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {(msg.pipelineResult as any)?.classification && (
-                        <div className="flex flex-col gap-0.5">
-                          <span className={`px-2 py-0.5 rounded text-xs inline-block w-fit ${
-                            (msg.pipelineResult as any).classification === 'BUSINESS' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-                            (msg.pipelineResult as any).classification === 'SPAM' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
-                            (msg.pipelineResult as any).classification === 'NEWSLETTER' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
-                            'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
-                          }`}>
-                            {(msg.pipelineResult as any).classification}
-                          </span>
-                          <div className="flex gap-1">
-                            {(msg.pipelineResult as any).addedToRag && (
-                              <span className="text-[10px] text-purple-500 dark:text-purple-400">RAG</span>
-                            )}
-                            {(msg.pipelineResult as any).addedToFlow && (
-                              <span className="text-[10px] text-blue-500 dark:text-blue-400">FLOW</span>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        {classification && classification !== 'INBOX' ? (
+                          <div className="flex flex-col gap-0.5">
+                            <span className={`px-2 py-0.5 rounded text-xs inline-block w-fit font-medium ${
+                              classification === 'BUSINESS' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+                              classification === 'NEWSLETTER' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                              classification === 'SPAM' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                              classification === 'TRANSACTIONAL' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' :
+                              classification === 'INVOICE' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' :
+                              classification === 'COOPERATION' ? 'bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400' :
+                              classification === 'OFFER' ? 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400' :
+                              classification === 'MEETING' ? 'bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400' :
+                              classification === 'AUTO_REPLY' ? 'bg-slate-200 text-slate-600 dark:bg-slate-600 dark:text-slate-300' :
+                              'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300'
+                            }`}>
+                              {classification}
+                            </span>
+                            {matchedRule && (
+                              <span className="text-[10px] text-slate-400 dark:text-slate-500 truncate max-w-[120px]" title={matchedRule}>
+                                {matchedRule}
+                              </span>
                             )}
                           </div>
+                        ) : (
+                          <span className="text-xs text-slate-400 dark:text-slate-500">
+                            {msg.pipelineProcessed ? 'INBOX' : '-'}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                          msg.priority === 'URGENT' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                          msg.priority === 'HIGH' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
+                          msg.priority === 'MEDIUM' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                          'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-400'
+                        }`}>
+                          {msg.priority}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2.5">
+                        <div className="flex gap-1">
+                          {pr?.addedToRag && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 flex items-center gap-0.5" title="Dodano do RAG">
+                              <Database className="w-3 h-3" /> RAG
+                            </span>
+                          )}
+                          {pr?.addedToFlow && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 flex items-center gap-0.5" title="Dodano do Flow">
+                              <Workflow className="w-3 h-3" /> FLOW
+                            </span>
+                          )}
+                          {msg.aiAnalyzed && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-50 text-purple-500 dark:bg-purple-900/20 dark:text-purple-400" title="Analiza AI">
+                              AI
+                            </span>
+                          )}
+                          {!msg.pipelineProcessed && (
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-orange-50 text-orange-500 dark:bg-orange-900/20 dark:text-orange-400">
+                              Nowy
+                            </span>
+                          )}
                         </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  );
+                })}
                 {messages.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-slate-500 dark:text-slate-400">
-                      Brak wiadomości do wyświetlenia
+                    <td colSpan={7} className="px-4 py-12 text-center text-slate-400 dark:text-slate-500">
+                      <Mail className="w-8 h-8 mx-auto mb-2 opacity-40" />
+                      {searchQuery ? 'Nie znaleziono wiadomości pasujących do wyszukiwania' :
+                       classificationFilter ? `Brak wiadomości z klasyfikacją: ${classificationFilter}` :
+                       'Brak wiadomości do wyświetlenia'}
                     </td>
                   </tr>
                 )}
@@ -819,23 +976,41 @@ export default function EmailPipelinePage() {
           </div>
 
           {/* Pagination */}
-          {messagesStats && messagesStats.total > 50 && (
-            <div className="flex justify-center gap-2">
-              <button
-                onClick={() => setMessagesPage(p => Math.max(1, p - 1))}
-                disabled={messagesPage === 1}
-                className="px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-700 disabled:opacity-50 text-slate-700 dark:text-slate-300"
-              >
-                &larr;
-              </button>
-              <span className="px-3 py-1 text-slate-700 dark:text-slate-300">Strona {messagesPage}</span>
-              <button
-                onClick={() => setMessagesPage(p => p + 1)}
-                disabled={messages.length < 50}
-                className="px-3 py-1 rounded-xl bg-slate-100 dark:bg-slate-700 disabled:opacity-50 text-slate-700 dark:text-slate-300"
-              >
-                &rarr;
-              </button>
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-2">
+              <span className="text-xs text-slate-500 dark:text-slate-400">
+                Strona {messagesPage} z {totalPages}
+              </span>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => setMessagesPage(1)}
+                  disabled={messagesPage === 1}
+                  className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 disabled:opacity-30 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                >
+                  Pierwsza
+                </button>
+                <button
+                  onClick={() => setMessagesPage(p => Math.max(1, p - 1))}
+                  disabled={messagesPage === 1}
+                  className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 disabled:opacity-30 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setMessagesPage(p => Math.min(totalPages, p + 1))}
+                  disabled={messagesPage >= totalPages}
+                  className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 disabled:opacity-30 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setMessagesPage(totalPages)}
+                  disabled={messagesPage >= totalPages}
+                  className="px-2 py-1 rounded-lg bg-slate-100 dark:bg-slate-700 disabled:opacity-30 text-xs text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors"
+                >
+                  Ostatnia
+                </button>
+              </div>
             </div>
           )}
         </div>

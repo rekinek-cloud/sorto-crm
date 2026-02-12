@@ -375,18 +375,48 @@ export class ScheduledTasksService {
                   }
                 });
 
-                // Step 2: RuleProcessingPipeline (CRM → Lists → AI → Actions)
+                // Step 2: RuleProcessingPipeline (CRM → Lists → AI Rules → AI → Actions)
                 try {
                   const rulePipeline = new RuleProcessingPipeline(prisma);
-                  await rulePipeline.processEntity(org.id, 'EMAIL', message.id, {
+                  const classResult = await rulePipeline.processEntity(org.id, 'EMAIL', message.id, {
+                    from: message.fromAddress || '',
                     subject: message.subject || '',
+                    body: message.content || '',
                     content: message.content || '',
-                    senderEmail: message.fromAddress || '',
                     senderName: message.fromName || '',
-                    receivedAt: message.receivedAt?.toISOString() || new Date().toISOString(),
                   });
+
+                  // Write classification back to message
+                  if (classResult?.finalClass) {
+                    const updateData: any = {
+                      category: classResult.finalClass,
+                    };
+                    if (classResult.finalClass === 'SPAM') {
+                      updateData.isSpam = true;
+                    }
+                    // Set priority from rule actions
+                    const ruleActions = classResult.stages?.ruleMatch?.actions;
+                    if (ruleActions?.setPriority) {
+                      updateData.priority = ruleActions.setPriority;
+                    } else if (classResult.finalClass === 'BUSINESS' && classResult.finalConfidence > 0.8) {
+                      updateData.priority = 'HIGH';
+                    }
+                    // Merge classification into pipelineResult
+                    const existingResult = pipelineResult as any || {};
+                    updateData.pipelineResult = {
+                      ...existingResult,
+                      classification: classResult.finalClass,
+                      classConfidence: classResult.finalConfidence,
+                      matchedRule: classResult.stages?.ruleMatch?.ruleName,
+                      addedToRag: classResult.actionsExecuted?.includes('ADDED_TO_RAG'),
+                      addedToFlow: classResult.actionsExecuted?.includes('ADDED_TO_FLOW'),
+                    };
+                    await prisma.message.update({
+                      where: { id: message.id },
+                      data: updateData,
+                    });
+                  }
                 } catch (classErr: any) {
-                  // Classification errors are non-fatal
                   logger.warn(`[EmailProcessing] Classification error for ${message.id}: ${classErr.message}`);
                 }
 

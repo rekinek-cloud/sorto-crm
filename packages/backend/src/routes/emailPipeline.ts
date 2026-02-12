@@ -389,6 +389,10 @@ router.get('/messages', authenticateToken, async (req: AuthenticatedRequest, res
     const page = parseInt(req.query.page as string) || 1;
     const limit = Math.min(parseInt(req.query.limit as string) || 50, 100);
     const filter = req.query.filter as string || 'all'; // all, unprocessed, processed
+    const classification = req.query.classification as string; // BUSINESS, NEWSLETTER, SPAM, etc.
+    const sortBy = req.query.sortBy as string || 'receivedAt';
+    const sortDir = (req.query.sortDir as string || 'desc') === 'asc' ? 'asc' : 'desc';
+    const search = req.query.search as string;
 
     const where: any = { organizationId };
 
@@ -398,10 +402,33 @@ router.get('/messages', authenticateToken, async (req: AuthenticatedRequest, res
       where.pipelineProcessed = true;
     }
 
-    const [messages, total] = await Promise.all([
+    if (classification) {
+      where.category = classification;
+    }
+
+    if (search) {
+      where.OR = [
+        { subject: { contains: search, mode: 'insensitive' } },
+        { fromAddress: { contains: search, mode: 'insensitive' } },
+        { fromName: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    // Build orderBy
+    const validSortFields: Record<string, string> = {
+      receivedAt: 'receivedAt',
+      fromAddress: 'fromAddress',
+      subject: 'subject',
+      category: 'category',
+      priority: 'priority',
+    };
+    const orderByField = validSortFields[sortBy] || 'receivedAt';
+    const orderBy: any = { [orderByField]: sortDir };
+
+    const [messages, total, statsData] = await Promise.all([
       prisma.message.findMany({
         where,
-        orderBy: { receivedAt: 'desc' },
+        orderBy,
         skip: (page - 1) * limit,
         take: limit,
         select: {
@@ -419,8 +446,20 @@ router.get('/messages', authenticateToken, async (req: AuthenticatedRequest, res
           pipelineResult: true,
         }
       }),
-      prisma.message.count({ where })
+      prisma.message.count({ where }),
+      Promise.all([
+        prisma.message.count({ where: { organizationId } }),
+        prisma.message.count({ where: { organizationId, pipelineProcessed: false } }),
+        prisma.message.count({ where: { organizationId, pipelineProcessed: true } }),
+        prisma.message.groupBy({
+          by: ['category'],
+          where: { organizationId, category: { not: null } },
+          _count: true,
+        }),
+      ]),
     ]);
+
+    const [totalAll, unprocessed, processed, byCategory] = statsData;
 
     res.json({
       success: true,
@@ -433,10 +472,14 @@ router.get('/messages', authenticateToken, async (req: AuthenticatedRequest, res
           pages: Math.ceil(total / limit)
         },
         stats: {
-          total: await prisma.message.count({ where: { organizationId } }),
-          unprocessed: await prisma.message.count({ where: { organizationId, pipelineProcessed: false } }),
-          processed: await prisma.message.count({ where: { organizationId, pipelineProcessed: true } }),
-        }
+          total: totalAll,
+          unprocessed,
+          processed,
+        },
+        categoryCounts: byCategory.reduce((acc, item) => {
+          if (item.category) acc[item.category] = item._count;
+          return acc;
+        }, {} as Record<string, number>),
       }
     });
   } catch (error) {
@@ -506,13 +549,41 @@ router.post('/process-batch', authenticateToken, async (req: AuthenticatedReques
             'EMAIL',
             message.id,
             {
+              from: message.fromAddress || '',
               subject: message.subject || '',
+              body: message.content || '',
               content: message.content || '',
-              senderEmail: message.fromAddress || '',
               senderName: message.fromName || '',
-              receivedAt: message.receivedAt?.toISOString() || new Date().toISOString(),
             }
           );
+
+          // Write classification back to message
+          if (classificationResult?.finalClass) {
+            const updateData: any = {
+              category: classificationResult.finalClass,
+            };
+            if (classificationResult.finalClass === 'SPAM') {
+              updateData.isSpam = true;
+            }
+            const ruleActions = classificationResult.stages?.ruleMatch?.actions;
+            if (ruleActions?.setPriority) {
+              updateData.priority = ruleActions.setPriority;
+            } else if (classificationResult.finalClass === 'BUSINESS' && classificationResult.finalConfidence > 0.8) {
+              updateData.priority = 'HIGH';
+            }
+            updateData.pipelineResult = {
+              ...(pipelineResult as any),
+              classification: classificationResult.finalClass,
+              classConfidence: classificationResult.finalConfidence,
+              matchedRule: classificationResult.stages?.ruleMatch?.ruleName,
+              addedToRag: classificationResult.actionsExecuted?.includes('ADDED_TO_RAG'),
+              addedToFlow: classificationResult.actionsExecuted?.includes('ADDED_TO_FLOW'),
+            };
+            await prisma.message.update({
+              where: { id: message.id },
+              data: updateData,
+            });
+          }
         } catch (classErr: any) {
           console.error(`[EmailPipeline] RuleProcessingPipeline error for ${message.id}:`, classErr.message);
         }
@@ -523,14 +594,14 @@ router.post('/process-batch', authenticateToken, async (req: AuthenticatedReques
           success: true,
           result: {
             isSpam: pipelineResult.isSpam,
-            category: pipelineResult.category,
+            category: classificationResult?.finalClass || pipelineResult.category,
             priority: pipelineResult.priority,
             skipAI: pipelineResult.skipAI,
             stage: pipelineResult.stage,
             classification: classificationResult?.finalClass,
             confidence: classificationResult?.finalConfidence,
-            addedToRag: classificationResult?.addedToRag,
-            addedToFlow: classificationResult?.addedToFlow,
+            addedToRag: classificationResult?.actionsExecuted?.includes('ADDED_TO_RAG'),
+            addedToFlow: classificationResult?.actionsExecuted?.includes('ADDED_TO_FLOW'),
           }
         });
       } catch (err: any) {
@@ -632,26 +703,43 @@ router.post('/process-all', authenticateToken, async (req: AuthenticatedRequest,
             'EMAIL',
             message.id,
             {
+              from: message.fromAddress || '',
               subject: message.subject || '',
+              body: message.content || '',
               content: message.content || '',
-              senderEmail: message.fromAddress || '',
               senderName: message.fromName || '',
-              receivedAt: message.receivedAt?.toISOString() || new Date().toISOString(),
             }
           );
-          // Save classification data back to pipelineResult
-          if (classResult) {
-            const merged = {
+          // Write classification back to message
+          if (classResult?.finalClass) {
+            const updateData: any = {
+              category: classResult.finalClass,
+            };
+            if (classResult.finalClass === 'SPAM') {
+              updateData.isSpam = true;
+            }
+            const ruleActions = classResult.stages?.ruleMatch?.actions;
+            if (ruleActions?.setPriority) {
+              updateData.priority = ruleActions.setPriority;
+            } else if (classResult.finalClass === 'BUSINESS' && classResult.finalConfidence > 0.8) {
+              updateData.priority = 'HIGH';
+            }
+            updateData.pipelineResult = {
               ...(pipelineResult as any),
               classification: classResult.finalClass,
-              confidence: classResult.finalConfidence,
-              addedToRag: classResult.addedToRag,
-              addedToFlow: classResult.addedToFlow,
+              classConfidence: classResult.finalConfidence,
+              matchedRule: classResult.stages?.ruleMatch?.ruleName,
+              addedToRag: classResult.actionsExecuted?.includes('ADDED_TO_RAG'),
+              addedToFlow: classResult.actionsExecuted?.includes('ADDED_TO_FLOW'),
             };
             await prisma.message.update({
               where: { id: message.id },
-              data: { pipelineResult: merged }
+              data: updateData,
             });
+
+            // Track category from classification
+            const classCategory = classResult.finalClass;
+            categoryStats[classCategory] = (categoryStats[classCategory] || 0) + 1;
           }
         } catch (classErr: any) {
           console.error(`[EmailPipeline] RuleProcessingPipeline error for ${message.id}:`, classErr.message);
