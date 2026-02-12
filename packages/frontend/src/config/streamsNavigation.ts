@@ -230,6 +230,18 @@ export const streamsNavigation: NavItem[] = [
     ],
   },
 
+  // === HOLDING & ZESPÓŁ ===
+  {
+    name: 'Holding',
+    icon: Buildings,
+    iconWeight: 'duotone',
+    children: [
+      { name: 'Struktura', href: '/dashboard/holding', icon: Buildings, iconWeight: 'duotone' },
+      { name: 'Zespół', href: '/dashboard/team', icon: UsersThree, iconWeight: 'duotone' },
+      { name: 'AI Agenci', href: '/dashboard/ai-agents', icon: Robot, iconWeight: 'duotone' },
+    ],
+  },
+
   // === AI & NARZĘDZIA ===
   {
     name: 'AI & Narzędzia',

@@ -115,6 +115,14 @@ import clientIntelligenceRoutes from './routes/clientIntelligence';
 import dealStakeholdersRoutes from './routes/dealStakeholders';
 import dealCompetitorsRoutes from './routes/dealCompetitors';
 import clientProductsRoutes from './routes/clientProducts';
+// Holding & AI Agents routes
+import holdingsRoutes from './routes/holdings';
+import employeesRoutes from './routes/employees';
+import contextSwitchRoutes from './routes/contextSwitch';
+import aiAgentsRoutes from './routes/aiAgents';
+import aiAgentTasksRoutes from './routes/aiAgentTasks';
+import aiMessagesRoutes from './routes/aiMessages';
+import teamRoutes from './routes/team';
 
 const app = express();
 
@@ -305,6 +313,15 @@ apiRouter.use('/client-intelligence', clientIntelligenceRoutes); // Client Intel
 apiRouter.use('/deal-stakeholders', dealStakeholdersRoutes); // Deal Stakeholders - mapa decyzji
 apiRouter.use('/deal-competitors', dealCompetitorsRoutes);   // Deal Competitors - konkurencja
 apiRouter.use('/client-products', clientProductsRoutes);     // Client Products - historia produktów
+
+// Holding & Multi-Company & AI Agents
+apiRouter.use('/holdings', holdingsRoutes);
+apiRouter.use('/employees', employeesRoutes);
+apiRouter.use('/context', contextSwitchRoutes);
+apiRouter.use('/ai-agents', aiAgentsRoutes);
+apiRouter.use('/ai-agent-tasks', aiAgentTasksRoutes);
+apiRouter.use('/ai-messages', aiMessagesRoutes);
+apiRouter.use('/team', teamRoutes);
 
 // Aliasy dla kompatybilności wstecznej (deprecated)
 apiRouter.use('/gtdinbox', sourceRoutes);         // deprecated -> use /source

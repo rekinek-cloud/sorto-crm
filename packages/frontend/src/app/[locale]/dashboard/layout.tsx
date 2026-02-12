@@ -14,6 +14,7 @@ import RAGChatModal from '@/components/rag/RAGChatModal';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { streamsNavigation } from '@/config/streamsNavigation';
 import { safeLocalStorage } from '@/lib/safeStorage';
+import { CompanySwitcher } from '@/components/holding/CompanySwitcher';
 
 export default function DashboardLayout({
   children,
@@ -260,6 +261,13 @@ export default function DashboardLayout({
               </svg>
             </button>
           </div>
+
+          {/* Company Switcher */}
+          {!sidebarCollapsed && (
+            <div className="px-3 py-2 border-b border-gray-100">
+              <CompanySwitcher />
+            </div>
+          )}
 
           {/* Navigation */}
           <div className="flex-1 flex flex-col overflow-y-auto">

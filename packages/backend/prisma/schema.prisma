@@ -137,6 +137,18 @@ model Organization {
   clientProducts      ClientProduct[]
   clientProductStats  ClientProductStats[]
 
+  // Holding & Multi-Company
+  holdingId           String?
+  holding             Holding?             @relation("HoldingOrganizations", fields: [holdingId], references: [id])
+  companyType         CompanyType          @default(OTHER)
+  shortName           String?
+  color               String               @default("#3b82f6")
+  icon                String?
+  baseStreamsCreated   Boolean              @default(false)
+  employees           Employee[]           @relation("OrganizationEmployees")
+  aiAgentAssignments  AIAgentAssignment[]  @relation("OrganizationAIAgents")
+
+  @@index([holdingId])
   @@map("organizations")
 }
 
@@ -247,6 +259,10 @@ model User {
   eventTeamMembers         EventTeamMember[]
   eventExpensesCreated     EventExpense[]
   createdClientProducts    ClientProduct[]
+
+  // Holding & Multi-Company
+  ownedHoldings            Holding[]            @relation("HoldingOwner")
+  employeeProfiles         Employee[]           @relation("EmployeeUser")
 
   @@map("users")
 }
@@ -5435,4 +5451,236 @@ model ClientProductStats {
   company            Company      @relation(fields: [companyId], references: [id])
 
   @@map("client_product_stats")
+}
+
+// ===========================================
+// HOLDING & MULTI-COMPANY STRUCTURE
+// ===========================================
+
+model Holding {
+  id        String   @id @default(uuid())
+  name      String
+  nip       String?
+  ownerId   String
+  settings  Json     @default("{}")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  owner         User           @relation("HoldingOwner", fields: [ownerId], references: [id])
+  organizations Organization[] @relation("HoldingOrganizations")
+  aiAgents      AIAgentManaged[]
+
+  @@index([ownerId])
+  @@map("holdings")
+}
+
+enum CompanyType {
+  PRODUCTION
+  SALES
+  SERVICES
+  EXPORT
+  OTHER
+}
+
+model Employee {
+  id             String       @id @default(uuid())
+  userId         String
+  organizationId String
+  role           EmployeeRole @default(EMPLOYEE)
+  position       String?
+  department     String?
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  user               User            @relation("EmployeeUser", fields: [userId], references: [id])
+  organization       Organization    @relation("OrganizationEmployees", fields: [organizationId], references: [id], onDelete: Cascade)
+  additionalAccess   CompanyAccess[]
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@index([userId])
+  @@map("employees")
+}
+
+enum EmployeeRole {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+  VIEWER
+}
+
+model CompanyAccess {
+  id                     String      @id @default(uuid())
+  employeeId             String
+  targetOrganizationId   String
+  accessLevel            AccessLevel @default(READ_ONLY)
+  createdAt              DateTime    @default(now())
+
+  employee Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@unique([employeeId, targetOrganizationId])
+  @@map("company_access")
+}
+
+// ===========================================
+// AI AGENTS (Managed)
+// ===========================================
+
+model AIAgentManaged {
+  id              String        @id @default(uuid())
+  holdingId       String
+  name            String
+  role            String
+  avatar          String
+  description     String?
+  status          AIAgentStatus @default(ACTIVE)
+  autonomyLevel   Int           @default(2)
+  capabilities    String[]      @default([])
+  settings        Json          @default("{}")
+  tasksCompleted  Int           @default(0)
+  successRate     Float         @default(0)
+  lastActivityAt  DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  holding                Holding              @relation(fields: [holdingId], references: [id], onDelete: Cascade)
+  organizationAssignments AIAgentAssignment[]
+  tasks                  AIAgentManagedTask[]
+  sentMessages           AIAgentManagedMessage[] @relation("AgentSentMessages")
+  receivedMessages       AIAgentManagedMessage[] @relation("AgentReceivedMessages")
+
+  @@index([holdingId])
+  @@index([status])
+  @@map("ai_agents_managed")
+}
+
+enum AIAgentStatus {
+  ACTIVE
+  PAUSED
+  DISABLED
+}
+
+model AIAgentAssignment {
+  id             String   @id @default(uuid())
+  agentId        String
+  organizationId String
+  settings       Json     @default("{}")
+  createdAt      DateTime @default(now())
+
+  agent        AIAgentManaged @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  organization Organization   @relation("OrganizationAIAgents", fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([agentId, organizationId])
+  @@index([organizationId])
+  @@map("ai_agent_assignments")
+}
+
+// ===========================================
+// AI AGENT TASKS
+// ===========================================
+
+model AIAgentManagedTask {
+  id               String          @id @default(uuid())
+  agentId          String
+  organizationId   String
+  type             String
+  status           AITaskStatus    @default(PENDING)
+  input            Json
+  prompt           String?
+  output           Json?
+  result           String?
+  requiresApproval Boolean         @default(false)
+  approvalStatus   ApprovalStatus?
+  approvedById     String?
+  approvedAt       DateTime?
+  requestedById    String
+  startedAt        DateTime?
+  completedAt      DateTime?
+  errorMessage     String?
+  retryCount       Int             @default(0)
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  agent AIAgentManaged @relation(fields: [agentId], references: [id], onDelete: Cascade)
+
+  @@index([agentId])
+  @@index([organizationId])
+  @@index([status])
+  @@index([requestedById])
+  @@map("ai_agent_managed_tasks")
+}
+
+enum AITaskStatus {
+  PENDING
+  IN_PROGRESS
+  WAITING_APPROVAL
+  APPROVED
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ApprovalStatus {
+  APPROVAL_PENDING
+  APPROVAL_APPROVED
+  APPROVAL_REJECTED
+  APPROVAL_MODIFIED
+}
+
+// ===========================================
+// AI AGENT MESSAGES
+// ===========================================
+
+model AIAgentManagedMessage {
+  id             String        @id @default(uuid())
+  fromAgentId    String?
+  fromUserId     String?
+  toAgentId      String?
+  toUserId       String?
+  organizationId String?
+  taskId         String?
+  content        String
+  type           AIMessageType @default(INFO)
+  isRead         Boolean       @default(false)
+  metadata       Json          @default("{}")
+  createdAt      DateTime      @default(now())
+
+  fromAgent AIAgentManaged? @relation("AgentSentMessages", fields: [fromAgentId], references: [id], onDelete: SetNull)
+  toAgent   AIAgentManaged? @relation("AgentReceivedMessages", fields: [toAgentId], references: [id], onDelete: SetNull)
+
+  @@index([fromAgentId])
+  @@index([toUserId])
+  @@index([organizationId])
+  @@index([taskId])
+  @@map("ai_agent_managed_messages")
+}
+
+enum AIMessageType {
+  INFO
+  QUESTION
+  RESULT
+  ALERT
+  APPROVAL_REQUEST
+}
+
+// ===========================================
+// AI AGENT TEMPLATES
+// ===========================================
+
+model AIAgentTemplate {
+  id                   String   @id @default(uuid())
+  name                 String
+  role                 String
+  avatar               String
+  description          String
+  defaultAutonomyLevel Int      @default(2)
+  capabilities         String[] @default([])
+  systemPrompt         String?
+  defaultSettings      Json     @default("{}")
+  isSystem             Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@map("ai_agent_templates")
 }
