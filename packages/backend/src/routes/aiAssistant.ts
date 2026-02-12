@@ -59,6 +59,7 @@ router.post('/analyze', async (req: Request, res: Response) => {
     if (!userPatterns) {
       userPatterns = await prisma.user_ai_patterns.create({
         data: {
+          id: uuidv4(),
           user_id: userId,
           organization_id: organizationId
         }
@@ -365,6 +366,7 @@ router.get('/user-patterns', async (req: Request, res: Response) => {
     if (!patterns) {
       patterns = await prisma.user_ai_patterns.create({
         data: {
+          id: uuidv4(),
           user_id: userId,
           organization_id: organizationId
         }
@@ -418,6 +420,7 @@ router.put('/settings', async (req: Request, res: Response) => {
       where: { user_id: userId },
       update: updateData,
       create: {
+        id: uuidv4(),
         user_id: userId,
         organization_id: organizationId,
         ...updateData
