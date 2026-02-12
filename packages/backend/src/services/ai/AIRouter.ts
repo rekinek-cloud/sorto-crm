@@ -4,6 +4,7 @@ import { OpenAIProvider } from './providers/OpenAIProvider';
 import { AnthropicProvider } from './providers/AnthropicProvider';
 import { HuggingFaceProvider } from './providers/HuggingFaceProvider';
 import { DeepSeekProvider } from './providers/DeepSeekProvider';
+import { QwenProvider } from './providers/QwenProvider';
 
 interface AIRouterConfig {
   organizationId: string;
@@ -398,6 +399,8 @@ export class AIRouter {
           return new HuggingFaceProvider(config.config, config.limits);
         case 'DeepSeek':
           return new DeepSeekProvider(config.config, config.limits);
+        case 'Qwen':
+          return new QwenProvider(config.config, config.limits);
         default:
           console.warn(`Unknown provider type: ${config.name}`);
           return null;

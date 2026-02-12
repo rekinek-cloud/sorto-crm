@@ -4,21 +4,40 @@ import { authenticateToken, requireRole } from '../shared/middleware/auth';
 import { AppError } from '../shared/middleware/error';
 import logger from '../config/logger';
 import { RuleProcessingPipeline } from '../services/ai/RuleProcessingPipeline';
+import { seedFlowAnalysisRules } from '../seeds/seedFlowAnalysisRules';
 
 const router = Router();
+
+// Valid categories and data types
+const VALID_CATEGORIES = ['CLASSIFICATION', 'ROUTING', 'EXTRACTION', 'INDEXING', 'FLOW_ANALYSIS'];
+const VALID_DATA_TYPES = [
+  'EMAIL', 'DOCUMENT', 'OFFER', 'ALL',
+  'QUICK_CAPTURE', 'MEETING_NOTES', 'PHONE_CALL', 'IDEA',
+  'BILL_INVOICE', 'ARTICLE', 'VOICE_MEMO', 'PHOTO', 'OTHER',
+];
 
 // =============================================================================
 // System Rules Definition
 // =============================================================================
 
-const SYSTEM_RULES = [
+const SYSTEM_RULES: Array<{
+  name: string;
+  description: string;
+  category: string;
+  dataType: string;
+  priority: number;
+  triggerType: 'MESSAGE_RECEIVED';
+  triggerConditions: any;
+  actions: any;
+  aiPrompt: string | null;
+}> = [
   {
     name: 'CRM Protection',
     description: 'Zawsze przepuszczaj maile od kontaktów i firm z CRM',
     category: 'CLASSIFICATION',
     dataType: 'EMAIL',
     priority: 1000,
-    triggerType: 'MESSAGE_RECEIVED' as const,
+    triggerType: 'MESSAGE_RECEIVED',
     triggerConditions: { operator: 'AND', conditions: [] },
     actions: { forceClassification: 'BUSINESS' },
     aiPrompt: null,
@@ -29,7 +48,7 @@ const SYSTEM_RULES = [
     category: 'CLASSIFICATION',
     dataType: 'EMAIL',
     priority: 500,
-    triggerType: 'MESSAGE_RECEIVED' as const,
+    triggerType: 'MESSAGE_RECEIVED',
     triggerConditions: {
       operator: 'OR',
       conditions: [
@@ -47,7 +66,7 @@ const SYSTEM_RULES = [
     category: 'CLASSIFICATION',
     dataType: 'EMAIL',
     priority: 500,
-    triggerType: 'MESSAGE_RECEIVED' as const,
+    triggerType: 'MESSAGE_RECEIVED',
     triggerConditions: {
       operator: 'OR',
       conditions: [
@@ -123,6 +142,7 @@ function mapRuleToFrontend(rule: any): any {
       ? JSON.parse(rule.actions)
       : rule.actions || {},
     aiPrompt: rule.aiPrompt || '',
+    aiSystemPrompt: rule.aiSystemPrompt || '',
     aiModel: rule.modelId || '',
     isSystem: rule.isSystem || false,
     createdBy: rule.createdBy || null,
@@ -230,8 +250,10 @@ router.post('/',
           triggerConditions: d.conditions || { operator: 'AND', conditions: [] },
           actions: d.actions || {},
           aiPrompt: d.aiPrompt || null,
+          aiSystemPrompt: d.aiSystemPrompt || null,
+          modelId: d.modelId || null,
           isSystem: false,
-          createdBy: req.user!.userId,
+          createdBy: req.user!.id,
           organizationId: req.user!.organizationId,
           executionCount: 0,
           successCount: 0,
@@ -282,6 +304,8 @@ router.put('/:id',
       if (d.conditions !== undefined) updateFields.triggerConditions = d.conditions;
       if (d.actions !== undefined) updateFields.actions = d.actions;
       if (d.aiPrompt !== undefined) updateFields.aiPrompt = d.aiPrompt;
+      if (d.aiSystemPrompt !== undefined) updateFields.aiSystemPrompt = d.aiSystemPrompt;
+      if (d.modelId !== undefined) updateFields.modelId = d.modelId || null;
       updateFields.updatedAt = new Date();
 
       const dbRule = await prisma.ai_rules.update({
@@ -506,6 +530,32 @@ router.get('/execution-history/:id',
       logger.error('Failed to get execution history:', error);
       // Fallback to empty if table doesn't have expected columns
       res.json({ success: true, data: [] });
+    }
+  }
+);
+
+/**
+ * POST /api/v1/ai-rules/seed-flow-rules
+ * Seed Flow Analysis rules with per-source-type prompts + Qwen provider
+ * Idempotent — skips rules that already exist
+ */
+router.post('/seed-flow-rules',
+  authenticateToken,
+  requireRole(['OWNER', 'ADMIN']),
+  async (req, res) => {
+    try {
+      const orgId = req.user!.organizationId;
+      const result = await seedFlowAnalysisRules(prisma, orgId);
+
+      logger.info(`Flow analysis rules seeded by ${req.user!.email}: ${result.rulesCreated} rules, ${result.modelsCreated} models`);
+
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      logger.error('Failed to seed flow analysis rules:', error);
+      throw new AppError('Nie udało się utworzyć reguł Flow Analysis', 500);
     }
   }
 );

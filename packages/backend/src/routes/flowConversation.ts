@@ -228,7 +228,7 @@ router.post('/start/:itemId', async (req: Request, res: Response) => {
     console.log('🔍 ================================');
 
     const aiResponse = await aiRouter.processRequest({
-      model: 'claude-sonnet-4-20250514',
+      model: 'qwen-plus',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
@@ -488,7 +488,7 @@ Odpowiedz w JSON:
     }));
 
     const aiResponse = await aiRouter.processRequest({
-      model: 'claude-sonnet-4-20250514',
+      model: 'qwen-plus',
       messages: [
         { role: 'system', content: systemPrompt },
         ...conversationHistory

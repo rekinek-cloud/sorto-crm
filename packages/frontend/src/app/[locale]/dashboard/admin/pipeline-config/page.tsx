@@ -250,8 +250,8 @@ export default function PipelineConfigPage() {
         apiClient.get('/admin/pipeline-config'),
         apiClient.get('/admin/pipeline-config/defaults'),
       ]);
-      setConfig(configRes.data?.config || configRes.data);
-      setDefaults(defaultsRes.data?.defaults || defaultsRes.data);
+      setConfig(configRes.data?.data || configRes.data);
+      setDefaults(defaultsRes.data?.data || defaultsRes.data);
       setDirty(new Set());
     } catch (err: any) {
       toast.error('Blad ladowania konfiguracji: ' + (err.message || 'Unknown'));

@@ -371,7 +371,7 @@ export class FlowEngineService {
     // Jesli mamy AI Router - uzyj AI do analizy
     if (this.aiRouter) {
       try {
-        const aiAnalysis = await this.performAIAnalysis(content, elementType, ragContext);
+        const aiAnalysis = await this.performAIAnalysis(content, elementType, ragContext, inboxItem);
         return aiAnalysis;
       } catch (error) {
         console.warn('AI analysis failed, using fallback:', error);
@@ -397,30 +397,101 @@ export class FlowEngineService {
     return sourceTypeMap[inboxItem.sourceType] || 'OTHER';
   }
 
-  private async performAIAnalysis(content: string, elementType: FlowElementType, ragContext?: FlowRAGContext | null): Promise<ContentAnalysis> {
-    const prompt = this.buildAnalysisPrompt(content, elementType);
-
-    // Pobierz prompt V3 z bazy danych
-    let systemPromptContent: string;
-
+  /**
+   * Load FLOW_ANALYSIS rule for specific source type
+   * Priority: specific sourceType rule > ALL rule > null (fallback to SOURCE_ANALYZE)
+   */
+  private async loadFlowAnalysisRule(sourceType: string): Promise<any | null> {
     try {
-      const promptTemplate = await this.prisma.ai_prompt_templates.findFirst({
+      // First try specific type match
+      const specificRule = await this.prisma.ai_rules.findFirst({
         where: {
-          code: 'SOURCE_ANALYZE',
-          organizationId: this.organizationId
-        }
+          organizationId: this.organizationId,
+          category: 'FLOW_ANALYSIS',
+          dataType: sourceType,
+          status: 'ACTIVE',
+        },
+        orderBy: { priority: 'asc' },
+        include: { ai_models: true },
       });
 
-      if (promptTemplate?.systemPrompt) {
-        systemPromptContent = promptTemplate.systemPrompt;
-        console.log('✅ FlowEngine: Używam promptu V3 z bazy danych');
-      } else {
-        throw new Error('Prompt SOURCE_ANALYZE nie znaleziony');
-      }
+      if (specificRule) return specificRule;
+
+      // Fallback: try ALL type
+      const allRule = await this.prisma.ai_rules.findFirst({
+        where: {
+          organizationId: this.organizationId,
+          category: 'FLOW_ANALYSIS',
+          dataType: 'ALL',
+          status: 'ACTIVE',
+        },
+        orderBy: { priority: 'asc' },
+        include: { ai_models: true },
+      });
+
+      return allRule;
     } catch (error) {
-      console.warn('⚠️ FlowEngine: Fallback do domyślnego promptu:', error);
-      // Fallback - podstawowy prompt
-      systemPromptContent = `Jesteś AI Asystentem w systemie Streams — pomagasz ludziom realizować ich cele.
+      console.warn('⚠️ Failed to load flow analysis rule:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Substitute template variables in prompt text
+   */
+  private substituteTemplate(template: string, vars: Record<string, string>): string {
+    let result = template;
+    for (const [key, value] of Object.entries(vars)) {
+      result = result.replace(new RegExp(`\\{\\{${key}\\}\\}`, 'g'), value || '');
+    }
+    return result;
+  }
+
+  private async performAIAnalysis(content: string, elementType: FlowElementType, ragContext?: FlowRAGContext | null, inboxItem?: any): Promise<ContentAnalysis> {
+    let systemPromptContent: string;
+    let userPromptContent: string;
+    let modelName = 'qwen-max-2025-01-25'; // Default to Qwen
+
+    // 1. Try to load rule-based prompt for this source type
+    const sourceType = inboxItem?.sourceType || 'OTHER';
+    const flowRule = await this.loadFlowAnalysisRule(sourceType);
+
+    if (flowRule?.aiPrompt) {
+      // Use rule-based prompt
+      systemPromptContent = flowRule.aiSystemPrompt || flowRule.aiPrompt;
+      userPromptContent = this.substituteTemplate(flowRule.aiPrompt, {
+        content: content.substring(0, 5000),
+        subject: inboxItem?.subject || inboxItem?.title || '',
+        sourceType: sourceType,
+        senderName: inboxItem?.senderName || inboxItem?.fromName || '',
+        metadata: inboxItem?.metadata ? JSON.stringify(inboxItem.metadata) : '',
+      });
+
+      // Use model from rule's ai_models relation, or fallback
+      if (flowRule.ai_models?.name) {
+        modelName = flowRule.ai_models.name;
+      }
+
+      console.log(`✅ FlowEngine: Używam reguły "${flowRule.name}" (model: ${modelName}, sourceType: ${sourceType})`);
+    } else {
+      // 2. Fallback: load SOURCE_ANALYZE from ai_prompt_templates
+      try {
+        const promptTemplate = await this.prisma.ai_prompt_templates.findFirst({
+          where: {
+            code: 'SOURCE_ANALYZE',
+            organizationId: this.organizationId
+          }
+        });
+
+        if (promptTemplate?.systemPrompt) {
+          systemPromptContent = promptTemplate.systemPrompt;
+          console.log('✅ FlowEngine: Używam promptu SOURCE_ANALYZE z bazy danych');
+        } else {
+          throw new Error('Prompt SOURCE_ANALYZE nie znaleziony');
+        }
+      } catch (error) {
+        console.warn('⚠️ FlowEngine: Fallback do domyślnego promptu:', error);
+        systemPromptContent = `Jesteś AI Asystentem w systemie Streams — pomagasz ludziom realizować ich cele.
 
 Twoje zadanie:
 1. Określić typ elementu
@@ -434,6 +505,9 @@ Jeśli podano KONTEKST ORGANIZACYJNY (RAG), wykorzystaj go:
 - Zwiększ confidence gdy kontekst potwierdza sugestię
 
 Odpowiedz w formacie JSON.`;
+      }
+
+      userPromptContent = this.buildAnalysisPrompt(content, elementType);
     }
 
     // Inject RAG context into system prompt
@@ -445,7 +519,7 @@ Odpowiedz w formacie JSON.`;
     }
 
     const request: AIRequest = {
-      model: 'gpt-4',
+      model: modelName,
       messages: [
         {
           role: 'system',
@@ -453,12 +527,12 @@ Odpowiedz w formacie JSON.`;
         },
         {
           role: 'user',
-          content: prompt
+          content: userPromptContent
         }
       ],
       config: {
         temperature: 0.3,
-        maxTokens: 1000
+        maxTokens: 2000
       }
     };
 

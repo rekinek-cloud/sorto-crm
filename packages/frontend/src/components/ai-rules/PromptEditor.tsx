@@ -114,6 +114,28 @@ export function PromptEditor({ prompt, onChange, systemPrompt, onSystemPromptCha
         </div>
       </div>
 
+      <div className="mt-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700">
+        <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2">Dostępne zmienne:</p>
+        <div className="flex flex-wrap gap-2">
+          {['{{content}}', '{{subject}}', '{{sourceType}}', '{{senderName}}', '{{metadata}}'].map((v) => (
+            <button
+              key={v}
+              type="button"
+              onClick={() => {
+                if (activeTab === 'main') {
+                  onChange(prompt + ' ' + v);
+                } else {
+                  onSystemPromptChange?.((systemPrompt || '') + ' ' + v);
+                }
+              }}
+              className="px-2 py-1 text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 rounded-md hover:bg-purple-200 dark:hover:bg-purple-900/50 font-mono"
+            >
+              {v}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {activeTab === 'main' && (
         <div>
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1">

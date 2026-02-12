@@ -48,6 +48,7 @@ export default function RuleEditorPage() {
   const [actions, setActions] = useState<Record<string, any>>({});
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiSystemPrompt, setAiSystemPrompt] = useState('');
+  const [aiModel, setAiModel] = useState('');
 
   const loadRule = useCallback(async () => {
     try {
@@ -64,6 +65,7 @@ export default function RuleEditorPage() {
       setActions(data.actions || {});
       setAiPrompt(data.aiPrompt || '');
       setAiSystemPrompt(data.aiSystemPrompt || '');
+      setAiModel(data.aiModel || '');
     } catch {
       // handled by UI
     } finally {
@@ -107,6 +109,7 @@ export default function RuleEditorPage() {
         actions,
         aiPrompt,
         aiSystemPrompt,
+        modelId: aiModel || undefined,
       });
       setHasChanges(false);
     } catch {
@@ -242,6 +245,7 @@ export default function RuleEditorPage() {
                   <option value="ROUTING">Routing</option>
                   <option value="EXTRACTION">Ekstrakcja</option>
                   <option value="INDEXING">Indeksowanie</option>
+                  <option value="FLOW_ANALYSIS">Flow Analysis</option>
                 </select>
               </div>
               <div>
@@ -255,6 +259,15 @@ export default function RuleEditorPage() {
                   <option value="DOCUMENT">Dokument</option>
                   <option value="OFFER">Oferta</option>
                   <option value="ALL">Wszystkie</option>
+                  <option value="QUICK_CAPTURE">Szybkie notatki</option>
+                  <option value="MEETING_NOTES">Notatki ze spotkan</option>
+                  <option value="PHONE_CALL">Rozmowy tel.</option>
+                  <option value="IDEA">Pomysly</option>
+                  <option value="BILL_INVOICE">Faktury</option>
+                  <option value="ARTICLE">Artykuly</option>
+                  <option value="VOICE_MEMO">Notatki glosowe</option>
+                  <option value="PHOTO">Zdjecia</option>
+                  <option value="OTHER">Inne</option>
                 </select>
               </div>
               <div>
@@ -279,6 +292,22 @@ export default function RuleEditorPage() {
                   <option value="TESTING">Testowa</option>
                 </select>
               </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Model AI</label>
+              <select
+                value={aiModel}
+                onChange={(e) => { setAiModel(e.target.value); markChanged(); }}
+                className="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+              >
+                <option value="">Domyslny</option>
+                <option value="qwen-max-2025-01-25">Qwen Max</option>
+                <option value="qwen-plus">Qwen Plus</option>
+                <option value="qwen-turbo">Qwen Turbo</option>
+                <option value="qwen-long">Qwen Long (10M ctx)</option>
+                <option value="gpt-4">GPT-4</option>
+                <option value="gpt-4o-mini">GPT-4o Mini</option>
+              </select>
             </div>
           </div>
         )}

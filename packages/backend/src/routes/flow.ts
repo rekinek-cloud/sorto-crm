@@ -166,7 +166,7 @@ async function analyzeWithAI(
 
   try {
     const response = await aiRouter.processRequest({
-      model: 'claude-sonnet-4-20250514',  // Use Claude Sonnet 4 (latest available)
+      model: 'qwen-max-2025-01-25',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }

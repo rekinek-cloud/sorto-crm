@@ -2352,8 +2352,9 @@ model ai_rules {
   updatedAt            DateTime
 
   // Task 6: AI Rules System - new fields
-  dataType             String               @default("EMAIL") // EMAIL | DOCUMENT | OFFER | ALL
+  dataType             String               @default("EMAIL")
   aiPrompt             String?              @db.Text
+  aiSystemPrompt       String?              @db.Text
   isSystem             Boolean              @default(false)
   createdBy            String?
 
