@@ -124,6 +124,7 @@ import aiAgentTasksRoutes from './routes/aiAgentTasks';
 import aiMessagesRoutes from './routes/aiMessages';
 import teamRoutes from './routes/team';
 import dataProcessingRoutes from './routes/dataProcessing';
+import emailPipelineRoutes from './routes/emailPipeline';
 
 const app = express();
 
@@ -286,7 +287,8 @@ apiRouter.use('/admin/bug-reports', bugReportsRoutes);  // Bug Reports
 apiRouter.use('/admin/mcp-keys', mcpKeysRoutes);  // MCP API Keys
 apiRouter.use('/ai-rules', aiRulesRoutes);  // AI Rules
 apiRouter.use('/email-domain-rules', emailDomainRulesRoutes);  // Email Domain Rules - listy domen
-  apiRouter.use('/email-analysis', emailAnalysisRoutes);  // Email Analysis - analiza AI emaili
+apiRouter.use('/email-analysis', emailAnalysisRoutes);  // Email Analysis - analiza AI emaili
+apiRouter.use('/email-pipeline', emailPipelineRoutes);  // Email Pipeline - przetwarzanie maili
 apiRouter.use('/ai-suggestions', aiSuggestionsRoutes);  // AI Suggestions - sugestie AI
 // apiRouter.use('/files', filesRoutes);  // Files - zarządzanie plikami
 apiRouter.use('/weekly-review', weeklyReviewRoutes);  // Weekly Review

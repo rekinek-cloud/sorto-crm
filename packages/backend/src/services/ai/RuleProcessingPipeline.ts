@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import crypto from 'crypto';
 import { FlowRAGService } from './FlowRAGService';
 import { AIRouter } from './AIRouter';
 import { AIRequest } from './providers/BaseProvider';
@@ -615,16 +616,21 @@ export class RuleProcessingPipeline {
 
       if (content.length < 20) return false;
 
-      const ragService = new FlowRAGService(this.prisma);
-      // Use raw insert to avoid dependency on specific RAGService method signature
+      const contentHash = crypto.createHash('sha256').update(content).digest('hex');
       await this.prisma.$executeRawUnsafe(`
-        INSERT INTO vector_documents (id, content, metadata, organization_id, created_at)
-        VALUES ($1, $2, $3::jsonb, $4, NOW())
-        ON CONFLICT DO NOTHING
+        INSERT INTO vector_documents (id, title, content, "contentHash", embedding, "entityType", "entityId", source, language, "lastUpdated", "organizationId")
+        VALUES ($1, $2, $3, $4, '{}', $5, $6, $7, 'pl', NOW(), $8)
+        ON CONFLICT ("contentHash") DO UPDATE SET
+          content = EXCLUDED.content,
+          "lastUpdated" = NOW()
       `,
         `rag-${entityType}-${entityId}`,
+        entityData.subject || `${entityType} ${entityId}`,
         content.substring(0, 10000),
-        JSON.stringify({ entityType, entityId, classification, from: entityData.from, subject: entityData.subject }),
+        contentHash,
+        entityType,
+        entityId,
+        entityData.from || 'email-pipeline',
         organizationId
       );
       return true;
@@ -642,9 +648,9 @@ export class RuleProcessingPipeline {
   ): Promise<string | null> {
     try {
       // Find default user (first admin) for inbox item
-      const adminUser = await this.prisma.organizationMember.findFirst({
+      const adminUser = await this.prisma.user.findFirst({
         where: { organizationId, role: { in: ['OWNER', 'ADMIN'] } },
-        select: { userId: true },
+        select: { id: true },
       });
       if (!adminUser) return null;
 
@@ -661,7 +667,7 @@ export class RuleProcessingPipeline {
           elementType: 'EMAIL',
           flowStatus: 'PENDING',
           organizationId,
-          capturedById: adminUser.userId,
+          capturedById: adminUser.id,
         },
       });
 
@@ -691,16 +697,16 @@ export class RuleProcessingPipeline {
       if (existing) return;
 
       // Find admin user for suggestion
-      const adminUser = await this.prisma.organizationMember.findFirst({
+      const adminUser = await this.prisma.user.findFirst({
         where: { organizationId, role: { in: ['OWNER', 'ADMIN'] } },
-        select: { userId: true },
+        select: { id: true },
       });
       if (!adminUser) return;
 
       await this.prisma.ai_suggestions.create({
         data: {
           id: `sug-bl-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
-          user_id: adminUser.userId,
+          user_id: adminUser.id,
           organization_id: organizationId,
           context: 'BLACKLIST_DOMAIN',
           input_data: { domain, email, source: 'classification-pipeline' },
