@@ -98,7 +98,7 @@ Wygenerowano: 2026-01-29
 | POST | /api/v1/streams/:id/archive | Archiwizacja/przywrócenie strumienia |
 | POST | /api/v1/streams/:id/duplicate | Duplikowanie strumienia |
 
-## 9. Moduł Source/GTD Inbox (Inbox i przetwarzanie)
+## 9. Moduł Source Inbox (Inbox i przetwarzanie)
 | Metoda | Endpoint | Opis |
 |--------|----------|------|
 | GET | /api/v1/source | Lista elementów w inboxie z filtrowaniem |
@@ -264,10 +264,10 @@ Wsparcie dla: EMAIL, SLACK
 ## 29. Moduł Smart Mailboxes (Inteligentne skrzynki)
 | Metoda | Endpoint | Opis |
 |--------|----------|------|
-| GET | /api/v1/smart-mailboxes | Lista skrzynek |
-| POST | /api/v1/smart-mailboxes | Utworzenie skrzynki |
-| PUT | /api/v1/smart-mailboxes/:id | Aktualizacja skrzynki |
-| DELETE | /api/v1/smart-mailboxes/:id | Usunięcie skrzynki |
+| GET | /api/v1/mailboxes | Lista skrzynek |
+| POST | /api/v1/mailboxes | Utworzenie skrzynki |
+| PUT | /api/v1/mailboxes/:id | Aktualizacja skrzynki |
+| DELETE | /api/v1/mailboxes/:id | Usunięcie skrzynki |
 
 ## 30. Moduł Invoices (Faktury)
 | Metoda | Endpoint | Opis |
@@ -407,11 +407,13 @@ Integracja z Fakturownia (polska platforma fakturowania)
 
 | Stary URL | Nowy URL |
 |-----------|----------|
+| /api/v1/gtd | /api/v1/workflow |
+| /api/v1/gtd-streams | /api/v1/stream-management |
 | /api/v1/gtdinbox | /api/v1/source |
 | /api/v1/gtdmapviews | /api/v1/streams-map |
 | /api/v1/gtdhorizons | /api/v1/horizons |
 | /api/v1/smartdayplanner | /api/v1/day-planner |
-| /api/v1/smartmailboxes | /api/v1/smart-mailboxes |
+| /api/v1/smartmailboxes | /api/v1/mailboxes |
 | /api/v1/precise-goals | /api/v1/goals |
 
 ---

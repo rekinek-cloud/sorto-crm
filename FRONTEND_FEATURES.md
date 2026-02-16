@@ -279,9 +279,9 @@ Wygenerowano: 2026-01-29
 ### Streams Components (`/components/streams`)
 | Komponent | Opis |
 |-----------|------|
-| GTDStreamManager | Manager strumieni |
-| GTDStreamForm | Formularz strumienia |
-| GTDStreamCard | Karta strumienia |
+| StreamManager | Manager strumieni |
+| StreamForm | Formularz strumienia |
+| StreamCard | Karta strumienia |
 | StreamHierarchyTree | Drzewo hierarchii |
 | StreamStatusBadge | Badge statusu |
 | FlowScoreBadge | Badge flow score |
@@ -333,12 +333,12 @@ Wygenerowano: 2026-01-29
 | companiesApi | CRUD firmy, relacje |
 | dealsApi | CRUD dealów, pipeline |
 | streamsApi | CRUD strumieni, hierarchia |
-| gtdApi | GTD operations |
-| gtdInboxApi | Inbox processing |
+| workflowApi | Workflow operations |
+| sourceInboxApi | Inbox processing |
 | calendarApi | Events, scheduling |
 | meetingsApi | CRUD spotkań |
 | communicationApi | Kanały, historia |
-| smartMailboxesApi | Smart mailbox operations |
+| mailboxesApi | Mailbox operations |
 | knowledgeApi | Docs, wiki, search |
 | aiAssistantApi | AI Q&A |
 | aiRulesApi | AI rule creation |
