@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Project } from '@/types/gtd';
+import { Project } from '@/types/streams';
 import { gtdHelpers } from '@/lib/api/gtd';
 import {
   Calendar,

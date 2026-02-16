@@ -12,7 +12,7 @@ import {
   ListTodo,
   Filter,
 } from 'lucide-react';
-import { Task, TaskFilters, Context, Project, Stream } from '@/types/gtd';
+import { Task, TaskFilters, Context, Project, Stream } from '@/types/streams';
 import { tasksApi, contextsApi, projectsApi, gtdHelpers } from '@/lib/api/gtd';
 import { streamsApi } from '@/lib/api/streams';
 import { apiClient } from '@/lib/api/client';

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Task, Context, Project, Stream, CreateTaskRequest, UpdateTaskRequest } from '@/types/gtd';
+import { Task, Context, Project, Stream, CreateTaskRequest, UpdateTaskRequest } from '@/types/streams';
 import apiClient from '@/lib/api/client';
 
 interface TaskFormUser {

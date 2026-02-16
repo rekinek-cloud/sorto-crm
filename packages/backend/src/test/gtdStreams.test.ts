@@ -6,7 +6,7 @@
 import request from 'supertest';
 import { app } from '../app';
 import { prisma } from '../config/database';
-import { GTDRole, StreamType } from '@prisma/client';
+import { StreamRole, StreamType } from '@prisma/client';
 
 describe('GTD Streams Integration Tests', () => {
   let authToken: string;
@@ -73,9 +73,9 @@ describe('GTD Streams Integration Tests', () => {
       const streamData = {
         name: 'Test GTD Inbox',
         description: 'Test inbox for GTD integration tests',
-        gtdRole: 'INBOX' as GTDRole,
+        streamRole: 'INBOX' as StreamRole,
         streamType: 'WORKSPACE' as StreamType,
-        gtdConfig: {
+        streamConfig: {
           inboxBehavior: {
             autoProcessing: false,
             autoCreateTasks: true,
@@ -96,8 +96,8 @@ describe('GTD Streams Integration Tests', () => {
 
       expect(response.body.success).toBe(true);
       expect(response.body.data.stream.name).toBe(streamData.name);
-      expect(response.body.data.stream.gtdRole).toBe('INBOX');
-      expect(response.body.data.gtdConfig).toBeDefined();
+      expect(response.body.data.stream.streamRole).toBe('INBOX');
+      expect(response.body.data.streamConfig).toBeDefined();
       
       testStreamId = response.body.data.stream.id;
     });
@@ -123,7 +123,7 @@ describe('GTD Streams Integration Tests', () => {
       expect(response.body.success).toBe(true);
       expect(response.body.data).toBeInstanceOf(Array);
       expect(response.body.data.length).toBeGreaterThan(0);
-      expect(response.body.data[0].gtdRole).toBe('INBOX');
+      expect(response.body.data[0].streamRole).toBe('INBOX');
     });
   });
 
@@ -199,7 +199,7 @@ describe('GTD Streams Integration Tests', () => {
 
     test('should migrate regular stream to GTD', async () => {
       const migrationData = {
-        gtdRole: 'NEXT_ACTIONS' as GTDRole,
+        streamRole: 'NEXT_ACTIONS' as StreamRole,
         streamType: 'PROJECT' as StreamType
       };
 
@@ -210,20 +210,20 @@ describe('GTD Streams Integration Tests', () => {
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.stream.gtdRole).toBe('NEXT_ACTIONS');
+      expect(response.body.data.stream.streamRole).toBe('NEXT_ACTIONS');
       expect(response.body.data.stream.streamType).toBe('PROJECT');
-      expect(response.body.data.gtdConfig).toBeDefined();
+      expect(response.body.data.streamConfig).toBeDefined();
     });
 
     test('should assign GTD role to existing stream', async () => {
       const response = await request(app)
         .put(`/api/v1/gtd-streams/${regularStreamId}/role`)
         .set('Authorization', `Bearer ${authToken}`)
-        .send({ gtdRole: 'PROJECTS' })
+        .send({ streamRole: 'PROJECTS' })
         .expect(200);
 
       expect(response.body.success).toBe(true);
-      expect(response.body.data.gtdRole).toBe('PROJECTS');
+      expect(response.body.data.streamRole).toBe('PROJECTS');
     });
   });
 
@@ -446,7 +446,7 @@ describe('GTD Streams Integration Tests', () => {
         .set('Authorization', `Bearer ${authToken}`)
         .send({
           name: 'Test Invalid',
-          gtdRole: 'INVALID_ROLE',
+          streamRole: 'INVALID_ROLE',
           streamType: 'CUSTOM'
         })
         .expect(400);

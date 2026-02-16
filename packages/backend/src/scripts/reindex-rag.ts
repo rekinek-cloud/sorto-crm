@@ -134,7 +134,7 @@ async function indexStreams(): Promise<IndexStats> {
       `Strumień: ${stream.name}`,
       stream.description || '',
       stream.streamType ? `Typ: ${stream.streamType}` : '',
-      stream.gtdRole ? `Rola GTD: ${stream.gtdRole}` : '',
+      stream.streamRole ? `Rola GTD: ${stream.streamRole}` : '',
       stream.status ? `Status: ${stream.status}` : ''
     ].filter(Boolean).join('. ');
 

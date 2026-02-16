@@ -3,9 +3,8 @@
  * Automatyczne przypisywanie na podstawie kontekstu, poziomu energii i analizy treści
  */
 
-import { PrismaClient, Task, Contact, Deal, Stream, Message, GTDRole, StreamType } from '@prisma/client';
-import { PrismaClient, Task, Contact, Deal, Stream, Message, GTDRole, StreamType } from '@prisma/client';
-import { GTDContext, EnergyLevel } from '../types/gtd';
+import { PrismaClient, Task, Contact, Deal, Stream, Message, StreamRole, StreamType } from '@prisma/client';
+import { StreamContext, EnergyLevel } from '../types/streams';
 import { VectorService } from './VectorService';
 
 /**
@@ -17,7 +16,7 @@ export interface RoutingResult {
   confidence: number; // 0-1
   reasoning: string[];
   fallbackUsed: boolean;
-  suggestedContext?: GTDContext;
+  suggestedContext?: StreamContext;
   suggestedEnergyLevel?: EnergyLevel;
   additionalActions?: Array<{
     type: 'CREATE_TASK' | 'ASSIGN_CONTEXT' | 'SET_PRIORITY' | 'SEND_NOTIFICATION';
@@ -61,7 +60,7 @@ export interface RoutingRule {
 
   // Target stream
   targetStreamId: string;
-  targetContext?: GTDContext;
+  targetContext?: StreamContext;
   targetEnergyLevel?: EnergyLevel;
 
   // Additional actions
@@ -155,7 +154,7 @@ export class ResourceRouter {
 
       if (isQuickTask) {
         // Zadania <2min idą do NEXT_ACTIONS
-        const nextActionsStream = await this.findStreamByRole(organizationId, GTDRole.NEXT_ACTIONS);
+        const nextActionsStream = await this.findStreamByRole(organizationId, StreamRole.NEXT_ACTIONS);
         if (nextActionsStream) {
           targetStreamId = nextActionsStream.id;
           confidence = 0.9;
@@ -167,7 +166,7 @@ export class ResourceRouter {
         }
       } else if (isUrgent) {
         // Pilne zadania do NEXT_ACTIONS z wysokim priorytetem
-        const nextActionsStream = await this.findStreamByRole(organizationId, GTDRole.NEXT_ACTIONS);
+        const nextActionsStream = await this.findStreamByRole(organizationId, StreamRole.NEXT_ACTIONS);
         if (nextActionsStream) {
           targetStreamId = nextActionsStream.id;
           confidence = 0.85;
@@ -179,7 +178,7 @@ export class ResourceRouter {
         }
       } else if (this.detectProjectKeywords(content)) {
         // Zadania projektowe
-        const projectsStream = await this.findStreamByRole(organizationId, GTDRole.PROJECTS);
+        const projectsStream = await this.findStreamByRole(organizationId, StreamRole.PROJECTS);
         if (projectsStream) {
           targetStreamId = projectsStream.id;
           confidence = 0.8;
@@ -191,13 +190,13 @@ export class ResourceRouter {
         }
       } else {
         // Standardowe zadania do NEXT_ACTIONS lub INBOX
-        const nextActionsStream = await this.findStreamByRole(organizationId, GTDRole.NEXT_ACTIONS);
+        const nextActionsStream = await this.findStreamByRole(organizationId, StreamRole.NEXT_ACTIONS);
         if (nextActionsStream) {
           targetStreamId = nextActionsStream.id;
           confidence = 0.7;
           reasoning.push('Standard task routed to Next Actions');
         } else {
-          const inboxStream = await this.findStreamByRole(organizationId, GTDRole.INBOX);
+          const inboxStream = await this.findStreamByRole(organizationId, StreamRole.INBOX);
           if (inboxStream) {
             targetStreamId = inboxStream.id;
             confidence = 0.6;
@@ -269,7 +268,7 @@ export class ResourceRouter {
       let targetStreamId: string;
 
       if (isWaitingFor) {
-        const waitingStream = await this.findStreamByRole(organizationId, GTDRole.WAITING_FOR);
+        const waitingStream = await this.findStreamByRole(organizationId, StreamRole.WAITING_FOR);
         if (waitingStream) {
           targetStreamId = waitingStream.id;
           confidence = 0.85;
@@ -279,7 +278,7 @@ export class ResourceRouter {
           confidence = 0.5;
         }
       } else if (isDelegation) {
-        const projectsStream = await this.findStreamByRole(organizationId, GTDRole.PROJECTS);
+        const projectsStream = await this.findStreamByRole(organizationId, StreamRole.PROJECTS);
         if (projectsStream) {
           targetStreamId = projectsStream.id;
           confidence = 0.8;
@@ -289,7 +288,7 @@ export class ResourceRouter {
           confidence = 0.5;
         }
       } else if (isActionRequired && urgency > 0.7) {
-        const nextActionsStream = await this.findStreamByRole(organizationId, GTDRole.NEXT_ACTIONS);
+        const nextActionsStream = await this.findStreamByRole(organizationId, StreamRole.NEXT_ACTIONS);
         if (nextActionsStream) {
           targetStreamId = nextActionsStream.id;
           confidence = 0.9;
@@ -299,7 +298,7 @@ export class ResourceRouter {
           confidence = 0.5;
         }
       } else if (isActionRequired) {
-        const inboxStream = await this.findStreamByRole(organizationId, GTDRole.INBOX);
+        const inboxStream = await this.findStreamByRole(organizationId, StreamRole.INBOX);
         if (inboxStream) {
           targetStreamId = inboxStream.id;
           confidence = 0.8;
@@ -309,7 +308,7 @@ export class ResourceRouter {
           confidence = 0.5;
         }
       } else if (isInformational) {
-        const referenceStream = await this.findStreamByRole(organizationId, GTDRole.REFERENCE);
+        const referenceStream = await this.findStreamByRole(organizationId, StreamRole.REFERENCE);
         if (referenceStream) {
           targetStreamId = referenceStream.id;
           confidence = 0.75;
@@ -320,7 +319,7 @@ export class ResourceRouter {
         }
       } else {
         // Default do inbox dla przetworzenia
-        const inboxStream = await this.findStreamByRole(organizationId, GTDRole.INBOX);
+        const inboxStream = await this.findStreamByRole(organizationId, StreamRole.INBOX);
         if (inboxStream) {
           targetStreamId = inboxStream.id;
           confidence = 0.6;
@@ -386,7 +385,7 @@ export class ResourceRouter {
 
       if (isHotLead || isVIP) {
         // Hot leads i VIP do aktywnych projektów
-        const projectsStream = await this.findStreamByRole(organizationId, GTDRole.PROJECTS);
+        const projectsStream = await this.findStreamByRole(organizationId, StreamRole.PROJECTS);
         if (projectsStream) {
           targetStreamId = projectsStream.id;
           confidence = 0.85;
@@ -397,7 +396,7 @@ export class ResourceRouter {
         }
       } else if (isCustomer) {
         // Istniejący klienci do obszarów odpowiedzialności
-        const areasStream = await this.findStreamByRole(organizationId, GTDRole.AREAS);
+        const areasStream = await this.findStreamByRole(organizationId, StreamRole.AREAS);
         if (areasStream) {
           targetStreamId = areasStream.id;
           confidence = 0.8;
@@ -408,7 +407,7 @@ export class ResourceRouter {
         }
       } else {
         // Nowi kontakty do inbox dla przetworzenia
-        const inboxStream = await this.findStreamByRole(organizationId, GTDRole.INBOX);
+        const inboxStream = await this.findStreamByRole(organizationId, StreamRole.INBOX);
         if (inboxStream) {
           targetStreamId = inboxStream.id;
           confidence = 0.7;
@@ -430,7 +429,7 @@ export class ResourceRouter {
         confidence,
         reasoning,
         fallbackUsed: confidence < 0.6,
-        suggestedContext: GTDContext.COMPUTER,
+        suggestedContext: StreamContext.COMPUTER,
         suggestedEnergyLevel: isVIP ? EnergyLevel.HIGH : EnergyLevel.MEDIUM,
         additionalActions: this.generateContactActions(contact, isHotLead, isVIP) as any
       };
@@ -471,7 +470,7 @@ export class ResourceRouter {
 
       if (isHighValue || (isHighProbability && isClosingStage)) {
         // Wysokowartościowe lub blisko zamknięcia do projektów
-        const projectsStream = await this.findStreamByRole(organizationId, GTDRole.PROJECTS);
+        const projectsStream = await this.findStreamByRole(organizationId, StreamRole.PROJECTS);
         if (projectsStream) {
           targetStreamId = projectsStream.id;
           confidence = 0.9;
@@ -482,7 +481,7 @@ export class ResourceRouter {
         }
       } else if (isClosingStage) {
         // Zamykające się deale do następnych akcji
-        const nextActionsStream = await this.findStreamByRole(organizationId, GTDRole.NEXT_ACTIONS);
+        const nextActionsStream = await this.findStreamByRole(organizationId, StreamRole.NEXT_ACTIONS);
         if (nextActionsStream) {
           targetStreamId = nextActionsStream.id;
           confidence = 0.85;
@@ -493,7 +492,7 @@ export class ResourceRouter {
         }
       } else {
         // Standardowe deale do obszarów odpowiedzialności
-        const areasStream = await this.findStreamByRole(organizationId, GTDRole.AREAS);
+        const areasStream = await this.findStreamByRole(organizationId, StreamRole.AREAS);
         if (areasStream) {
           targetStreamId = areasStream.id;
           confidence = 0.75;
@@ -515,7 +514,7 @@ export class ResourceRouter {
         confidence,
         reasoning,
         fallbackUsed: confidence < 0.6,
-        suggestedContext: GTDContext.COMPUTER,
+        suggestedContext: StreamContext.COMPUTER,
         suggestedEnergyLevel: isHighValue ? EnergyLevel.HIGH : EnergyLevel.MEDIUM,
         additionalActions: this.generateDealActions(deal, isHighValue, isClosingStage) as any
       };
@@ -561,12 +560,12 @@ export class ResourceRouter {
       if (!targetStreamId || confidence < confidenceThreshold) {
         // Simple keyword matching against roles
         const lowerContent = content.toLowerCase();
-        let roleMatch: GTDRole | null = null;
+        let roleMatch: StreamRole | null = null;
 
-        if (lowerContent.includes('project')) roleMatch = GTDRole.PROJECTS;
-        else if (lowerContent.includes('waiting')) roleMatch = GTDRole.WAITING_FOR;
-        else if (lowerContent.includes('someday')) roleMatch = GTDRole.SOMEDAY_MAYBE;
-        else if (lowerContent.includes('read')) roleMatch = GTDRole.REFERENCE;
+        if (lowerContent.includes('project')) roleMatch = StreamRole.PROJECTS;
+        else if (lowerContent.includes('waiting')) roleMatch = StreamRole.WAITING_FOR;
+        else if (lowerContent.includes('someday')) roleMatch = StreamRole.SOMEDAY_MAYBE;
+        else if (lowerContent.includes('read')) roleMatch = StreamRole.REFERENCE;
 
         if (roleMatch) {
           const stream = await this.findStreamByRole(organizationId, roleMatch);
@@ -584,7 +583,7 @@ export class ResourceRouter {
 
       // 3. Default (Inbox)
       if (!targetStreamId) {
-        const inboxStream = await this.findStreamByRole(organizationId, GTDRole.INBOX);
+        const inboxStream = await this.findStreamByRole(organizationId, StreamRole.INBOX);
         if (inboxStream) {
           targetStreamId = inboxStream.id;
           targetStreamName = inboxStream.name;
@@ -769,29 +768,29 @@ export class ResourceRouter {
   /**
    * Wykrywa kontekst GTD na podstawie treści
    */
-  private detectContext(content: string): GTDContext {
+  private detectContext(content: string): StreamContext {
     if (content.includes('computer') || content.includes('online') || content.includes('software')) {
-      return GTDContext.COMPUTER;
+      return StreamContext.COMPUTER;
     }
     if (content.includes('call') || content.includes('phone') || content.includes('meeting')) {
-      return GTDContext.PHONE;
+      return StreamContext.PHONE;
     }
     if (content.includes('office') || content.includes('desk')) {
-      return GTDContext.OFFICE;
+      return StreamContext.OFFICE;
     }
     if (content.includes('home') || content.includes('remote')) {
-      return GTDContext.HOME;
+      return StreamContext.HOME;
     }
     if (content.includes('shop') || content.includes('buy') || content.includes('errand')) {
-      return GTDContext.ERRANDS;
+      return StreamContext.ERRANDS;
     }
     if (content.includes('read') || content.includes('review') || content.includes('document')) {
-      return GTDContext.READING;
+      return StreamContext.READING;
     }
     if (content.includes('wait') || content.includes('response')) {
-      return GTDContext.WAITING;
+      return StreamContext.WAITING;
     }
-    return GTDContext.COMPUTER; // Default
+    return StreamContext.COMPUTER; // Default
   }
 
   /**
@@ -891,11 +890,11 @@ export class ResourceRouter {
   /**
    * Znajduje stream według roli GTD
    */
-  private async findStreamByRole(organizationId: string, gtdRole: GTDRole): Promise<Stream | null> {
+  private async findStreamByRole(organizationId: string, streamRole: StreamRole): Promise<Stream | null> {
     return await this.prisma.stream.findFirst({
       where: {
         organizationId,
-        gtdRole,
+        streamRole,
         status: 'ACTIVE'
       }
     });
@@ -931,7 +930,7 @@ export class ResourceRouter {
    */
   private generateTaskActions(
     task: any,
-    context?: GTDContext,
+    context?: StreamContext,
     energyLevel?: EnergyLevel
   ): Array<{ type: string; config: Record<string, any> }> {
     const actions: Array<{ type: string; config: Record<string, any> }> = [];

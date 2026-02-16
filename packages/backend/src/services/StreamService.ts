@@ -3,16 +3,16 @@
  * Zachowuje backward compatibility z istniejącymi operacjami CRUD
  */
 
-import { PrismaClient, Stream, StreamStatus, GTDRole, StreamType } from '@prisma/client';
+import { PrismaClient, Stream, StreamStatus, StreamRole, StreamType } from '@prisma/client';
 import { GTDConfigManager } from './GTDConfigManager';
 import {
-  CreateGTDStreamOptions,
-  UpdateGTDConfigOptions,
-  ValidatedGTDConfig,
-  GTDAnalysisResult,
-  GTDContext,
+  CreateStreamOptions as CreateGTDStreamOptions,
+  UpdateStreamConfigOptions as UpdateGTDConfigOptions,
+  ValidatedStreamConfig as ValidatedGTDConfig,
+  StreamAnalysisResult as GTDAnalysisResult,
+  StreamContext as GTDContext,
   EnergyLevel
-} from '../types/gtd';
+} from '../types/streams';
 
 /**
  * Niestandardowe błędy StreamService
@@ -30,13 +30,13 @@ export class StreamServiceError extends Error {
 export interface StreamFilterOptions {
   search?: string;
   status?: StreamStatus;
-  gtdRole?: GTDRole;
+  gtdRole?: StreamRole;
   streamType?: StreamType;
   hasGTDConfig?: boolean;
   parentStreamId?: string;
   page?: number;
   limit?: number;
-  sortBy?: 'name' | 'createdAt' | 'updatedAt' | 'gtdRole';
+  sortBy?: 'name' | 'createdAt' | 'updatedAt' | 'streamRole';
   sortOrder?: 'asc' | 'desc';
 }
 
@@ -75,7 +75,7 @@ export class StreamService {
   constructor(prisma: PrismaClient, logger?: any) {
     this.prisma = prisma;
     this.logger = logger || console;
-    this.gtdConfigManager = new GTDConfigManager(prisma, logger);
+    this.streamConfigManager = new GTDConfigManager(prisma, logger);
   }
 
   // ========================================
@@ -242,7 +242,7 @@ export class StreamService {
       }
 
       if (gtdRole) {
-        where.gtdRole = gtdRole;
+        where.streamRole = gtdRole;
       }
 
       if (streamType) {
@@ -251,9 +251,9 @@ export class StreamService {
 
       if (hasGTDConfig !== undefined) {
         if (hasGTDConfig) {
-          where.gtdRole = { not: null };
+          where.streamRole = { not: null };
         } else {
-          where.gtdRole = null;
+          where.streamRole = null;
         }
       }
 
@@ -311,7 +311,7 @@ export class StreamService {
     createdById: string,
     options: CreateGTDStreamOptions
   ): Promise<{ stream: Stream; config: ValidatedGTDConfig }> {
-    return await this.gtdConfigManager.createGTDStream(organizationId, createdById, options);
+    return await this.streamConfigManager.createGTDStream(organizationId, createdById, options);
   }
 
   /**
@@ -322,33 +322,33 @@ export class StreamService {
     config: Partial<ValidatedGTDConfig>,
     options: UpdateGTDConfigOptions = {}
   ): Promise<ValidatedGTDConfig> {
-    return await this.gtdConfigManager.setGTDConfig(streamId, config as any, options);
+    return await this.streamConfigManager.setGTDConfig(streamId, config as any, options);
   }
 
   /**
    * Pobiera konfigurację GTD streama
    */
   async getGTDConfig(streamId: string): Promise<ValidatedGTDConfig | null> {
-    return await this.gtdConfigManager.getGTDConfig(streamId);
+    return await this.streamConfigManager.getGTDConfig(streamId);
   }
 
   /**
    * Pobiera streamy według roli GTD
    */
-  async getStreamsByGTDRole(organizationId: string, gtdRole: GTDRole): Promise<Stream[]> {
-    return await this.gtdConfigManager.getStreamsByGTDRole(organizationId, gtdRole);
+  async getStreamsByStreamRole(organizationId: string, gtdRole: StreamRole): Promise<Stream[]> {
+    return await this.streamConfigManager.getStreamsByStreamRole(organizationId, gtdRole);
   }
 
   /**
    * Przypisuje rolę GTD do streama
    */
-  async assignGTDRole(streamId: string, gtdRole: GTDRole): Promise<Stream> {
+  async assignStreamRole(streamId: string, gtdRole: StreamRole): Promise<Stream> {
     try {
-      await this.gtdConfigManager.assignGTDRole(streamId, gtdRole);
+      await this.streamConfigManager.assignStreamRole(streamId, gtdRole);
 
       return await this.prisma.stream.update({
         where: { id: streamId },
-        data: { gtdRole }
+        data: { streamRole: gtdRole }
       });
     } catch (error) {
       this.logger.error('Error assigning GTD role:', error);
@@ -360,7 +360,7 @@ export class StreamService {
    * Waliduje hierarchię GTD
    */
   async validateGTDHierarchy(streamId: string): Promise<{ valid: boolean; errors: string[] }> {
-    return await this.gtdConfigManager.validateGTDHierarchy(streamId);
+    return await this.streamConfigManager.validateGTDHierarchy(streamId);
   }
 
   /**
@@ -368,11 +368,11 @@ export class StreamService {
    */
   async migrateToGTDStream(
     streamId: string,
-    gtdRole: GTDRole,
+    gtdRole: StreamRole,
     streamType: StreamType = StreamType.CUSTOM
   ): Promise<{ stream: Stream; config: ValidatedGTDConfig }> {
     try {
-      const config = await this.gtdConfigManager.migrateToGTDStream(streamId, gtdRole, streamType);
+      const config = await this.streamConfigManager.migrateToGTDStream(streamId, gtdRole, streamType);
       const stream = await this.getStreamById(streamId);
 
       if (!stream) {
@@ -404,7 +404,7 @@ export class StreamService {
       const { name, description, existingTasks = 0, relatedContacts = 0, messageVolume = 0 } = content;
 
       // Prosta analiza na podstawie keywords i metryki
-      let recommendedRole: GTDRole = GTDRole.CUSTOM;
+      let recommendedRole: StreamRole = StreamRole.CUSTOM;
       let recommendedContext: GTDContext = GTDContext.COMPUTER;
       let recommendedEnergyLevel: EnergyLevel = EnergyLevel.MEDIUM;
       let confidence = 0.5;
@@ -414,39 +414,39 @@ export class StreamService {
       const text = `${name} ${description || ''}`.toLowerCase();
 
       if (text.includes('inbox') || text.includes('input') || text.includes('capture')) {
-        recommendedRole = GTDRole.INBOX;
+        recommendedRole = StreamRole.INBOX;
         recommendedContext = GTDContext.ANYWHERE;
         confidence = 0.9;
         reasoning.push('Name suggests inbox functionality');
       } else if (text.includes('next') || text.includes('action') || text.includes('todo')) {
-        recommendedRole = GTDRole.NEXT_ACTIONS;
+        recommendedRole = StreamRole.NEXT_ACTIONS;
         confidence = 0.85;
         reasoning.push('Name suggests next actions list');
       } else if (text.includes('wait') || text.includes('pending')) {
-        recommendedRole = GTDRole.WAITING_FOR;
+        recommendedRole = StreamRole.WAITING_FOR;
         recommendedContext = GTDContext.WAITING;
         confidence = 0.9;
         reasoning.push('Name suggests waiting for items');
       } else if (text.includes('someday') || text.includes('maybe') || text.includes('future')) {
-        recommendedRole = GTDRole.SOMEDAY_MAYBE;
+        recommendedRole = StreamRole.SOMEDAY_MAYBE;
         recommendedContext = GTDContext.ANYWHERE;
         recommendedEnergyLevel = EnergyLevel.CREATIVE;
         confidence = 0.8;
         reasoning.push('Name suggests someday/maybe items');
       } else if (text.includes('project') || existingTasks > 5) {
-        recommendedRole = GTDRole.PROJECTS;
+        recommendedRole = StreamRole.PROJECTS;
         confidence = Math.min(0.9, 0.6 + (existingTasks * 0.05));
         reasoning.push(`Detected project characteristics (${existingTasks} tasks)`);
       } else if (text.includes('context') || text.includes('@')) {
-        recommendedRole = GTDRole.CONTEXTS;
+        recommendedRole = StreamRole.CONTEXTS;
         confidence = 0.8;
         reasoning.push('Name suggests context organization');
       } else if (text.includes('area') || text.includes('responsibility')) {
-        recommendedRole = GTDRole.AREAS;
+        recommendedRole = StreamRole.AREAS;
         confidence = 0.8;
         reasoning.push('Name suggests area of responsibility');
       } else if (text.includes('reference') || text.includes('doc') || text.includes('knowledge')) {
-        recommendedRole = GTDRole.REFERENCE;
+        recommendedRole = StreamRole.REFERENCE;
         recommendedContext = GTDContext.READING;
         recommendedEnergyLevel = EnergyLevel.LOW;
         confidence = 0.85;
@@ -599,7 +599,7 @@ export class StreamService {
   async getStreamStats(organizationId: string): Promise<{
     total: number;
     byStatus: Record<string, number>;
-    byGTDRole: Record<string, number>;
+    byStreamRole: Record<string, number>;
     byStreamType: Record<string, number>;
     withGTDConfig: number;
     withoutGTDConfig: number;
@@ -609,16 +609,16 @@ export class StreamService {
         where: { organizationId },
         select: {
           status: true,
-          gtdRole: true,
+          streamRole: true,
           streamType: true,
-          gtdConfig: true
+          streamConfig: true
         }
       });
 
       const stats = {
         total: streams.length,
         byStatus: {} as Record<string, number>,
-        byGTDRole: {} as Record<string, number>,
+        byStreamRole: {} as Record<string, number>,
         byStreamType: {} as Record<string, number>,
         withGTDConfig: 0,
         withoutGTDConfig: 0
@@ -629,14 +629,14 @@ export class StreamService {
         stats.byStatus[stream.status] = (stats.byStatus[stream.status] || 0) + 1;
 
         // Count by GTD role
-        const role = stream.gtdRole || 'NONE';
-        stats.byGTDRole[role] = (stats.byGTDRole[role] || 0) + 1;
+        const role = stream.streamRole || 'NONE';
+        stats.byStreamRole[role] = (stats.byStreamRole[role] || 0) + 1;
 
         // Count by stream type
         stats.byStreamType[stream.streamType] = (stats.byStreamType[stream.streamType] || 0) + 1;
 
         // Count GTD config
-        if (stream.gtdRole && stream.gtdConfig) {
+        if (stream.streamRole && stream.streamConfig) {
           stats.withGTDConfig++;
         } else {
           stats.withoutGTDConfig++;

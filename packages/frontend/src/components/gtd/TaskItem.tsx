@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Task } from '@/types/gtd';
+import { Task } from '@/types/streams';
 import { gtdHelpers } from '@/lib/api/gtd';
 import FlowScoreBadge from '@/components/streams/FlowScoreBadge';
 import FlowAnalysisModal from '@/components/streams/FlowAnalysisModal';

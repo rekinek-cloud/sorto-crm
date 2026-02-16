@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { DealCompetitor } from '@/types/gtd';
+import { DealCompetitor } from '@/types/streams';
 
 export interface LostAnalysis {
   id: string;

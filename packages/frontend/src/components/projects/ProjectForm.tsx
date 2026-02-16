@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Project, Stream } from '@/types/gtd';
+import { Project, Stream } from '@/types/streams';
 import { X } from 'lucide-react';
 
 interface ProjectFormProps {

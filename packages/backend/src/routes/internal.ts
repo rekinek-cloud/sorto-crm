@@ -157,7 +157,7 @@ router.get('/user-streams', async (req, res) => {
         name: true,
         description: true,
         streamType: true,
-        gtdRole: true,
+        streamRole: true,
         color: true,
         createdById: true
       }

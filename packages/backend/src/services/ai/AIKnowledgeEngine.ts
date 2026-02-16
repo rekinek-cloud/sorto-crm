@@ -279,7 +279,7 @@ export class AIKnowledgeEngine {
         id: stream.id,
         name: stream.name,
         color: stream.color,
-        gtdRole: stream.gtdRole,
+        streamRole: stream.streamRole,
         description: stream.description,
         totalTasks,
         overdueTasks: streamOverdueTasks.length,

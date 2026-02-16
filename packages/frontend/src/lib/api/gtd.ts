@@ -13,7 +13,7 @@ import type {
   UpdateContextRequest,
   TaskFilters,
   ProjectFilters,
-} from '@/types/gtd';
+} from '@/types/streams';
 
 // GTD Inbox Types
 export interface InboxItem {

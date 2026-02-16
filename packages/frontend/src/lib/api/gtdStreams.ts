@@ -3,7 +3,7 @@
  * Handles all API calls related to GTD functionality
  */
 
-import { GTDRole, StreamType } from '@/types/gtd';
+import { StreamRole, StreamType } from '@/types/streams';
 import apiClient from './client';
 
 const API_BASE = process.env.NODE_ENV === 'production'
@@ -18,7 +18,7 @@ export interface GTDStream {
   color: string;
   icon?: string;
   status: string;
-  gtdRole?: GTDRole;
+  gtdRole?: StreamRole;
   streamType?: StreamType;
   gtdConfig?: any;
   createdAt: string;
@@ -40,7 +40,7 @@ export interface CreateGTDStreamData {
   description?: string;
   color?: string;
   icon?: string;
-  gtdRole: GTDRole;
+  gtdRole: StreamRole;
   streamType: StreamType;
   templateOrigin?: string;
   parentStreamId?: string;
@@ -95,7 +95,7 @@ export interface RoutingResult {
 }
 
 export interface GTDAnalysisResult {
-  recommendedRole: GTDRole;
+  recommendedRole: StreamRole;
   recommendedContext: string;
   recommendedEnergyLevel: string;
   confidence: number;
@@ -150,11 +150,11 @@ export async function getGTDStreams() {
   return apiCall<GTDStream[]>('/gtd-streams');
 }
 
-export async function getStreamsByRole(role: GTDRole) {
+export async function getStreamsByRole(role: StreamRole) {
   return apiCall<GTDStream[]>(`/gtd-streams/by-role/${role}`);
 }
 
-export async function assignGTDRole(streamId: string, gtdRole: GTDRole) {
+export async function assignStreamRole(streamId: string, gtdRole: StreamRole) {
   return apiCall<GTDStream>(`/gtd-streams/${streamId}/role`, {
     method: 'PUT',
     body: JSON.stringify({ gtdRole })
@@ -163,7 +163,7 @@ export async function assignGTDRole(streamId: string, gtdRole: GTDRole) {
 
 export async function migrateStreamToGTD(
   streamId: string, 
-  gtdRole: GTDRole, 
+  gtdRole: StreamRole, 
   streamType: StreamType
 ) {
   return apiCall<{ stream: GTDStream; gtdConfig: GTDConfig }>(`/gtd-streams/${streamId}/migrate`, {
@@ -342,7 +342,7 @@ export default {
   createGTDStream,
   getGTDStreams,
   getStreamsByRole,
-  assignGTDRole,
+  assignStreamRole,
   migrateStreamToGTD,
   
   // Configuration

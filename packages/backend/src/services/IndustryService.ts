@@ -167,11 +167,11 @@ export class IndustryService {
           name: config.name,
           description: config.description || '',
           color: config.color,
-          gtdRole: config.role as any,
+          streamRole: config.role as any,
           streamType: 'WORKSPACE' as StreamType,
           organizationId,
           createdById: userId,
-          gtdConfig: {
+          streamConfig: {
             autoProcessing: config.role === 'INBOX',
             reviewFrequency: config.role === 'INBOX' ? 'daily' : 'weekly',
           },

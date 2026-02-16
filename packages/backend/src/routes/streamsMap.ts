@@ -296,7 +296,7 @@ const createStreamView = (tasks: any[]): BucketGroup[] => {
   tasks.forEach(task => {
     const streamId = task.streamId || 'unassigned';
     const streamName = task.stream?.name || 'Nieprzypisane';
-    const gtdRole = task.stream?.gtdRole || 'CUSTOM';
+    const gtdRole = task.stream?.streamRole || 'CUSTOM';
     
     if (!streamMap.has(streamId)) {
       streamMap.set(streamId, []);
@@ -462,7 +462,7 @@ router.get('/views/:viewType', authenticateToken, async (req, res) => {
             id: true,
             name: true,
             color: true,
-            gtdRole: true,
+            streamRole: true,
             horizonLevel: true
           }
         },

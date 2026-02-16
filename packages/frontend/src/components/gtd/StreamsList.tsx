@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Stream } from '@/types/gtd';
+import { Stream } from '@/types/streams';
 import StreamItem from './StreamItem';
 import StreamForm from './StreamForm';
 import { streamsApi } from '@/lib/api/streams';

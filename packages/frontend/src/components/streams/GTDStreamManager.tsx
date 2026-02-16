@@ -36,7 +36,7 @@ import GTDStreamForm from './GTDStreamForm';
 import GTDConfigModal from './GTDConfigModal';
 import StreamHierarchyModal from './StreamHierarchyModal';
 import GTDMigrationModal from './GTDMigrationModal';
-import { GTDRole, StreamType } from '@/types/gtd';
+import { StreamRole, StreamType } from '@/types/streams';
 import apiClient from '@/lib/api/client';
 
 interface GTDStream {
@@ -46,7 +46,7 @@ interface GTDStream {
   color: string;
   icon?: string;
   status: string;
-  gtdRole?: GTDRole;
+  gtdRole?: StreamRole;
   streamType?: StreamType;
   gtdConfig?: any;
   createdAt: string;
@@ -98,7 +98,7 @@ const GTDStreamManager: React.FC = () => {
   const [stats, setStats] = useState<GTDStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedRole, setSelectedRole] = useState<GTDRole | 'all'>('all');
+  const [selectedRole, setSelectedRole] = useState<StreamRole | 'all'>('all');
   const [selectedType, setSelectedType] = useState<StreamType | 'all'>('all');
   const [showOnlyGTD, setShowOnlyGTD] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -261,7 +261,7 @@ const GTDStreamManager: React.FC = () => {
   };
 
   // Handle migration
-  const handleMigrate = async (streamId: string, gtdRole: GTDRole, streamType: StreamType) => {
+  const handleMigrate = async (streamId: string, gtdRole: StreamRole, streamType: StreamType) => {
     try {
       await apiClient.post(`/gtd-streams/${streamId}/migrate`, { gtdRole, streamType });
 
@@ -310,7 +310,7 @@ const GTDStreamManager: React.FC = () => {
   // Handle filter change
   const handleFilterChange = (key: string, value: string) => {
     if (key === 'role') {
-      setSelectedRole(value as GTDRole | 'all');
+      setSelectedRole(value as StreamRole | 'all');
     } else if (key === 'type') {
       setSelectedType(value as StreamType | 'all');
     } else if (key === 'configured') {

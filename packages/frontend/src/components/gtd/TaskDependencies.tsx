@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { tasksApi } from '@/lib/api/gtd';
-import { Task } from '@/types/gtd';
+import { Task } from '@/types/streams';
 import { toast } from 'react-hot-toast';
 import {
   Link,

@@ -1,16 +1,16 @@
 /**
- * GTD (Getting Things Done) TypeScript Types and Interfaces
- * Kompletne definicje typów dla systemu GTD z walidacją Zod
+ * STREAMS TypeScript Types and Interfaces
+ * Kompletne definicje typów dla systemu STREAMS z walidacją Zod
  */
 
 import { z } from 'zod';
-import { GTDRole, StreamType } from '@prisma/client';
+import { StreamRole, StreamType } from '@prisma/client';
 
 // ========================================
 // CORE GTD ENUMS
 // ========================================
 
-// GTDRole jest zdefiniowane w Prisma schema i automatycznie generowane
+// StreamRole jest zdefiniowane w Prisma schema i automatycznie generowane
 
 // StreamType jest zdefiniowane w Prisma schema i automatycznie generowane
 
@@ -39,7 +39,7 @@ export enum ReviewFrequency {
 /**
  * Konteksty GTD standardowe
  */
-export enum GTDContext {
+export enum StreamContext {
   COMPUTER = '@computer',            // Zadania przy komputerze
   PHONE = '@phone',                  // Rozmowy telefoniczne
   ERRANDS = '@errands',              // Sprawy poza biurem
@@ -61,7 +61,7 @@ export enum GTDContext {
 export interface InboxBehavior {
   autoProcessing: boolean;           // Automatyczne przetwarzanie
   autoCreateTasks: boolean;          // Automatyczne tworzenie zadań
-  defaultContext: GTDContext;        // Domyślny kontekst
+  defaultContext: StreamContext;        // Domyślny kontekst
   defaultEnergyLevel: EnergyLevel;   // Domyślny poziom energii
   processAfterDays: number;          // Przetwórz po X dniach
   purgeAfterDays: number;            // Usuń po X dniach
@@ -122,12 +122,12 @@ export interface ProcessingAction {
 /**
  * Główna konfiguracja GTD dla streama
  */
-export interface GTDConfig {
+export interface StreamConfig {
   // Zachowanie inbox
   inboxBehavior: InboxBehavior;
   
   // Konteksty dostępne w tym streamie
-  availableContexts: GTDContext[];
+  availableContexts: StreamContext[];
   
   // Poziomy energii
   energyLevels: EnergyLevel[];
@@ -139,7 +139,7 @@ export interface GTDConfig {
   processingRules: ProcessingRule[];
   
   // Automatyzacje
-  automations: GTDAutomation[];
+  automations: StreamAutomation[];
   
   // Ustawienia zaawansowane
   advanced: {
@@ -162,7 +162,7 @@ export interface GTDConfig {
 /**
  * Automatyzacja GTD
  */
-export interface GTDAutomation {
+export interface StreamAutomation {
   id: string;                        // Unikalny identyfikator
   name: string;                      // Nazwa automatyzacji
   type: 'WEEKLY_REVIEW' | 'INBOX_ZERO' | 'WAITING_FOR_FOLLOWUP' | 'PROJECT_REVIEW' | 'CONTEXT_SWITCH' | 'ENERGY_OPTIMIZATION';
@@ -178,9 +178,9 @@ export interface GTDAutomation {
 // ========================================
 
 /**
- * Schema walidacji dla GTDRole
+ * Schema walidacji dla StreamRole
  */
-export const GTDRoleSchema = z.nativeEnum(GTDRole);
+export const StreamRoleSchema = z.nativeEnum(StreamRole);
 
 /**
  * Schema walidacji dla StreamType  
@@ -198,9 +198,9 @@ export const EnergyLevelSchema = z.nativeEnum(EnergyLevel);
 export const ReviewFrequencySchema = z.nativeEnum(ReviewFrequency);
 
 /**
- * Schema walidacji dla GTDContext
+ * Schema walidacji dla StreamContext
  */
-export const GTDContextSchema = z.nativeEnum(GTDContext);
+export const StreamContextSchema = z.nativeEnum(StreamContext);
 
 /**
  * Schema walidacji dla InboxBehavior
@@ -208,7 +208,7 @@ export const GTDContextSchema = z.nativeEnum(GTDContext);
 export const InboxBehaviorSchema = z.object({
   autoProcessing: z.boolean(),
   autoCreateTasks: z.boolean(),
-  defaultContext: GTDContextSchema,
+  defaultContext: StreamContextSchema,
   defaultEnergyLevel: EnergyLevelSchema,
   processAfterDays: z.number().min(1).max(365),
   purgeAfterDays: z.number().min(1).max(365)
@@ -259,9 +259,9 @@ export const ProcessingRuleSchema = z.object({
 });
 
 /**
- * Schema walidacji dla GTDAutomation
+ * Schema walidacji dla StreamAutomation
  */
-export const GTDAutomationSchema = z.object({
+export const StreamAutomationSchema = z.object({
   id: z.string().uuid(),
   name: z.string().min(1).max(255),
   type: z.enum(['WEEKLY_REVIEW', 'INBOX_ZERO', 'WAITING_FOR_FOLLOWUP', 'PROJECT_REVIEW', 'CONTEXT_SWITCH', 'ENERGY_OPTIMIZATION']),
@@ -273,15 +273,15 @@ export const GTDAutomationSchema = z.object({
 });
 
 /**
- * Schema walidacji dla GTDConfig
+ * Schema walidacji dla StreamConfig
  */
-export const GTDConfigSchema = z.object({
+export const StreamConfigSchema = z.object({
   inboxBehavior: InboxBehaviorSchema,
-  availableContexts: z.array(GTDContextSchema).min(1),
+  availableContexts: z.array(StreamContextSchema).min(1),
   energyLevels: z.array(EnergyLevelSchema).min(1),
   reviewFrequency: ReviewFrequencySchema,
   processingRules: z.array(ProcessingRuleSchema),
-  automations: z.array(GTDAutomationSchema),
+  automations: z.array(StreamAutomationSchema),
   advanced: z.object({
     enableAI: z.boolean(),
     autoAssignContext: z.boolean(),
@@ -307,7 +307,7 @@ export const GTDConfigSchema = z.object({
 export const DEFAULT_INBOX_BEHAVIOR: InboxBehavior = {
   autoProcessing: false,
   autoCreateTasks: true,
-  defaultContext: GTDContext.COMPUTER,
+  defaultContext: StreamContext.COMPUTER,
   defaultEnergyLevel: EnergyLevel.MEDIUM,
   processAfterDays: 3,
   purgeAfterDays: 30
@@ -316,12 +316,12 @@ export const DEFAULT_INBOX_BEHAVIOR: InboxBehavior = {
 /**
  * Domyślne konteksty GTD
  */
-export const DEFAULT_GTD_CONTEXTS: GTDContext[] = [
-  GTDContext.COMPUTER,
-  GTDContext.PHONE,
-  GTDContext.OFFICE,
-  GTDContext.HOME,
-  GTDContext.ANYWHERE
+export const DEFAULT_STREAM_CONTEXTS: StreamContext[] = [
+  StreamContext.COMPUTER,
+  StreamContext.PHONE,
+  StreamContext.OFFICE,
+  StreamContext.HOME,
+  StreamContext.ANYWHERE
 ];
 
 /**
@@ -338,74 +338,74 @@ export const DEFAULT_ENERGY_LEVELS: EnergyLevel[] = [
 /**
  * Domyślna konfiguracja GTD dla różnych ról
  */
-export const DEFAULT_GTD_CONFIGS: Record<GTDRole, Partial<GTDConfig>> = {
-  [GTDRole.INBOX]: {
+export const DEFAULT_STREAM_CONFIGS: Record<StreamRole, Partial<StreamConfig>> = {
+  [StreamRole.INBOX]: {
     inboxBehavior: DEFAULT_INBOX_BEHAVIOR,
-    availableContexts: DEFAULT_GTD_CONTEXTS,
+    availableContexts: DEFAULT_STREAM_CONTEXTS,
     energyLevels: DEFAULT_ENERGY_LEVELS,
     reviewFrequency: ReviewFrequency.DAILY,
     processingRules: [],
     automations: []
   },
   
-  [GTDRole.NEXT_ACTIONS]: {
-    availableContexts: DEFAULT_GTD_CONTEXTS,
+  [StreamRole.NEXT_ACTIONS]: {
+    availableContexts: DEFAULT_STREAM_CONTEXTS,
     energyLevels: DEFAULT_ENERGY_LEVELS,
     reviewFrequency: ReviewFrequency.DAILY,
     processingRules: [],
     automations: []
   },
   
-  [GTDRole.WAITING_FOR]: {
-    availableContexts: [GTDContext.WAITING],
+  [StreamRole.WAITING_FOR]: {
+    availableContexts: [StreamContext.WAITING],
     energyLevels: [EnergyLevel.LOW],
     reviewFrequency: ReviewFrequency.WEEKLY,
     processingRules: [],
     automations: []
   },
   
-  [GTDRole.SOMEDAY_MAYBE]: {
-    availableContexts: [GTDContext.ANYWHERE],
+  [StreamRole.SOMEDAY_MAYBE]: {
+    availableContexts: [StreamContext.ANYWHERE],
     energyLevels: [EnergyLevel.CREATIVE],
     reviewFrequency: ReviewFrequency.MONTHLY,
     processingRules: [],
     automations: []
   },
   
-  [GTDRole.PROJECTS]: {
-    availableContexts: DEFAULT_GTD_CONTEXTS,
+  [StreamRole.PROJECTS]: {
+    availableContexts: DEFAULT_STREAM_CONTEXTS,
     energyLevels: DEFAULT_ENERGY_LEVELS,
     reviewFrequency: ReviewFrequency.WEEKLY,
     processingRules: [],
     automations: []
   },
   
-  [GTDRole.CONTEXTS]: {
-    availableContexts: DEFAULT_GTD_CONTEXTS,
+  [StreamRole.CONTEXTS]: {
+    availableContexts: DEFAULT_STREAM_CONTEXTS,
     energyLevels: DEFAULT_ENERGY_LEVELS,
     reviewFrequency: ReviewFrequency.WEEKLY,
     processingRules: [],
     automations: []
   },
   
-  [GTDRole.AREAS]: {
-    availableContexts: DEFAULT_GTD_CONTEXTS,
+  [StreamRole.AREAS]: {
+    availableContexts: DEFAULT_STREAM_CONTEXTS,
     energyLevels: DEFAULT_ENERGY_LEVELS,
     reviewFrequency: ReviewFrequency.MONTHLY,
     processingRules: [],
     automations: []
   },
   
-  [GTDRole.REFERENCE]: {
-    availableContexts: [GTDContext.READING, GTDContext.COMPUTER],
+  [StreamRole.REFERENCE]: {
+    availableContexts: [StreamContext.READING, StreamContext.COMPUTER],
     energyLevels: [EnergyLevel.LOW, EnergyLevel.MEDIUM],
     reviewFrequency: ReviewFrequency.QUARTERLY,
     processingRules: [],
     automations: []
   },
   
-  [GTDRole.CUSTOM]: {
-    availableContexts: DEFAULT_GTD_CONTEXTS,
+  [StreamRole.CUSTOM]: {
+    availableContexts: DEFAULT_STREAM_CONTEXTS,
     energyLevels: DEFAULT_ENERGY_LEVELS,
     reviewFrequency: ReviewFrequency.WEEKLY,
     processingRules: [],
@@ -420,7 +420,7 @@ export const DEFAULT_GTD_CONFIGS: Record<GTDRole, Partial<GTDConfig>> = {
 /**
  * Type dla walidowanej GTD konfiguracji
  */
-export type ValidatedGTDConfig = z.infer<typeof GTDConfigSchema>;
+export type ValidatedStreamConfig = z.infer<typeof StreamConfigSchema>;
 
 /**
  * Type dla walidowanej reguły przetwarzania
@@ -430,27 +430,27 @@ export type ValidatedProcessingRule = z.infer<typeof ProcessingRuleSchema>;
 /**
  * Type dla walidowanej automatyzacji GTD
  */
-export type ValidatedGTDAutomation = z.infer<typeof GTDAutomationSchema>;
+export type ValidatedStreamAutomation = z.infer<typeof StreamAutomationSchema>;
 
 /**
  * Opcje dla tworzenia nowego streama GTD
  */
-export interface CreateGTDStreamOptions {
+export interface CreateStreamOptions {
   name: string;
   description?: string;
   color?: string;
   icon?: string;
-  gtdRole: GTDRole;
+  streamRole: StreamRole;
   streamType: StreamType;
   templateOrigin?: string;
   parentStreamId?: string;
-  gtdConfig?: Partial<GTDConfig>;
+  streamConfig?: Partial<StreamConfig>;
 }
 
 /**
  * Opcje dla aktualizacji konfiguracji GTD
  */
-export interface UpdateGTDConfigOptions {
+export interface UpdateStreamConfigOptions {
   merge?: boolean;                   // Czy scalić z istniejącą konfiguracją
   inheritFromParent?: boolean;       // Czy dziedziczyć od rodzica
   validateOnly?: boolean;            // Tylko walidacja bez zapisu
@@ -459,9 +459,9 @@ export interface UpdateGTDConfigOptions {
 /**
  * Wynik analizy GTD
  */
-export interface GTDAnalysisResult {
-  recommendedRole: GTDRole;          // Rekomendowana rola GTD
-  recommendedContext: GTDContext;    // Rekomendowany kontekst
+export interface StreamAnalysisResult {
+  recommendedRole: StreamRole;          // Rekomendowana rola GTD
+  recommendedContext: StreamContext;    // Rekomendowany kontekst
   recommendedEnergyLevel: EnergyLevel; // Rekomendowany poziom energii
   confidence: number;                // Pewność rekomendacji (0-1)
   reasoning: string[];               // Uzasadnienie decyzji
@@ -471,12 +471,12 @@ export interface GTDAnalysisResult {
 export default {
   EnergyLevel,
   ReviewFrequency,
-  GTDContext,
-  GTDRoleSchema,
+  StreamContext,
+  StreamRoleSchema,
   StreamTypeSchema,
   EnergyLevelSchema,
   ReviewFrequencySchema,
-  GTDContextSchema,
-  GTDConfigSchema,
-  DEFAULT_GTD_CONFIGS
+  StreamContextSchema,
+  StreamConfigSchema,
+  DEFAULT_STREAM_CONFIGS
 };

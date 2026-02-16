@@ -25,7 +25,7 @@ router.get('/test-public', async (req, res) => {
     // Use default organization for testing
     const organizationId = 'fe59f2b0-93d0-4193-9bab-aee778c1a449';
 
-    const horizons = await prisma.gTDHorizon.findMany({
+    const horizons = await prisma.goal.findMany({
       where: { organizationId },
       orderBy: { level: 'asc' }
     });
@@ -52,7 +52,7 @@ router.get('/', authenticateToken, async (req, res) => {
   try {
     const organizationId = await getUserOrganizationId(req.user.id);
 
-    const horizons = await prisma.gTDHorizon.findMany({
+    const horizons = await prisma.goal.findMany({
       where: { organizationId },
       orderBy: { level: 'asc' }
     });
@@ -110,7 +110,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const organizationId = await getUserOrganizationId(req.user.id);
 
-    const horizon = await prisma.gTDHorizon.findFirst({
+    const horizon = await prisma.goal.findFirst({
       where: {
         id,
         organizationId
@@ -148,7 +148,7 @@ router.put('/:id/reviewed', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const organizationId = await getUserOrganizationId(req.user.id);
 
-    const horizon = await prisma.gTDHorizon.findFirst({
+    const horizon = await prisma.goal.findFirst({
       where: {
         id,
         organizationId
@@ -162,7 +162,7 @@ router.put('/:id/reviewed', authenticateToken, async (req, res) => {
       });
     }
 
-    const updated = await prisma.gTDHorizon.update({
+    const updated = await prisma.goal.update({
       where: { id },
       data: {
         updatedAt: new Date()
@@ -186,7 +186,7 @@ router.put('/:id/reviewed', authenticateToken, async (req, res) => {
 
 // Helper function to get stats data
 const getStatsData = async (organizationId: string) => {
-  const horizons = await prisma.gTDHorizon.findMany({
+  const horizons = await prisma.goal.findMany({
     where: { organizationId }
   });
 

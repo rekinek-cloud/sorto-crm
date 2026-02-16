@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { DealStakeholder } from '@/types/gtd';
+import { DealStakeholder } from '@/types/streams';
 
 export interface DealStakeholdersResponse {
   stakeholders: DealStakeholder[];

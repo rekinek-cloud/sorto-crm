@@ -14,14 +14,14 @@ import { ResourceRouter } from '../services/ResourceRouter';
 import { GTDProcessingRuleEngine } from '../services/GTDProcessingRuleEngine';
 import { VectorService } from '../services/VectorService';
 import {
-  GTDRoleSchema,
+  StreamRoleSchema,
   StreamTypeSchema,
-  GTDConfigSchema,
+  StreamConfigSchema,
   EnergyLevelSchema,
   ReviewFrequencySchema,
-  GTDContextSchema
-} from '../types/gtd';
-import { GTDRole, StreamType } from '@prisma/client';
+  StreamContextSchema
+} from '../types/streams';
+import { StreamRole, StreamType } from '@prisma/client';
 
 const router = Router();
 
@@ -61,12 +61,12 @@ router.get('/', async (req, res) => {
         color: true,
         icon: true,
         pattern: true,        // STREAMS pattern (project, continuous, reference, pipeline, client, etc.)
-        gtdRole: true,
+        streamRole: true,
         streamType: true,
         status: true,
         templateOrigin: true,
         settings: true,
-        gtdConfig: true,
+        streamConfig: true,
         createdAt: true,
         updatedAt: true,
         // Include counts
@@ -77,7 +77,7 @@ router.get('/', async (req, res) => {
         }
       },
       orderBy: [
-        { gtdRole: 'asc' },
+        { streamRole: 'asc' },
         { name: 'asc' }
       ]
     });
@@ -88,7 +88,7 @@ router.get('/', async (req, res) => {
       meta: {
         total: streams.length,
         byRole: streams.reduce((acc, stream) => {
-          const role = stream.gtdRole || 'NONE';
+          const role = stream.streamRole || 'NONE';
           acc[role] = (acc[role] || 0) + 1;
           return acc;
         }, {} as Record<string, number>)
@@ -113,11 +113,11 @@ const createGTDStreamSchema = z.object({
   description: z.string().optional(),
   color: z.string().regex(/^#[0-9A-F]{6}$/i).default('#3B82F6'),
   icon: z.string().optional(),
-  gtdRole: GTDRoleSchema,
+  streamRole: StreamRoleSchema,
   streamType: StreamTypeSchema,
   templateOrigin: z.string().optional(),
   parentStreamId: z.string().uuid().optional(),
-  gtdConfig: GTDConfigSchema.partial().optional()
+  streamConfig: StreamConfigSchema.partial().optional()
 });
 
 // POST /api/gtd-streams - Create new GTD-enabled stream
@@ -157,11 +157,11 @@ router.get('/by-role/:role', async (req, res) => {
     const { role } = req.params;
 
     // Validate role
-    const validatedRole = GTDRoleSchema.parse(role);
+    const validatedRole = StreamRoleSchema.parse(role);
 
-    const streams = await streamService.getStreamsByGTDRole(
+    const streams = await streamService.getStreamsByStreamRole(
       req.user.organizationId,
-      validatedRole as GTDRole
+      validatedRole as StreamRole
     );
 
     res.json({
@@ -183,11 +183,11 @@ router.get('/by-role/:role', async (req, res) => {
 router.put('/:id/role', async (req, res) => {
   try {
     const { id } = req.params;
-    const { gtdRole } = req.body;
+    const { streamRole } = req.body;
 
-    const validatedRole = GTDRoleSchema.parse(gtdRole);
+    const validatedRole = StreamRoleSchema.parse(streamRole);
 
-    const stream = await streamService.assignGTDRole(id, validatedRole as GTDRole);
+    const stream = await streamService.assignStreamRole(id, validatedRole as StreamRole);
 
     res.json({
       success: true,
@@ -208,14 +208,14 @@ router.put('/:id/role', async (req, res) => {
 router.post('/:id/migrate', async (req, res) => {
   try {
     const { id } = req.params;
-    const { gtdRole, streamType } = req.body;
+    const { streamRole, streamType } = req.body;
 
-    const validatedRole = GTDRoleSchema.parse(gtdRole);
+    const validatedRole = StreamRoleSchema.parse(streamRole);
     const validatedType = streamType ? StreamTypeSchema.parse(streamType) : StreamType.CUSTOM;
 
     const { stream, config } = await streamService.migrateToGTDStream(
       id,
-      validatedRole as GTDRole,
+      validatedRole as StreamRole,
       validatedType as StreamType
     );
 
@@ -332,11 +332,11 @@ router.post('/:id/config/reset', async (req, res) => {
       }
     });
 
-    if (!stream || !stream.gtdRole) {
+    if (!stream || !stream.streamRole) {
       return res.status(404).json({ error: 'Stream not found' });
     }
 
-    const config = await gtdConfigManager.resetToDefaultConfig(id, stream.gtdRole);
+    const config = await gtdConfigManager.resetToDefaultConfig(id, stream.streamRole);
 
     res.json({
       success: true,

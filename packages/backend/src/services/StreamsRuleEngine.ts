@@ -3,7 +3,7 @@
  * Rozszerza UnifiedRuleEngine o funkcjonalność STREAMS workflow
  */
 
-import { PrismaClient, GTDRole } from '@prisma/client';
+import { PrismaClient, StreamRole } from '@prisma/client';
 import { UnifiedRuleEngine } from './UnifiedRuleEngine';
 import { emailService } from './EmailService';
 import {
@@ -11,9 +11,9 @@ import {
   ProcessingTrigger,
   ProcessingCondition,
   ProcessingAction,
-  GTDContext,
+  StreamContext,
   EnergyLevel
-} from '../types/gtd';
+} from '../types/streams';
 
 /**
  * Wynik wykonania reguły GTD
@@ -391,7 +391,7 @@ export class StreamsRuleEngine extends UnifiedRuleEngine {
     // Sprawdź czy stream istnieje
     const stream = await this.prisma.stream.findUnique({
       where: { id: streamId },
-      select: { id: true, name: true, gtdRole: true }
+      select: { id: true, name: true, streamRole: true }
     });
 
     if (!stream) {
@@ -432,7 +432,7 @@ export class StreamsRuleEngine extends UnifiedRuleEngine {
   private async assignContext(config: Record<string, any>, context: StreamsExecutionContext): Promise<any> {
     const { context: gtdContext } = config;
     
-    if (!gtdContext || !Object.values(GTDContext).includes(gtdContext)) {
+    if (!gtdContext || !Object.values(StreamContext).includes(gtdContext)) {
       throw new Error('Invalid GTD context specified');
     }
 

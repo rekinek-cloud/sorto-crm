@@ -3,7 +3,7 @@
  * Rozszerza istniejący StreamHierarchyService o funkcjonalność GTD i optymalizacje wydajności
  */
 
-import { PrismaClient, Stream, StreamRelation, GTDRole, StreamType } from '@prisma/client';
+import { PrismaClient, Stream, StreamRelation, StreamRole, StreamType } from '@prisma/client';
 import { StreamHierarchyService } from './StreamHierarchyService';
 
 /**
@@ -25,7 +25,7 @@ export interface StreamWithChildren extends Stream {
   path: string[];
   gtdContext?: {
     isGTDCompliant: boolean;
-    suggestedRole?: GTDRole;
+    suggestedRole?: StreamRole;
     issues: string[];
   };
 }
@@ -45,7 +45,7 @@ export interface StreamPathResult {
  */
 export interface GTDHierarchyStats {
   totalStreams: number;
-  streamsByRole: Record<GTDRole, number>;
+  streamsByRole: Record<StreamRole, number>;
   hierarchyDepth: {
     average: number;
     maximum: number;
@@ -117,7 +117,7 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
           -- Base case: root stream
           SELECT 
             s.id, s.name, s.description, s.color, s.icon, s.settings, s.status,
-            s."gtdRole", s."templateOrigin", s."gtdConfig", s."streamType",
+            s."streamRole", s."templateOrigin", s."streamConfig", s."streamType",
             s."organizationId", s."createdById", s."createdAt", s."updatedAt",
             0 as depth,
             ARRAY[s.id] as path,
@@ -130,8 +130,8 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
           -- Recursive case: children
           SELECT 
             child.id, child.name, child.description, child.color, child.icon, 
-            child.settings, child.status, child."gtdRole", child."templateOrigin", 
-            child."gtdConfig", child."streamType", child."organizationId", 
+            child.settings, child.status, child."streamRole", child."templateOrigin", 
+            child."streamConfig", child."streamType", child."organizationId", 
             child."createdById", child."createdAt", child."updatedAt",
             st.depth + 1,
             st.path || child.id,
@@ -499,7 +499,7 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
 
       const stats: GTDHierarchyStats = {
         totalStreams: streams.length,
-        streamsByRole: {} as Record<GTDRole, number>,
+        streamsByRole: {} as Record<StreamRole, number>,
         hierarchyDepth: { average: 0, maximum: 0, minimum: 0 },
         gtdCompliance: {
           compliantStreams: 0,
@@ -510,8 +510,8 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
       };
 
       // Analiza ról GTD
-      for (const role of Object.values(GTDRole)) {
-        stats.streamsByRole[role] = streams.filter(s => s.gtdRole === role).length;
+      for (const role of Object.values(StreamRole)) {
+        stats.streamsByRole[role] = streams.filter(s => s.streamRole === role).length;
       }
 
       // Analiza głębokości
@@ -627,14 +627,14 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
    */
   private analyzeGTDStructure(root: StreamWithChildren): boolean {
     // Sprawdź czy root ma odpowiednią rolę
-    if (!root.gtdRole) {
+    if (!root.streamRole) {
       return false;
     }
 
     // Sprawdź czy ma przynajmniej podstawowe role GTD w hierarchii
-    const hasInbox = this.findRoleInTree(root, GTDRole.INBOX);
-    const hasNextActions = this.findRoleInTree(root, GTDRole.NEXT_ACTIONS);
-    const hasProjects = this.findRoleInTree(root, GTDRole.PROJECTS);
+    const hasInbox = this.findRoleInTree(root, StreamRole.INBOX);
+    const hasNextActions = this.findRoleInTree(root, StreamRole.NEXT_ACTIONS);
+    const hasProjects = this.findRoleInTree(root, StreamRole.PROJECTS);
 
     return hasInbox || hasNextActions || hasProjects;
   }
@@ -642,8 +642,8 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
   /**
    * Znajduje rolę w drzewie
    */
-  private findRoleInTree(node: StreamWithChildren, role: GTDRole): boolean {
-    if (node.gtdRole === role) {
+  private findRoleInTree(node: StreamWithChildren, role: StreamRole): boolean {
+    if (node.streamRole === role) {
       return true;
     }
 
@@ -655,7 +655,7 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
    */
   private async analyzeStreamGTDCompliance(stream: any): Promise<{
     isCompliant: boolean;
-    suggestedRole?: GTDRole;
+    suggestedRole?: StreamRole;
     issues: Array<{
       message: string;
       severity: 'LOW' | 'MEDIUM' | 'HIGH';
@@ -667,7 +667,7 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
     }> = [];
 
     // Sprawdź czy ma przypisaną rolę GTD
-    if (!stream.gtdRole) {
+    if (!stream.streamRole) {
       issues.push({
         message: 'No GTD role assigned',
         severity: 'MEDIUM'
@@ -675,14 +675,14 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
     }
 
     // Sprawdź zgodność stream type z GTD role
-    if (stream.gtdRole === GTDRole.CONTEXTS && stream.streamType !== StreamType.CONTEXT) {
+    if (stream.streamRole === StreamRole.CONTEXTS && stream.streamType !== StreamType.CONTEXT) {
       issues.push({
         message: 'CONTEXTS role should have CONTEXT stream type',
         severity: 'HIGH'
       });
     }
 
-    if (stream.gtdRole === GTDRole.PROJECTS && stream.streamType !== StreamType.PROJECT) {
+    if (stream.streamRole === StreamRole.PROJECTS && stream.streamType !== StreamType.PROJECT) {
       issues.push({
         message: 'PROJECTS role should have PROJECT stream type',
         severity: 'HIGH'
@@ -690,7 +690,7 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
     }
 
     // Sprawdź czy INBOX nie ma GTD config
-    if (stream.gtdRole === GTDRole.INBOX && (!stream.gtdConfig || Object.keys(stream.gtdConfig).length === 0)) {
+    if (stream.streamRole === StreamRole.INBOX && (!stream.streamConfig || Object.keys(stream.streamConfig).length === 0)) {
       issues.push({
         message: 'INBOX should have GTD configuration',
         severity: 'HIGH'
@@ -699,7 +699,7 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
 
     return {
       isCompliant: issues.length === 0,
-      suggestedRole: this.suggestGTDRole(stream),
+      suggestedRole: this.suggestStreamRole(stream),
       issues
     };
   }
@@ -707,17 +707,17 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
   /**
    * Sugeruje rolę GTD na podstawie nazwy i kontekstu
    */
-  private suggestGTDRole(stream: any): GTDRole | undefined {
+  private suggestStreamRole(stream: any): StreamRole | undefined {
     const name = stream.name.toLowerCase();
     
-    if (name.includes('inbox')) return GTDRole.INBOX;
-    if (name.includes('next') || name.includes('action')) return GTDRole.NEXT_ACTIONS;
-    if (name.includes('wait')) return GTDRole.WAITING_FOR;
-    if (name.includes('someday') || name.includes('maybe')) return GTDRole.SOMEDAY_MAYBE;
-    if (name.includes('project')) return GTDRole.PROJECTS;
-    if (name.includes('context') || name.includes('@')) return GTDRole.CONTEXTS;
-    if (name.includes('area') || name.includes('responsibility')) return GTDRole.AREAS;
-    if (name.includes('reference') || name.includes('doc')) return GTDRole.REFERENCE;
+    if (name.includes('inbox')) return StreamRole.INBOX;
+    if (name.includes('next') || name.includes('action')) return StreamRole.NEXT_ACTIONS;
+    if (name.includes('wait')) return StreamRole.WAITING_FOR;
+    if (name.includes('someday') || name.includes('maybe')) return StreamRole.SOMEDAY_MAYBE;
+    if (name.includes('project')) return StreamRole.PROJECTS;
+    if (name.includes('context') || name.includes('@')) return StreamRole.CONTEXTS;
+    if (name.includes('area') || name.includes('responsibility')) return StreamRole.AREAS;
+    if (name.includes('reference') || name.includes('doc')) return StreamRole.REFERENCE;
     
     return undefined;
   }
@@ -741,7 +741,7 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
       where: {
         organizationId,
         parentRelations: { none: {} },
-        gtdRole: { not: null } // Only GTD streams that should have parents
+        streamRole: { not: null } // Only GTD streams that should have parents
       }
     });
   }

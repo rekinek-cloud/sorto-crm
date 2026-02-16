@@ -6,18 +6,18 @@
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
 import {
-  GTDConfig,
-  GTDConfigSchema,
-  DEFAULT_GTD_CONFIGS,
+  StreamConfig,
+  StreamConfigSchema,
+  DEFAULT_STREAM_CONFIGS,
   DEFAULT_INBOX_BEHAVIOR,
-  DEFAULT_GTD_CONTEXTS,
+  DEFAULT_STREAM_CONTEXTS,
   DEFAULT_ENERGY_LEVELS,
-  CreateGTDStreamOptions,
-  UpdateGTDConfigOptions,
-  ValidatedGTDConfig,
+  CreateStreamOptions,
+  UpdateStreamConfigOptions,
+  ValidatedStreamConfig,
   ReviewFrequency as GTDReviewFrequency
-} from '../types/gtd';
-import { GTDRole, StreamType, ReviewFrequency } from '@prisma/client';
+} from '../types/streams';
+import { StreamRole, StreamType, ReviewFrequency } from '@prisma/client';
 
 /**
  * Niestandardowe błędy StreamsConfigManager
@@ -60,22 +60,22 @@ export class StreamsConfigManager {
   /**
    * Pobiera konfigurację GTD dla streama
    */
-  async getGTDConfig(streamId: string): Promise<ValidatedGTDConfig | null> {
+  async getGTDConfig(streamId: string): Promise<ValidatedStreamConfig | null> {
     try {
       const stream = await this.prisma.stream.findUnique({
         where: { id: streamId },
         select: {
           id: true,
-          gtdConfig: true,
-          gtdRole: true,
+          streamConfig: true,
+          streamRole: true,
           streamType: true,
           parentRelations: {
             select: {
               parent: {
                 select: {
                   id: true,
-                  gtdConfig: true,
-                  gtdRole: true
+                  streamConfig: true,
+                  streamRole: true
                 }
               }
             }
@@ -103,9 +103,9 @@ export class StreamsConfigManager {
    */
   async setGTDConfig(
     streamId: string, 
-    config: Partial<GTDConfig>, 
-    options: UpdateGTDConfigOptions = {}
-  ): Promise<ValidatedGTDConfig> {
+    config: Partial<StreamConfig>, 
+    options: UpdateStreamConfigOptions = {}
+  ): Promise<ValidatedStreamConfig> {
     try {
       const { merge = true, inheritFromParent = true, validateOnly = false } = options;
 
@@ -136,7 +136,7 @@ export class StreamsConfigManager {
       await this.prisma.stream.update({
         where: { id: streamId },
         data: {
-          gtdConfig: validatedConfig as any
+          streamConfig: validatedConfig as any
         }
       });
 
@@ -155,7 +155,7 @@ export class StreamsConfigManager {
   /**
    * Resetuje konfigurację GTD do domyślnej dla danej roli
    */
-  async resetToDefaultConfig(streamId: string, gtdRole: GTDRole): Promise<ValidatedGTDConfig> {
+  async resetToDefaultConfig(streamId: string, gtdRole: StreamRole): Promise<ValidatedStreamConfig> {
     try {
       const defaultConfig = this.getDefaultConfigForRole(gtdRole);
       return await this.setGTDConfig(streamId, defaultConfig, { merge: false, inheritFromParent: false });
@@ -184,7 +184,7 @@ export class StreamsConfigManager {
   /**
    * Importuje konfigurację GTD z JSON
    */
-  async importGTDConfig(streamId: string, jsonConfig: string): Promise<ValidatedGTDConfig> {
+  async importGTDConfig(streamId: string, jsonConfig: string): Promise<ValidatedStreamConfig> {
     try {
       const config = JSON.parse(jsonConfig);
       return await this.setGTDConfig(streamId, config, { merge: false, inheritFromParent: false });
@@ -207,19 +207,19 @@ export class StreamsConfigManager {
   async createGTDStream(
     organizationId: string,
     createdById: string,
-    options: CreateGTDStreamOptions
-  ): Promise<{ stream: any; config: ValidatedGTDConfig }> {
+    options: CreateStreamOptions
+  ): Promise<{ stream: any; config: ValidatedStreamConfig }> {
     try {
       const {
         name,
         description,
         color = '#3B82F6',
         icon,
-        gtdRole,
+        streamRole: gtdRole,
         streamType,
         templateOrigin,
         parentStreamId,
-        gtdConfig = {}
+        streamConfig: gtdConfig = {}
       } = options;
 
       // Pobierz domyślną konfigurację dla roli
@@ -238,10 +238,10 @@ export class StreamsConfigManager {
           description,
           color,
           icon,
-          gtdRole,
+          streamRole: gtdRole,
           streamType,
           templateOrigin,
-          gtdConfig: validatedConfig as any,
+          streamConfig: validatedConfig as any,
           organizationId,
           createdById
         },
@@ -271,9 +271,9 @@ export class StreamsConfigManager {
    */
   async migrateToGTDStream(
     streamId: string,
-    gtdRole: GTDRole,
+    gtdRole: StreamRole,
     streamType: StreamType = StreamType.CUSTOM
-  ): Promise<ValidatedGTDConfig> {
+  ): Promise<ValidatedStreamConfig> {
     try {
       // Pobierz domyślną konfigurację
       const defaultConfig = this.getDefaultConfigForRole(gtdRole);
@@ -283,9 +283,9 @@ export class StreamsConfigManager {
       await this.prisma.stream.update({
         where: { id: streamId },
         data: {
-          gtdRole,
+          streamRole: gtdRole,
           streamType,
-          gtdConfig: validatedConfig as any
+          streamConfig: validatedConfig as any
         }
       });
 
@@ -305,9 +305,9 @@ export class StreamsConfigManager {
   /**
    * Waliduje konfigurację GTD
    */
-  private validateConfig(config: any): ValidatedGTDConfig {
+  private validateConfig(config: any): ValidatedStreamConfig {
     try {
-      return GTDConfigSchema.parse(config);
+      return StreamConfigSchema.parse(config);
     } catch (error) {
       if (error instanceof z.ZodError) {
         throw new GTDValidationError('GTD config validation failed', error);
@@ -342,9 +342,9 @@ export class StreamsConfigManager {
       }
 
       // Sprawdź czy INBOX nie ma dzieci typu INBOX
-      if (stream.gtdRole === GTDRole.INBOX) {
+      if (stream.streamRole === StreamRole.INBOX) {
         const inboxChildren = stream.childRelations.filter(
-          rel => rel.child.gtdRole === GTDRole.INBOX
+          rel => rel.child.streamRole === StreamRole.INBOX
         );
         if (inboxChildren.length > 0) {
           errors.push('INBOX stream cannot have INBOX children');
@@ -352,7 +352,7 @@ export class StreamsConfigManager {
       }
 
       // Sprawdź czy CONTEXTS ma odpowiednie dzieci
-      if (stream.gtdRole === GTDRole.CONTEXTS) {
+      if (stream.streamRole === StreamRole.CONTEXTS) {
         const invalidChildren = stream.childRelations.filter(
           rel => rel.child.streamType !== StreamType.CONTEXT
         );
@@ -364,7 +364,7 @@ export class StreamsConfigManager {
       // Sprawdź czy PROJECT ma odpowiednią hierarchię
       if (stream.streamType === StreamType.PROJECT) {
         const projectParents = stream.parentRelations.filter(
-          rel => rel.parent.gtdRole === GTDRole.PROJECTS || 
+          rel => rel.parent.streamRole === StreamRole.PROJECTS || 
                 rel.parent.streamType === StreamType.AREA
         );
         if (projectParents.length === 0) {
@@ -384,11 +384,11 @@ export class StreamsConfigManager {
    * Scalanie konfiguracji z rodzicem
    */
   private async mergeConfigWithParent(stream: any): Promise<any> {
-    let config = stream.gtdConfig;
+    let config = stream.streamConfig;
 
     // Jeśli ma rodzica, scalaj konfiguracje
     if (stream.parentRelations.length > 0) {
-      const parentConfig = stream.parentRelations[0].parent.gtdConfig;
+      const parentConfig = stream.parentRelations[0].parent.streamConfig;
       if (parentConfig) {
         config = this.deepMerge(parentConfig, config);
       }
@@ -407,7 +407,7 @@ export class StreamsConfigManager {
         parentRelations: {
           include: {
             parent: {
-              select: { gtdConfig: true, gtdRole: true }
+              select: { streamConfig: true, streamRole: true }
             }
           }
         }
@@ -418,7 +418,7 @@ export class StreamsConfigManager {
       return config;
     }
 
-    const parentConfig = stream.parentRelations[0].parent.gtdConfig;
+    const parentConfig = stream.parentRelations[0].parent.streamConfig;
     return this.deepMerge(parentConfig, config);
   }
 
@@ -442,12 +442,12 @@ export class StreamsConfigManager {
   /**
    * Pobiera domyślną konfigurację dla roli GTD
    */
-  private getDefaultConfigForRole(gtdRole: GTDRole): Partial<GTDConfig> {
-    const baseConfig = DEFAULT_GTD_CONFIGS[gtdRole] || DEFAULT_GTD_CONFIGS[GTDRole.CUSTOM];
+  private getDefaultConfigForRole(gtdRole: StreamRole): Partial<StreamConfig> {
+    const baseConfig = DEFAULT_STREAM_CONFIGS[gtdRole] || DEFAULT_STREAM_CONFIGS[StreamRole.CUSTOM];
     
     return {
       inboxBehavior: DEFAULT_INBOX_BEHAVIOR,
-      availableContexts: DEFAULT_GTD_CONTEXTS,
+      availableContexts: DEFAULT_STREAM_CONTEXTS,
       energyLevels: DEFAULT_ENERGY_LEVELS,
       reviewFrequency: GTDReviewFrequency.WEEKLY,
       processingRules: [],
@@ -496,11 +496,11 @@ export class StreamsConfigManager {
   /**
    * Pobiera wszystkie streamy z daną rolą GTD
    */
-  async getStreamsByGTDRole(organizationId: string, gtdRole: GTDRole): Promise<any[]> {
+  async getStreamsByStreamRole(organizationId: string, gtdRole: StreamRole): Promise<any[]> {
     return await this.prisma.stream.findMany({
       where: {
         organizationId,
-        gtdRole
+        streamRole: gtdRole
       },
       include: {
         parentRelations: {
@@ -516,14 +516,14 @@ export class StreamsConfigManager {
   /**
    * Przypisuje rolę GTD do streama
    */
-  async assignGTDRole(streamId: string, gtdRole: GTDRole): Promise<void> {
+  async assignStreamRole(streamId: string, gtdRole: StreamRole): Promise<void> {
     const defaultConfig = this.getDefaultConfigForRole(gtdRole);
-    
+
     await this.prisma.stream.update({
       where: { id: streamId },
       data: {
-        gtdRole,
-        gtdConfig: defaultConfig as any
+        streamRole: gtdRole,
+        streamConfig: defaultConfig as any
       }
     });
   }
@@ -541,9 +541,9 @@ export class StreamsConfigManager {
     const streams = await this.prisma.stream.findMany({
       where: { organizationId },
       select: {
-        gtdRole: true,
+        streamRole: true,
         streamType: true,
-        gtdConfig: true
+        streamConfig: true
       }
     });
 
@@ -557,14 +557,14 @@ export class StreamsConfigManager {
 
     streams.forEach(stream => {
       // Count by role
-      const role = stream.gtdRole || 'NONE';
+      const role = stream.streamRole || 'NONE';
       stats.streamsByRole[role] = (stats.streamsByRole[role] || 0) + 1;
 
       // Count by type
       stats.streamsByType[stream.streamType] = (stats.streamsByType[stream.streamType] || 0) + 1;
 
       // Count configured vs unconfigured
-      if (stream.gtdConfig && Object.keys(stream.gtdConfig).length > 0) {
+      if (stream.streamConfig && Object.keys(stream.streamConfig).length > 0) {
         stats.configuredStreams++;
       } else {
         stats.unconfiguredStreams++;

@@ -814,10 +814,10 @@ Odpowiedz w formacie JSON:
     }
 
     // 3. Stream config matching
-    if (stream.gtdConfig) {
-      const gtdConfig = typeof stream.gtdConfig === 'string'
-        ? JSON.parse(stream.gtdConfig)
-        : stream.gtdConfig;
+    if (stream.streamConfig) {
+      const gtdConfig = typeof stream.streamConfig === 'string'
+        ? JSON.parse(stream.streamConfig)
+        : stream.streamConfig;
 
       if (gtdConfig.allowedTypes?.includes(analysis.elementType)) {
         keyword += 0.15;

@@ -93,9 +93,9 @@ router.get('/', async (req, res) => {
       createdBy: stream.createdBy,
       _count: stream._count,
       // Add GTD information for enhanced functionality
-      gtdRole: stream.gtdRole,
+      streamRole: stream.streamRole,
       streamType: stream.streamType,
-      gtdConfig: stream.gtdConfig,
+      streamConfig: stream.streamConfig,
       isGTDEnabled: true, // All streams are now GTD-enabled
       templateOrigin: stream.templateOrigin
     }));
@@ -186,9 +186,9 @@ router.get('/:id', async (req, res) => {
       ...stream,
       // Legacy compatibility
       isGTDEnabled: true,
-      gtdRole: stream.gtdRole,
+      streamRole: stream.streamRole,
       streamType: stream.streamType,
-      gtdConfig: stream.gtdConfig,
+      streamConfig: stream.streamConfig,
       migration: {
         notice: 'This stream has been migrated to GTD. Use /api/v1/gtd-streams for full GTD functionality.',
         gtdEndpoint: `/api/v1/gtd-streams/${id}`
@@ -214,8 +214,8 @@ router.post('/', async (req, res) => {
     const streamData = req.body;
     
     // Default GTD role if not specified
-    if (!streamData.gtdRole) {
-      streamData.gtdRole = 'AREAS'; // Safe default
+    if (!streamData.streamRole) {
+      streamData.streamRole = 'AREAS'; // Safe default
     }
     
     if (!streamData.streamType) {
@@ -223,8 +223,8 @@ router.post('/', async (req, res) => {
     }
 
     // Add default GTD config
-    if (!streamData.gtdConfig) {
-      streamData.gtdConfig = {
+    if (!streamData.streamConfig) {
+      streamData.streamConfig = {
         autoRouting: true,
         notificationsEnabled: true,
         energyTracking: false,
@@ -258,9 +258,9 @@ router.post('/', async (req, res) => {
         icon: streamData.icon,
         settings: streamData.settings || {},
         status: streamData.status || 'ACTIVE',
-        gtdRole: streamData.gtdRole,
+        streamRole: streamData.streamRole,
         streamType: streamData.streamType,
-        gtdConfig: streamData.gtdConfig,
+        streamConfig: streamData.streamConfig,
         templateOrigin: streamData.templateOrigin,
         organizationId: req.user.organizationId,
         createdById: req.user.id

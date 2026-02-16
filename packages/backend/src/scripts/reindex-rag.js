@@ -89,7 +89,7 @@ async function indexStreams() {
       `Strumień: ${s.name}`,
       s.description || '',
       s.streamType ? `Typ: ${s.streamType}` : '',
-      s.gtdRole ? `Rola GTD: ${s.gtdRole}` : '',
+      s.streamRole ? `Rola GTD: ${s.streamRole}` : '',
       s.status ? `Status: ${s.status}` : ''
     ].filter(Boolean).join('. ');
 
