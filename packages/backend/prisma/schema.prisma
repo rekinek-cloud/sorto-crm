@@ -327,7 +327,7 @@ model Stream {
   settings                                            Json                 @default("{}")
   status                                              StreamStatus         @default(ACTIVE)
   templateOrigin                                      String?
-  streamConfig                                        Json                 @default("{}") @map("gtd_config")
+  streamConfig                                        Json                 @default("{}") @map("gtdConfig")
   streamType                                          StreamType           @default(CUSTOM)
   organizationId                                      String
   createdById                                         String
@@ -335,7 +335,7 @@ model Stream {
   updatedAt                                           DateTime             @updatedAt
   horizonLevel                                        Int                  @default(0)
   pattern                                             String?              @default("custom") @db.VarChar(50)
-  streamRole                                          String?              @map("gtd_role")
+  streamRole                                          String?              @map("gtdRole")
   inboxItems                                          InboxItem[]          @relation("InboxToStream")
   messages                                            Message[]
   next_actions                                        next_actions[]
