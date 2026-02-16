@@ -1,6 +1,6 @@
 /**
- * EnhancedStreamHierarchyManager - Rozszerzony manager hierarchii streams z zaawansowanymi operacjami na drzewie GTD
- * Rozszerza istniejący StreamHierarchyService o funkcjonalność GTD i optymalizacje wydajności
+ * EnhancedStreamHierarchyManager - Rozszerzony manager hierarchii streams z zaawansowanymi operacjami na drzewie Streams
+ * Rozszerza istniejący StreamHierarchyService o funkcjonalność Streams i optymalizacje wydajności
  */
 
 import { PrismaClient, Stream, StreamRelation, StreamRole, StreamType } from '@prisma/client';
@@ -13,7 +13,7 @@ export interface StreamTreeResult {
   root: StreamWithChildren;
   totalNodes: number;
   maxDepth: number;
-  hasGTDStructure: boolean;
+  hasStreamStructure: boolean;
 }
 
 /**
@@ -23,8 +23,8 @@ export interface StreamWithChildren extends Stream {
   children: StreamWithChildren[];
   depth: number;
   path: string[];
-  gtdContext?: {
-    isGTDCompliant: boolean;
+  streamContext?: {
+    isStreamCompliant: boolean;
     suggestedRole?: StreamRole;
     issues: string[];
   };
@@ -41,9 +41,9 @@ export interface StreamPathResult {
 }
 
 /**
- * Statystyki hierarchii GTD
+ * Statystyki hierarchii Streams
  */
-export interface GTDHierarchyStats {
+export interface StreamHierarchyStats {
   totalStreams: number;
   streamsByRole: Record<StreamRole, number>;
   hierarchyDepth: {
@@ -51,7 +51,7 @@ export interface GTDHierarchyStats {
     maximum: number;
     minimum: number;
   };
-  gtdCompliance: {
+  streamCompliance: {
     compliantStreams: number;
     nonCompliantStreams: number;
     issues: Array<{
@@ -69,7 +69,7 @@ export interface GTDHierarchyStats {
 }
 
 /**
- * Enhanced Stream Hierarchy Manager z funkcjonalnością GTD
+ * Enhanced Stream Hierarchy Manager z funkcjonalnością Streams
  */
 export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
   private prisma: PrismaClient;
@@ -94,14 +94,14 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
     rootStreamId: string,
     options: {
       maxDepth?: number;
-      includeGTDAnalysis?: boolean;
+      includeStreamAnalysis?: boolean;
       includeInactive?: boolean;
     } = {}
   ): Promise<StreamTreeResult> {
-    const { maxDepth = 10, includeGTDAnalysis = true, includeInactive = false } = options;
+    const { maxDepth = 10, includeStreamAnalysis = true, includeInactive = false } = options;
     
     try {
-      const cacheKey = `tree_${rootStreamId}_${maxDepth}_${includeGTDAnalysis}_${includeInactive}`;
+      const cacheKey = `tree_${rootStreamId}_${maxDepth}_${includeStreamAnalysis}_${includeInactive}`;
       
       // Sprawdź cache
       if (this.cache.has(cacheKey)) {
@@ -158,13 +158,13 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
       }
 
       // Buduj strukturę drzewa
-      const root = await this.buildTreeStructure(treeNodes, includeGTDAnalysis);
+      const root = await this.buildTreeStructure(treeNodes, includeStreamAnalysis);
       
       const result: StreamTreeResult = {
         root,
         totalNodes: treeNodes.length,
         maxDepth: Math.max(...treeNodes.map((n: any) => n.depth)),
-        hasGTDStructure: this.analyzeGTDStructure(root)
+        hasStreamStructure: this.analyzeStreamStructure(root)
       };
 
       // Cache wynik
@@ -427,20 +427,20 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
   async validateHierarchyIntegrity(organizationId: string): Promise<{
     isValid: boolean;
     errors: Array<{
-      type: 'CYCLE' | 'ORPHAN' | 'INVALID_RELATION' | 'GTD_VIOLATION';
+      type: 'CYCLE' | 'ORPHAN' | 'INVALID_RELATION' | 'STREAM_VIOLATION';
       streamId: string;
       message: string;
     }>;
   }> {
     try {
       const errors: Array<{
-        type: 'CYCLE' | 'ORPHAN' | 'INVALID_RELATION' | 'GTD_VIOLATION';
+        type: 'CYCLE' | 'ORPHAN' | 'INVALID_RELATION' | 'STREAM_VIOLATION';
         streamId: string;
         message: string;
       }> = [];
 
       // Sprawdź cykle
-      const cycles = await this.detectGTDCycles(organizationId);
+      const cycles = await this.detectStreamCycles(organizationId);
       cycles.forEach(cycle => {
         errors.push({
           type: 'CYCLE',
@@ -459,11 +459,11 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
         });
       });
 
-      // Sprawdź naruszenia GTD
-      const gtdViolations = await this.validateGTDHierarchyRules(organizationId);
-      gtdViolations.forEach(violation => {
+      // Sprawdź naruszenia Streams
+      const streamViolations = await this.validateStreamHierarchyRules(organizationId);
+      streamViolations.forEach(violation => {
         errors.push({
-          type: 'GTD_VIOLATION',
+          type: 'STREAM_VIOLATION',
           streamId: violation.streamId,
           message: violation.message
         });
@@ -481,13 +481,13 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
   }
 
   // ========================================
-  // GTD-SPECIFIC OPERATIONS
+  // STREAM-SPECIFIC OPERATIONS
   // ========================================
 
   /**
-   * Pobiera statystyki hierarchii GTD
+   * Pobiera statystyki hierarchii Streams
    */
-  async getGTDHierarchyStats(organizationId: string): Promise<GTDHierarchyStats> {
+  async getStreamHierarchyStats(organizationId: string): Promise<StreamHierarchyStats> {
     try {
       const streams = await this.prisma.stream.findMany({
         where: { organizationId },
@@ -497,11 +497,11 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
         }
       });
 
-      const stats: GTDHierarchyStats = {
+      const stats: StreamHierarchyStats = {
         totalStreams: streams.length,
         streamsByRole: {} as Record<StreamRole, number>,
         hierarchyDepth: { average: 0, maximum: 0, minimum: 0 },
-        gtdCompliance: {
+        streamCompliance: {
           compliantStreams: 0,
           nonCompliantStreams: 0,
           issues: []
@@ -509,7 +509,7 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
         orphanedStreams: []
       };
 
-      // Analiza ról GTD
+      // Analiza ról Streams
       for (const role of Object.values(StreamRole)) {
         stats.streamsByRole[role] = streams.filter(s => s.streamRole === role).length;
       }
@@ -525,14 +525,14 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
         stats.hierarchyDepth.average = depths.reduce((a, b) => a + b, 0) / depths.length;
       }
 
-      // Analiza zgodności GTD
+      // Analiza zgodności Streams
       for (const stream of streams) {
-        const compliance = await this.analyzeStreamGTDCompliance(stream);
+        const compliance = await this.analyzeStreamCompliance(stream);
         if (compliance.isCompliant) {
-          stats.gtdCompliance.compliantStreams++;
+          stats.streamCompliance.compliantStreams++;
         } else {
-          stats.gtdCompliance.nonCompliantStreams++;
-          stats.gtdCompliance.issues.push(...compliance.issues.map(issue => ({
+          stats.streamCompliance.nonCompliantStreams++;
+          stats.streamCompliance.issues.push(...compliance.issues.map(issue => ({
             streamId: stream.id,
             streamName: stream.name,
             issue: issue.message,
@@ -552,8 +552,8 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
       return stats;
 
     } catch (error) {
-      this.logger.error('Error getting GTD hierarchy stats:', error);
-      throw new Error('Failed to get GTD hierarchy stats');
+      this.logger.error('Error getting Stream hierarchy stats:', error);
+      throw new Error('Failed to get Stream hierarchy stats');
     }
   }
 
@@ -566,7 +566,7 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
    */
   private async buildTreeStructure(
     treeNodes: any[],
-    includeGTDAnalysis: boolean
+    includeStreamAnalysis: boolean
   ): Promise<StreamWithChildren> {
     const nodeMap = new Map<string, StreamWithChildren>();
 
@@ -577,16 +577,16 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
         children: [],
         depth: node.depth,
         path: node.path || [],
-        gtdContext: includeGTDAnalysis ? {
-          isGTDCompliant: false,
+        streamContext: includeStreamAnalysis ? {
+          isStreamCompliant: false,
           issues: []
         } : undefined
       };
 
-      if (includeGTDAnalysis) {
-        const compliance = await this.analyzeStreamGTDCompliance(node);
-        streamNode.gtdContext = {
-          isGTDCompliant: compliance.isCompliant,
+      if (includeStreamAnalysis) {
+        const compliance = await this.analyzeStreamCompliance(node);
+        streamNode.streamContext = {
+          isStreamCompliant: compliance.isCompliant,
           suggestedRole: compliance.suggestedRole,
           issues: compliance.issues.map(i => i.message)
         };
@@ -623,15 +623,15 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
   }
 
   /**
-   * Analizuje czy drzewo ma strukturę GTD
+   * Analizuje czy drzewo ma strukturę Streams
    */
-  private analyzeGTDStructure(root: StreamWithChildren): boolean {
+  private analyzeStreamStructure(root: StreamWithChildren): boolean {
     // Sprawdź czy root ma odpowiednią rolę
     if (!root.streamRole) {
       return false;
     }
 
-    // Sprawdź czy ma przynajmniej podstawowe role GTD w hierarchii
+    // Sprawdź czy ma przynajmniej podstawowe role Streams w hierarchii
     const hasInbox = this.findRoleInTree(root, StreamRole.INBOX);
     const hasNextActions = this.findRoleInTree(root, StreamRole.NEXT_ACTIONS);
     const hasProjects = this.findRoleInTree(root, StreamRole.PROJECTS);
@@ -651,9 +651,9 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
   }
 
   /**
-   * Analizuje zgodność streama z regułami GTD
+   * Analizuje zgodność streama z regułami Streams
    */
-  private async analyzeStreamGTDCompliance(stream: any): Promise<{
+  private async analyzeStreamCompliance(stream: any): Promise<{
     isCompliant: boolean;
     suggestedRole?: StreamRole;
     issues: Array<{
@@ -666,15 +666,15 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
       severity: 'LOW' | 'MEDIUM' | 'HIGH';
     }> = [];
 
-    // Sprawdź czy ma przypisaną rolę GTD
+    // Sprawdź czy ma przypisaną rolę Stream
     if (!stream.streamRole) {
       issues.push({
-        message: 'No GTD role assigned',
+        message: 'No Stream role assigned',
         severity: 'MEDIUM'
       });
     }
 
-    // Sprawdź zgodność stream type z GTD role
+    // Sprawdź zgodność stream type z Stream role
     if (stream.streamRole === StreamRole.CONTEXTS && stream.streamType !== StreamType.CONTEXT) {
       issues.push({
         message: 'CONTEXTS role should have CONTEXT stream type',
@@ -689,10 +689,10 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
       });
     }
 
-    // Sprawdź czy INBOX nie ma GTD config
+    // Sprawdź czy INBOX nie ma Stream config
     if (stream.streamRole === StreamRole.INBOX && (!stream.streamConfig || Object.keys(stream.streamConfig).length === 0)) {
       issues.push({
-        message: 'INBOX should have GTD configuration',
+        message: 'INBOX should have Stream configuration',
         severity: 'HIGH'
       });
     }
@@ -705,7 +705,7 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
   }
 
   /**
-   * Sugeruje rolę GTD na podstawie nazwy i kontekstu
+   * Sugeruje rolę Stream na podstawie nazwy i kontekstu
    */
   private suggestStreamRole(stream: any): StreamRole | undefined {
     const name = stream.name.toLowerCase();
@@ -723,9 +723,9 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
   }
 
   /**
-   * Wykrywa cykle w hierarchii GTD
+   * Wykrywa cykle w hierarchii Streams
    */
-  private async detectGTDCycles(organizationId: string): Promise<Array<{
+  private async detectStreamCycles(organizationId: string): Promise<Array<{
     streamId: string;
     cycle: string[];
   }>> {
@@ -741,19 +741,19 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
       where: {
         organizationId,
         parentRelations: { none: {} },
-        streamRole: { not: null } // Only GTD streams that should have parents
+        streamRole: { not: null } // Only streams that should have parents
       }
     });
   }
 
   /**
-   * Waliduje reguły hierarchii GTD
+   * Waliduje reguły hierarchii Streams
    */
-  private async validateGTDHierarchyRules(organizationId: string): Promise<Array<{
+  private async validateStreamHierarchyRules(organizationId: string): Promise<Array<{
     streamId: string;
     message: string;
   }>> {
-    // TODO: Implementacja walidacji reguł GTD
+    // TODO: Implementacja walidacji reguł Streams
     return [];
   }
 

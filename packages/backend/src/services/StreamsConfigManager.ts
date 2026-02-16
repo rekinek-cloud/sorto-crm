@@ -1,5 +1,5 @@
 /**
- * StreamsConfigManager - Service do zarządzania konfiguracją GTD dla streams
+ * GTDConfigManager - Service do zarządzania konfiguracją GTD dla streams
  * Obsługuje CRUD operacje, walidację, dziedziczenie i default settings
  */
 
@@ -20,22 +20,22 @@ import {
 import { StreamRole, StreamType, ReviewFrequency } from '@prisma/client';
 
 /**
- * Niestandardowe błędy StreamsConfigManager
+ * Niestandardowe błędy GTDConfigManager
  */
-export class GTDConfigError extends Error {
+export class StreamsConfigError extends Error {
   constructor(message: string, public code: string) {
     super(message);
-    this.name = 'GTDConfigError';
+    this.name = 'StreamsConfigError';
   }
 }
 
-export class GTDValidationError extends GTDConfigError {
+export class StreamsValidationError extends StreamsConfigError {
   constructor(message: string, public validationErrors: z.ZodError) {
     super(message, 'VALIDATION_ERROR');
   }
 }
 
-export class GTDInheritanceError extends GTDConfigError {
+export class StreamsInheritanceError extends StreamsConfigError {
   constructor(message: string) {
     super(message, 'INHERITANCE_ERROR');
   }
@@ -60,7 +60,7 @@ export class StreamsConfigManager {
   /**
    * Pobiera konfigurację GTD dla streama
    */
-  async getGTDConfig(streamId: string): Promise<ValidatedStreamConfig | null> {
+  async getStreamConfig(streamId: string): Promise<ValidatedStreamConfig | null> {
     try {
       const stream = await this.prisma.stream.findUnique({
         where: { id: streamId },
@@ -69,9 +69,9 @@ export class StreamsConfigManager {
           streamConfig: true,
           streamRole: true,
           streamType: true,
-          parentRelations: {
+          stream_relations_stream_relations_childIdTostreams: {
             select: {
-              parent: {
+              streams_stream_relations_parentIdTostreams: {
                 select: {
                   id: true,
                   streamConfig: true,
@@ -94,14 +94,14 @@ export class StreamsConfigManager {
       return this.validateConfig(config);
     } catch (error) {
       this.logger.error('Error getting GTD config:', error);
-      throw new GTDConfigError('Failed to get GTD config', 'GET_CONFIG_ERROR');
+      throw new StreamsConfigError('Failed to get GTD config', 'GET_CONFIG_ERROR');
     }
   }
 
   /**
    * Ustawia konfigurację GTD dla streama
    */
-  async setGTDConfig(
+  async setStreamConfig(
     streamId: string, 
     config: Partial<StreamConfig>, 
     options: UpdateStreamConfigOptions = {}
@@ -113,7 +113,7 @@ export class StreamsConfigManager {
       let finalConfig = config;
       
       if (merge) {
-        const existingConfig = await this.getGTDConfig(streamId);
+        const existingConfig = await this.getStreamConfig(streamId);
         if (existingConfig) {
           finalConfig = this.deepMerge(existingConfig, config);
         }
@@ -145,10 +145,10 @@ export class StreamsConfigManager {
 
     } catch (error) {
       this.logger.error('Error setting GTD config:', error);
-      if (error instanceof GTDConfigError) {
+      if (error instanceof StreamsConfigError) {
         throw error;
       }
-      throw new GTDConfigError('Failed to set GTD config', 'SET_CONFIG_ERROR');
+      throw new StreamsConfigError('Failed to set GTD config', 'SET_CONFIG_ERROR');
     }
   }
 
@@ -158,42 +158,42 @@ export class StreamsConfigManager {
   async resetToDefaultConfig(streamId: string, gtdRole: StreamRole): Promise<ValidatedStreamConfig> {
     try {
       const defaultConfig = this.getDefaultConfigForRole(gtdRole);
-      return await this.setGTDConfig(streamId, defaultConfig, { merge: false, inheritFromParent: false });
+      return await this.setStreamConfig(streamId, defaultConfig, { merge: false, inheritFromParent: false });
     } catch (error) {
       this.logger.error('Error resetting GTD config to default:', error);
-      throw new GTDConfigError('Failed to reset to default config', 'RESET_CONFIG_ERROR');
+      throw new StreamsConfigError('Failed to reset to default config', 'RESET_CONFIG_ERROR');
     }
   }
 
   /**
    * Eksportuje konfigurację GTD do JSON
    */
-  async exportGTDConfig(streamId: string): Promise<string> {
+  async exportStreamConfig(streamId: string): Promise<string> {
     try {
-      const config = await this.getGTDConfig(streamId);
+      const config = await this.getStreamConfig(streamId);
       if (!config) {
-        throw new GTDConfigError('Stream not found', 'STREAM_NOT_FOUND');
+        throw new StreamsConfigError('Stream not found', 'STREAM_NOT_FOUND');
       }
       return JSON.stringify(config, null, 2);
     } catch (error) {
       this.logger.error('Error exporting GTD config:', error);
-      throw new GTDConfigError('Failed to export GTD config', 'EXPORT_CONFIG_ERROR');
+      throw new StreamsConfigError('Failed to export GTD config', 'EXPORT_CONFIG_ERROR');
     }
   }
 
   /**
    * Importuje konfigurację GTD z JSON
    */
-  async importGTDConfig(streamId: string, jsonConfig: string): Promise<ValidatedStreamConfig> {
+  async importStreamConfig(streamId: string, jsonConfig: string): Promise<ValidatedStreamConfig> {
     try {
       const config = JSON.parse(jsonConfig);
-      return await this.setGTDConfig(streamId, config, { merge: false, inheritFromParent: false });
+      return await this.setStreamConfig(streamId, config, { merge: false, inheritFromParent: false });
     } catch (error) {
       this.logger.error('Error importing GTD config:', error);
       if (error instanceof SyntaxError) {
-        throw new GTDConfigError('Invalid JSON format', 'INVALID_JSON');
+        throw new StreamsConfigError('Invalid JSON format', 'INVALID_JSON');
       }
-      throw new GTDConfigError('Failed to import GTD config', 'IMPORT_CONFIG_ERROR');
+      throw new StreamsConfigError('Failed to import GTD config', 'IMPORT_CONFIG_ERROR');
     }
   }
 
@@ -204,7 +204,7 @@ export class StreamsConfigManager {
   /**
    * Tworzy nowy stream z konfiguracją GTD
    */
-  async createGTDStream(
+  async createStream(
     organizationId: string,
     createdById: string,
     options: CreateStreamOptions
@@ -246,8 +246,8 @@ export class StreamsConfigManager {
           createdById
         },
         include: {
-          parentRelations: true,
-          childRelations: true
+          stream_relations_stream_relations_parentIdTostreams: true,
+          stream_relations_stream_relations_childIdTostreams: true
         }
       });
 
@@ -262,14 +262,14 @@ export class StreamsConfigManager {
 
     } catch (error) {
       this.logger.error('Error creating GTD stream:', error);
-      throw new GTDConfigError('Failed to create GTD stream', 'CREATE_STREAM_ERROR');
+      throw new StreamsConfigError('Failed to create GTD stream', 'CREATE_STREAM_ERROR');
     }
   }
 
   /**
    * Migruje istniejący stream na GTD-aware
    */
-  async migrateToGTDStream(
+  async migrateToStream(
     streamId: string,
     gtdRole: StreamRole,
     streamType: StreamType = StreamType.CUSTOM
@@ -294,7 +294,7 @@ export class StreamsConfigManager {
 
     } catch (error) {
       this.logger.error('Error migrating stream to GTD:', error);
-      throw new GTDConfigError('Failed to migrate stream to GTD', 'MIGRATE_STREAM_ERROR');
+      throw new StreamsConfigError('Failed to migrate stream to GTD', 'MIGRATE_STREAM_ERROR');
     }
   }
 
@@ -310,16 +310,16 @@ export class StreamsConfigManager {
       return StreamConfigSchema.parse(config);
     } catch (error) {
       if (error instanceof z.ZodError) {
-        throw new GTDValidationError('GTD config validation failed', error);
+        throw new StreamsValidationError('GTD config validation failed', error);
       }
-      throw new GTDConfigError('Unknown validation error', 'VALIDATION_ERROR');
+      throw new StreamsConfigError('Unknown validation error', 'VALIDATION_ERROR');
     }
   }
 
   /**
    * Sprawdza spójność hierarchii GTD
    */
-  async validateGTDHierarchy(streamId: string): Promise<{ valid: boolean; errors: string[] }> {
+  async validateStreamHierarchy(streamId: string): Promise<{ valid: boolean; errors: string[] }> {
     try {
       const errors: string[] = [];
 
@@ -327,10 +327,10 @@ export class StreamsConfigManager {
       const stream = await this.prisma.stream.findUnique({
         where: { id: streamId },
         include: {
-          parentRelations: {
+          stream_relations_stream_relations_parentIdTostreams: {
             include: { parent: true }
           },
-          childRelations: {
+          stream_relations_stream_relations_childIdTostreams: {
             include: { child: true }
           }
         }
@@ -343,7 +343,7 @@ export class StreamsConfigManager {
 
       // Sprawdź czy INBOX nie ma dzieci typu INBOX
       if (stream.streamRole === StreamRole.INBOX) {
-        const inboxChildren = stream.childRelations.filter(
+        const inboxChildren = stream.stream_relations_stream_relations_childIdTostreams.filter(
           rel => rel.child.streamRole === StreamRole.INBOX
         );
         if (inboxChildren.length > 0) {
@@ -353,7 +353,7 @@ export class StreamsConfigManager {
 
       // Sprawdź czy CONTEXTS ma odpowiednie dzieci
       if (stream.streamRole === StreamRole.CONTEXTS) {
-        const invalidChildren = stream.childRelations.filter(
+        const invalidChildren = stream.stream_relations_stream_relations_childIdTostreams.filter(
           rel => rel.child.streamType !== StreamType.CONTEXT
         );
         if (invalidChildren.length > 0) {
@@ -363,10 +363,13 @@ export class StreamsConfigManager {
 
       // Sprawdź czy PROJECT ma odpowiednią hierarchię
       if (stream.streamType === StreamType.PROJECT) {
-        const projectParents = stream.parentRelations.filter(
-          rel => rel.parent.streamRole === StreamRole.PROJECTS || 
-                rel.parent.streamType === StreamType.AREA
-        );
+        const projectParents = stream.stream_relations_stream_relations_childIdTostreams?.filter(
+          rel => {
+            const parent = rel.streams_stream_relations_parentIdTostreams;
+            return parent?.streamRole === StreamRole.PROJECTS ||
+                   parent?.streamType === StreamType.AREA;
+          }
+        ) || [];
         if (projectParents.length === 0) {
           errors.push('PROJECT should belong to PROJECTS or AREA stream');
         }
@@ -387,8 +390,10 @@ export class StreamsConfigManager {
     let config = stream.streamConfig;
 
     // Jeśli ma rodzica, scalaj konfiguracje
-    if (stream.parentRelations.length > 0) {
-      const parentConfig = stream.parentRelations[0].parent.streamConfig;
+    // Relacja childIdTostreams zawiera rodziców tego streama
+    if (stream.stream_relations_stream_relations_childIdTostreams?.length > 0) {
+      const parentStream = stream.stream_relations_stream_relations_childIdTostreams[0].streams_stream_relations_parentIdTostreams;
+      const parentConfig = parentStream?.streamConfig;
       if (parentConfig) {
         config = this.deepMerge(parentConfig, config);
       }
@@ -404,9 +409,9 @@ export class StreamsConfigManager {
     const stream = await this.prisma.stream.findUnique({
       where: { id: streamId },
       include: {
-        parentRelations: {
+        stream_relations_stream_relations_childIdTostreams: {
           include: {
-            parent: {
+            streams_stream_relations_parentIdTostreams: {
               select: { streamConfig: true, streamRole: true }
             }
           }
@@ -414,11 +419,12 @@ export class StreamsConfigManager {
       }
     });
 
-    if (!stream || stream.parentRelations.length === 0) {
+    if (!stream || stream.stream_relations_stream_relations_childIdTostreams.length === 0) {
       return config;
     }
 
-    const parentConfig = stream.parentRelations[0].parent.streamConfig;
+    const parentConfig = stream.stream_relations_stream_relations_childIdTostreams[0].streams_stream_relations_parentIdTostreams?.streamConfig;
+    if (!parentConfig) return config;
     return this.deepMerge(parentConfig, config);
   }
 
@@ -503,10 +509,10 @@ export class StreamsConfigManager {
         streamRole: gtdRole
       },
       include: {
-        parentRelations: {
+        stream_relations_stream_relations_parentIdTostreams: {
           include: { parent: true }
         },
-        childRelations: {
+        stream_relations_stream_relations_childIdTostreams: {
           include: { child: true }
         }
       }
@@ -531,7 +537,7 @@ export class StreamsConfigManager {
   /**
    * Pobiera statystyki konfiguracji GTD dla organizacji
    */
-  async getGTDStats(organizationId: string): Promise<{
+  async getStreamStats(organizationId: string): Promise<{
     totalStreams: number;
     streamsByRole: Record<string, number>;
     streamsByType: Record<string, number>;

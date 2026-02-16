@@ -8,10 +8,10 @@ import { prisma } from '../config/database';
 import { authenticateUser } from '../shared/middleware/auth';
 import { z } from 'zod';
 import { StreamService } from '../services/StreamService';
-import { GTDConfigManager } from '../services/GTDConfigManager';
+import { StreamsConfigManager } from '../services/StreamsConfigManager';
 import { EnhancedStreamHierarchyManager } from '../services/EnhancedStreamHierarchyManager';
 import { ResourceRouter } from '../services/ResourceRouter';
-import { GTDProcessingRuleEngine } from '../services/GTDProcessingRuleEngine';
+import { StreamsProcessingRuleEngine } from '../services/StreamsProcessingRuleEngine';
 import { VectorService } from '../services/VectorService';
 import {
   StreamRoleSchema,
@@ -27,10 +27,10 @@ const router = Router();
 
 // Initialize services
 const streamService = new StreamService(prisma);
-const gtdConfigManager = new GTDConfigManager(prisma);
+const gtdConfigManager = new StreamsConfigManager(prisma);
 const hierarchyManager = new EnhancedStreamHierarchyManager(prisma);
 const resourceRouter = new ResourceRouter(prisma);
-const ruleEngine = new GTDProcessingRuleEngine(prisma);
+const ruleEngine = new StreamsProcessingRuleEngine(prisma);
 const vectorService = new VectorService(prisma);
 
 // Apply authentication middleware to all routes
@@ -108,7 +108,7 @@ router.get('/', async (req, res) => {
 // ========================================
 
 // Schema for creating GTD Stream
-const createGTDStreamSchema = z.object({
+const createStreamSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
   color: z.string().regex(/^#[0-9A-F]{6}$/i).default('#3B82F6'),
@@ -123,9 +123,9 @@ const createGTDStreamSchema = z.object({
 // POST /api/gtd-streams - Create new GTD-enabled stream
 router.post('/', async (req, res) => {
   try {
-    const validatedData = createGTDStreamSchema.parse(req.body);
+    const validatedData = createStreamSchema.parse(req.body);
 
-    const { stream, config } = await streamService.createGTDStream(
+    const { stream, config } = await streamService.createStream(
       req.user.organizationId,
       req.user.id,
       validatedData
@@ -213,7 +213,7 @@ router.post('/:id/migrate', async (req, res) => {
     const validatedRole = StreamRoleSchema.parse(streamRole);
     const validatedType = streamType ? StreamTypeSchema.parse(streamType) : StreamType.CUSTOM;
 
-    const { stream, config } = await streamService.migrateToGTDStream(
+    const { stream, config } = await streamService.migrateToStream(
       id,
       validatedRole as StreamRole,
       validatedType as StreamType
@@ -285,7 +285,7 @@ router.get('/:id/config', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const config = await streamService.getGTDConfig(id);
+    const config = await streamService.getStreamConfig(id);
 
     if (!config) {
       return res.status(404).json({ error: 'Configuration not found' });
@@ -307,7 +307,7 @@ router.put('/:id/config', async (req, res) => {
     const { id } = req.params;
     const { config, options = {} } = req.body;
 
-    const updatedConfig = await streamService.updateGTDConfig(id, config, options);
+    const updatedConfig = await streamService.updateStreamConfig(id, config, options);
 
     res.json({
       success: true,
@@ -356,11 +356,11 @@ router.post('/:id/config/reset', async (req, res) => {
 router.get('/:id/tree', async (req, res) => {
   try {
     const { id } = req.params;
-    const { maxDepth = 10, includeGTDAnalysis = true } = req.query;
+    const { maxDepth = 10, includeStreamAnalysis = true } = req.query;
 
     const tree = await hierarchyManager.getStreamTree(id, {
       maxDepth: parseInt(maxDepth as string),
-      includeGTDAnalysis: includeGTDAnalysis === 'true'
+      includeStreamAnalysis: includeStreamAnalysis === 'true'
     });
 
     res.json({
@@ -412,7 +412,7 @@ router.post('/:id/validate-hierarchy', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const validation = await streamService.validateGTDHierarchy(id);
+    const validation = await streamService.validateStreamHierarchy(id);
 
     res.json({
       success: true,
@@ -531,7 +531,7 @@ router.post('/analyze', async (req, res) => {
   try {
     const { name, description, existingTasks, relatedContacts, messageVolume } = req.body;
 
-    const analysis = await streamService.analyzeForGTD({
+    const analysis = await streamService.analyzeForStreamSuggestions({
       name,
       description,
       existingTasks,
@@ -556,7 +556,7 @@ router.post('/analyze', async (req, res) => {
 // GET /api/gtd-streams/stats - Get GTD statistics
 router.get('/stats', async (req, res) => {
   try {
-    const stats = await gtdConfigManager.getGTDStats(req.user.organizationId);
+    const stats = await gtdConfigManager.getStreamStats(req.user.organizationId);
 
     res.json({
       success: true,
@@ -571,7 +571,7 @@ router.get('/stats', async (req, res) => {
 // GET /api/gtd-streams/hierarchy-stats - Get hierarchy statistics
 router.get('/hierarchy-stats', async (req, res) => {
   try {
-    const stats = await hierarchyManager.getGTDHierarchyStats(req.user.organizationId);
+    const stats = await hierarchyManager.getStreamHierarchyStats(req.user.organizationId);
 
     res.json({
       success: true,
@@ -608,7 +608,7 @@ router.post('/:id/rules', async (req, res) => {
     const { id } = req.params;
     const ruleData = req.body;
 
-    const rule = await ruleEngine.createGTDRule({
+    const rule = await ruleEngine.createStreamRule({
       ...ruleData,
       streamId: id,
       organizationId: req.user.organizationId
@@ -619,7 +619,7 @@ router.post('/:id/rules', async (req, res) => {
       data: rule
     });
   } catch (error) {
-    console.error('Error creating GTD rule:', error);
+    console.error('Error creating Stream rule:', error);
     res.status(500).json({ error: 'Failed to create processing rule' });
   }
 });
@@ -636,7 +636,7 @@ router.get('/:id/rules', async (req, res) => {
       data: rules
     });
   } catch (error) {
-    console.error('Error fetching GTD rules:', error);
+    console.error('Error fetching Stream rules:', error);
     res.status(500).json({ error: 'Failed to fetch processing rules' });
   }
 });
@@ -646,7 +646,7 @@ router.post('/rules/execute', async (req, res) => {
   try {
     const { entityType, entityId, streamId } = req.body;
 
-    const results = await ruleEngine.executeGTDRules({
+    const results = await ruleEngine.executeStreamRules({
       entityType,
       entityId,
       entityData: {},
@@ -661,7 +661,7 @@ router.post('/rules/execute', async (req, res) => {
       data: results
     });
   } catch (error) {
-    console.error('Error executing GTD rules:', error);
+    console.error('Error executing Stream rules:', error);
     res.status(500).json({ error: 'Failed to execute rules' });
   }
 });

@@ -47,7 +47,7 @@ export interface ProcessInboxItemInput {
   };
 }
 
-export class GTDInboxService {
+export class StreamInboxService {
 
   /**
    * Get all inbox items for organization
@@ -857,4 +857,4 @@ export class GTDInboxService {
   }
 }
 
-export const gtdInboxService = new GTDInboxService();
+export const gtdInboxService = new StreamInboxService();
