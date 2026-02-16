@@ -765,7 +765,7 @@ router.post('/messages/:id/analyze', requireAuth, async (req: AuthenticatedReque
     // Run AI analysis first 
     const aiAnalysis = await aiAnalysisService.analyzeMessage(emailMessage);
     
-    // Run full CRM-GTD-SMART analysis
+    // Run full CRM-STREAMS analysis
     const results = await processMessageContent(id, emailMessage, req.user!.id);
     
     // Save AI analysis results
@@ -837,7 +837,7 @@ router.post('/messages/:id/analyze', requireAuth, async (req: AuthenticatedReque
       dealId: updatedMessage?.dealId,
       deal: updatedMessage?.deal,
       
-      // GTD data
+      // workflow data
       taskId: updatedMessage?.taskId,
       task: updatedMessage?.task,
       

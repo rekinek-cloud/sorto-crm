@@ -642,7 +642,7 @@ router.post('/inbox', requireAuth, async (req: AuthenticatedRequest, res) => {
   }
 });
 
-// Process inbox item with GTD methodology
+// Process inbox item with workflow methodology
 router.post('/inbox/:id/process', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;

@@ -38,7 +38,7 @@ router.get('/test-public', async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error in GTD Horizons test:', error);
+    console.error('Error in Horizons test:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch goals (test mode)',
@@ -47,7 +47,7 @@ router.get('/test-public', async (req, res) => {
   }
 });
 
-// Get all GTD Horizons for user's organization
+// Get all Horizons for user's organization
 router.get('/', authenticateToken, async (req, res) => {
   try {
     const organizationId = await getUserOrganizationId(req.user.id);
@@ -70,7 +70,7 @@ router.get('/', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    logger.error('Error fetching GTD horizons:', error);
+    logger.error('Error fetching horizons:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch goals'
@@ -134,7 +134,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    logger.error('Error fetching GTD horizon:', error);
+    logger.error('Error fetching horizon:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch goal'
@@ -176,7 +176,7 @@ router.put('/:id/reviewed', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    logger.error('Error updating GTD horizon review:', error);
+    logger.error('Error updating horizon review:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to update goal review'
@@ -233,7 +233,7 @@ const getStatsData = async (organizationId: string) => {
   };
 };
 
-// Get GTD Horizons statistics (alias for /stats/overview)
+// Get Horizons statistics (alias for /stats/overview)
 router.get('/stats', authenticateToken, async (req, res) => {
   try {
     const organizationId = await getUserOrganizationId(req.user.id);
@@ -245,7 +245,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    logger.error('Error fetching GTD horizons stats:', error);
+    logger.error('Error fetching horizons stats:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch goals statistics'
@@ -253,7 +253,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
   }
 });
 
-// Get GTD Horizons statistics (original endpoint)
+// Get Horizons statistics (original endpoint)
 router.get('/stats/overview', authenticateToken, async (req, res) => {
   try {
     const organizationId = await getUserOrganizationId(req.user.id);
@@ -265,7 +265,7 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
     });
 
   } catch (error) {
-    logger.error('Error fetching GTD horizons stats:', error);
+    logger.error('Error fetching horizons stats:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch goals statistics'

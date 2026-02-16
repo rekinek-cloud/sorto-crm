@@ -296,15 +296,15 @@ const createStreamView = (tasks: any[]): BucketGroup[] => {
   tasks.forEach(task => {
     const streamId = task.streamId || 'unassigned';
     const streamName = task.stream?.name || 'Nieprzypisane';
-    const gtdRole = task.stream?.streamRole || 'CUSTOM';
+    const streamRole = task.stream?.streamRole || 'CUSTOM';
     
     if (!streamMap.has(streamId)) {
       streamMap.set(streamId, []);
       streamInfo.set(streamId, {
         name: streamName,
-        gtdRole,
+        streamRole,
         color: task.stream?.color || '#6B7280',
-        icon: getStreamIcon(gtdRole)
+        icon: getStreamIcon(streamRole)
       });
     }
     
@@ -336,7 +336,7 @@ const createStreamView = (tasks: any[]): BucketGroup[] => {
 };
 
 // Helper functions
-const getStreamIcon = (gtdRole: string): string => {
+const getStreamIcon = (streamRole: string): string => {
   const iconMap: Record<string, string> = {
     'INBOX': '📥',
     'NEXT_ACTIONS': '⚡',
@@ -348,7 +348,7 @@ const getStreamIcon = (gtdRole: string): string => {
     'REFERENCE': '📚',
     'CUSTOM': '🔧'
   };
-  return iconMap[gtdRole] || '📋';
+  return iconMap[streamRole] || '📋';
 };
 
 const calculateStreamEfficiency = (tasks: any[]): number => {
@@ -366,7 +366,7 @@ router.get('/views', authenticateToken, async (req, res) => {
       {
         id: 'horizon',
         name: 'Mapa wysokości',
-        description: 'Grupowanie według poziomów perspektywy GTD (0-5)',
+        description: 'Grupowanie według poziomów perspektywy (0-5)',
         icon: '🛩️',
         color: '#3B82F6',
         category: 'perspective'
@@ -398,7 +398,7 @@ router.get('/views', authenticateToken, async (req, res) => {
       {
         id: 'stream',
         name: 'Mapa infrastruktury',
-        description: 'Według streamów GTD (workflow)',
+        description: 'Według streamów (workflow)',
         icon: '🌊',
         color: '#8B5CF6',
         category: 'workflow'

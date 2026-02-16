@@ -132,7 +132,7 @@ router.get('/', requireAuth, async (req: AuthenticatedRequest, res) => {
       }
     };
 
-    // GTD Filters
+    // Workflow Filters
     if (context) where.context = context;
     if (priority) where.priority = priority;
     if (energy) where.energy = energy;

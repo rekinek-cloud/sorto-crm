@@ -1,6 +1,6 @@
 /**
- * GTD Streams API Routes
- * Endpointy dla zaawansowanej funkcjonalności GTD w systemie Streams
+ * Stream Management API Routes
+ * Endpointy dla zaawansowanego zarządzania strumieniami
  */
 
 import { Router } from 'express';
@@ -37,12 +37,12 @@ const vectorService = new VectorService(prisma);
 router.use(authenticateUser);
 
 // ========================================
-// GTD STREAMS LIST & MANAGEMENT
+// STREAMS LIST & MANAGEMENT
 // ========================================
 
 /**
  * GET /api/v1/gtd-streams
- * Get all GTD streams for user's organization
+ * Get all managed streams for user's organization
  */
 router.get('/', async (req, res) => {
   try {
@@ -95,7 +95,7 @@ router.get('/', async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Error fetching GTD streams:', error);
+    console.error('Error fetching streams:', error);
     res.status(500).json({
       success: false,
       error: 'Failed to fetch streams'
@@ -104,10 +104,10 @@ router.get('/', async (req, res) => {
 });
 
 // ========================================
-// GTD STREAM CREATION & MANAGEMENT
+// STREAM CREATION & MANAGEMENT
 // ========================================
 
-// Schema for creating GTD Stream
+// Schema for creating managed stream
 const createStreamSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional(),
@@ -120,7 +120,7 @@ const createStreamSchema = z.object({
   streamConfig: StreamConfigSchema.partial().optional()
 });
 
-// POST /api/gtd-streams - Create new GTD-enabled stream
+// POST /api/gtd-streams - Create new managed stream
 router.post('/', async (req, res) => {
   try {
     const validatedData = createStreamSchema.parse(req.body);
@@ -146,12 +146,12 @@ router.post('/', async (req, res) => {
         details: error.errors
       });
     }
-    console.error('Error creating GTD stream:', error);
+    console.error('Error creating stream:', error);
     res.status(500).json({ error: 'Failed to create stream' });
   }
 });
 
-// GET /api/gtd-streams/by-role/:role - Get streams by GTD role
+// GET /api/gtd-streams/by-role/:role - Get streams by stream role
 router.get('/by-role/:role', async (req, res) => {
   try {
     const { role } = req.params;
@@ -179,7 +179,7 @@ router.get('/by-role/:role', async (req, res) => {
   }
 });
 
-// PUT /api/gtd-streams/:id/role - Assign GTD role to stream
+// PUT /api/gtd-streams/:id/role - Assign stream role to stream
 router.put('/:id/role', async (req, res) => {
   try {
     const { id } = req.params;
@@ -199,12 +199,12 @@ router.put('/:id/role', async (req, res) => {
         error: 'Invalid role'
       });
     }
-    console.error('Error assigning GTD role:', error);
+    console.error('Error assigning stream role:', error);
     res.status(500).json({ error: 'Failed to assign role' });
   }
 });
 
-// POST /api/gtd-streams/:id/migrate - Migrate existing stream to GTD
+// POST /api/gtd-streams/:id/migrate - Migrate existing stream to managed mode
 router.post('/:id/migrate', async (req, res) => {
   try {
     const { id } = req.params;
@@ -233,7 +233,7 @@ router.post('/:id/migrate', async (req, res) => {
         details: error.errors
       });
     }
-    console.error('Error migrating stream to GTD:', error);
+    console.error('Error migrating stream:', error);
     res.status(500).json({ error: 'Failed to migrate stream' });
   }
 });
@@ -277,10 +277,10 @@ router.post('/:id/unfreeze', async (req, res) => {
 });
 
 // ========================================
-// GTD CONFIGURATION MANAGEMENT
+// STREAM CONFIGURATION MANAGEMENT
 // ========================================
 
-// GET /api/gtd-streams/:id/config - Get GTD configuration
+// GET /api/gtd-streams/:id/config - Get stream configuration
 router.get('/:id/config', async (req, res) => {
   try {
     const { id } = req.params;
@@ -296,12 +296,12 @@ router.get('/:id/config', async (req, res) => {
       data: config
     });
   } catch (error) {
-    console.error('Error fetching GTD config:', error);
+    console.error('Error fetching stream config:', error);
     res.status(500).json({ error: 'Failed to fetch configuration' });
   }
 });
 
-// PUT /api/gtd-streams/:id/config - Update GTD configuration
+// PUT /api/gtd-streams/:id/config - Update stream configuration
 router.put('/:id/config', async (req, res) => {
   try {
     const { id } = req.params;
@@ -314,7 +314,7 @@ router.put('/:id/config', async (req, res) => {
       data: updatedConfig
     });
   } catch (error) {
-    console.error('Error updating GTD config:', error);
+    console.error('Error updating stream config:', error);
     res.status(500).json({ error: 'Failed to update configuration' });
   }
 });
@@ -324,7 +324,7 @@ router.post('/:id/config/reset', async (req, res) => {
   try {
     const { id } = req.params;
 
-    // Get stream to find its GTD role
+    // Get stream to find its stream role
     const stream = await prisma.stream.findFirst({
       where: {
         id,
@@ -343,7 +343,7 @@ router.post('/:id/config/reset', async (req, res) => {
       data: config
     });
   } catch (error) {
-    console.error('Error resetting GTD config:', error);
+    console.error('Error resetting stream config:', error);
     res.status(500).json({ error: 'Failed to reset configuration' });
   }
 });
@@ -407,7 +407,7 @@ router.get('/:id/path', async (req, res) => {
   }
 });
 
-// POST /api/gtd-streams/:id/validate-hierarchy - Validate GTD hierarchy
+// POST /api/gtd-streams/:id/validate-hierarchy - Validate stream hierarchy
 router.post('/:id/validate-hierarchy', async (req, res) => {
   try {
     const { id } = req.params;
@@ -523,10 +523,10 @@ router.post('/route/content', async (req, res) => {
 });
 
 // ========================================
-// GTD ANALYSIS & SUGGESTIONS
+// STREAM ANALYSIS & SUGGESTIONS
 // ========================================
 
-// POST /api/gtd-streams/analyze - Analyze content for GTD suggestions
+// POST /api/gtd-streams/analyze - Analyze content for stream suggestions
 router.post('/analyze', async (req, res) => {
   try {
     const { name, description, existingTasks, relatedContacts, messageVolume } = req.body;
@@ -544,7 +544,7 @@ router.post('/analyze', async (req, res) => {
       data: analysis
     });
   } catch (error) {
-    console.error('Error analyzing for GTD:', error);
+    console.error('Error analyzing for streams:', error);
     res.status(500).json({ error: 'Failed to analyze content' });
   }
 });
@@ -553,7 +553,7 @@ router.post('/analyze', async (req, res) => {
 // STATISTICS & INSIGHTS
 // ========================================
 
-// GET /api/gtd-streams/stats - Get GTD statistics
+// GET /api/gtd-streams/stats - Get stream statistics
 router.get('/stats', async (req, res) => {
   try {
     const stats = await gtdConfigManager.getStreamStats(req.user.organizationId);
@@ -563,7 +563,7 @@ router.get('/stats', async (req, res) => {
       data: stats
     });
   } catch (error) {
-    console.error('Error fetching GTD stats:', error);
+    console.error('Error fetching stream stats:', error);
     res.status(500).json({ error: 'Failed to fetch statistics' });
   }
 });
