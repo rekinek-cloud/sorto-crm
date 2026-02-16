@@ -162,7 +162,7 @@ const Router = {
 
 // Konfiguracja
 const CONFIG = {
-  CRM_API_BASE_URL: 'https://91.99.50.80/crm/api/v1',
+  CRM_API_BASE_URL: 'https://crm.dev.sorto.ai/crm/api/v1',
   WEBHOOK_SECRET: PropertiesService.getScriptProperties().getProperty('WEBHOOK_SECRET'),
   API_KEY: PropertiesService.getScriptProperties().getProperty('CRM_API_KEY'),
   LOG_SHEET_ID: PropertiesService.getScriptProperties().getProperty('LOG_SHEET_ID')

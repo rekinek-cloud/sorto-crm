@@ -408,7 +408,7 @@ async function createSampleData() {
     console.log(`📊 Analityka energii: ${energyAnalytics.length}`);
     
     console.log('\n🚀 Dashboard Smart Day Planner powinien teraz wyświetlać dane!');
-    console.log('🌐 Sprawdź: http://91.99.50.80/crm/dashboard/');
+    console.log('🌐 Sprawdź: https://crm.dev.sorto.ai/crm/dashboard/');
 
     // 8. Sprawdź które zadanie jest aktualnie aktywne
     const activeTask = scheduledTasks.find(t => t.status === 'IN_PROGRESS');

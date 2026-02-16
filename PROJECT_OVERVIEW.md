@@ -188,7 +188,7 @@ Stream roles: INBOX, NEXT_ACTIONS, WAITING_FOR, SOMEDAY_MAYBE, PROJECTS, CONTEXT
 **Development V1** (`docker-compose.v1.yml`):
 - Ports: frontend 9025, backend 3001, postgres 5434, redis 6381
 - DB: `crm_gtd_v1`, user: `user`, password: `password`
-- URL: `http://91.99.50.80/crm/`
+- URL: `https://crm.dev.sorto.ai/crm/`
 
 ## Auth Flow
 1. Login -> POST `/auth/login` -> returns `access_token` + `refresh_token` (JWT)

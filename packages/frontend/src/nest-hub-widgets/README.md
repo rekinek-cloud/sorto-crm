@@ -84,7 +84,7 @@ Edytuj `api-client.js` aby dostosować URL do swojego środowiska:
 ```javascript
 detectBaseURL() {
     // Dostosuj do swojego środowiska
-    return 'http://91.99.50.80/crm/api/v1';
+    return 'https://crm.dev.sorto.ai/crm/api/v1';
 }
 ```
 

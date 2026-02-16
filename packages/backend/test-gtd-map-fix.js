@@ -39,17 +39,17 @@ async function testGTDMapAPI() {
     // 3. Test API curl commands
     console.log('\n📋 KOMENDY DO TESTOWANIA:');
     console.log('\n# Test GET /views:');
-    console.log(`curl -s -X GET "http://91.99.50.80/crm/api/v1/gtd-map/views" \\
+    console.log(`curl -s -X GET "https://crm.dev.sorto.ai/crm/api/v1/gtd-map/views" \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer ${token}" | jq`);
 
     console.log('\n# Test GET /views/horizon:');
-    console.log(`curl -s -X GET "http://91.99.50.80/crm/api/v1/gtd-map/views/horizon" \\
+    console.log(`curl -s -X GET "https://crm.dev.sorto.ai/crm/api/v1/gtd-map/views/horizon" \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer ${token}" | jq`);
 
     console.log('\n# Test GET /views/urgency:');
-    console.log(`curl -s -X GET "http://91.99.50.80/crm/api/v1/gtd-map/views/urgency" \\
+    console.log(`curl -s -X GET "https://crm.dev.sorto.ai/crm/api/v1/gtd-map/views/urgency" \\
   -H "Content-Type: application/json" \\
   -H "Authorization: Bearer ${token}" | jq`);
 
@@ -75,7 +75,7 @@ async function testGTDMapAPI() {
     console.log('2. Przejdź do Console');
     console.log('3. Wklej następujący kod:');
     console.log(`
-document.cookie = "access_token=${token}; path=/; domain=91.99.50.80; expires=${new Date(Date.now() + 24*60*60*1000).toUTCString()}";
+document.cookie = "access_token=${token}; path=/; domain=crm.dev.sorto.ai; expires=${new Date(Date.now() + 24*60*60*1000).toUTCString()}";
 console.log('✅ Token ustawiony w cookies');
 location.reload();
     `);

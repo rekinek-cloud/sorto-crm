@@ -12,7 +12,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Konfiguracja
-BASE_URL="http://91.99.50.80"
+BASE_URL="https://crm.dev.sorto.ai"
 API_URL="http://localhost:3004"
 FRONTEND_URL="http://localhost:9025"
 API_PREFIX="/api/v1"

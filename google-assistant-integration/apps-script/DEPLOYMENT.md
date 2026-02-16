@@ -17,7 +17,7 @@ Ten dokument opisuje proces wdrożenia Google Apps Script backend'u dla integrac
 - Skonfigurowane uprawnienia OAuth
 
 ### 3. CRM-GTD Smart
-- Działający backend CRM na `http://91.99.50.80/crm/api/v1/`
+- Działający backend CRM na `https://crm.dev.sorto.ai/crm/api/v1/`
 - Skonfigurowane API klucze i autoryzacja
 - Dostęp do bazy danych PostgreSQL
 
@@ -92,12 +92,12 @@ W Google Apps Script Console → Project Settings → Script Properties:
 // Wymagane właściwości skryptu:
 API_KEY: "your-crm-api-key"
 API_SECRET: "your-api-secret-key"
-DB_HOST: "91.99.50.80"
+DB_HOST: "crm.dev.sorto.ai"
 DB_PORT: "5434"
 DB_NAME: "crm_gtd_v1"
 DB_USER: "user"
 DB_PASSWORD: "password"
-CRM_API_BASE_URL: "http://91.99.50.80/crm/api/v1"
+CRM_API_BASE_URL: "https://crm.dev.sorto.ai/crm/api/v1"
 CRM_API_KEY: "your-crm-api-bearer-token"
 LOG_SHEET_ID: "your-google-sheet-id-for-logs"
 ```

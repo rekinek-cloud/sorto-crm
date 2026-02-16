@@ -15,4 +15,4 @@ docker-compose -f docker-compose.v1.yml up -d
 
 echo ""
 echo "✅ DEVELOPMENT MODE ACTIVATED!"
-echo "🌐 Application URL: http://91.99.50.80/crm/"
+echo "🌐 Application URL: https://crm.dev.sorto.ai/crm/"

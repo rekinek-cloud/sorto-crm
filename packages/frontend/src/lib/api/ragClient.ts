@@ -7,7 +7,7 @@ import axios from 'axios';
 import Cookies from 'js-cookie';
 
 // RAG Service base URL (proxied through nginx)
-const ragBaseURL = process.env.NEXT_PUBLIC_RAG_API_URL || 'http://91.99.50.80/rag-api';
+const ragBaseURL = process.env.NEXT_PUBLIC_RAG_API_URL || 'https://crm.dev.sorto.ai/rag-api';
 console.log('🔧 RAG API Client Config:', { ragBaseURL });
 
 // Create axios instance for RAG service

@@ -24,7 +24,7 @@ const CONFIG = {
   DB_PASSWORD: PropertiesService.getScriptProperties().getProperty('DB_PASSWORD'),
   
   // External CRM API
-  CRM_API_BASE_URL: PropertiesService.getScriptProperties().getProperty('CRM_API_BASE_URL') || 'http://91.99.50.80/crm/api/v1',
+  CRM_API_BASE_URL: PropertiesService.getScriptProperties().getProperty('CRM_API_BASE_URL') || 'https://crm.dev.sorto.ai/crm/api/v1',
   CRM_API_KEY: PropertiesService.getScriptProperties().getProperty('CRM_API_KEY'),
   
   // Rate Limiting

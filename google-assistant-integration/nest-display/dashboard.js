@@ -7,7 +7,7 @@ class NestDashboard {
     constructor() {
         this.widgets = new Map();
         this.config = {
-            apiBaseUrl: 'https://91.99.50.80/crm/api/v1',
+            apiBaseUrl: 'https://crm.dev.sorto.ai/crm/api/v1',
             refreshInterval: 30000, // 30 sekund
             maxRetries: 3
         };

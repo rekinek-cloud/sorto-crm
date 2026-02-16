@@ -101,9 +101,8 @@ export const config = {
         'http://localhost:9025', 
         'http://localhost:9026', 
         'http://localhost:3001',
-        'http://91.99.50.80',
-        'http://91.99.50.80/crm',
-        'http://91.99.50.80:3002',
+        'https://crm.dev.sorto.ai',
+        'https://crm.dev.sorto.ai/crm',
         // Allow network access in development
         /^http:\/\/192\.168\.\d+\.\d+:3000$/,
         /^http:\/\/192\.168\.\d+\.\d+:902[5-7]$/,

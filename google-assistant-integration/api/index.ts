@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3001;
 // Security middleware
 app.use(helmet());
 app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['https://91.99.50.80'],
+  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['https://crm.dev.sorto.ai'],
   credentials: true
 }));
 

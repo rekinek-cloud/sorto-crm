@@ -87,9 +87,9 @@ fi
 
 echo ""
 echo "🌐 Application URLs:"
-echo "Frontend: http://91.99.50.80/crm/"
-echo "Backend API: http://91.99.50.80/crm/api/v1/"
-echo "Health: http://91.99.50.80/health"
+echo "Frontend: https://crm.dev.sorto.ai/crm/"
+echo "Backend API: https://crm.dev.sorto.ai/crm/api/v1/"
+echo "Health: https://crm.dev.sorto.ai/health"
 
 echo ""
 echo "📋 Quick Commands:"

@@ -48,8 +48,8 @@ function deploy_v1() {
     docker-compose -f docker-compose.v1.yml up --build -d
     
     echo "✅ V1 deployed successfully!"
-    echo "🌐 Access at: http://91.99.50.80/crm/"
-    echo "📊 Health check: http://91.99.50.80/health"
+    echo "🌐 Access at: https://crm.dev.sorto.ai/crm/"
+    echo "📊 Health check: https://crm.dev.sorto.ai/health"
 }
 
 function deploy_v2() {
@@ -69,8 +69,8 @@ function deploy_v2() {
     docker-compose -f docker-compose.v2.yml up --build -d
     
     echo "✅ V2 deployed successfully!"
-    echo "🌐 Access at: http://91.99.50.80/crm2/"
-    echo "📊 Health check: http://91.99.50.80/health2"
+    echo "🌐 Access at: https://crm.dev.sorto.ai/crm2/"
+    echo "📊 Health check: https://crm.dev.sorto.ai/health2"
 }
 
 function deploy_both() {
@@ -80,8 +80,8 @@ function deploy_both() {
     deploy_v2
     echo ""
     echo "🎉 Both versions deployed!"
-    echo "📋 V1 (Production): http://91.99.50.80/crm/"
-    echo "📋 V2 (Development): http://91.99.50.80/crm2/"
+    echo "📋 V1 (Production): https://crm.dev.sorto.ai/crm/"
+    echo "📋 V2 (Development): https://crm.dev.sorto.ai/crm2/"
 }
 
 function stop_all() {
@@ -110,8 +110,8 @@ function show_status() {
     echo "V2 Redis:    6380"
     echo ""
     echo "=== URLs ==="
-    echo "V1: http://91.99.50.80/crm/"
-    echo "V2: http://91.99.50.80/crm2/"
+    echo "V1: https://crm.dev.sorto.ai/crm/"
+    echo "V2: https://crm.dev.sorto.ai/crm2/"
 }
 
 function update_nginx() {
@@ -128,7 +128,7 @@ function update_nginx() {
     sudo systemctl reload nginx
     
     echo "✅ Nginx configuration updated!"
-    echo "🌐 Main redirect: http://91.99.50.80/ → /crm/"
+    echo "🌐 Main redirect: https://crm.dev.sorto.ai/ → /crm/"
 }
 
 function show_logs_v1() {

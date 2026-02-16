@@ -53,7 +53,7 @@ async function addDemoUser() {
     console.log(`👤 Rola: ${demoUser.role}`);
     console.log(`🏢 Organizacja: ${organization.name}`);
     console.log('================================');
-    console.log('🌐 Zaloguj się: http://91.99.50.80/crm/auth/login');
+    console.log('🌐 Zaloguj się: https://crm.dev.sorto.ai/crm/auth/login');
 
   } catch (error) {
     console.error('❌ Błąd:', error);

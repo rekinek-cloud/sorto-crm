@@ -38,7 +38,7 @@ services:
       - JWT_SECRET=super-bezpieczny-klucz-jwt-v1-min-32-znakow
       - JWT_REFRESH_SECRET=super-bezpieczny-refresh-klucz-v1-min-32-znakow
       - BCRYPT_ROUNDS=12
-      - NEXT_PUBLIC_APP_URL=http://91.99.50.80/crm
+      - NEXT_PUBLIC_APP_URL=https://crm.dev.sorto.ai/crm
     volumes:
       - ./packages/backend:/app
       - /app/node_modules

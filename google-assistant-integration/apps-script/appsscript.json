@@ -53,8 +53,7 @@
     "access": "ANYONE"
   },
   "urlFetchWhitelist": [
-    "http://91.99.50.80/",
-    "https://91.99.50.80/",
+    "https://crm.dev.sorto.ai/",
     "http://localhost:3003/",
     "https://localhost:3003/"
   ]

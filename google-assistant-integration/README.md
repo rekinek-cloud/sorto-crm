@@ -143,7 +143,7 @@ GOOGLE_CLIENT_SECRET=your-client-secret
 GOOGLE_PROJECT_ID=crm-gtd-smart-assistant
 
 # CRM API
-CRM_API_BASE_URL=https://91.99.50.80/crm/api/v1
+CRM_API_BASE_URL=https://crm.dev.sorto.ai/crm/api/v1
 CRM_API_KEY=your-api-key
 
 # Security

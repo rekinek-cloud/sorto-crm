@@ -4,14 +4,14 @@
 
 ### Frontend (V1)
 - **Status**: ✅ DZIAŁA
-- **URL**: http://91.99.50.80/crm/
+- **URL**: https://crm.dev.sorto.ai/crm/
 - **Container**: crm-frontend-v1 (port 9025)
 - **Ostatnia aktualizacja**: 2025-07-08
 - **Nowe komponenty**: DailyWidget, ActiveLinksPanel (Smart Day Planner)
 
 ### Backend (V1) 
 - **Status**: ✅ DZIAŁA
-- **API**: http://91.99.50.80/crm/api/v1/
+- **API**: https://crm.dev.sorto.ai/crm/api/v1/
 - **Container**: crm-backend-v1 (port 3003)
 - **AI System**: ✅ PEŁNA FUNKCJONALNOŚĆ
 - **Voice TTS**: ✅ PEŁNA FUNKCJONALNOŚĆ
@@ -36,13 +36,13 @@
 
 ### Knowledge Base
 - **Status**: ✅ PEŁNA FUNKCJONALNOŚĆ
-- **URL**: http://91.99.50.80/crm/dashboard/knowledge/
+- **URL**: https://crm.dev.sorto.ai/crm/dashboard/knowledge/
 - **Funkcje**: Dokumenty, Wiki Pages, Foldery
 - **Ostatnia aktualizacja**: 2025-06-27
 
 ### GTD Streams System 🎯
 - **Status**: ✅ PEŁNA MIGRACJA ZAKOŃCZONA
-- **URL**: http://91.99.50.80/crm/dashboard/streams/
+- **URL**: https://crm.dev.sorto.ai/crm/dashboard/streams/
 - **Menu**: GTD Streams (główne menu)
 - **Data migracji**: 2025-07-04
 - **Coverage**: 100% streams zmigrowanych do GTD (5/5)
@@ -50,7 +50,7 @@
 
 ### Smart Day Planner System 📅
 - **Status**: ✅ KOMPLETNIE ZAIMPLEMENTOWANY
-- **URL**: http://91.99.50.80/crm/dashboard/smart-day-planner/
+- **URL**: https://crm.dev.sorto.ai/crm/dashboard/smart-day-planner/
 - **Menu**: Dashboard → Smart Day Planner
 - **Data implementacji**: 2025-07-07
 - **Funkcje**: Inteligentne planowanie dnia z AI, energy tracking, focus modes
@@ -84,31 +84,31 @@ docker restart crm-backend-v1
 nginx -t && systemctl reload nginx
 
 # Test aplikacji
-curl -s -o /dev/null -w "%{http_code}" http://91.99.50.80/crm/
+curl -s -o /dev/null -w "%{http_code}" https://crm.dev.sorto.ai/crm/
 ```
 
 ## System AI - Pełna Funkcjonalność ✅
 
 ### 🤖 Uniwersalne Reguły AI
 - **Status**: ✅ DZIAŁA
-- **URL**: http://91.99.50.80/crm/dashboard/ai-rules/
+- **URL**: https://crm.dev.sorto.ai/crm/dashboard/ai-rules/
 - **Menu**: Narzędzia → Reguły AI
 - **Funkcje**: Tworzenie i zarządzanie regułami automatycznej analizy AI
 
 ### 🔧 Konfiguracja AI (Providerzy i Modele)
 - **Status**: ✅ DZIAŁA  
-- **URL**: http://91.99.50.80/crm/dashboard/ai-config/
+- **URL**: https://crm.dev.sorto.ai/crm/dashboard/ai-config/
 - **Menu**: Narzędzia → AI Config (przeniesione z Communication/Rules)
 - **Funkcje**: Dodawanie providerów AI (OpenAI, Claude) i modeli
 
 ### 🎯 Analiza AI w Projektach
 - **Status**: ✅ ZINTEGROWANA
-- **URL**: http://91.99.50.80/crm/dashboard/projects/
+- **URL**: https://crm.dev.sorto.ai/crm/dashboard/projects/
 - **Funkcje**: Przyciski "Analiza AI" w kartach projektów i widoku listy
 
 ### 🎮 Demo Systemu AI
 - **Status**: ✅ DOSTĘPNE
-- **URL**: http://91.99.50.80/crm/dashboard/ai-demo/
+- **URL**: https://crm.dev.sorto.ai/crm/dashboard/ai-demo/
 - **Menu**: Narzędzia → Demo Analizy AI
 - **Funkcje**: Pełna demonstracja możliwości systemu
 
@@ -116,7 +116,7 @@ curl -s -o /dev/null -w "%{http_code}" http://91.99.50.80/crm/
 
 ### 📬 Smart Mailboxes - GŁÓWNY HUB KOMUNIKACJI
 - **Status**: ✅ KOMPLETNY SYSTEM
-- **URL**: http://91.99.50.80/crm/dashboard/smart-mailboxes/
+- **URL**: https://crm.dev.sorto.ai/crm/dashboard/smart-mailboxes/
 - **Menu**: Komunikacja → Smart Mailboxes
 - **Zastąpił**: Centrum Komunikacji (przeniesione całkowicie)
 
@@ -154,7 +154,7 @@ curl -s -o /dev/null -w "%{http_code}" http://91.99.50.80/crm/
 
 ### 🔧 Rules Manager - ZUNIFIKOWANY SYSTEM REGUŁ ⚡
 - **Status**: ✅ PEŁNA FUNKCJONALNOŚĆ  
-- **URL**: http://91.99.50.80/crm/dashboard/rules-manager/
+- **URL**: https://crm.dev.sorto.ai/crm/dashboard/rules-manager/
 - **Menu**: Narzędzia → Rules Manager (przeniesione z Communication)
 - **Możliwości**: ✅ CRUD (tworzenie, edycja, usuwanie, zarządzanie)
 - **Funkcje**: 
@@ -203,7 +203,7 @@ curl -s -o /dev/null -w "%{http_code}" http://91.99.50.80/crm/
 ## 📥 GTD Inbox - KOMPLETNA PRZEBUDOWA ⚡
 
 ### Status: ✅ PRZEBUDOWANY WEDŁUG METODOLOGII DAVID ALLENA
-- **URL**: http://91.99.50.80/crm/dashboard/gtd/inbox/
+- **URL**: https://crm.dev.sorto.ai/crm/dashboard/gtd/inbox/
 - **Menu**: GTD → Skrzynka
 
 ### 🎯 **Prawdziwy GTD Inbox - zgodnie z "Getting Things Done"**
@@ -310,7 +310,7 @@ systemctl reload nginx
 2. **PostCSS zawsze w formacie object** - nie array
 3. **NODE_ENV=development** - w kontenerze frontend
 4. **Przed każdą większą zmianą** - uruchom backup script
-5. **Po każdej zmianie konfiguracji** - test curl http://91.99.50.80/crm/
+5. **Po każdej zmianie konfiguracji** - test curl https://crm.dev.sorto.ai/crm/
 
 ## Pamięć Systemowa
 
@@ -355,7 +355,7 @@ systemctl reload nginx
 ### 🚀 **Funkcjonalności GTD Streams:**
 
 #### **🎨 GTD Stream Manager**
-- **URL**: http://91.99.50.80/crm/dashboard/streams/
+- **URL**: https://crm.dev.sorto.ai/crm/dashboard/streams/
 - **Funkcje**:
   - 📊 **Dashboard ze statystykami** - podsumowanie wszystkich ról
   - 🔍 **Zaawansowane filtry** - po roli GTD, typie, statusie
@@ -429,7 +429,7 @@ systemctl reload nginx
 
 ```bash
 # 1. Otwórz GTD Streams Manager
-http://91.99.50.80/crm/dashboard/streams/
+https://crm.dev.sorto.ai/crm/dashboard/streams/
 
 # 2. Sprawdź istniejące streams z rolami GTD
 → Wszystkie 5 streams mają przypisane role
@@ -473,14 +473,14 @@ http://91.99.50.80/crm/dashboard/streams/
 ### Quick Start - Pierwszy Setup AI:
 ```bash
 # 1. Konfiguracja Provider (OpenAI)
-http://91.99.50.80/crm/dashboard/ai-config/
+https://crm.dev.sorto.ai/crm/dashboard/ai-config/
 → Dodaj Provider → OpenAI → API Key
 
 # 2. Dodaj Model  
 → Dodaj Model → GPT-4 → Zapisz
 
 # 3. Utwórz Regułę
-http://91.99.50.80/crm/dashboard/ai-rules/
+https://crm.dev.sorto.ai/crm/dashboard/ai-rules/
 → Nowa reguła → Projekty → Warunek: status=PLANNING → Akcja: AI Analysis
 
 # 4. Test
@@ -511,7 +511,7 @@ http://91.99.50.80/crm/dashboard/ai-rules/
 ### Quick Start - Pierwsza Reguła:
 ```bash
 # 1. Otwórz Rules Manager
-http://91.99.50.80/crm/dashboard/rules-manager/
+https://crm.dev.sorto.ai/crm/dashboard/rules-manager/
 
 # 2. Kliknij "Nowa Reguła"
 → Wypełnij formularz:
@@ -553,7 +553,7 @@ http://91.99.50.80/crm/dashboard/rules-manager/
 
 ```bash
 # 1. Otwórz Smart Mailboxes
-http://91.99.50.80/crm/dashboard/smart-mailboxes/
+https://crm.dev.sorto.ai/crm/dashboard/smart-mailboxes/
 
 # 2. Wybierz wiadomość wymagającą działania
 → Znajdź wiadomość z badge "ACTION NEEDED"
@@ -918,7 +918,7 @@ Dashboard/
 #### **🎯 Test Commands:**
 ```bash
 # Test basic synthesis
-curl -X POST "http://91.99.50.80/crm/api/v1/voice/test-synthesis-public" \
+curl -X POST "https://crm.dev.sorto.ai/crm/api/v1/voice/test-synthesis-public" \
   -H "Content-Type: application/json" \
   -d '{"text": "Test syntezy mowy"}' | jq
 
@@ -934,7 +934,7 @@ curl -s "http://localhost:5002/health" | jq
 
 ### 🎮 **Jak używać w Smart Mailboxes:**
 
-1. **Otwórz Smart Mailboxes**: `http://91.99.50.80/crm/dashboard/smart-mailboxes/`
+1. **Otwórz Smart Mailboxes**: `https://crm.dev.sorto.ai/crm/dashboard/smart-mailboxes/`
 2. **Kliknij dowolną wiadomość** - rozwinie się okno podglądu
 3. **Kliknij "🔊 Przeczytaj"** - rozpocznie się czytanie temat + treść
 4. **Kliknij "⏹️ Stop"** - zatrzyma czytanie w dowolnym momencie
@@ -1053,7 +1053,7 @@ curl -s "http://localhost:5002/health" | jq
 - **Backend API**: `/packages/backend/src/routes/knowledge.ts` (POST/PUT endpoints)
 
 ### 🎮 **Jak używać:**
-1. **Otwórz Knowledge Base**: `http://91.99.50.80/crm/dashboard/knowledge/`
+1. **Otwórz Knowledge Base**: `https://crm.dev.sorto.ai/crm/dashboard/knowledge/`
 2. **Kliknij "New Document"** - otwiera DocumentModal z 10 typami
 3. **Kliknij "New Wiki Page"** - otwiera WikiPageModal z 8 kategoriami
 4. **Wypełnij formularz** - wszystkie pola z walidacją
@@ -1114,7 +1114,7 @@ curl -s "http://localhost:5002/health" | jq
 
 ### 🚀 **Jak korzystać:**
 
-1. **Otwórz Smart Day Planner**: `http://91.99.50.80/crm/dashboard/smart-day-planner/`
+1. **Otwórz Smart Day Planner**: `https://crm.dev.sorto.ai/crm/dashboard/smart-day-planner/`
 2. **Skonfiguruj szablon tygodniowy** - ustawienia energii i bloków
 3. **Przypisz zadania** - automatycznie lub manualnie
 4. **Monitoruj w Dashboard** - widget z bieżącymi zadaniami

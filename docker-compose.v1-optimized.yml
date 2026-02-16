@@ -11,7 +11,7 @@ services:
       - "9025:9025"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=http://91.99.50.80/crm/api
+      - NEXT_PUBLIC_API_URL=https://crm.dev.sorto.ai/crm/api
       - NEXT_PUBLIC_APP_VERSION=1.0.0
       - NEXT_PUBLIC_ENVIRONMENT=production
       - WATCHPACK_POLLING=false
@@ -48,7 +48,7 @@ services:
       - JWT_SECRET=super-bezpieczny-klucz-jwt-v1-min-32-znakow
       - JWT_REFRESH_SECRET=super-bezpieczny-refresh-klucz-v1-min-32-znakow
       - BCRYPT_ROUNDS=10
-      - NEXT_PUBLIC_APP_URL=http://91.99.50.80:9025
+      - NEXT_PUBLIC_APP_URL=https://crm.dev.sorto.ai
       - NODE_OPTIONS=--max-old-space-size=512
     volumes:
       - ./packages/backend:/app

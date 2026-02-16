@@ -80,12 +80,12 @@ async function deployDatabase() {
     
     console.log('\n🌐 ACCESS URLs:');
     console.log('==============');
-    console.log('Frontend: http://91.99.50.80/crm/');
-    console.log('API: http://91.99.50.80/crm/api/v1/');
-    console.log('Knowledge Base: http://91.99.50.80/crm/dashboard/knowledge/');
-    console.log('Smart Mailboxes: http://91.99.50.80/crm/dashboard/smart-mailboxes/');
-    console.log('GTD Inbox: http://91.99.50.80/crm/dashboard/gtd/inbox/');
-    console.log('AI Rules: http://91.99.50.80/crm/dashboard/ai-rules/');
+    console.log('Frontend: https://crm.dev.sorto.ai/crm/');
+    console.log('API: https://crm.dev.sorto.ai/crm/api/v1/');
+    console.log('Knowledge Base: https://crm.dev.sorto.ai/crm/dashboard/knowledge/');
+    console.log('Smart Mailboxes: https://crm.dev.sorto.ai/crm/dashboard/smart-mailboxes/');
+    console.log('GTD Inbox: https://crm.dev.sorto.ai/crm/dashboard/gtd/inbox/');
+    console.log('AI Rules: https://crm.dev.sorto.ai/crm/dashboard/ai-rules/');
 
   } catch (error) {
     console.error('❌ Deployment failed:', error);
