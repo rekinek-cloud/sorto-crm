@@ -60,8 +60,8 @@ model Organization {
   files                   File[]
   focusModes              FocusMode[]
   folders                 Folder[]
-  gtdBuckets              GTDBucket[]
-  gtdHorizons             GTDHorizon[]
+  streamBuckets           StreamBucket[]
+  goals                   Goal[]
   habits                  Habit[]
   inboxItems              InboxItem[]
   infos                   Info[]
@@ -327,7 +327,7 @@ model Stream {
   settings                                            Json                 @default("{}")
   status                                              StreamStatus         @default(ACTIVE)
   templateOrigin                                      String?
-  gtdConfig                                           Json                 @default("{}")
+  streamConfig                                        Json                 @default("{}") @map("gtd_config")
   streamType                                          StreamType           @default(CUSTOM)
   organizationId                                      String
   createdById                                         String
@@ -335,7 +335,7 @@ model Stream {
   updatedAt                                           DateTime             @updatedAt
   horizonLevel                                        Int                  @default(0)
   pattern                                             String?              @default("custom") @db.VarChar(50)
-  gtdRole                                             String?
+  streamRole                                          String?              @map("gtd_role")
   inboxItems                                          InboxItem[]          @relation("InboxToStream")
   messages                                            Message[]
   next_actions                                        next_actions[]
@@ -1268,7 +1268,7 @@ model Metadata {
   @@map("metadata")
 }
 
-model GTDBucket {
+model StreamBucket {
   id             String       @id @default(uuid())
   name           String
   description    String?
@@ -1282,7 +1282,7 @@ model GTDBucket {
   @@map("gtd_buckets")
 }
 
-model GTDHorizon {
+model Goal {
   id              String       @id @default(uuid())
   level           Int
   name            String
@@ -4209,7 +4209,7 @@ enum FeedbackType {
   EXCELLENT
 }
 
-enum GTDRole {
+enum StreamRole {
   INBOX
   NEXT_ACTIONS
   WAITING_FOR

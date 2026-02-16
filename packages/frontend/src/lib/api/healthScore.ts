@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { RelationshipHealth, HealthAlert } from '@/types/gtd';
+import { RelationshipHealth, HealthAlert } from '@/types/streams';
 
 export interface HealthScoreFilters {
   entityType: 'COMPANY' | 'CONTACT' | 'DEAL';

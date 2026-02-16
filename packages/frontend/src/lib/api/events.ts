@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { Event } from '@/types/gtd';
+import { Event } from '@/types/streams';
 
 export interface EventsResponse {
   events: Event[];

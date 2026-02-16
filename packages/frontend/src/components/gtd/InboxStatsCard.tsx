@@ -1,6 +1,6 @@
 'use client';
 
-import type { InboxStats } from '@/lib/api/gtdInbox';
+import type { InboxStats } from '@/lib/api/sourceInbox';
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
 

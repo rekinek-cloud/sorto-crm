@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Stream } from '@/types/gtd';
+import { Stream } from '@/types/streams';
 import { X, Sparkles } from 'lucide-react';
 import { streamsApi } from '@/lib/api/streams';
 import { toast } from 'react-hot-toast';

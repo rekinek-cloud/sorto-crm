@@ -1,23 +1,23 @@
 /**
- * GTDProcessingRuleEngine - Specjalizowany engine do przetwarzania reguł GTD
- * Rozszerza UnifiedRuleEngine o funkcjonalność GTD workflow
+ * StreamsProcessingRuleEngine - Specjalizowany engine do przetwarzania reguł Streams
+ * Rozszerza UnifiedRuleEngine o funkcjonalność Streams workflow
  */
 
-import { PrismaClient, GTDRole } from '@prisma/client';
+import { PrismaClient, StreamRole } from '@prisma/client';
 import { UnifiedRuleEngine } from './UnifiedRuleEngine';
 import {
   ProcessingRule,
   ProcessingTrigger,
   ProcessingCondition,
   ProcessingAction,
-  GTDContext,
+  StreamContext,
   EnergyLevel
-} from '../types/gtd';
+} from '../types/streams';
 
 /**
- * Wynik wykonania reguły GTD
+ * Wynik wykonania reguły Streams
  */
-export interface GTDRuleExecutionResult {
+export interface StreamsRuleExecutionResult {
   ruleId: string;
   ruleName: string;
   success: boolean;
@@ -43,7 +43,7 @@ export interface GTDRuleExecutionResult {
 /**
  * Kontekst wykonania reguły
  */
-export interface GTDExecutionContext {
+export interface StreamsExecutionContext {
   entityType: 'TASK' | 'EMAIL' | 'CONTACT' | 'DEAL' | 'MESSAGE';
   entityId: string;
   entityData: Record<string, any>;
@@ -51,13 +51,13 @@ export interface GTDExecutionContext {
   userId: string;
   triggeredBy: 'MANUAL' | 'AUTOMATIC' | 'SCHEDULED' | 'EMAIL_RECEIVED' | 'TASK_CREATED';
   streamId?: string;
-  parentContext?: GTDExecutionContext;
+  parentContext?: StreamsExecutionContext;
 }
 
 /**
- * Statystyki wykonania reguł GTD
+ * Statystyki wykonania reguł Streams
  */
-export interface GTDRuleStats {
+export interface StreamsRuleStats {
   totalExecutions: number;
   successfulExecutions: number;
   failedExecutions: number;
@@ -77,9 +77,9 @@ export interface GTDRuleStats {
 }
 
 /**
- * GTD Processing Rule Engine
+ * Streams Processing Rule Engine
  */
-export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
+export class StreamsProcessingRuleEngine extends UnifiedRuleEngine {
   private prisma: PrismaClient;
   private logger: any;
 
@@ -90,25 +90,25 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
   }
 
   // ========================================
-  // CORE GTD RULE EXECUTION
+  // CORE STREAM RULE EXECUTION
   // ========================================
 
   /**
-   * Wykonuje reguły GTD dla danego kontekstu
+   * Wykonuje reguły Streams dla danego kontekstu
    */
-  async executeGTDRules(context: GTDExecutionContext): Promise<GTDRuleExecutionResult[]> {
+  async executeStreamRules(context: StreamsExecutionContext): Promise<StreamsRuleExecutionResult[]> {
     try {
       const startTime = Date.now();
       
-      // Pobierz aktywne reguły GTD dla kontekstu
-      const rules = await this.getGTDRulesForContext(context);
+      // Pobierz aktywne reguły Streams dla kontekstu
+      const rules = await this.getStreamRulesForContext(context);
       
-      this.logger.info(`Executing ${rules.length} GTD rules for ${context.entityType}:${context.entityId}`);
+      this.logger.info(`Executing ${rules.length} Stream rules for ${context.entityType}:${context.entityId}`);
       
-      const results: GTDRuleExecutionResult[] = [];
+      const results: StreamsRuleExecutionResult[] = [];
       
       for (const rule of rules) {
-        const executionResult = await this.executeGTDRule(rule, context);
+        const executionResult = await this.executeStreamRule(rule, context);
         results.push(executionResult);
         
         // Jeśli reguła ma stopOnFirstMatch i została wykonana pomyślnie, zatrzymaj
@@ -122,7 +122,7 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
       const totalTime = Date.now() - startTime;
       const successfulRules = results.filter(r => r.success).length;
       
-      this.logger.info(`GTD rules execution completed`, {
+      this.logger.info(`Stream rules execution completed`, {
         totalRules: rules.length,
         successfulRules,
         failedRules: rules.length - successfulRules,
@@ -134,17 +134,17 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
       return results;
       
     } catch (error) {
-      this.logger.error('Error executing GTD rules:', error);
-      throw new Error('Failed to execute GTD rules');
+      this.logger.error('Error executing Stream rules:', error);
+      throw new Error('Failed to execute Stream rules');
     }
   }
 
   /**
-   * Wykonuje pojedynczą regułę GTD
+   * Wykonuje pojedynczą regułę Stream
    */
-  async executeGTDRule(rule: ProcessingRule, context: GTDExecutionContext): Promise<GTDRuleExecutionResult> {
+  async executeStreamRule(rule: ProcessingRule, context: StreamsExecutionContext): Promise<StreamsRuleExecutionResult> {
     const startTime = Date.now();
-    const result: GTDRuleExecutionResult = {
+    const result: StreamsRuleExecutionResult = {
       ruleId: rule.id,
       ruleName: rule.name,
       success: false,
@@ -163,7 +163,7 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
 
     try {
       // Sprawdź warunki reguły
-      const conditionsResult = await this.evaluateGTDConditions(rule.conditions, context);
+      const conditionsResult = await this.evaluateStreamConditions(rule.conditions, context);
       result.metadata.conditionsMatched = conditionsResult.matchedCount;
       result.metadata.confidence = conditionsResult.confidence;
 
@@ -179,7 +179,7 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
         result.actionsExecuted++;
         
         try {
-          const actionResult = await this.executeGTDAction(action, context);
+          const actionResult = await this.executeStreamAction(action, context);
           
           result.results.push({
             action: action.type,
@@ -228,11 +228,11 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
   // ========================================
 
   /**
-   * Ewaluuje warunki reguły GTD
+   * Ewaluuje warunki reguły Stream
    */
-  private async evaluateGTDConditions(
+  private async evaluateStreamConditions(
     conditions: ProcessingCondition[],
-    context: GTDExecutionContext
+    context: StreamsExecutionContext
   ): Promise<{
     allMatched: boolean;
     matchedCount: number;
@@ -277,7 +277,7 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
    */
   private async evaluateCondition(
     condition: ProcessingCondition,
-    context: GTDExecutionContext
+    context: StreamsExecutionContext
   ): Promise<boolean> {
     try {
       const fieldValue = this.getFieldValue(condition.field, context);
@@ -319,7 +319,7 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
   /**
    * Pobiera wartość pola z kontekstu
    */
-  private getFieldValue(field: string, context: GTDExecutionContext): any {
+  private getFieldValue(field: string, context: StreamsExecutionContext): any {
     // Obsługa nested properties z kropką
     const parts = field.split('.');
     let value: any = context.entityData;
@@ -340,13 +340,13 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
   // ========================================
 
   /**
-   * Wykonuje akcję GTD
+   * Wykonuje akcję Stream
    */
-  private async executeGTDAction(
+  private async executeStreamAction(
     action: ProcessingAction,
-    context: GTDExecutionContext
+    context: StreamsExecutionContext
   ): Promise<any> {
-    this.logger.info(`Executing GTD action: ${action.type}`, action.config);
+    this.logger.info(`Executing Stream action: ${action.type}`, action.config);
     
     switch (action.type) {
       case 'MOVE_TO_STREAM':
@@ -375,7 +375,7 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
   /**
    * Przenieś do streama
    */
-  private async moveToStream(config: Record<string, any>, context: GTDExecutionContext): Promise<any> {
+  private async moveToStream(config: Record<string, any>, context: StreamsExecutionContext): Promise<any> {
     const { streamId, reason } = config;
     
     if (!streamId) {
@@ -385,7 +385,7 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
     // Sprawdź czy stream istnieje
     const stream = await this.prisma.stream.findUnique({
       where: { id: streamId },
-      select: { id: true, name: true, gtdRole: true }
+      select: { id: true, name: true, streamRole: true }
     });
 
     if (!stream) {
@@ -416,18 +416,18 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
       action: 'MOVE_TO_STREAM',
       streamId,
       streamName: stream.name,
-      reason: reason || 'Moved by GTD rule'
+      reason: reason || 'Moved by Stream rule'
     };
   }
 
   /**
-   * Przypisz kontekst GTD
+   * Przypisz kontekst Stream
    */
-  private async assignContext(config: Record<string, any>, context: GTDExecutionContext): Promise<any> {
+  private async assignContext(config: Record<string, any>, context: StreamsExecutionContext): Promise<any> {
     const { context: gtdContext } = config;
     
-    if (!gtdContext || !Object.values(GTDContext).includes(gtdContext)) {
-      throw new Error('Invalid GTD context specified');
+    if (!gtdContext || !Object.values(StreamContext).includes(gtdContext)) {
+      throw new Error('Invalid Stream context specified');
     }
 
     // Znajdź lub utwórz kontekst
@@ -471,7 +471,7 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
   /**
    * Ustaw priorytet
    */
-  private async setPriority(config: Record<string, any>, context: GTDExecutionContext): Promise<any> {
+  private async setPriority(config: Record<string, any>, context: StreamsExecutionContext): Promise<any> {
     const { priority } = config;
     
     if (!priority || !['LOW', 'MEDIUM', 'HIGH', 'URGENT'].includes(priority)) {
@@ -499,7 +499,7 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
   /**
    * Utwórz zadanie
    */
-  private async createTask(config: Record<string, any>, context: GTDExecutionContext): Promise<any> {
+  private async createTask(config: Record<string, any>, context: StreamsExecutionContext): Promise<any> {
     const {
       title,
       description,
@@ -548,11 +548,11 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
   /**
    * Wyślij notyfikację
    */
-  private async sendNotification(config: Record<string, any>, context: GTDExecutionContext): Promise<any> {
+  private async sendNotification(config: Record<string, any>, context: StreamsExecutionContext): Promise<any> {
     const { message, type = 'INFO', recipients } = config;
     
     // TODO: Implement actual notification sending
-    this.logger.info('GTD Notification sent', {
+    this.logger.info('Stream Notification sent', {
       message,
       type,
       recipients,
@@ -573,7 +573,7 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
   /**
    * Utwórz projekt
    */
-  private async createProject(config: Record<string, any>, context: GTDExecutionContext): Promise<any> {
+  private async createProject(config: Record<string, any>, context: StreamsExecutionContext): Promise<any> {
     const {
       name,
       description,
@@ -605,15 +605,15 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
   // ========================================
 
   /**
-   * Pobiera reguły GTD dla kontekstu
+   * Pobiera reguły Stream dla kontekstu
    */
-  private async getGTDRulesForContext(context: GTDExecutionContext): Promise<ProcessingRule[]> {
+  private async getStreamRulesForContext(context: StreamsExecutionContext): Promise<ProcessingRule[]> {
     try {
-      // TODO: Implement actual database query for GTD rules
+      // TODO: Implement actual database query for Stream rules
       // For now, return empty array
       return [];
     } catch (error) {
-      this.logger.error('Error getting GTD rules for context:', error);
+      this.logger.error('Error getting Stream rules for context:', error);
       return [];
     }
   }
@@ -631,9 +631,9 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
   }
 
   /**
-   * Pobiera statystyki wykonania reguł GTD
+   * Pobiera statystyki wykonania reguł Streams
    */
-  async getGTDRuleStats(organizationId: string, dateFrom?: Date, dateTo?: Date): Promise<GTDRuleStats> {
+  async getStreamRuleStats(organizationId: string, dateFrom?: Date, dateTo?: Date): Promise<StreamsRuleStats> {
     try {
       // TODO: Implement real statistics from database
       return {
@@ -645,15 +645,15 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
         actionStats: {}
       };
     } catch (error) {
-      this.logger.error('Error getting GTD rule stats:', error);
-      throw new Error('Failed to get GTD rule stats');
+      this.logger.error('Error getting Stream rule stats:', error);
+      throw new Error('Failed to get Stream rule stats');
     }
   }
 
   /**
-   * Testuje regułę GTD na próbnych danych
+   * Testuje regułę Stream na próbnych danych
    */
-  async testGTDRule(
+  async testStreamRule(
     rule: ProcessingRule,
     testData: Record<string, any>,
     organizationId: string,
@@ -669,7 +669,7 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
     confidence: number;
   }> {
     try {
-      const testContext: GTDExecutionContext = {
+      const testContext: StreamsExecutionContext = {
         entityType: 'TASK', // Default for testing
         entityId: 'test',
         entityData: testData,
@@ -678,7 +678,7 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
         triggeredBy: 'MANUAL'
       };
 
-      const conditionsResult = await this.evaluateGTDConditions(rule.conditions, testContext);
+      const conditionsResult = await this.evaluateStreamConditions(rule.conditions, testContext);
 
       return {
         conditionsMatched: conditionsResult.allMatched,
@@ -692,10 +692,10 @@ export class GTDProcessingRuleEngine extends UnifiedRuleEngine {
       };
 
     } catch (error) {
-      this.logger.error('Error testing GTD rule:', error);
-      throw new Error('Failed to test GTD rule');
+      this.logger.error('Error testing Stream rule:', error);
+      throw new Error('Failed to test Stream rule');
     }
   }
 }
 
-export default GTDProcessingRuleEngine;
+export default StreamsProcessingRuleEngine;

@@ -134,7 +134,7 @@ const ALL_PAGES = [
 
   // ORGANIZACJA
   { path: '/dashboard/tags', name: 'Tagi' },
-  { path: '/dashboard/contexts', name: 'Konteksty GTD' },
+  { path: '/dashboard/contexts', name: 'Konteksty' },
   { path: '/dashboard/habits', name: 'Nawyki' },
   { path: '/dashboard/recurring-tasks', name: 'Zadania cykliczne' },
   { path: '/dashboard/delegated', name: 'Delegowane' },

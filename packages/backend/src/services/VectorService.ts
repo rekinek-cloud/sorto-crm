@@ -419,7 +419,7 @@ export class VectorService {
           description: true,
           color: true,
           streamType: true,
-          gtdRole: true
+          streamRole: true
         }
       });
 
@@ -432,7 +432,7 @@ export class VectorService {
             stream.name,
             stream.description || '',
             stream.streamType ? `Type: ${stream.streamType}` : '',
-            stream.gtdRole ? `Role: ${stream.gtdRole}` : ''
+            stream.streamRole ? `Role: ${stream.streamRole}` : ''
           ].filter(Boolean);
 
           const content = contentParts.join('. ');

@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { toast } from 'react-hot-toast';
-import { Stream } from '@/types/gtd';
+import { Stream } from '@/types/streams';
 import { StreamRelation } from '@/lib/api/streamHierarchy';
 import StreamHierarchyTree from './StreamHierarchyTree';
 import CreateStreamRelationModal from './CreateStreamRelationModal';

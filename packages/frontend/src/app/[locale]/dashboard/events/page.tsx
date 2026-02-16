@@ -17,7 +17,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { eventsApi, CreateEventRequest, EventFilters } from '@/lib/api/events';
-import { Event } from '@/types/gtd';
+import { Event } from '@/types/streams';
 
 import { PageShell } from '@/components/ui/PageShell';
 import { PageHeader } from '@/components/ui/PageHeader';

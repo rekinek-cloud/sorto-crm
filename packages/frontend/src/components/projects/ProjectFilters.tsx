@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ProjectFilters, Stream } from '@/types/gtd';
+import { ProjectFilters, Stream } from '@/types/streams';
 
 interface ProjectFiltersProps {
   filters: ProjectFilters;

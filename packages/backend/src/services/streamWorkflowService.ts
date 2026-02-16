@@ -20,7 +20,7 @@ export interface InboxItem {
   receivedAt: Date;
 }
 
-export interface GTDProcessingDecision {
+export interface StreamProcessingDecision {
   itemId: string;
   decision: 'DO' | 'DEFER' | 'DELEGATE' | 'DELETE' | 'REFERENCE';
   actionData?: {
@@ -35,7 +35,7 @@ export interface GTDProcessingDecision {
   notes?: string;
 }
 
-export class GTDService {
+export class StreamWorkflowService {
   
   /**
    * Get all inbox items for organization
@@ -158,7 +158,7 @@ export class GTDService {
   /**
    * Process inbox item with GTD methodology
    */
-  async processInboxItem(itemId: string, decision: GTDProcessingDecision, userId: string): Promise<any> {
+  async processInboxItem(itemId: string, decision: StreamProcessingDecision, userId: string): Promise<any> {
     const { decision: action, actionData, notes } = decision;
 
     // Get the item (could be message or task)
@@ -600,4 +600,7 @@ export class GTDService {
   }
 }
 
-export const gtdService = new GTDService();
+export const streamWorkflowService = new StreamWorkflowService();
+
+// Backward compatibility alias
+export const gtdService = streamWorkflowService;

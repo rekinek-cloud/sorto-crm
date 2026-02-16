@@ -147,7 +147,7 @@ router.get('/stats-public', async (req, res) => {
  * Get all inbox items
  */
 router.get('/', requireAuth, async (req: AuthenticatedRequest, res) => {
-  console.log('🔍 GTD Inbox main endpoint called by user:', req.user?.email);
+  console.log('🔍 Source Inbox main endpoint called by user:', req.user?.email);
   try {
     const { 
       processed,
@@ -205,7 +205,7 @@ router.get('/', requireAuth, async (req: AuthenticatedRequest, res) => {
  * Get inbox statistics
  */
 router.get('/stats', requireAuth, async (req: AuthenticatedRequest, res) => {
-  console.log('🔍 GTD Inbox stats endpoint called by user:', req.user?.email);
+  console.log('🔍 Source Inbox stats endpoint called by user:', req.user?.email);
   try {
     const stats = await gtdInboxService.getInboxStats(req.user!.organizationId);
     console.log('📊 Stats calculated:', stats);
@@ -318,7 +318,7 @@ router.post('/quick-capture', requireAuth, async (req: AuthenticatedRequest, res
 
 /**
  * POST /api/v1/gtd-inbox/:id/process
- * Process inbox item with GTD methodology
+ * Process inbox item with workflow methodology
  */
 router.post('/:id/process', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
@@ -729,7 +729,7 @@ router.post('/:id/analyze-for-planning', requireAuth, async (req: AuthenticatedR
 
 /**
  * POST /api/v1/gtd-inbox/:id/plan-as-time-block
- * Convert GTD Inbox item to Smart Day Planner time block
+ * Convert Source Inbox item to Smart Day Planner time block
  */
 router.post('/:id/plan-as-time-block', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
@@ -857,7 +857,7 @@ router.post('/:id/plan-as-time-block', requireAuth, async (req: AuthenticatedReq
 });
 
 // =============================================================================
-// HELPER FUNCTIONS FOR GTD → TIME BLOCKS INTEGRATION
+// HELPER FUNCTIONS FOR SOURCE → TIME BLOCKS INTEGRATION
 // =============================================================================
 
 /**

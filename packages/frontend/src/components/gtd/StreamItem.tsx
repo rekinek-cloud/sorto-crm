@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Stream } from '@/types/gtd';
+import { Stream } from '@/types/streams';
 import {
   Pencil,
   Trash2,

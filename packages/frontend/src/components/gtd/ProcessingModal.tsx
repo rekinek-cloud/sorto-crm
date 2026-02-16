@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { gtdApi, GTDProcessingDecision } from '@/lib/api/gtd';
+import { workflowApi, WorkflowProcessingDecision } from '@/lib/api/workflow';
 import { toast } from 'react-hot-toast';
 
 interface ProcessingModalProps {
@@ -39,7 +39,7 @@ export default function ProcessingModal({ item, onClose, onComplete }: Processin
       return;
     }
 
-    const processingDecision: GTDProcessingDecision = {
+    const processingDecision: WorkflowProcessingDecision = {
       itemId: item.id,
       decision,
       actionData: {
@@ -55,7 +55,7 @@ export default function ProcessingModal({ item, onClose, onComplete }: Processin
 
     try {
       setIsProcessing(true);
-      await gtdApi.processInboxItem(item.id, processingDecision);
+      await workflowApi.processInboxItem(item.id, processingDecision);
       
       toast.success(`Item ${decision.toLowerCase()}d successfully`);
       onComplete();

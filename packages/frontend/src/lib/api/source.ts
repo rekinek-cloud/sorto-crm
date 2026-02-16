@@ -108,7 +108,7 @@ export const sourceApi = {
 
     // AI Routing
     routeContent: async (content: string): Promise<any> => {
-        const response = await apiClient.post('/gtd-streams/route/content', { content });
+        const response = await apiClient.post('/stream-management/route/content', { content });
         return response.data.data;
     }
 };

@@ -24,7 +24,7 @@ import {
   PauseCircle,
   PlayCircle
 } from 'lucide-react';
-import { GTDRole, StreamType } from '@/types/gtd';
+import { StreamRole, StreamType } from '@/types/streams';
 import Card from '../ui/Card';
 import Badge from '../ui/Badge';
 import Button from '../ui/Button';
@@ -38,7 +38,7 @@ interface GTDStreamCardProps {
     color: string;
     icon?: string;
     status: string;
-    gtdRole?: GTDRole;
+    gtdRole?: StreamRole;
     streamType?: StreamType;
     gtdConfig?: any;
     createdAt: string;
@@ -78,7 +78,7 @@ const GTDStreamCard: React.FC<GTDStreamCardProps> = ({
   const [showMenu, setShowMenu] = useState(false);
 
   // Ikony dla różnych ról GTD
-  const getGTDIcon = (role?: GTDRole) => {
+  const getGTDIcon = (role?: StreamRole) => {
     switch (role) {
       case 'INBOX':
         return <Inbox className="w-5 h-5" />;
@@ -118,7 +118,7 @@ const GTDStreamCard: React.FC<GTDStreamCardProps> = ({
   };
 
   // Formatowanie roli GTD
-  const formatGTDRole = (role?: GTDRole) => {
+  const formatStreamRole = (role?: StreamRole) => {
     if (!role) return 'Brak roli';
     return role.replace(/_/g, ' ').toLowerCase()
       .split(' ')
@@ -270,7 +270,7 @@ const GTDStreamCard: React.FC<GTDStreamCardProps> = ({
         <div className="flex flex-wrap gap-2 mb-4">
           {isGTDEnabled && (
             <Badge variant="default">
-              {formatGTDRole(stream.gtdRole)}
+              {formatStreamRole(stream.gtdRole)}
             </Badge>
           )}
           {stream.streamType && (

@@ -261,7 +261,7 @@ const generateAIFlashNews = async (organizationId: string): Promise<FlashNewsIte
       });
     }
 
-    // Check for GTD inbox items
+    // Check for source inbox items
     const inboxItems = await prisma.inboxItem.count({
       where: {
         organizationId,
@@ -272,7 +272,7 @@ const generateAIFlashNews = async (organizationId: string): Promise<FlashNewsIte
     if (inboxItems > 10) {
       aiNews.push({
         id: `inbox-${Date.now()}`,
-        content: `📥 Twój GTD Inbox ma ${inboxItems} nieprzetworonych elementów.`,
+        content: `📥 Twój Inbox ma ${inboxItems} nieprzetworonych elementów.`,
         type: 'warning',
         priority: inboxItems > 20 ? 'high' : 'medium',
         source: 'automation',

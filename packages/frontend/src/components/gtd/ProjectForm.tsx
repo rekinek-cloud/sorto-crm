@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Project, CreateProjectRequest, UpdateProjectRequest, Stream, User } from '@/types/gtd';
+import { Project, CreateProjectRequest, UpdateProjectRequest, Stream, User } from '@/types/streams';
 
 interface ProjectFormProps {
   project?: Project;

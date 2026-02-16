@@ -430,6 +430,7 @@ router.get('/kanban/:boardType/data', authenticateUser, async (req, res) => {
           { id: 'enterprise', title: 'Enterprise (>100k)', color: '#10B981' }
         ];
         break;
+      case 'stream_context':
       case 'gtd_context':
         columns = [
           { id: 'calls', title: '@Telefony', color: '#EF4444' },
@@ -477,8 +478,9 @@ router.get('/kanban/:boardType/data', authenticateUser, async (req, res) => {
             }
           });
           break;
+        case 'stream_context':
         case 'gtd_context':
-          // Assign deals to GTD contexts based on stage
+          // Assign deals to stream contexts based on stage
           columnDeals = deals.filter(deal => {
             switch (deal.stage) {
               case 'PROSPECT': return column.id === 'calls';
@@ -506,7 +508,7 @@ router.get('/kanban/:boardType/data', authenticateUser, async (req, res) => {
           avatar: deal.owner?.avatar || ''
         },
         nextAction: {
-          gtdContext: boardType === 'gtd_context' ? `@${column.title.replace('@', '')}` : '@calls',
+          streamContext: (boardType === 'gtd_context' || boardType === 'stream_context') ? `@${column.title.replace('@', '')}` : '@calls',
           description: deal.description || 'Brak opisu'
         },
         dueDate: deal.expectedCloseDate || new Date(),
@@ -606,8 +608,9 @@ router.post('/kanban/:boardType/move', authenticateUser, async (req, res) => {
         // Deal size is based on value, so moving doesn't change the deal
         // Just update position for ordering within the column
         break;
+      case 'stream_context':
       case 'gtd_context':
-        // For GTD context, we could map back to stages
+        // For stream context, we could map back to stages
         switch (toColumn) {
           case 'calls':
             updateData.stage = 'PROSPECT';

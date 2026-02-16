@@ -1,6 +1,6 @@
 'use client';
 
-import { InboxStats as InboxStatsType } from '@/lib/api/gtd';
+import { InboxStats as InboxStatsType } from '@/lib/api/workflow';
 
 interface InboxStatsProps {
   stats: InboxStatsType;

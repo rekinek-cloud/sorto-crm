@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { PauseCircle, Layers, Play } from 'lucide-react';
 import Link from 'next/link';
 import { streamsApi } from '@/lib/api/streams';
-import { Stream } from '@/types/gtd';
+import { Stream } from '@/types/streams';
 import { toast } from 'react-hot-toast';
 import { PageShell } from '@/components/ui/PageShell';
 import { PageHeader } from '@/components/ui/PageHeader';

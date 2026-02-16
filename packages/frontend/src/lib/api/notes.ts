@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { Note } from '@/types/gtd';
+import { Note } from '@/types/streams';
 
 export interface NotesResponse {
   notes: Note[];

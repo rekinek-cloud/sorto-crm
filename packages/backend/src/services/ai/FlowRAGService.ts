@@ -35,7 +35,7 @@ export interface StreamSummary {
   name: string;
   description: string | null;
   streamType: string;
-  gtdRole: string | null;
+  streamRole: string | null;
   recentItemCount: number;
 }
 
@@ -329,7 +329,7 @@ export class FlowRAGService {
           name: true,
           description: true,
           streamType: true,
-          gtdRole: true,
+          streamRole: true,
           _count: {
             select: {
               inboxItems: {
@@ -345,7 +345,7 @@ export class FlowRAGService {
         name: s.name,
         description: s.description,
         streamType: s.streamType,
-        gtdRole: s.gtdRole,
+        streamRole: s.streamRole,
         recentItemCount: s._count.inboxItems,
       }));
     } catch (error) {

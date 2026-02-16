@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { Stream } from '@/types/gtd';
+import { Stream } from '@/types/streams';
 
 export interface StreamsResponse {
   streams: Stream[];

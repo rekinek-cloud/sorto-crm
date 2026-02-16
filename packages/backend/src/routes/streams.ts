@@ -2,7 +2,7 @@ import express from 'express';
 import { TaskStatus, Priority } from '@prisma/client';
 import { prisma } from '../config/database';
 import { authenticateToken as requireAuth, AuthenticatedRequest } from '../shared/middleware/auth';
-import { gtdService, GTDProcessingDecision } from '../services/gtdService';
+import { streamWorkflowService, StreamProcessingDecision } from '../services/streamWorkflowService';
 import { vectorService } from './vectorSearch';
 
 const router = express.Router();
@@ -560,7 +560,7 @@ router.get('/inbox', requireAuth, async (req: AuthenticatedRequest, res) => {
       offset: parseInt(offset as string)
     };
 
-    const items = await gtdService.getInboxItems(req.user!.organizationId, filters);
+    const items = await streamWorkflowService.getInboxItems(req.user!.organizationId, filters);
 
     res.json(items);
   } catch (error) {
@@ -572,7 +572,7 @@ router.get('/inbox', requireAuth, async (req: AuthenticatedRequest, res) => {
 // Get inbox statistics
 router.get('/inbox/stats', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
-    const stats = await gtdService.getInboxStats(req.user!.organizationId);
+    const stats = await streamWorkflowService.getInboxStats(req.user!.organizationId);
     res.json(stats);
   } catch (error) {
     console.error('Error fetching inbox stats:', error);
@@ -642,15 +642,15 @@ router.post('/inbox', requireAuth, async (req: AuthenticatedRequest, res) => {
   }
 });
 
-// Process inbox item with GTD methodology
+// Process inbox item with workflow methodology
 router.post('/inbox/:id/process', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { id } = req.params;
-    const decision: GTDProcessingDecision = req.body;
+    const decision: StreamProcessingDecision = req.body;
 
     decision.itemId = id;
 
-    const result = await gtdService.processInboxItem(id, decision, req.user!.id);
+    const result = await streamWorkflowService.processInboxItem(id, decision, req.user!.id);
 
     res.json({
       message: 'Item processed successfully',
@@ -674,7 +674,7 @@ router.post('/inbox/:id/quick-action', requireAuth, async (req: AuthenticatedReq
       return res.status(400).json({ error: 'Invalid quick action' });
     }
 
-    const result = await gtdService.quickAction(id, action, req.user!.id);
+    const result = await streamWorkflowService.quickAction(id, action, req.user!.id);
 
     res.json({
       message: 'Quick action completed',

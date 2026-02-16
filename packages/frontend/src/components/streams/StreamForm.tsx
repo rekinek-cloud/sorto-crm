@@ -18,7 +18,7 @@ import {
   Archive,
   Info
 } from 'lucide-react';
-import { GTDRole, StreamType } from '@/types/gtd';
+import { StreamRole, StreamType } from '@/types/streams';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 
@@ -32,7 +32,7 @@ const FrozenIcon = () => (
 interface AvailableStream {
   id: string;
   name: string;
-  gtdRole?: GTDRole;
+  gtdRole?: StreamRole;
   color?: string;
 }
 
@@ -42,14 +42,14 @@ interface GTDStreamFormProps {
     name: string;
     description?: string;
     color: string;
-    gtdRole?: GTDRole;
+    gtdRole?: StreamRole;
     streamType?: StreamType;
   };
   initialData?: {
     name: string;
     description?: string;
     color: string;
-    gtdRole?: GTDRole;
+    gtdRole?: StreamRole;
     streamType?: StreamType;
     parentStreamId?: string;
   };
@@ -141,7 +141,7 @@ const GTDStreamForm: React.FC<GTDStreamFormProps> = ({
     name: data?.name || '',
     description: data?.description || '',
     color: data?.color || '#3B82F6',
-    gtdRole: data?.gtdRole || 'PROJECTS' as GTDRole, // Domyślnie strumień projektowy
+    gtdRole: data?.gtdRole || 'PROJECTS' as StreamRole, // Domyślnie strumień projektowy
     streamType: data?.streamType || 'PROJECT' as StreamType,
     parentStreamId: initialData?.parentStreamId || '',
     gtdConfig: {
@@ -204,7 +204,7 @@ const GTDStreamForm: React.FC<GTDStreamFormProps> = ({
     onSubmit(submitData);
   };
 
-  const handleRoleSelect = (role: GTDRole) => {
+  const handleRoleSelect = (role: StreamRole) => {
     setFormData(prev => ({
       ...prev,
       gtdRole: role,
@@ -303,7 +303,7 @@ const GTDStreamForm: React.FC<GTDStreamFormProps> = ({
                 <button
                   key={role.value}
                   type="button"
-                  onClick={() => handleRoleSelect(role.value as GTDRole)}
+                  onClick={() => handleRoleSelect(role.value as StreamRole)}
                   className={`
                     p-4 rounded-lg border-2 text-left transition-all
                     ${formData.gtdRole === role.value 

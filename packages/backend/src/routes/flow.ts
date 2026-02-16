@@ -1205,7 +1205,7 @@ router.get('/streams', async (req: Request, res: Response) => {
         color: true,
         icon: true,
         streamType: true,
-        gtdRole: true,
+        streamRole: true,
         _count: {
           select: {
             inboxItems: {
@@ -1228,7 +1228,7 @@ router.get('/streams', async (req: Request, res: Response) => {
         color: s.color,
         icon: s.icon,
         streamType: s.streamType,
-        gtdRole: s.gtdRole,
+        streamRole: s.streamRole,
         pendingItems: s._count.inboxItems,
         activeProjects: s._count.projects
       }))

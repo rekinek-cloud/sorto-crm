@@ -1,6 +1,6 @@
 'use client';
 
-import { InboxItem as InboxItemType } from '@/lib/api/gtd';
+import { InboxItem as InboxItemType } from '@/lib/api/workflow';
 
 interface InboxItemProps {
   item: InboxItemType;

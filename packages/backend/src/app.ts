@@ -30,8 +30,8 @@ import dealsRoutes from './routes/deals';
 import streamsRoutes from './routes/streams';
 import smartRoutes from './routes/smart';
 import communicationRoutes from './routes/communication';
-import gtdRoutes from './routes/gtd';
-import gtdStreamsRoutes from './routes/gtdStreams';
+import workflowRoutes from './routes/workflow';
+import streamManagementRoutes from './routes/streamManagement';
 import analysisRoutes from './routes/analysis';
 import calendarRoutes from './routes/calendar';
 
@@ -228,8 +228,8 @@ apiRouter.use('/streams', streamsRoutes);
 apiRouter.use('/smart', smartRoutes);
 apiRouter.use('/communication', communicationRoutes);
 apiRouter.use('/communications', communicationsRoutes);
-apiRouter.use('/gtd', gtdRoutes);
-apiRouter.use('/gtd-streams', gtdStreamsRoutes);
+apiRouter.use('/workflow', workflowRoutes);               // Core workflow (was: /gtd)
+apiRouter.use('/stream-management', streamManagementRoutes); // Stream management (was: /gtd-streams)
 apiRouter.use('/analysis', analysisRoutes);
 apiRouter.use('/dashboard', dashboardRoutes);
 apiRouter.use('/ai', aiRoutes);
@@ -254,7 +254,7 @@ apiRouter.use('/ai/prompts', aiPromptsRoutes);
 apiRouter.use('/ai-knowledge', aiKnowledgeRoutes);  // AI Knowledge Chat
 apiRouter.use('/ai-insights', aiInsightsRoutes);    // AI Insights dla Dashboard
 apiRouter.use('/vector-search', vectorSearchRoutes);
-apiRouter.use('/flow', flowRoutes);  // Flow Engine - GTD AI Processing
+apiRouter.use('/flow', flowRoutes);  // Flow Engine - AI Processing
 apiRouter.use('/flow/conversation', flowConversationRoutes);  // Flow Conversation - Dialogowe przetwarzanie
 apiRouter.use('/user-hierarchy', userHierarchyRoutes);  // Zarządzanie użytkownikami w organizacji
 apiRouter.use('/internal', internalRoutes);  // Internal API dla service-to-service (RAG)
@@ -299,9 +299,9 @@ apiRouter.use('/stream-hierarchy', streamHierarchyRoutes);  // Stream Hierarchy 
 apiRouter.use('/stream-access', streamAccessRoutes);  // Stream Access - uprawnienia strumieni
 
 // STREAMS Migration - nowe endpointy
-apiRouter.use('/source', sourceRoutes);           // Źródło (ex gtdInbox)
-apiRouter.use('/streams-map', streamsMapRoutes);  // Mapa strumieni (ex gtdMapViews)
-apiRouter.use('/horizons', goalsRoutes);          // GTD Horizons (legacy) - przeniesione z /goals
+apiRouter.use('/source', sourceRoutes);           // Source Inbox
+apiRouter.use('/streams-map', streamsMapRoutes);  // Streams Map views
+apiRouter.use('/horizons', goalsRoutes);          // Horizons (goals/levels)
 apiRouter.use('/goals', preciseGoalsRoutes);      // Cele Precyzyjne (RZUT) - główny endpoint
 apiRouter.use('/precise-goals', preciseGoalsRoutes); // Alias dla /goals
 apiRouter.use('/day-planner', dayPlannerRoutes);  // Day Planner (ex smartDayPlanner)
@@ -329,12 +329,14 @@ apiRouter.use('/ai-messages', aiMessagesRoutes);
 apiRouter.use('/team', teamRoutes);
 apiRouter.use('/data-processing', dataProcessingRoutes);  // Data Processing - pipeline przetwarzania
 
-// Aliasy dla kompatybilności wstecznej (deprecated)
-apiRouter.use('/gtdinbox', sourceRoutes);         // deprecated -> use /source
-apiRouter.use('/gtdmapviews', streamsMapRoutes);  // deprecated -> use /streams-map
-apiRouter.use('/gtdhorizons', goalsRoutes);       // deprecated -> use /horizons
-apiRouter.use('/smartdayplanner', dayPlannerRoutes); // deprecated -> use /day-planner
-apiRouter.use('/smartmailboxes', smartMailboxesRoutes);   // deprecated -> use /mailboxes
+// Backward-compat aliases (deprecated - to be removed after frontend migration)
+apiRouter.use('/gtd', workflowRoutes);                     // deprecated -> use /workflow
+apiRouter.use('/gtd-streams', streamManagementRoutes);     // deprecated -> use /stream-management
+apiRouter.use('/gtdinbox', sourceRoutes);                  // deprecated -> use /source
+apiRouter.use('/gtdmapviews', streamsMapRoutes);           // deprecated -> use /streams-map
+apiRouter.use('/gtdhorizons', goalsRoutes);                // deprecated -> use /horizons
+apiRouter.use('/smartdayplanner', dayPlannerRoutes);       // deprecated -> use /day-planner
+apiRouter.use('/smartmailboxes', smartMailboxesRoutes);    // deprecated -> use /mailboxes
 
 // Temporary welcome route for development
 apiRouter.get('/', (req, res) => {

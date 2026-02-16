@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import apiClient from '@/lib/api/client';
 import { contactRelationsApi, CreateContactRelationRequest } from '@/lib/api/contactRelations';
-import { ContactRelation } from '@/types/gtd';
+import { ContactRelation } from '@/types/streams';
 
 import { PageShell } from '@/components/ui/PageShell';
 import { PageHeader } from '@/components/ui/PageHeader';

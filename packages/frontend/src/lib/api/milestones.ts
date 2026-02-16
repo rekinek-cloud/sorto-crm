@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { Milestone } from '@/types/gtd';
+import { Milestone } from '@/types/streams';
 
 export interface MilestoneFilters {
   projectId: string;

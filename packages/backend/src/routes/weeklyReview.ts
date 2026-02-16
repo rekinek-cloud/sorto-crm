@@ -11,7 +11,7 @@ const createWeeklyReviewSchema = z.object({
   reviewDate: z.string().transform(str => new Date(str)),
   notes: z.string().optional(),
   nextActions: z.string().optional(),
-  // GTD Checklist items
+  // Workflow Checklist items
   collectLoosePapers: z.boolean().default(false),
   processNotes: z.boolean().default(false),
   emptyInbox: z.boolean().default(false),
@@ -26,7 +26,7 @@ const createWeeklyReviewSchema = z.object({
 const updateWeeklyReviewSchema = z.object({
   notes: z.string().optional(),
   nextActions: z.string().optional(),
-  // GTD Checklist items
+  // Workflow Checklist items
   collectLoosePapers: z.boolean().optional(),
   processNotes: z.boolean().optional(),
   emptyInbox: z.boolean().optional(),

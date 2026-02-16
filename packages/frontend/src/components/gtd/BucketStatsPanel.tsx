@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { BucketViewData, BucketGroup, BucketViewType, bucketViewHelpers } from '@/lib/api/gtdMapViews';
+import { BucketViewData, BucketGroup, BucketViewType, bucketViewHelpers } from '@/lib/api/streamsMapViews';
 
 interface BucketStatsPanelProps {
   bucketData: BucketViewData;

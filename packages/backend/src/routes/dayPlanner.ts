@@ -2800,15 +2800,15 @@ router.get('/task-queue', authMiddleware, async (req, res) => {
     
     // Default sources
     const sources = {
-      gtdInbox: includeInbox !== 'false',
+      sourceInbox: includeInbox !== 'false',
       projects: includeProjects !== 'false', 
       recurring: includeRecurring !== 'false'
     };
 
     const taskQueue: any[] = [];
     
-    // 1. GTD Inbox Items (nieprzetworzone)
-    if (sources.gtdInbox) {
+    // 1. Workflow Inbox Items (nieprzetworzone)
+    if (sources.sourceInbox) {
       const inboxItems = await prisma.inboxItem.findMany({
         where: {
           capturedById: userId,
@@ -2828,7 +2828,7 @@ router.get('/task-queue', authMiddleware, async (req, res) => {
       inboxItems.forEach(item => {
         taskQueue.push({
           id: item.id,
-          source: 'GTD_INBOX',
+          source: 'SOURCE_INBOX',
           type: 'INBOX_ITEM',
           title: `Przetwórz: ${item.content.substring(0, 50)}...`,
           description: item.content,
@@ -2948,7 +2948,7 @@ router.get('/task-queue', authMiddleware, async (req, res) => {
         statistics: {
           total: sortedQueue.length,
           bySource: {
-            gtdInbox: sortedQueue.filter(t => t.source === 'GTD_INBOX').length,
+            sourceInbox: sortedQueue.filter(t => t.source === 'SOURCE_INBOX').length,
             projects: sortedQueue.filter(t => t.source === 'PROJECTS').length,
             recurring: sortedQueue.filter(t => t.source === 'RECURRING').length
           },
@@ -4120,8 +4120,8 @@ router.post('/auto-populate', authMiddleware, async (req, res) => {
     const { date, sources = {}, preferences = {} } = req.body;
 
     const defaultSources = {
-      gtdInbox: true,
-      gtdNextActions: true,
+      sourceInbox: true,
+      activeNextActions: true,
       projects: true,
       recurringTasks: true,
       communications: false,
@@ -4131,10 +4131,10 @@ router.post('/auto-populate', authMiddleware, async (req, res) => {
 
     // Pobierz zadania z wszystkich źródeł
     const taskSources = await Promise.all([
-      // GTD Inbox
-      defaultSources.gtdInbox ? fetchGTDInboxTasks(userId) : [],
-      // GTD Next Actions  
-      defaultSources.gtdNextActions ? fetchGTDNextActions(userId) : [],
+      // Workflow Inbox
+      defaultSources.sourceInbox ? fetchSourceInboxTasks(userId) : [],
+      // Workflow Next Actions  
+      defaultSources.activeNextActions ? fetchActiveNextActions(userId) : [],
       // Project Tasks
       defaultSources.projects ? fetchProjectTasks(userId, date) : [],
       // Recurring Tasks
@@ -4170,8 +4170,8 @@ router.post('/auto-populate', authMiddleware, async (req, res) => {
         date,
         sources: defaultSources,
         tasksFound: {
-          gtdInbox: taskSources[0]?.length || 0,
-          gtdNextActions: taskSources[1]?.length || 0,
+          sourceInbox: taskSources[0]?.length || 0,
+          activeNextActions: taskSources[1]?.length || 0,
           projects: taskSources[2]?.length || 0,
           recurring: taskSources[3]?.length || 0,
           communications: taskSources[4]?.length || 0,
@@ -4201,28 +4201,28 @@ router.post('/auto-populate', authMiddleware, async (req, res) => {
 });
 
 /**
- * POST /api/v1/smart-day-planner/sync-with-gtd
- * Synchronizacja z systemem GTD
+ * POST /api/v1/smart-day-planner/sync-with-workflow
+ * Synchronizacja z systemem Workflow
  */
-router.post('/sync-with-gtd', authMiddleware, async (req, res) => {
+router.post('/sync-with-workflow', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
     const { date, syncDirection = 'BOTH' } = req.body;
 
-    // PULL: Pobierz zadania z GTD do Smart Day Planner
+    // PULL: Pobierz zadania z Workflow do Smart Day Planner
     let pulledTasks = [];
     if (syncDirection === 'PULL' || syncDirection === 'BOTH') {
-      pulledTasks = await pullFromGTD(userId, date);
+      pulledTasks = await pullFromWorkflow(userId, date);
     }
 
-    // PUSH: Przekaż ukończone zadania z SDP do GTD
+    // PUSH: Przekaż ukończone zadania z SDP do Workflow
     let pushedUpdates = [];
     if (syncDirection === 'PUSH' || syncDirection === 'BOTH') {
-      pushedUpdates = await pushToGTD(userId, date);
+      pushedUpdates = await pushToWorkflow(userId, date);
     }
 
     // Analiza konfliktów i duplikatów
-    const conflicts = await detectGTDConflicts(userId, date);
+    const conflicts = await detectWorkflowConflicts(userId, date);
 
     res.json({
       success: true,
@@ -4241,15 +4241,15 @@ router.post('/sync-with-gtd', authMiddleware, async (req, res) => {
           detected: conflicts,
           count: conflicts.length
         },
-        recommendations: generateGTDSyncRecommendations(pulledTasks, pushedUpdates, conflicts),
+        recommendations: generateSyncRecommendations(pulledTasks, pushedUpdates, conflicts),
         lastSync: new Date().toISOString()
       }
     });
   } catch (error) {
-    console.error('Error in GTD sync:', error);
+    console.error('Error in Workflow sync:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to sync with GTD'
+      error: 'Failed to sync with Workflow'
     });
   }
 });
@@ -4374,7 +4374,7 @@ router.post('/communication-to-tasks', authMiddleware, async (req, res) => {
 // INTEGRATION HELPER FUNCTIONS
 // =============================================================================
 
-async function fetchGTDInboxTasks(userId: string) {
+async function fetchSourceInboxTasks(userId: string) {
   const inboxItems = await prisma.inboxItem.findMany({
     where: {
       capturedById: userId,
@@ -4386,7 +4386,7 @@ async function fetchGTDInboxTasks(userId: string) {
 
   return inboxItems.map(item => ({
     id: item.id,
-    source: 'GTD_INBOX',
+    source: 'SOURCE_INBOX',
     title: `Przetwórz: ${item.content.substring(0, 50)}...`,
     description: item.content,
     estimatedMinutes: getEstimatedTimeFromType(item.sourceType),
@@ -4398,7 +4398,7 @@ async function fetchGTDInboxTasks(userId: string) {
   }));
 }
 
-async function fetchGTDNextActions(userId: string) {
+async function fetchActiveNextActions(userId: string) {
   const nextActions = await prisma.next_actions.findMany({
     where: {
       userId,
@@ -4411,7 +4411,7 @@ async function fetchGTDNextActions(userId: string) {
 
   return nextActions.map(action => ({
     id: action.id,
-    source: 'GTD_NEXT_ACTIONS',
+    source: 'ACTIVE_TASKS',
     title: action.title,
     description: action.description,
     estimatedMinutes: action.estimatedTime || 30,
@@ -4599,8 +4599,8 @@ function analyzeContextEfficiency(assignments: any[]): any {
 function generateIntegrationRecommendations(result: any, allTasks: any[], sources: any): string[] {
   const recommendations = [];
   
-  if (sources.gtdInbox && allTasks.filter(t => t.source === 'GTD_INBOX').length > 5) {
-    recommendations.push('📥 Dużo elementów w GTD Inbox - rozważ przetworzenie niektórych przed planowaniem');
+  if (sources.sourceInbox && allTasks.filter(t => t.source === 'SOURCE_INBOX').length > 5) {
+    recommendations.push('📥 Dużo elementów w Workflow Inbox - rozważ przetworzenie niektórych przed planowaniem');
   }
   
   if (sources.projects && allTasks.filter(t => t.source === 'PROJECTS').length > 10) {
@@ -4614,24 +4614,24 @@ function generateIntegrationRecommendations(result: any, allTasks: any[], source
   return recommendations;
 }
 
-// Simplified GTD integration functions
-async function pullFromGTD(userId: string, date: string) {
+// Simplified Workflow integration functions
+async function pullFromWorkflow(userId: string, date: string) {
   return []; // Simplified
 }
 
-async function pushToGTD(userId: string, date: string) {
+async function pushToWorkflow(userId: string, date: string) {
   return []; // Simplified  
 }
 
-async function detectGTDConflicts(userId: string, date: string) {
+async function detectWorkflowConflicts(userId: string, date: string) {
   return []; // Simplified
 }
 
-function generateGTDSyncRecommendations(pulled: any[], pushed: any[], conflicts: any[]): string[] {
+function generateSyncRecommendations(pulled: any[], pushed: any[], conflicts: any[]): string[] {
   const recommendations = [];
   
   if (pulled.length > 0) {
-    recommendations.push(`✅ Pobrano ${pulled.length} zadań z GTD - sprawdź czy wszystkie są aktualne`);
+    recommendations.push(`✅ Pobrano ${pulled.length} zadań z Workflow - sprawdź czy wszystkie są aktualne`);
   }
   
   if (conflicts.length > 0) {
@@ -5133,7 +5133,7 @@ router.post('/next-suggestions', authMiddleware, async (req, res) => {
       }
     });
 
-    // 2. Znajdź zadania z GTD Inbox
+    // 2. Znajdź zadania z Workflow Inbox
     const inboxTasks = await prisma.inboxItem.findMany({
       where: {
         capturedById: userId,
@@ -5191,9 +5191,9 @@ router.post('/next-suggestions', authMiddleware, async (req, res) => {
         priority: item.priority || 'MEDIUM',
         context: item.context || '@computer',
         energyRequired: item.energyRequired || 'MEDIUM',
-        source: 'GTD_INBOX',
+        source: 'SOURCE_INBOX',
         score: 40, // Inbox ma wysoką wartość
-        reason: 'Warto przetworzyć z GTD Inbox podczas wolnego czasu.',
+        reason: 'Warto przetworzyć z Workflow Inbox podczas wolnego czasu.',
         canFitInTime: (item.estimatedMinutes || 30) <= availableMinutes
       });
     });

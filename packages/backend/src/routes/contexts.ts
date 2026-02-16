@@ -198,7 +198,7 @@ router.delete('/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// POST /api/v1/contexts/default - Create default GTD contexts
+// POST /api/v1/contexts/default - Create default stream contexts
 router.post('/default', authenticateToken, async (req, res) => {
   try {
     const defaultContexts = [

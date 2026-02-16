@@ -23,7 +23,7 @@ import {
   ShieldAlert,
 } from 'lucide-react';
 import { dealCompetitorsApi, CreateDealCompetitorRequest, CreateLostAnalysisRequest, LostAnalysis } from '@/lib/api/dealCompetitors';
-import { DealCompetitor } from '@/types/gtd';
+import { DealCompetitor } from '@/types/streams';
 import { dealsApi } from '@/lib/api/deals';
 
 import { PageShell } from '@/components/ui/PageShell';

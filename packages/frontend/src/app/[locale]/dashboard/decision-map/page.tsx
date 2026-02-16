@@ -21,7 +21,7 @@ import {
   Award,
 } from 'lucide-react';
 import { dealStakeholdersApi, DealStakeholdersResponse, CreateDealStakeholderRequest } from '@/lib/api/dealStakeholders';
-import { DealStakeholder } from '@/types/gtd';
+import { DealStakeholder } from '@/types/streams';
 import { dealsApi } from '@/lib/api/deals';
 import { contactsApi } from '@/lib/api/contacts';
 

@@ -31,12 +31,12 @@ import { ActionButton } from '@/components/ui/ActionButton';
 import { StatCard } from '@/components/ui/StatCard';
 import { SkeletonPage } from '@/components/ui/SkeletonLoader';
 
-import GTDStreamCard from './GTDStreamCard';
-import GTDStreamForm from './GTDStreamForm';
-import GTDConfigModal from './GTDConfigModal';
+import StreamCard from './StreamCard';
+import StreamForm from './StreamForm';
+import StreamConfigModal from './StreamConfigModal';
 import StreamHierarchyModal from './StreamHierarchyModal';
-import GTDMigrationModal from './GTDMigrationModal';
-import { GTDRole, StreamType } from '@/types/gtd';
+import StreamMigrationModal from './StreamMigrationModal';
+import { StreamRole, StreamType } from '@/types/streams';
 import apiClient from '@/lib/api/client';
 
 interface GTDStream {
@@ -46,7 +46,7 @@ interface GTDStream {
   color: string;
   icon?: string;
   status: string;
-  gtdRole?: GTDRole;
+  gtdRole?: StreamRole;
   streamType?: StreamType;
   gtdConfig?: any;
   createdAt: string;
@@ -92,13 +92,13 @@ const itemVariants = {
   },
 };
 
-const GTDStreamManager: React.FC = () => {
+const StreamManager: React.FC = () => {
   const router = useRouter();
   const [streams, setStreams] = useState<GTDStream[]>([]);
   const [stats, setStats] = useState<GTDStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedRole, setSelectedRole] = useState<GTDRole | 'all'>('all');
+  const [selectedRole, setSelectedRole] = useState<StreamRole | 'all'>('all');
   const [selectedType, setSelectedType] = useState<StreamType | 'all'>('all');
   const [showOnlyGTD, setShowOnlyGTD] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -117,7 +117,7 @@ const GTDStreamManager: React.FC = () => {
       setLoading(true);
 
       // Fetch GTD streams
-      const response = await apiClient.get('/gtd-streams');
+      const response = await apiClient.get('/stream-management');
       const gtdStreams = response.data.data || [];
 
       // Fetch regular streams if needed
@@ -147,7 +147,7 @@ const GTDStreamManager: React.FC = () => {
   // Fetch statistics
   const fetchStats = async () => {
     try {
-      const response = await apiClient.get('/gtd-streams/stats');
+      const response = await apiClient.get('/stream-management/stats');
       setStats(response.data.data || response.data);
     } catch (error: any) {
       console.error('Error fetching stats:', error);
@@ -187,7 +187,7 @@ const GTDStreamManager: React.FC = () => {
   // Handle stream creation
   const handleCreateStream = async (streamData: any) => {
     try {
-      await apiClient.post('/gtd-streams', streamData);
+      await apiClient.post('/stream-management', streamData);
 
       toast.success('Strumien zostal utworzony');
 
@@ -213,7 +213,7 @@ const GTDStreamManager: React.FC = () => {
 
       // If gtdRole or streamType changed, update via gtd-streams endpoint
       if (gtdRole && gtdRole !== selectedStream.gtdRole) {
-        await apiClient.put(`/gtd-streams/${selectedStream.id}/role`, { gtdRole });
+        await apiClient.put(`/stream-management/${selectedStream.id}/role`, { gtdRole });
       }
 
       toast.success('Strumien zostal zaktualizowany');
@@ -248,7 +248,7 @@ const GTDStreamManager: React.FC = () => {
   // Handle config update
   const handleUpdateConfig = async (streamId: string, config: any) => {
     try {
-      await apiClient.put(`/gtd-streams/${streamId}/config`, { config });
+      await apiClient.put(`/stream-management/${streamId}/config`, { config });
 
       toast.success('Konfiguracja zostala zaktualizowana');
 
@@ -261,9 +261,9 @@ const GTDStreamManager: React.FC = () => {
   };
 
   // Handle migration
-  const handleMigrate = async (streamId: string, gtdRole: GTDRole, streamType: StreamType) => {
+  const handleMigrate = async (streamId: string, gtdRole: StreamRole, streamType: StreamType) => {
     try {
-      await apiClient.post(`/gtd-streams/${streamId}/migrate`, { gtdRole, streamType });
+      await apiClient.post(`/stream-management/${streamId}/migrate`, { gtdRole, streamType });
 
       toast.success('Strumien zostal zmigrowany');
 
@@ -284,7 +284,7 @@ const GTDStreamManager: React.FC = () => {
   // Handle freeze stream
   const handleFreezeStream = async (streamId: string) => {
     try {
-      await apiClient.post(`/gtd-streams/${streamId}/freeze`);
+      await apiClient.post(`/stream-management/${streamId}/freeze`);
       toast.success('Strumien zostal zamrozony');
       fetchStreams();
       fetchStats();
@@ -310,7 +310,7 @@ const GTDStreamManager: React.FC = () => {
   // Handle filter change
   const handleFilterChange = (key: string, value: string) => {
     if (key === 'role') {
-      setSelectedRole(value as GTDRole | 'all');
+      setSelectedRole(value as StreamRole | 'all');
     } else if (key === 'type') {
       setSelectedType(value as StreamType | 'all');
     } else if (key === 'configured') {
@@ -487,7 +487,7 @@ const GTDStreamManager: React.FC = () => {
               onClick={() => handleOpenStream(stream.id)}
             >
               <div className="bg-white/80 backdrop-blur-xl border border-white/20 rounded-2xl shadow-sm dark:bg-slate-800/80 dark:border-slate-700/30 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-300">
-                <GTDStreamCard
+                <StreamCard
                   stream={stream}
                   onEdit={(id) => {
                     setSelectedStream(stream);
@@ -537,7 +537,7 @@ const GTDStreamManager: React.FC = () => {
 
       {/* Modals */}
       {showCreateModal && (
-        <GTDStreamForm
+        <StreamForm
           availableStreams={streams}
           onClose={() => setShowCreateModal(false)}
           onSubmit={handleCreateStream}
@@ -545,7 +545,7 @@ const GTDStreamManager: React.FC = () => {
       )}
 
       {showEditModal && selectedStream && (
-        <GTDStreamForm
+        <StreamForm
           stream={selectedStream}
           availableStreams={streams}
           onClose={() => {
@@ -557,7 +557,7 @@ const GTDStreamManager: React.FC = () => {
       )}
 
       {showConfigModal && selectedStream && (
-        <GTDConfigModal
+        <StreamConfigModal
           stream={selectedStream}
           onClose={() => {
             setShowConfigModal(false);
@@ -579,7 +579,7 @@ const GTDStreamManager: React.FC = () => {
       )}
 
       {showMigrationModal && selectedStream && (
-        <GTDMigrationModal
+        <StreamMigrationModal
           stream={selectedStream}
           onClose={() => {
             setShowMigrationModal(false);
@@ -592,4 +592,4 @@ const GTDStreamManager: React.FC = () => {
   );
 };
 
-export default GTDStreamManager;
+export default StreamManager;

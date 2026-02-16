@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { ContactRelation } from '@/types/gtd';
+import { ContactRelation } from '@/types/streams';
 
 export interface ContactRelationFilters {
   contactId?: string;

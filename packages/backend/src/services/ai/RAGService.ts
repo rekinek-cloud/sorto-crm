@@ -715,7 +715,7 @@ ZASADY:
         metadata: {
           name: stream.name,
           streamType: stream.streamType,
-          gtdRole: stream.gtdRole
+          streamRole: stream.streamRole
         }
       });
       indexed ? success++ : failed++;
@@ -931,8 +931,8 @@ ZASADY:
     let content = `Strumień: ${stream.name}\n`;
     content += `Typ: ${stream.streamType}\n`;
 
-    if (stream.gtdRole) {
-      content += `Rola: ${stream.gtdRole}\n`;
+    if (stream.streamRole) {
+      content += `Rola: ${stream.streamRole}\n`;
     }
 
     if (stream.description) {

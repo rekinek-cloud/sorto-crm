@@ -150,11 +150,11 @@ class ApiClient {
     }
 
     async getGTDInboxStats() {
-        return this.makeRequest('/gtd/inbox/stats');
+        return this.makeRequest('/workflow/inbox/stats');
     }
 
     async getGTDInboxItems() {
-        return this.makeRequest('/gtd/inbox?limit=10&processed=false');
+        return this.makeRequest('/workflow/inbox?limit=10&processed=false');
     }
 
     async completeTask(taskId) {

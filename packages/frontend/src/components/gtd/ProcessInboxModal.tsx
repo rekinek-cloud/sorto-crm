@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 // import { X } from 'lucide-react';
-import type { InboxItem, ProcessInboxItemInput } from '@/lib/api/gtdInbox';
-import { gtdInboxApi } from '@/lib/api/gtdInbox';
+import type { InboxItem, ProcessInboxItemInput } from '@/lib/api/sourceInbox';
+import { sourceInboxApi } from '@/lib/api/sourceInbox';
 
 interface ProcessInboxModalProps {
   item: InboxItem;
@@ -82,7 +82,7 @@ export default function ProcessInboxModal({ item, onClose, onComplete }: Process
           break;
       }
       
-      await gtdInboxApi.processItem(item.id, input);
+      await sourceInboxApi.processItem(item.id, input);
       onComplete();
     } catch (error: any) {
       console.error('Error processing item:', error);

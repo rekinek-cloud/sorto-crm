@@ -75,12 +75,12 @@ export interface BucketViewData3D extends Omit<BucketViewData, 'buckets'> {
   view3D: View3DConfig;
 }
 
-export const gtdMapViewsApi = {
+export const streamsMapViewsApi = {
   // Get all available bucket view types
   getViewTypes: async (): Promise<BucketViewType[]> => {
     try {
       console.log('🔄 API: Requesting bucket view types...');
-      const response = await apiClient.get<ApiResponse<BucketViewType[]>>('/gtd-map/views');
+      const response = await apiClient.get<ApiResponse<BucketViewType[]>>('/streams-map/views');
       console.log('✅ API: Bucket view types received:', response.data.data);
       return response.data.data;
     } catch (error: any) {
@@ -141,7 +141,7 @@ export const gtdMapViewsApi = {
   getBucketView: async (viewType: string): Promise<BucketViewData> => {
     try {
       console.log(`🔄 API: Requesting bucket view for ${viewType}...`);
-      const response = await apiClient.get<ApiResponse<BucketViewData>>(`/gtd-map/views/${viewType}`);
+      const response = await apiClient.get<ApiResponse<BucketViewData>>(`/streams-map/views/${viewType}`);
       console.log(`✅ API: Bucket view data received for ${viewType}:`, response.data.data);
       return response.data.data;
     } catch (error: any) {
@@ -160,7 +160,7 @@ export const gtdMapViewsApi = {
   // Get 3D visualization data for specific view type
   get3DBucketView: async (viewType: string): Promise<BucketViewData3D> => {
     try {
-      const response = await apiClient.get<ApiResponse<BucketViewData3D>>(`/gtd-map/views/${viewType}/3d`);
+      const response = await apiClient.get<ApiResponse<BucketViewData3D>>(`/streams-map/views/${viewType}/3d`);
       return response.data.data;
     } catch (error: any) {
       console.error(`Failed to get 3D bucket view ${viewType}:`, error);
@@ -171,7 +171,7 @@ export const gtdMapViewsApi = {
   // Refresh specific bucket view (force reload)
   refreshBucketView: async (viewType: string): Promise<BucketViewData> => {
     try {
-      const response = await apiClient.get<ApiResponse<BucketViewData>>(`/gtd-map/views/${viewType}?refresh=true`);
+      const response = await apiClient.get<ApiResponse<BucketViewData>>(`/streams-map/views/${viewType}?refresh=true`);
       return response.data.data;
     } catch (error: any) {
       console.error(`Failed to refresh bucket view ${viewType}:`, error);

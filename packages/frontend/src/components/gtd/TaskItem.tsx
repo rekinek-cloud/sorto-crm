@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Task } from '@/types/gtd';
-import { gtdHelpers } from '@/lib/api/gtd';
+import { Task } from '@/types/streams';
+import { workflowHelpers } from '@/lib/api/workflow';
 import FlowScoreBadge from '@/components/streams/FlowScoreBadge';
 import FlowAnalysisModal from '@/components/streams/FlowAnalysisModal';
 
@@ -16,9 +16,9 @@ interface TaskItemProps {
 
 export default function TaskItem({ task, onEdit, onDelete, onStatusChange, onTaskUpdate }: TaskItemProps) {
   const [showFlowModal, setShowFlowModal] = useState(false);
-  const isOverdue = gtdHelpers.isTaskOverdue(task);
-  const priorityColor = gtdHelpers.getPriorityColor(task.priority);
-  const statusColor = gtdHelpers.getTaskStatusColor(task.status);
+  const isOverdue = workflowHelpers.isTaskOverdue(task);
+  const priorityColor = workflowHelpers.getPriorityColor(task.priority);
+  const statusColor = workflowHelpers.getTaskStatusColor(task.status);
   
   const handleStatusToggle = () => {
     const newStatus = task.status === 'COMPLETED' ? 'NEW' : 'COMPLETED';
@@ -120,7 +120,7 @@ export default function TaskItem({ task, onEdit, onDelete, onStatusChange, onTas
                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
-                    <span>{gtdHelpers.formatDate(task.dueDate)}</span>
+                    <span>{workflowHelpers.formatDate(task.dueDate)}</span>
                     {isOverdue && (
                       <svg className="w-3 h-3 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                         <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
@@ -203,7 +203,7 @@ export default function TaskItem({ task, onEdit, onDelete, onStatusChange, onTas
           {task.energy && (
             <div 
               className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: gtdHelpers.getEnergyColor(task.energy) }}
+              style={{ backgroundColor: workflowHelpers.getEnergyColor(task.energy) }}
               title={`Energy: ${task.energy}`}
             />
           )}

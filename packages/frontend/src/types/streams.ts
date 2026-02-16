@@ -1,14 +1,33 @@
-// STREAMS Types for Frontend - metodologia SORTO STREAMS
-// Migracja z GTD/SMART na STREAMS
+// Streams Types for Frontend
 
-// Wzorce strumieni
-export type StreamPattern = 'project' | 'continuous' | 'reference' | 'client' | 'pipeline' | 'workspace' | 'custom';
+// Stream Role - role dla streamów
+export type StreamRole =
+  | 'INBOX'
+  | 'NEXT_ACTIONS'
+  | 'WAITING_FOR'
+  | 'SOMEDAY_MAYBE'
+  | 'PROJECTS'
+  | 'CONTEXTS'
+  | 'AREAS'
+  | 'REFERENCE'
+  | 'ARCHIVE'
+  | 'CUSTOM';
 
-// Statusy strumieni (FLOWING = płynie, FROZEN = zamrożony)
-export type StreamStatus = 'FLOWING' | 'FROZEN' | 'TEMPLATE';
+// Stream Type - typy streamów
+export type StreamType =
+  | 'TASK_LIST'
+  | 'PROJECT_CONTAINER'
+  | 'REFERENCE_MATERIAL'
+  | 'TICKLER'
+  | 'CALENDAR'
+  | 'HYBRID'
+  | 'CUSTOM'
+  | 'WORKSPACE'
+  | 'PROJECT'
+  | 'AREA'
+  | 'CONTEXT';
 
-// Tag (ex Context)
-export interface Tag {
+export interface Context {
   id: string;
   name: string;
   description?: string;
@@ -29,17 +48,12 @@ export interface Stream {
   description?: string;
   color: string;
   icon?: string;
-  status: StreamStatus;  // FLOWING | FROZEN | TEMPLATE
-  pattern?: StreamPattern;  // project | continuous | reference | client | pipeline | workspace | custom
+  status: 'ACTIVE' | 'ARCHIVED' | 'TEMPLATE';
   organizationId: string;
   createdById: string;
-  parentId?: string;  // dla dopływów (hierarchia)
   createdAt: string;
   updatedAt: string;
 }
-
-// Alias dla kompatybilności wstecznej
-export type Context = Tag;
 
 export interface Project {
   id: string;
@@ -50,20 +64,29 @@ export interface Project {
   startDate?: string;
   endDate?: string;
   completedAt?: string;
-  streamScore?: number;  // ex smartScore
-  streamAnalysis?: any;  // ex smartAnalysis
+  smartScore?: number;
+  smartAnalysis?: any;
   organizationId: string;
   createdById: string;
   assignedToId?: string;
   streamId?: string;
   createdAt: string;
   updatedAt: string;
+  
+  // Universal relations
+  contactId?: string;
+  dealId?: string;
+  eventId?: string;
 
   // Relations
   stream?: Pick<Stream, 'id' | 'name' | 'color'>;
   createdBy?: User;
   assignedTo?: User;
   tasks?: Task[];
+  contact?: { id: string; firstName: string; lastName: string };
+  deal?: { id: string; title: string; value?: number };
+  event?: { id: string; name: string };
+  milestones?: Milestone[];
   stats?: {
     totalTasks: number;
     completedTasks: number;
@@ -84,23 +107,36 @@ export interface Task {
   energy?: 'LOW' | 'MEDIUM' | 'HIGH';
   isWaitingFor: boolean;
   waitingForNote?: string;
-  streamScore?: number;  // ex smartScore
-  streamAnalysis?: any;  // ex smartAnalysis
+  smartScore?: number;
+  smartAnalysis?: any;
   organizationId: string;
   createdById: string;
   assignedToId?: string;
-  tagId?: string;  // ex contextId
+  contextId?: string;
   streamId?: string;
   projectId?: string;
+  parentTaskId?: string;
+  subtasks?: Pick<Task, 'id' | 'title' | 'status' | 'priority'>[];
+  // Universal relations
+  contactId?: string;
+  dealId?: string;
+  eventId?: string;
+  milestoneId?: string;
+  companyId?: string;
   createdAt: string;
   updatedAt: string;
 
   // Relations
-  tag?: Tag;  // ex context
+  context?: Context;
   project?: Pick<Project, 'id' | 'name'>;
   stream?: Pick<Stream, 'id' | 'name' | 'color'>;
   createdBy?: User;
   assignedTo?: User;
+  contact?: { id: string; firstName: string; lastName: string; email?: string };
+  deal?: { id: string; title: string; value?: number; stage?: string };
+  event?: { id: string; name: string; startDate?: string };
+  milestone?: { id: string; name: string; dueDate?: string; status?: string };
+  companies?: { id: string; name: string };
 }
 
 export interface User {
@@ -126,6 +162,12 @@ export interface CreateTaskRequest {
   energy?: 'LOW' | 'MEDIUM' | 'HIGH';
   isWaitingFor?: boolean;
   waitingForNote?: string;
+  parentTaskId?: string;
+  contactId?: string;
+  dealId?: string;
+  eventId?: string;
+  milestoneId?: string;
+  companyId?: string;
 }
 
 export interface UpdateTaskRequest extends Partial<CreateTaskRequest> {
@@ -152,6 +194,9 @@ export interface CreateProjectRequest {
   endDate?: string;
   streamId?: string;
   assignedToId?: string;
+  contactId?: string;
+  dealId?: string;
+  eventId?: string;
 }
 
 export interface UpdateProjectRequest extends Partial<CreateProjectRequest> {
@@ -284,103 +329,212 @@ export interface StreamFormProps {
   isLoading?: boolean;
 }
 
-// ============================================
-// CEL PRECYZYJNY (RZUT) - Precise Goal
-// ============================================
+// =============================================
+// Extension Types
+// =============================================
 
-export type GoalStatus = 'active' | 'achieved' | 'failed' | 'paused';
-
-/**
- * Cel Precyzyjny według metodologii RZUT:
- * R - Rezultat: Co konkretnie powstanie?
- * Z - Zmierzalność: Po czym poznam sukces?
- * U - Ujście: Do kiedy? (deadline)
- * T - Tło: Dlaczego ten cel?
- */
-export interface PreciseGoal {
+// Milestones
+export interface Milestone {
   id: string;
-
-  // RZUT
-  result: string;        // R - Rezultat
-  measurement: string;   // Z - Zmierzalność
-  deadline: string;      // U - Ujście (termin)
-  background?: string;   // T - Tło
-
-  // Metryki
-  currentValue: number;
-  targetValue: number;
-  unit: string;
-
-  // Relacje
-  streamId?: string;
-  stream?: Pick<Stream, 'id' | 'name' | 'color'>;
-  organizationId: string;
-  createdById: string;
-
-  // Status
-  status: GoalStatus;
-
-  // Timestamps
-  createdAt: string;
-  updatedAt: string;
-  achievedAt?: string;
-}
-
-export interface CreateGoalRequest {
-  result: string;
-  measurement: string;
-  deadline: string;
-  background?: string;
-  targetValue: number;
-  unit?: string;
-  streamId?: string;
-}
-
-export interface UpdateGoalRequest extends Partial<CreateGoalRequest> {
-  currentValue?: number;
-  status?: GoalStatus;
-}
-
-export interface GoalsResponse {
-  goals: PreciseGoal[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  };
-}
-
-// ============================================
-// ŹRÓDŁO (Source) - ex GTD Inbox
-// ============================================
-
-export interface SourceItem {
-  id: string;
-  content: string;
-  type: 'TEXT' | 'EMAIL' | 'VOICE' | 'FILE' | 'LINK';
-  status: 'NEW' | 'PROCESSING' | 'ROUTED' | 'ARCHIVED';
-  metadata?: Record<string, any>;
-  aiSuggestion?: {
-    suggestedStream?: string;
-    suggestedTags?: string[];
-    confidence: number;
-  };
-  organizationId: string;
+  projectId: string;
+  name: string;
+  description?: string;
+  dueDate: string;
+  completedAt?: string;
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'DELAYED' | 'BLOCKED';
+  isCritical: boolean;
+  dependsOnIds: string[];
+  responsibleId?: string;
   createdById: string;
   createdAt: string;
   updatedAt: string;
+  responsible?: User;
+  tasks?: Task[];
 }
 
-export interface CreateSourceItemRequest {
+// Events
+export interface Event {
+  id: string;
+  organizationId: string;
+  name: string;
+  description?: string;
+  eventType: 'TRADE_SHOW' | 'CONFERENCE' | 'WEBINAR' | 'WORKSHOP' | 'NETWORKING' | 'COMPANY_EVENT' | 'OTHER';
+  venue?: string;
+  city?: string;
+  country?: string;
+  address?: string;
+  startDate: string;
+  endDate: string;
+  setupDate?: string;
+  teardownDate?: string;
+  status: 'DRAFT' | 'PLANNING' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED';
+  budgetPlanned?: number;
+  budgetActual?: number;
+  currency: string;
+  goals?: any;
+  results?: any;
+  rating?: number;
+  retrospective?: string;
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    companies: number;
+    contacts: number;
+    tasks: number;
+    team: number;
+    expenses: number;
+  };
+}
+
+// Notes
+export interface Note {
+  id: string;
+  organizationId: string;
   content: string;
-  type?: 'TEXT' | 'EMAIL' | 'VOICE' | 'FILE' | 'LINK';
-  metadata?: Record<string, any>;
+  streamId?: string;
+  projectId?: string;
+  taskId?: string;
+  companyId?: string;
+  contactId?: string;
+  dealId?: string;
+  meetingId?: string;
+  eventId?: string;
+  isPinned: boolean;
+  createdById: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: User;
 }
 
-export interface RouteSourceItemRequest {
-  streamId: string;
-  createTask?: boolean;
-  taskTitle?: string;
-  tags?: string[];
+// Contact Relations
+export interface ContactRelation {
+  id: string;
+  organizationId: string;
+  fromContactId: string;
+  toContactId: string;
+  relationType: 'REPORTS_TO' | 'WORKS_WITH' | 'KNOWS' | 'REFERRED_BY' | 'FAMILY' | 'TECHNICAL' | 'FORMER_COLLEAGUE' | 'MENTOR' | 'PARTNER';
+  strength: number;
+  isBidirectional: boolean;
+  notes?: string;
+  discoveredAt: string;
+  discoveredVia?: string;
+  fromContact?: { id: string; firstName: string; lastName: string };
+  toContact?: { id: string; firstName: string; lastName: string };
+}
+
+// Health Score
+export interface RelationshipHealth {
+  id: string;
+  entityType: 'COMPANY' | 'CONTACT' | 'DEAL';
+  entityId: string;
+  healthScore: number;
+  trend: 'RISING' | 'STABLE' | 'DECLINING' | 'CRITICAL';
+  trendChange: number;
+  recencyScore: number;
+  frequencyScore: number;
+  responseScore: number;
+  sentimentScore: number;
+  engagementScore: number;
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  riskFactors: string[];
+  lastContactAt?: string;
+  lastContactType?: string;
+}
+
+export interface HealthAlert {
+  id: string;
+  entityType: 'COMPANY' | 'CONTACT' | 'DEAL';
+  entityId: string;
+  alertType: string;
+  severity: 'INFO' | 'WARNING' | 'CRITICAL';
+  title: string;
+  message: string;
+  suggestion?: string;
+  isRead: boolean;
+  isDismissed: boolean;
+  isActioned: boolean;
+  createdAt: string;
+}
+
+// Client Intelligence
+export interface ClientIntelligence {
+  id: string;
+  entityType: 'COMPANY' | 'CONTACT';
+  entityId: string;
+  category: 'LIKES' | 'DISLIKES' | 'PREFERENCE' | 'FACT' | 'WARNING' | 'TIP' | 'IMPORTANT_DATE' | 'DECISION_PROCESS' | 'COMMUNICATION' | 'SUCCESS';
+  content: string;
+  importance: number;
+  source?: string;
+  sourceDate?: string;
+  isPrivate: boolean;
+  eventDate?: string;
+  isRecurring: boolean;
+  createdAt: string;
+  createdBy?: User;
+}
+
+// Deal Stakeholders (Decision Map)
+export interface DealStakeholder {
+  id: string;
+  dealId: string;
+  contactId: string;
+  role: 'DECISION_MAKER' | 'INFLUENCER' | 'CHAMPION' | 'BLOCKER' | 'USER_ROLE' | 'TECHNICAL' | 'FINANCIAL' | 'LEGAL' | 'PROCUREMENT';
+  isChampion: boolean;
+  influence: number;
+  sentiment: 'POSITIVE' | 'NEUTRAL' | 'SKEPTICAL' | 'NEGATIVE' | 'UNKNOWN';
+  objections?: string;
+  motivations?: string;
+  winStrategy?: string;
+  hasApproved: boolean;
+  contact?: { id: string; firstName: string; lastName: string; position?: string };
+}
+
+// Deal Competitors
+export interface DealCompetitor {
+  id: string;
+  dealId: string;
+  competitorName: string;
+  competitorWebsite?: string;
+  estimatedPrice?: number;
+  priceSource?: string;
+  currency: string;
+  threatLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  theirStrengths?: string;
+  theirWeaknesses?: string;
+  ourAdvantages?: string;
+  status: 'ACTIVE' | 'ELIMINATED' | 'WON' | 'UNKNOWN';
+  eliminatedReason?: string;
+  intelNotes?: string;
+}
+
+// Client Products (Order History)
+export interface ClientProduct {
+  id: string;
+  companyId: string;
+  productId?: string;
+  serviceId?: string;
+  customName?: string;
+  customDescription?: string;
+  deliveredAt: string;
+  value: number;
+  currency: string;
+  rating?: number;
+  feedback?: string;
+  dealId?: string;
+  projectId?: string;
+  createdAt: string;
+}
+
+export interface ClientProductStats {
+  id: string;
+  companyId: string;
+  totalValue: number;
+  orderCount: number;
+  averageValue: number;
+  averageRating?: number;
+  yearOverYearGrowth?: number;
+  lastOrderAt?: string;
+  firstOrderAt?: string;
+  topProducts?: any;
+  seasonality?: any;
 }

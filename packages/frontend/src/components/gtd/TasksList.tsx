@@ -12,8 +12,8 @@ import {
   ListTodo,
   Filter,
 } from 'lucide-react';
-import { Task, TaskFilters, Context, Project, Stream } from '@/types/gtd';
-import { tasksApi, contextsApi, projectsApi, gtdHelpers } from '@/lib/api/gtd';
+import { Task, TaskFilters, Context, Project, Stream } from '@/types/streams';
+import { tasksApi, contextsApi, projectsApi, workflowHelpers } from '@/lib/api/workflow';
 import { streamsApi } from '@/lib/api/streams';
 import { apiClient } from '@/lib/api/client';
 import TaskForm from './TaskForm';
@@ -329,7 +329,7 @@ export default function TasksList() {
 
   // --- Derived data ---
 
-  const sortedTasks = useMemo(() => gtdHelpers.sortTasks(tasks), [tasks]);
+  const sortedTasks = useMemo(() => workflowHelpers.sortTasks(tasks), [tasks]);
 
   const stats = useMemo(() => {
     const all = sortedTasks.length;
@@ -396,7 +396,7 @@ export default function TasksList() {
         getValue: (row: Task) => row.dueDate,
         render: (_value: any, row: Task) => {
           if (!row.dueDate) return <span className="text-slate-400 dark:text-slate-500">-</span>;
-          const isOverdue = gtdHelpers.isTaskOverdue(row);
+          const isOverdue = workflowHelpers.isTaskOverdue(row);
           return (
             <span
               className={

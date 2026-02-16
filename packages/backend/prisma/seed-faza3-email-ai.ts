@@ -551,7 +551,7 @@ Your CRM-GTD Assistant</p>
           inboxItems: 15,
           waitingForItems: 4,
           somedayItems: 8,
-          reviewUrl: 'https://crm-gtd.com/gtd/weekly-review'
+          reviewUrl: 'https://crm-gtd.com/workflow/weekly-review'
         },
         status: 'delivered',
         sentAt: new Date('2024-07-22T08:00:00Z'),

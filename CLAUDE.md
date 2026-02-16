@@ -389,33 +389,33 @@ systemctl reload nginx
 ### 🛠️ **API Endpoints GTD Streams:**
 
 #### **Główne Zarządzanie:**
-- `GET /api/v1/gtd-streams` - Lista GTD streams
-- `POST /api/v1/gtd-streams` - Tworzenie nowego GTD stream
-- `GET /api/v1/gtd-streams/by-role/{role}` - Streams według roli
-- `PUT /api/v1/gtd-streams/{id}/role` - Przypisanie roli GTD
-- `POST /api/v1/gtd-streams/{id}/migrate` - Migracja do GTD
+- `GET /api/v1/stream-management` - Lista GTD streams
+- `POST /api/v1/stream-management` - Tworzenie nowego GTD stream
+- `GET /api/v1/stream-management/by-role/{role}` - Streams według roli
+- `PUT /api/v1/stream-management/{id}/role` - Przypisanie roli GTD
+- `POST /api/v1/stream-management/{id}/migrate` - Migracja do GTD
 
 #### **Konfiguracja GTD:**
-- `GET /api/v1/gtd-streams/{id}/config` - Pobranie konfiguracji GTD
-- `PUT /api/v1/gtd-streams/{id}/config` - Aktualizacja config
-- `POST /api/v1/gtd-streams/{id}/config/reset` - Reset do domyślnych
+- `GET /api/v1/stream-management/{id}/config` - Pobranie konfiguracji GTD
+- `PUT /api/v1/stream-management/{id}/config` - Aktualizacja config
+- `POST /api/v1/stream-management/{id}/config/reset` - Reset do domyślnych
 
 #### **Hierarchia i Routing:**
-- `GET /api/v1/gtd-streams/{id}/tree` - Drzewo hierarchii
-- `GET /api/v1/gtd-streams/{id}/ancestors` - Przodkowie
-- `GET /api/v1/gtd-streams/{id}/path` - Ścieżka breadcrumb
-- `POST /api/v1/gtd-streams/route/task` - Routing zadań
-- `POST /api/v1/gtd-streams/route/email` - Routing emaili
+- `GET /api/v1/stream-management/{id}/tree` - Drzewo hierarchii
+- `GET /api/v1/stream-management/{id}/ancestors` - Przodkowie
+- `GET /api/v1/stream-management/{id}/path` - Ścieżka breadcrumb
+- `POST /api/v1/stream-management/route/task` - Routing zadań
+- `POST /api/v1/stream-management/route/email` - Routing emaili
 
 #### **Analityka i Statystyki:**
-- `GET /api/v1/gtd-streams/stats` - Statystyki GTD
-- `GET /api/v1/gtd-streams/hierarchy-stats` - Stats hierarchii
-- `POST /api/v1/gtd-streams/analyze` - Analiza treści dla GTD
+- `GET /api/v1/stream-management/stats` - Statystyki GTD
+- `GET /api/v1/stream-management/hierarchy-stats` - Stats hierarchii
+- `POST /api/v1/stream-management/analyze` - Analiza treści dla GTD
 
 #### **Processing Rules:**
-- `POST /api/v1/gtd-streams/{id}/rules` - Tworzenie reguł
-- `GET /api/v1/gtd-streams/{id}/rules` - Lista reguł stream
-- `POST /api/v1/gtd-streams/rules/execute` - Wykonanie reguł
+- `POST /api/v1/stream-management/{id}/rules` - Tworzenie reguł
+- `GET /api/v1/stream-management/{id}/rules` - Lista reguł stream
+- `POST /api/v1/stream-management/rules/execute` - Wykonanie reguł
 
 ### 🔄 **Backward Compatibility:**
 
@@ -463,8 +463,8 @@ http://91.99.50.80/crm/dashboard/streams/
 ### 📖 **Pełna Dokumentacja GTD Streams:**
 - **Architektura**: `STREAM_HIERARCHY_IMPLEMENTATION_PLAN.md`
 - **Backend Services**: `EnhancedStreamHierarchyManager.ts`
-- **Frontend Components**: `GTDStreamManager.tsx`
-- **API Reference**: `gtdStreams.ts`
+- **Frontend Components**: `StreamManager.tsx`
+- **API Reference**: `streamManagement.ts`
 
 ---
 
@@ -686,18 +686,18 @@ Zadanie delegowane z deadline i notyfikacją
 - **Visual Organization** - Kolorowe ikony dla każdego typu źródła
 
 #### **🔧 Backend API Kompletny:**
-- `GET /api/v1/gtd-inbox` - Lista elementów z filtrami
-- `POST /api/v1/gtd-inbox` - Tworzenie elementów  
-- `POST /api/v1/gtd-inbox/quick-capture` - Szybkie przechwytywanie
-- `POST /api/v1/gtd-inbox/:id/process` - Pełne przetwarzanie GTD
-- `POST /api/v1/gtd-inbox/:id/quick-action` - Quick actions (DO/DEFER/DELETE)
-- `POST /api/v1/gtd-inbox/bulk-process` - Masowe przetwarzanie
-- `GET /api/v1/gtd-inbox/stats` - Statystyki i metryki
-- `DELETE /api/v1/gtd-inbox/clear-processed` - Czyszczenie starych
+- `GET /api/v1/source` - Lista elementów z filtrami
+- `POST /api/v1/source` - Tworzenie elementów  
+- `POST /api/v1/source/quick-capture` - Szybkie przechwytywanie
+- `POST /api/v1/source/:id/process` - Pełne przetwarzanie GTD
+- `POST /api/v1/source/:id/quick-action` - Quick actions (DO/DEFER/DELETE)
+- `POST /api/v1/source/bulk-process` - Masowe przetwarzanie
+- `GET /api/v1/source/stats` - Statystyki i metryki
+- `DELETE /api/v1/source/clear-processed` - Czyszczenie starych
 
 ### 🎯 **URL Systemu:**
 - **GTD Inbox**: `/crm/dashboard/gtd/inbox/`  
-- **API Backend**: `/crm/api/v1/gtd-inbox/`
+- **API Backend**: `/crm/api/v1/source/`
 
 ### 📋 **Metodologia David Allena - Pełne Zastosowanie:**
 
@@ -1135,7 +1135,7 @@ curl -s "http://localhost:5002/health" | jq
 #### **1. ✅ GTD STREAMS System** (100% ukończony - NOWY!) 🎯
 - **Pełna migracja** - 5/5 streams zmigrowanych do GTD (100%)
 - **8 ról GTD** - INBOX, NEXT_ACTIONS, PROJECTS, WAITING_FOR, SOMEDAY_MAYBE, CONTEXTS, AREAS, REFERENCE
-- **Enhanced Manager** - GTDStreamManager z dashboard, statystykami i hierarchią
+- **Enhanced Manager** - StreamManager z dashboard, statystykami i hierarchią
 - **Backward compatibility** - stare API działają z migration notices
 - **Resource Routing** - automatyczne kierowanie zadań/emaili do streamów
 - **GTD Configuration** - role-specific settings dla każdej roli GTD

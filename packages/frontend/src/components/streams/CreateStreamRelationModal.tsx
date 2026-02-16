@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { streamHierarchyApi, CreateStreamRelationRequest, StreamRelation } from '@/lib/api/streamHierarchy';
 import { streamsApi } from '@/lib/api/streams';
-import { Stream } from '@/types/gtd';
+import { Stream } from '@/types/streams';
 import { toast } from 'react-hot-toast';
 import {
   X,

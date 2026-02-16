@@ -21,7 +21,7 @@ import {
   Info,
   Zap
 } from 'lucide-react';
-import { GTDRole, StreamType } from '@/types/gtd';
+import { StreamRole, StreamType } from '@/types/streams';
 import Button from '../ui/Button';
 
 interface GTDMigrationModalProps {
@@ -35,7 +35,7 @@ interface GTDMigrationModalProps {
     };
   };
   onClose: () => void;
-  onMigrate: (streamId: string, gtdRole: GTDRole, streamType: StreamType) => void;
+  onMigrate: (streamId: string, gtdRole: StreamRole, streamType: StreamType) => void;
 }
 
 const GTD_ROLES = [
@@ -143,7 +143,7 @@ const GTDMigrationModal: React.FC<GTDMigrationModalProps> = ({
   onClose,
   onMigrate
 }) => {
-  const [selectedRole, setSelectedRole] = useState<GTDRole | null>(null);
+  const [selectedRole, setSelectedRole] = useState<StreamRole | null>(null);
   const [selectedType, setSelectedType] = useState<StreamType>('CUSTOM');
   const [showRecommendations, setShowRecommendations] = useState(true);
 
@@ -260,7 +260,7 @@ const GTDMigrationModal: React.FC<GTDMigrationModalProps> = ({
   };
 
   const applyRecommendation = (rec: any) => {
-    setSelectedRole(rec.role as GTDRole);
+    setSelectedRole(rec.role as StreamRole);
     setSelectedType(rec.type as StreamType);
     setShowRecommendations(false);
   };
@@ -370,7 +370,7 @@ const GTDMigrationModal: React.FC<GTDMigrationModalProps> = ({
                   <button
                     key={role.value}
                     type="button"
-                    onClick={() => setSelectedRole(role.value as GTDRole)}
+                    onClick={() => setSelectedRole(role.value as StreamRole)}
                     className={`
                       p-4 rounded-lg border-2 text-left transition-all
                       ${selectedRole === role.value 

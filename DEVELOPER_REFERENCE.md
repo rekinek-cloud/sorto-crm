@@ -183,8 +183,8 @@ Auth: Bearer token via `Authorization` header or `access_token` cookie.
 | `/smart` | `routes/smart` | SMART goal analysis |
 | `/communication` | `routes/communication` | Communication hub |
 | `/communications` | `routes/communications` | Communication channels |
-| `/gtd` | `routes/gtd` | GTD methodology |
-| `/gtd-streams` | `routes/gtdStreams` | GTD streams |
+| `/workflow` | `routes/workflow` | GTD methodology |
+| `/stream-management` | `routes/streamManagement` | GTD streams |
 | `/analysis` | `routes/analysis` | Data analysis |
 | `/dashboard` | `routes/dashboard` | Dashboard stats |
 | `/ai` | `routes/ai` | AI features (v1) |
@@ -256,7 +256,7 @@ Auth: Bearer token via `Authorization` header or `access_token` cookie.
 | `/gtdmapviews` | `/streams-map` |
 | `/gtdhorizons` | `/horizons` |
 | `/smartdayplanner` | `/day-planner` |
-| `/smartmailboxes` | `/smart-mailboxes` |
+| `/smartmailboxes` | `/mailboxes` |
 
 ### Disabled Routes (commented out in app.ts)
 | API Path | Route File | Reason |

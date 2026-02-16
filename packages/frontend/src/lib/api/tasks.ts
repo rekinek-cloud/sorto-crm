@@ -40,36 +40,36 @@ export const tasksApi = {
     if (filters?.offset) params.append('offset', filters.offset.toString());
 
     const queryString = params.toString();
-    const response = await apiClient.get<Task[]>(`/gtd/tasks${queryString ? `?${queryString}` : ''}`);
+    const response = await apiClient.get<Task[]>(`/workflow/tasks${queryString ? `?${queryString}` : ''}`);
     return response.data;
   },
 
   async getTask(taskId: string): Promise<Task> {
-    const response = await apiClient.get<Task>(`/gtd/tasks/${taskId}`);
+    const response = await apiClient.get<Task>(`/workflow/tasks/${taskId}`);
     return response.data;
   },
 
   async createTask(taskData: CreateTaskData): Promise<Task> {
-    const response = await apiClient.post<Task>('/gtd/tasks', taskData);
+    const response = await apiClient.post<Task>('/workflow/tasks', taskData);
     return response.data;
   },
 
   async updateTask(taskId: string, taskData: Partial<CreateTaskData>): Promise<Task> {
-    const response = await apiClient.put<Task>(`/gtd/tasks/${taskId}`, taskData);
+    const response = await apiClient.put<Task>(`/workflow/tasks/${taskId}`, taskData);
     return response.data;
   },
 
   async deleteTask(taskId: string): Promise<void> {
-    await apiClient.delete(`/gtd/tasks/${taskId}`);
+    await apiClient.delete(`/workflow/tasks/${taskId}`);
   },
 
   async completeTask(taskId: string): Promise<Task> {
-    const response = await apiClient.put<Task>(`/gtd/tasks/${taskId}/complete`);
+    const response = await apiClient.put<Task>(`/workflow/tasks/${taskId}/complete`);
     return response.data;
   },
 
   async delegateTask(taskId: string, assigneeId: string, notes?: string): Promise<Task> {
-    const response = await apiClient.post<Task>(`/gtd/tasks/${taskId}/delegate`, {
+    const response = await apiClient.post<Task>(`/workflow/tasks/${taskId}/delegate`, {
       assigneeId,
       notes
     });

@@ -56,7 +56,7 @@ router.get('/health', async (req, res) => {
 router.post('/test-synthesis-public', async (req, res) => {
   try {
     const { text } = z.object({
-      text: z.string().min(1).max(100).default('Witaj w systemie CRM-GTD')
+      text: z.string().min(1).max(100).default('Witaj w systemie CRM Streams')
     }).parse(req.body);
 
     console.log(`🎤 Public TTS test: "${text}"`);

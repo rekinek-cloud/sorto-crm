@@ -1,5 +1,5 @@
 import apiClient from './client';
-import { ClientIntelligence } from '@/types/gtd';
+import { ClientIntelligence } from '@/types/streams';
 
 export interface ClientIntelligenceResponse {
   items: ClientIntelligence[];

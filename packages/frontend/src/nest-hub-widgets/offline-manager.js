@@ -382,7 +382,7 @@ class OfflineManager {
             { endpoint: '/dashboard/stats', store: 'dashboard', key: 'stats' },
             { endpoint: '/tasks?priority=HIGH,URGENT&status=NEW,IN_PROGRESS&limit=10', store: 'tasks', key: 'priority' },
             { endpoint: '/meetings?startDate=' + new Date().toISOString().split('T')[0], store: 'meetings', key: 'today' },
-            { endpoint: '/gtd/inbox/stats', store: 'dashboard', key: 'inbox' }
+            { endpoint: '/workflow/inbox/stats', store: 'dashboard', key: 'inbox' }
         ];
 
         const promises = criticalEndpoints.map(async ({ endpoint, store, key }) => {

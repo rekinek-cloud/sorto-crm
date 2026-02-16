@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { BucketGroup, ViewTypeId, bucketViewHelpers } from '@/lib/api/gtdMapViews';
+import { BucketGroup, ViewTypeId, bucketViewHelpers } from '@/lib/api/streamsMapViews';
 
 interface BucketViewCardProps {
   bucket: BucketGroup;

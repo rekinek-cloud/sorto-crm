@@ -13,9 +13,9 @@ import type {
   UpdateContextRequest,
   TaskFilters,
   ProjectFilters,
-} from '@/types/gtd';
+} from '@/types/streams';
 
-// GTD Inbox Types
+// Workflow Inbox Types
 export interface InboxItem {
   id: string;
   type: 'MESSAGE' | 'TASK' | 'IDEA' | 'REQUEST';
@@ -45,7 +45,7 @@ export interface InboxStats {
   processingRate: number;
 }
 
-export interface GTDProcessingDecision {
+export interface WorkflowProcessingDecision {
   itemId: string;
   decision: 'DO' | 'DEFER' | 'DELEGATE' | 'DELETE' | 'REFERENCE';
   actionData?: {
@@ -197,7 +197,7 @@ export const contextsApi = {
 };
 
 // Helper functions for UI
-export const gtdHelpers = {
+export const workflowHelpers = {
   // Get priority color
   getPriorityColor(priority: Task['priority'] | Project['priority']): string {
     const colors = {
@@ -307,8 +307,8 @@ export const gtdHelpers = {
   },
 };
 
-// GTD Inbox API
-export const gtdApi = {
+// Workflow API
+export const workflowApi = {
   // Inbox operations
   async getInboxItems(filters?: {
     unprocessedOnly?: boolean;
@@ -324,7 +324,7 @@ export const gtdApi = {
     if (filters?.limit) params.append('limit', filters.limit.toString());
     if (filters?.offset) params.append('offset', filters.offset.toString());
 
-    const response = await apiClient.get(`/gtd/inbox?${params.toString()}`);
+    const response = await apiClient.get(`/workflow/inbox?${params.toString()}`);
     return response.data;
   },
 
@@ -337,22 +337,22 @@ export const gtdApi = {
     context?: string;
     dueDate?: string;
   }): Promise<InboxItem> {
-    const response = await apiClient.post('/gtd/inbox', data);
+    const response = await apiClient.post('/workflow/inbox', data);
     return response.data.item;
   },
 
   async getInboxStats(): Promise<InboxStats> {
-    const response = await apiClient.get('/gtd/inbox/stats');
+    const response = await apiClient.get('/workflow/inbox/stats');
     return response.data;
   },
 
-  async processInboxItem(itemId: string, decision: GTDProcessingDecision): Promise<any> {
-    const response = await apiClient.post(`/gtd/inbox/${itemId}/process`, decision);
+  async processInboxItem(itemId: string, decision: WorkflowProcessingDecision): Promise<any> {
+    const response = await apiClient.post(`/workflow/inbox/${itemId}/process`, decision);
     return response.data;
   },
 
   async quickAction(itemId: string, action: 'QUICK_DO' | 'QUICK_DEFER' | 'QUICK_DELETE'): Promise<any> {
-    const response = await apiClient.post(`/gtd/inbox/${itemId}/quick-action`, { action });
+    const response = await apiClient.post(`/workflow/inbox/${itemId}/quick-action`, { action });
     return response.data;
   },
 
@@ -371,12 +371,12 @@ export const gtdApi = {
     if (filters?.limit) params.append('limit', filters.limit.toString());
     if (filters?.offset) params.append('offset', filters.offset.toString());
 
-    const response = await apiClient.get(`/gtd/next-actions?${params.toString()}`);
+    const response = await apiClient.get(`/workflow/next-actions?${params.toString()}`);
     return response.data;
   },
 
   async getNextActionsStats(): Promise<any> {
-    const response = await apiClient.get('/gtd/next-actions/stats');
+    const response = await apiClient.get('/workflow/next-actions/stats');
     return response.data;
   },
 
@@ -391,12 +391,12 @@ export const gtdApi = {
     if (filters?.limit) params.append('limit', filters.limit.toString());
     if (filters?.offset) params.append('offset', filters.offset.toString());
 
-    const response = await apiClient.get(`/gtd/waiting-for?${params.toString()}`);
+    const response = await apiClient.get(`/workflow/waiting-for?${params.toString()}`);
     return response.data;
   },
 
   async followUp(itemId: string, data: { notes?: string; newExpectedDate?: string }): Promise<any> {
-    const response = await apiClient.post(`/gtd/waiting-for/${itemId}/follow-up`, data);
+    const response = await apiClient.post(`/workflow/waiting-for/${itemId}/follow-up`, data);
     return response.data;
   },
 
@@ -411,7 +411,7 @@ export const gtdApi = {
     if (filters?.limit) params.append('limit', filters.limit.toString());
     if (filters?.offset) params.append('offset', filters.offset.toString());
 
-    const response = await apiClient.get(`/gtd/someday-maybe?${params.toString()}`);
+    const response = await apiClient.get(`/workflow/someday-maybe?${params.toString()}`);
     return response.data;
   },
 
@@ -423,7 +423,7 @@ export const gtdApi = {
     whenToReview?: string;
     tags?: string[];
   }): Promise<any> {
-    const response = await apiClient.post('/gtd/someday-maybe', data);
+    const response = await apiClient.post('/workflow/someday-maybe', data);
     return response.data;
   },
 
@@ -432,23 +432,23 @@ export const gtdApi = {
     streamId?: string;
     context?: string;
   }): Promise<any> {
-    const response = await apiClient.post(`/gtd/someday-maybe/${itemId}/activate`, data);
+    const response = await apiClient.post(`/workflow/someday-maybe/${itemId}/activate`, data);
     return response.data;
   },
 
   // Contexts and Tasks
-  async getGTDContexts(): Promise<string[]> {
-    const response = await apiClient.get('/gtd/contexts');
+  async getWorkflowContexts(): Promise<string[]> {
+    const response = await apiClient.get('/workflow/contexts');
     return response.data;
   },
 
   async updateTaskContext(taskId: string, context: string): Promise<any> {
-    const response = await apiClient.put(`/gtd/tasks/${taskId}/context`, { context });
+    const response = await apiClient.put(`/workflow/tasks/${taskId}/context`, { context });
     return response.data;
   },
 
-  async completeGTDTask(taskId: string, notes?: string): Promise<any> {
-    const response = await apiClient.post(`/gtd/tasks/${taskId}/complete`, { notes });
+  async completeWorkflowTask(taskId: string, notes?: string): Promise<any> {
+    const response = await apiClient.post(`/workflow/tasks/${taskId}/complete`, { notes });
     return response.data;
   }
 };

@@ -235,7 +235,7 @@ test.describe('4. API Endpoints', () => {
   // Other modules - test they don't 500
   const otherEndpoints = [
     '/projects', '/organizations', '/contexts', '/streams',
-    '/gtd/inbox', '/areas', '/habits', '/meetings', '/delegated',
+    '/workflow/inbox', '/areas', '/habits', '/meetings', '/delegated',
     '/recurring-tasks', '/timeline', '/products', '/services',
     '/offers', '/invoices', '/tags', '/users', '/calendar/events',
     '/ai-rules', '/weekly-review', '/source', '/goals', '/mailboxes',

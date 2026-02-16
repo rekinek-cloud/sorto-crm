@@ -1,5 +1,5 @@
 import { Metadata } from 'next';
-import GTDStreamManager from '@/components/streams/GTDStreamManager';
+import StreamManager from '@/components/streams/StreamManager';
 
 export const metadata: Metadata = {
   title: 'Strumienie - Zarządzanie strumieniami',
@@ -7,5 +7,5 @@ export const metadata: Metadata = {
 };
 
 export default function StreamsPage() {
-  return <GTDStreamManager />;
+  return <StreamManager />;
 }
