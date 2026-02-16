@@ -41,7 +41,7 @@ import {
   AddEventTeamMemberRequest,
   CreateEventExpenseRequest,
 } from '@/lib/api/events';
-import { Event as CRMEvent } from '@/types/gtd';
+import { Event as CRMEvent } from '@/types/streams';
 
 import { PageShell } from '@/components/ui/PageShell';
 import { PageHeader } from '@/components/ui/PageHeader';

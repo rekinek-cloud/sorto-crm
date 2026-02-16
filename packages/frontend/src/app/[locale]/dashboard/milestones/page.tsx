@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import apiClient from '@/lib/api/client';
 import { milestonesApi, CreateMilestoneRequest } from '@/lib/api/milestones';
-import { Milestone, Project, User as UserType } from '@/types/gtd';
+import { Milestone, Project, User as UserType } from '@/types/streams';
 
 import { PageShell } from '@/components/ui/PageShell';
 import { PageHeader } from '@/components/ui/PageHeader';

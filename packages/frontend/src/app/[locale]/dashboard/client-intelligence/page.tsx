@@ -29,7 +29,7 @@ import {
   ClipboardList,
 } from 'lucide-react';
 import { clientIntelligenceApi, CreateClientIntelligenceRequest, ClientBriefing } from '@/lib/api/clientIntelligence';
-import { ClientIntelligence } from '@/types/gtd';
+import { ClientIntelligence } from '@/types/streams';
 import { companiesApi } from '@/lib/api/companies';
 import { contactsApi } from '@/lib/api/contacts';
 

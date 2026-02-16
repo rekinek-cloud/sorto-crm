@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Contact, Company, Deal } from '@/types/crm';
-import { Task } from '@/types/gtd';
+import { Task } from '@/types/streams';
 import { contactsApi } from '@/lib/api/contacts';
 import { dealsApi } from '@/lib/api/deals';
 import { tasksApi } from '@/lib/api/tasks';

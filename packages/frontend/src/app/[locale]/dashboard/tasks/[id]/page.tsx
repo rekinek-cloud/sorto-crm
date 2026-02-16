@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Contact, Company } from '@/types/crm';
-import { Task, Context, User, Project } from '@/types/gtd';
+import { Task, Context, User, Project } from '@/types/streams';
 import { tasksApi } from '@/lib/api/gtd';
 import { toast } from 'react-hot-toast';
 import { GraphModal } from '@/components/graph/GraphModal';

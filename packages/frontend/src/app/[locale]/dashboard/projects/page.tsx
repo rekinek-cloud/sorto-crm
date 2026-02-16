@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import { Project, ProjectFilters, Stream } from '@/types/gtd';
+import { Project, ProjectFilters, Stream } from '@/types/streams';
 import { projectsApi, gtdHelpers } from '@/lib/api/gtd';
 import { streamsApi } from '@/lib/api/streams';
 import ProjectForm from '@/components/projects/ProjectForm';

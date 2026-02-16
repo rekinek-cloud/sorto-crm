@@ -32,7 +32,7 @@ import {
   Info,
 } from 'lucide-react';
 import { healthScoreApi, CreateHealthScoreRequest, CreateHealthAlertRequest } from '@/lib/api/healthScore';
-import { RelationshipHealth, HealthAlert } from '@/types/gtd';
+import { RelationshipHealth, HealthAlert } from '@/types/streams';
 import { companiesApi } from '@/lib/api/companies';
 import { contactsApi } from '@/lib/api/contacts';
 import { dealsApi } from '@/lib/api/deals';

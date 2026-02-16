@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { Project, Task, Stream, User } from '@/types/gtd';
+import { Project, Task, Stream, User } from '@/types/streams';
 import { projectsApi } from '@/lib/api/projects';
 import { toast } from 'react-hot-toast';
 import { GraphModal } from '@/components/graph/GraphModal';

@@ -20,7 +20,7 @@ import {
 
 import apiClient from '@/lib/api/client';
 import { clientProductsApi, CreateClientProductRequest } from '@/lib/api/clientProducts';
-import { ClientProduct, ClientProductStats } from '@/types/gtd';
+import { ClientProduct, ClientProductStats } from '@/types/streams';
 
 import { PageShell } from '@/components/ui/PageShell';
 import { PageHeader } from '@/components/ui/PageHeader';
