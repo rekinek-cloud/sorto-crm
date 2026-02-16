@@ -412,54 +412,54 @@ export const smartDayPlannerApi = {
   // Time Blocks
   async getTimeBlocks(dayOfWeek?: string) {
     const params = dayOfWeek ? `?dayOfWeek=${dayOfWeek}` : '';
-    const response = await apiClient.get(`/smart-day-planner/time-blocks${params}`);
+    const response = await apiClient.get(`/day-planner/time-blocks${params}`);
     return response.data;
   },
 
   async createTimeBlock(data: Partial<TimeBlock>) {
-    const response = await apiClient.post('/smart-day-planner/time-blocks', data);
+    const response = await apiClient.post('/day-planner/time-blocks', data);
     return response.data;
   },
 
   async updateTimeBlock(id: string, data: Partial<TimeBlock>) {
-    const response = await apiClient.put(`/smart-day-planner/time-blocks/${id}`, data);
+    const response = await apiClient.put(`/day-planner/time-blocks/${id}`, data);
     return response.data;
   },
 
   async deleteTimeBlock(id: string) {
-    const response = await apiClient.delete(`/smart-day-planner/time-blocks/${id}`);
+    const response = await apiClient.delete(`/day-planner/time-blocks/${id}`);
     return response.data;
   },
 
   async updateBlockOrder(blocks: Array<{ id: string; order: number }>) {
-    const response = await apiClient.put('/smart-day-planner/time-blocks/order', { blocks });
+    const response = await apiClient.put('/day-planner/time-blocks/order', { blocks });
     return response.data;
   },
 
   // Daily Schedule
   async getDailySchedule(date: string): Promise<{ success: boolean; data: DailySchedule }> {
-    const response = await apiClient.get(`/smart-day-planner/daily-schedule/${date}`);
+    const response = await apiClient.get(`/day-planner/daily-schedule/${date}`);
     return response.data;
   },
 
   // Task Scheduling
   async scheduleTasks(data: ScheduleTasksRequest): Promise<{ success: boolean; data: ScheduleTasksResponse }> {
-    const response = await apiClient.post('/smart-day-planner/schedule-tasks', data);
+    const response = await apiClient.post('/day-planner/schedule-tasks', data);
     return response.data;
   },
 
   async createScheduledTask(data: Partial<ScheduledTask>): Promise<{ success: boolean; data: ScheduledTask }> {
-    const response = await apiClient.post('/smart-day-planner/scheduled-tasks', data);
+    const response = await apiClient.post('/day-planner/scheduled-tasks', data);
     return response.data;
   },
 
   async updateScheduledTask(id: string, data: Partial<ScheduledTask>) {
-    const response = await apiClient.put(`/smart-day-planner/scheduled-tasks/${id}`, data);
+    const response = await apiClient.put(`/day-planner/scheduled-tasks/${id}`, data);
     return response.data;
   },
 
   async completeTask(id: string) {
-    const response = await apiClient.post(`/smart-day-planner/scheduled-tasks/${id}/complete`);
+    const response = await apiClient.post(`/day-planner/scheduled-tasks/${id}/complete`);
     return response.data;
   },
 
@@ -468,18 +468,18 @@ export const smartDayPlannerApi = {
     reason?: string;
     newDate?: string;
   }) {
-    const response = await apiClient.post(`/smart-day-planner/scheduled-tasks/${id}/reschedule`, data);
+    const response = await apiClient.post(`/day-planner/scheduled-tasks/${id}/reschedule`, data);
     return response.data;
   },
 
   // Energy Patterns
   async getEnergyPatterns() {
-    const response = await apiClient.get('/smart-day-planner/energy-patterns');
+    const response = await apiClient.get('/day-planner/energy-patterns');
     return response.data;
   },
 
   async analyzeEnergyPatterns(dateRange?: { from: string; to: string }) {
-    const response = await apiClient.post('/smart-day-planner/energy-patterns/analyze', dateRange);
+    const response = await apiClient.post('/day-planner/energy-patterns/analyze', dateRange);
     return response.data;
   },
 
@@ -488,7 +488,7 @@ export const smartDayPlannerApi = {
     const params = dateRange 
       ? `?from=${dateRange.from}&to=${dateRange.to}` 
       : '';
-    const response = await apiClient.get(`/smart-day-planner/energy-analytics${params}`);
+    const response = await apiClient.get(`/day-planner/energy-analytics${params}`);
     return response.data;
   },
 
@@ -499,33 +499,33 @@ export const smartDayPlannerApi = {
     notes?: string;
     distractions?: string[];
   }) {
-    const response = await apiClient.post(`/smart-day-planner/time-blocks/${blockId}/feedback`, data);
+    const response = await apiClient.post(`/day-planner/time-blocks/${blockId}/feedback`, data);
     return response.data;
   },
 
   // Break Templates
   async getBreakTemplates() {
-    const response = await apiClient.get('/smart-day-planner/break-templates');
+    const response = await apiClient.get('/day-planner/break-templates');
     return response.data;
   },
 
   async createBreakTemplate(data: Partial<BreakTemplate>) {
-    const response = await apiClient.post('/smart-day-planner/break-templates', data);
+    const response = await apiClient.post('/day-planner/break-templates', data);
     return response.data;
   },
 
   async updateBreakTemplate(id: string, data: Partial<BreakTemplate>) {
-    const response = await apiClient.put(`/smart-day-planner/break-templates/${id}`, data);
+    const response = await apiClient.put(`/day-planner/break-templates/${id}`, data);
     return response.data;
   },
 
   async deleteBreakTemplate(id: string) {
-    const response = await apiClient.delete(`/smart-day-planner/break-templates/${id}`);
+    const response = await apiClient.delete(`/day-planner/break-templates/${id}`);
     return response.data;
   },
 
   async applyBreakTemplate(templateId: string, timeBlockId: string) {
-    const response = await apiClient.post(`/smart-day-planner/break-templates/${templateId}/apply`, {
+    const response = await apiClient.post(`/day-planner/break-templates/${templateId}/apply`, {
       timeBlockId
     });
     return response.data;
@@ -533,7 +533,7 @@ export const smartDayPlannerApi = {
 
   // Context Priorities
   async getContextPriorities() {
-    const response = await apiClient.get('/smart-day-planner/context-priorities');
+    const response = await apiClient.get('/day-planner/context-priorities');
     return response.data;
   },
 
@@ -546,7 +546,7 @@ export const smartDayPlannerApi = {
     maxDuration?: number;
     alternativeOrder?: string[];
   }) {
-    const response = await apiClient.post('/smart-day-planner/context-priorities', data);
+    const response = await apiClient.post('/day-planner/context-priorities', data);
     return response.data;
   },
 
@@ -556,7 +556,7 @@ export const smartDayPlannerApi = {
     tasks?: Array<{ title: string; estimatedMinutes: number; context: string }>;
     optimizeFor?: 'PRODUCTIVITY' | 'ENERGY' | 'BALANCE';
   }) {
-    const response = await apiClient.post('/smart-day-planner/ai-suggestions', data);
+    const response = await apiClient.post('/day-planner/ai-suggestions', data);
     return response.data;
   },
 
@@ -565,7 +565,7 @@ export const smartDayPlannerApi = {
     const params = dateRange 
       ? `?from=${dateRange.from}&to=${dateRange.to}` 
       : '';
-    const response = await apiClient.get(`/smart-day-planner/statistics/productivity${params}`);
+    const response = await apiClient.get(`/day-planner/statistics/productivity${params}`);
     return response.data;
   },
 
@@ -573,33 +573,33 @@ export const smartDayPlannerApi = {
     const params = dateRange 
       ? `?from=${dateRange.from}&to=${dateRange.to}` 
       : '';
-    const response = await apiClient.get(`/smart-day-planner/statistics/energy${params}`);
+    const response = await apiClient.get(`/day-planner/statistics/energy${params}`);
     return response.data;
   },
 
   // Focus Modes
   async getFocusModes(): Promise<{ success: boolean; data: FocusMode[] }> {
-    const response = await apiClient.get('/smart-day-planner/focus-modes');
+    const response = await apiClient.get('/day-planner/focus-modes');
     return response.data;
   },
 
   async createFocusMode(data: Partial<FocusMode>): Promise<{ success: boolean; data: FocusMode }> {
-    const response = await apiClient.post('/smart-day-planner/focus-modes', data);
+    const response = await apiClient.post('/day-planner/focus-modes', data);
     return response.data;
   },
 
   async updateFocusMode(id: string, data: Partial<FocusMode>): Promise<{ success: boolean; data: FocusMode }> {
-    const response = await apiClient.put(`/smart-day-planner/focus-modes/${id}`, data);
+    const response = await apiClient.put(`/day-planner/focus-modes/${id}`, data);
     return response.data;
   },
 
   async deleteFocusMode(id: string): Promise<{ success: boolean }> {
-    const response = await apiClient.delete(`/smart-day-planner/focus-modes/${id}`);
+    const response = await apiClient.delete(`/day-planner/focus-modes/${id}`);
     return response.data;
   },
 
   async assignFocusModeToBlock(blockId: string, focusModeId: string | null): Promise<{ success: boolean; data: TimeBlock }> {
-    const response = await apiClient.post(`/smart-day-planner/time-blocks/${blockId}/focus-mode`, {
+    const response = await apiClient.post(`/day-planner/time-blocks/${blockId}/focus-mode`, {
       focusModeId
     });
     return response.data;
@@ -616,7 +616,7 @@ export const smartDayPlannerApi = {
     if (params?.endDate) queryParams.append('endDate', params.endDate);
     if (params?.periodType) queryParams.append('periodType', params.periodType);
 
-    const response = await apiClient.get(`/smart-day-planner/performance-analytics?${queryParams}`);
+    const response = await apiClient.get(`/day-planner/performance-analytics?${queryParams}`);
     return response.data;
   },
 
@@ -625,35 +625,35 @@ export const smartDayPlannerApi = {
     endDate: string;
     periodType?: 'daily' | 'weekly' | 'monthly';
   }): Promise<{ success: boolean; data: PerformanceMetrics }> {
-    const response = await apiClient.post('/smart-day-planner/performance-analytics/generate', data);
+    const response = await apiClient.post('/day-planner/performance-analytics/generate', data);
     return response.data;
   },
 
   async getPerformanceInsights(period?: '7d' | '30d' | '90d'): Promise<{ success: boolean; data: PerformanceInsights }> {
     const params = period ? `?period=${period}` : '';
-    const response = await apiClient.get(`/smart-day-planner/performance-insights${params}`);
+    const response = await apiClient.get(`/day-planner/performance-insights${params}`);
     return response.data;
   },
 
   // Enhanced AI - Pattern Learning
   async getUserPatterns(patternType?: string): Promise<{ success: boolean; data: UserPattern[] }> {
     const params = patternType ? `?patternType=${patternType}` : '';
-    const response = await apiClient.get(`/smart-day-planner/user-patterns${params}`);
+    const response = await apiClient.get(`/day-planner/user-patterns${params}`);
     return response.data;
   },
 
   async detectUserPatterns(days: number = 30): Promise<{ success: boolean; data: { patterns: PatternDetectionResult[]; stored: number; insights: number } }> {
-    const response = await apiClient.post('/smart-day-planner/detect-patterns', { days });
+    const response = await apiClient.post('/day-planner/detect-patterns', { days });
     return response.data;
   },
 
   async getAIRecommendations(): Promise<{ success: boolean; data: AIRecommendation[] }> {
-    const response = await apiClient.get('/smart-day-planner/ai-recommendations');
+    const response = await apiClient.get('/day-planner/ai-recommendations');
     return response.data;
   },
 
   async submitPatternFeedback(patternId: string, accepted: boolean, implemented?: boolean): Promise<{ success: boolean }> {
-    const response = await apiClient.post('/smart-day-planner/pattern-feedback', {
+    const response = await apiClient.post('/day-planner/pattern-feedback', {
       patternId,
       accepted,
       implemented
@@ -662,29 +662,29 @@ export const smartDayPlannerApi = {
   },
 
   async getLearningInsights(): Promise<{ success: boolean; data: PatternLearningInsights }> {
-    const response = await apiClient.get('/smart-day-planner/learning-insights');
+    const response = await apiClient.get('/day-planner/learning-insights');
     return response.data;
   },
 
   async adaptPatterns(): Promise<{ success: boolean }> {
-    const response = await apiClient.post('/smart-day-planner/adapt-patterns');
+    const response = await apiClient.post('/day-planner/adapt-patterns');
     return response.data;
   },
 
   // Template Generator - User Profile Management
   async getUserProfile(): Promise<{ success: boolean; data: UserProfile }> {
-    const response = await apiClient.get('/smart-day-planner/user-profile');
+    const response = await apiClient.get('/day-planner/user-profile');
     return response.data;
   },
 
   async updateUserProfile(data: Partial<UserProfile>): Promise<{ success: boolean; data: UserProfile }> {
-    const response = await apiClient.put('/smart-day-planner/user-profile', data);
+    const response = await apiClient.put('/day-planner/user-profile', data);
     return response.data;
   },
 
   // Template Generator - Template Management
   async generateTemplate(data: GenerateTemplateRequest): Promise<{ success: boolean; data: DayTemplate }> {
-    const response = await apiClient.post('/smart-day-planner/generate-template', data);
+    const response = await apiClient.post('/day-planner/generate-template', data);
     return response.data;
   },
 
@@ -696,7 +696,7 @@ export const smartDayPlannerApi = {
     if (params?.templateType) queryParams.append('templateType', params.templateType);
     if (params?.isPublic !== undefined) queryParams.append('isPublic', String(params.isPublic));
 
-    const response = await apiClient.get(`/smart-day-planner/templates?${queryParams}`);
+    const response = await apiClient.get(`/day-planner/templates?${queryParams}`);
     return response.data;
   },
 
@@ -708,17 +708,17 @@ export const smartDayPlannerApi = {
       appliedDate: string;
     }
   }> {
-    const response = await apiClient.post(`/smart-day-planner/templates/${templateId}/apply`, data);
+    const response = await apiClient.post(`/day-planner/templates/${templateId}/apply`, data);
     return response.data;
   },
 
   async updateTemplate(templateId: string, data: Partial<DayTemplate>): Promise<{ success: boolean; data: DayTemplate }> {
-    const response = await apiClient.put(`/smart-day-planner/templates/${templateId}`, data);
+    const response = await apiClient.put(`/day-planner/templates/${templateId}`, data);
     return response.data;
   },
 
   async deleteTemplate(templateId: string): Promise<{ success: boolean }> {
-    const response = await apiClient.delete(`/smart-day-planner/templates/${templateId}`);
+    const response = await apiClient.delete(`/day-planner/templates/${templateId}`);
     return response.data;
   },
 
@@ -731,7 +731,7 @@ export const smartDayPlannerApi = {
     holidays?: string[];
     customizations?: any;
   }): Promise<{ success: boolean; data: DayTemplate }> {
-    const response = await apiClient.post('/smart-day-planner/weekly-templates/create', data);
+    const response = await apiClient.post('/day-planner/weekly-templates/create', data);
     return response.data;
   },
 
@@ -752,7 +752,7 @@ export const smartDayPlannerApi = {
     };
     message: string;
   }> {
-    const response = await apiClient.post(`/smart-day-planner/weekly-templates/${templateId}/apply`, data);
+    const response = await apiClient.post(`/day-planner/weekly-templates/${templateId}/apply`, data);
     return response.data;
   },
 
@@ -773,7 +773,7 @@ export const smartDayPlannerApi = {
     message?: string;
   }> {
     const params = weekStartDate ? `?weekStartDate=${weekStartDate}` : '';
-    const response = await apiClient.get(`/smart-day-planner/weekly-templates/current${params}`);
+    const response = await apiClient.get(`/day-planner/weekly-templates/current${params}`);
     return response.data;
   },
 
@@ -797,7 +797,7 @@ export const smartDayPlannerApi = {
     };
     message: string;
   }> {
-    const response = await apiClient.post('/smart-day-planner/weekly-templates/quick-setup', data);
+    const response = await apiClient.post('/day-planner/weekly-templates/quick-setup', data);
     return response.data;
   },
 
@@ -826,7 +826,7 @@ export const smartDayPlannerApi = {
     if (params?.includeProjects !== undefined) queryParams.append('includeProjects', String(params.includeProjects));
     if (params?.includeInbox !== undefined) queryParams.append('includeInbox', String(params.includeInbox));
 
-    const response = await apiClient.get(`/smart-day-planner/task-queue?${queryParams}`);
+    const response = await apiClient.get(`/day-planner/task-queue?${queryParams}`);
     return response.data;
   },
 
@@ -845,7 +845,7 @@ export const smartDayPlannerApi = {
       analyzedAt: string;
     };
   }> {
-    const response = await apiClient.post('/smart-day-planner/task-queue/analyze', data);
+    const response = await apiClient.post('/day-planner/task-queue/analyze', data);
     return response.data;
   },
 
@@ -863,7 +863,7 @@ export const smartDayPlannerApi = {
       appliedAt: string;
     };
   }> {
-    const response = await apiClient.post('/smart-day-planner/task-queue/prioritize', data);
+    const response = await apiClient.post('/day-planner/task-queue/prioritize', data);
     return response.data;
   },
 
@@ -879,7 +879,7 @@ export const smartDayPlannerApi = {
     success: boolean;
     data: SmartAssignmentResult;
   }> {
-    const response = await apiClient.post('/smart-day-planner/smart-assignment', data);
+    const response = await apiClient.post('/day-planner/smart-assignment', data);
     return response.data;
   },
 
@@ -890,7 +890,7 @@ export const smartDayPlannerApi = {
     success: boolean;
     data: AssignmentOptimization;
   }> {
-    const response = await apiClient.post('/smart-day-planner/optimize-assignments', data);
+    const response = await apiClient.post('/day-planner/optimize-assignments', data);
     return response.data;
   },
 
@@ -904,7 +904,7 @@ export const smartDayPlannerApi = {
     success: boolean;
     data: EmergencyRescheduleResult;
   }> {
-    const response = await apiClient.post('/smart-day-planner/emergency-reschedule', data);
+    const response = await apiClient.post('/day-planner/emergency-reschedule', data);
     return response.data;
   },
 
@@ -918,7 +918,7 @@ export const smartDayPlannerApi = {
     success: boolean;
     data: TaskSuggestion[];
   }> {
-    const response = await apiClient.post('/smart-day-planner/next-suggestions', data);
+    const response = await apiClient.post('/day-planner/next-suggestions', data);
     return response.data;
   },
 
@@ -931,7 +931,7 @@ export const smartDayPlannerApi = {
     success: boolean;
     data: PartialDayResult;
   }> {
-    const response = await apiClient.post('/smart-day-planner/partial-day', data);
+    const response = await apiClient.post('/day-planner/partial-day', data);
     return response.data;
   },
 
@@ -939,8 +939,8 @@ export const smartDayPlannerApi = {
   async getWeeklySchedule(date: string): Promise<{ success: boolean; data: any }> {
     try {
       console.log('📅 Calling weekly schedule API for date:', date);
-      console.log('📡 API URL:', `/smart-day-planner/weekly-schedule/${date}`);
-      const response = await apiClient.get(`/smart-day-planner/weekly-schedule/${date}`);
+      console.log('📡 API URL:', `/day-planner/weekly-schedule/${date}`);
+      const response = await apiClient.get(`/day-planner/weekly-schedule/${date}`);
       console.log('✅ Weekly schedule response:', response.data);
       return response.data;
     } catch (error: any) {
@@ -953,7 +953,7 @@ export const smartDayPlannerApi = {
   // Monthly Schedule
   async getMonthlySchedule(year: number, month: number): Promise<{ success: boolean; data: any }> {
     try {
-      const response = await apiClient.get(`/smart-day-planner/monthly-schedule/${year}/${month}`);
+      const response = await apiClient.get(`/day-planner/monthly-schedule/${year}/${month}`);
       return response.data;
     } catch (error: any) {
       console.error('Error fetching monthly schedule:', error);

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { BucketViewType, ViewTypeId } from '@/lib/api/gtdMapViews';
+import { BucketViewType, ViewTypeId } from '@/lib/api/streamsMapViews';
 
 interface ViewTypeSwitcherProps {
   viewTypes: BucketViewType[];

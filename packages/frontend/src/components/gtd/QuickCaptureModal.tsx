@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { gtdApi } from '@/lib/api/gtd';
+import { workflowApi } from '@/lib/api/workflow';
 import { toast } from 'react-hot-toast';
 
 interface QuickCaptureModalProps {
@@ -32,7 +32,7 @@ export default function QuickCaptureModal({ isOpen, onClose, onSuccess }: QuickC
 
     setLoading(true);
     try {
-      await gtdApi.createInboxItem({
+      await workflowApi.createInboxItem({
         ...formData,
         dueDate: formData.dueDate || undefined
       });

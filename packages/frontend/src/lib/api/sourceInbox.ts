@@ -84,7 +84,7 @@ export interface ProcessInboxItemInput {
   };
 }
 
-export const gtdInboxApi = {
+export const sourceInboxApi = {
   // Get all inbox items
   async getItems(filters?: {
     processed?: boolean;
@@ -106,38 +106,38 @@ export const gtdInboxApi = {
       params.append('offset', String(filters.offset));
     }
 
-    const url = `/gtd-inbox?${params.toString()}`;
+    const url = `/source?${params.toString()}`;
     const response = await apiClient.get(url);
     return response.data;
   },
 
   // Get inbox statistics
   async getStats(): Promise<InboxStats> {
-    const response = await apiClient.get('/gtd-inbox/stats');
+    const response = await apiClient.get('/source/stats');
     return response.data;
   },
 
   // Create new inbox item
   async createItem(input: CreateInboxItemInput): Promise<InboxItem> {
-    const response = await apiClient.post('/gtd-inbox', input);
+    const response = await apiClient.post('/source', input);
     return response.data.item;
   },
 
   // Quick capture
   async quickCapture(content: string): Promise<InboxItem> {
-    const response = await apiClient.post('/gtd-inbox/quick-capture', { content });
+    const response = await apiClient.post('/source/quick-capture', { content });
     return response.data.item;
   },
 
   // Process inbox item
   async processItem(itemId: string, input: ProcessInboxItemInput): Promise<InboxItem> {
-    const response = await apiClient.post(`/gtd-inbox/${itemId}/process`, input);
+    const response = await apiClient.post(`/source/${itemId}/process`, input);
     return response.data.item;
   },
 
   // Bulk process items (mainly for deletion)
   async bulkProcess(items: Array<{ itemId: string; decision: 'DELETE' }>): Promise<void> {
-    await apiClient.post('/gtd-inbox/bulk-process', { items });
+    await apiClient.post('/source/bulk-process', { items });
   },
 
   // Quick action on inbox item
@@ -147,7 +147,7 @@ export const gtdInboxApi = {
       'DEFER': 'QUICK_DEFER', 
       'DELETE': 'QUICK_DELETE'
     };
-    const response = await apiClient.post(`/gtd-inbox/${itemId}/quick-action`, { 
+    const response = await apiClient.post(`/source/${itemId}/quick-action`, { 
       action: actionMap[action] 
     });
     return response.data.item;
@@ -155,7 +155,7 @@ export const gtdInboxApi = {
 
   // Clear old processed items
   async clearProcessedItems(olderThanDays: number = 30): Promise<{ message: string }> {
-    const response = await apiClient.delete(`/gtd-inbox/clear-processed?olderThanDays=${olderThanDays}`);
+    const response = await apiClient.delete(`/source/clear-processed?olderThanDays=${olderThanDays}`);
     return response.data;
   },
 
@@ -176,7 +176,7 @@ export const gtdInboxApi = {
       urgencyScore?: number;
     };
   }> {
-    const response = await apiClient.post(`/gtd-inbox/${itemId}/analyze-for-planning`);
+    const response = await apiClient.post(`/source/${itemId}/analyze-for-planning`);
     return response.data;
   },
 
@@ -203,7 +203,7 @@ export const gtdInboxApi = {
       };
     };
   }> {
-    const response = await apiClient.post(`/gtd-inbox/${itemId}/plan-as-time-block`, options);
+    const response = await apiClient.post(`/source/${itemId}/plan-as-time-block`, options);
     return response.data;
   }
 };

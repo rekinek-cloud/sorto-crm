@@ -72,7 +72,7 @@ const GTDConfigModal: React.FC<GTDConfigModalProps> = ({
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const response = await fetch(`/api/v1/gtd-streams/${stream.id}/config`, {
+        const response = await fetch(`/api/v1/stream-management/${stream.id}/config`, {
           credentials: 'include'
         });
         

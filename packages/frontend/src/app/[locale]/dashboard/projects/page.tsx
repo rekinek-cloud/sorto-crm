@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { Project, ProjectFilters, Stream } from '@/types/streams';
-import { projectsApi, gtdHelpers } from '@/lib/api/gtd';
+import { projectsApi, workflowHelpers } from '@/lib/api/workflow';
 import { streamsApi } from '@/lib/api/streams';
 import ProjectForm from '@/components/projects/ProjectForm';
 import { toast } from 'react-hot-toast';
@@ -298,7 +298,7 @@ export default function ProjectsPage() {
         const isOverdue = new Date(row.endDate) < new Date() && row.status !== 'COMPLETED';
         return (
           <span className={isOverdue ? 'text-red-600 dark:text-red-400 font-medium' : 'text-slate-600 dark:text-slate-400'}>
-            {gtdHelpers.formatDate(row.endDate)}
+            {workflowHelpers.formatDate(row.endDate)}
           </span>
         );
       },
@@ -660,7 +660,7 @@ export default function ProjectsPage() {
                             : 'text-slate-500 dark:text-slate-400'
                         }
                       >
-                        {gtdHelpers.formatDate(project.endDate)}
+                        {workflowHelpers.formatDate(project.endDate)}
                       </span>
                     </div>
                   )}
@@ -670,7 +670,7 @@ export default function ProjectsPage() {
               {/* Dolna krawedz z kolorem priorytetu */}
               <div
                 className="h-1 rounded-b-2xl"
-                style={{ backgroundColor: gtdHelpers.getPriorityColor(project.priority) }}
+                style={{ backgroundColor: workflowHelpers.getPriorityColor(project.priority) }}
               />
             </motion.div>
           ))}

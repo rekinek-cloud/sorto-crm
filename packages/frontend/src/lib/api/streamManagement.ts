@@ -1,6 +1,6 @@
 /**
- * API client functions for GTD Streams
- * Handles all API calls related to GTD functionality
+ * API client functions for Stream Management
+ * Handles all API calls related to stream management functionality
  */
 
 import { StreamRole, StreamType } from '@/types/streams';
@@ -11,7 +11,7 @@ const API_BASE = process.env.NODE_ENV === 'production'
   : '/api/v1';
 
 // Types
-export interface GTDStream {
+export interface ManagedStream {
   id: string;
   name: string;
   description?: string;
@@ -35,7 +35,7 @@ export interface GTDStream {
   };
 }
 
-export interface CreateGTDStreamData {
+export interface CreateManagedStreamData {
   name: string;
   description?: string;
   color?: string;
@@ -47,7 +47,7 @@ export interface CreateGTDStreamData {
   gtdConfig?: any;
 }
 
-export interface GTDConfig {
+export interface StreamConfig {
   inboxBehavior: {
     autoProcessing: boolean;
     autoCreateTasks: boolean;
@@ -76,7 +76,7 @@ export interface GTDConfig {
   };
 }
 
-export interface GTDStats {
+export interface StreamManagementStats {
   totalStreams: number;
   streamsByRole: Record<string, number>;
   streamsByType: Record<string, number>;
@@ -94,7 +94,7 @@ export interface RoutingResult {
   suggestedEnergyLevel?: string;
 }
 
-export interface GTDAnalysisResult {
+export interface StreamAnalysisResult {
   recommendedRole: StreamRole;
   recommendedContext: string;
   recommendedEnergyLevel: string;
@@ -136,63 +136,63 @@ async function apiCall<T>(
 }
 
 // ========================================
-// GTD STREAM MANAGEMENT
+// STREAM MANAGEMENT
 // ========================================
 
-export async function createGTDStream(streamData: CreateGTDStreamData) {
-  return apiCall<{ stream: GTDStream; gtdConfig: GTDConfig }>('/gtd-streams', {
+export async function createManagedStream(streamData: CreateManagedStreamData) {
+  return apiCall<{ stream: ManagedStream; gtdConfig: StreamConfig }>('/stream-management', {
     method: 'POST',
     body: JSON.stringify(streamData)
   });
 }
 
-export async function getGTDStreams() {
-  return apiCall<GTDStream[]>('/gtd-streams');
+export async function getManagedStreams() {
+  return apiCall<ManagedStream[]>('/stream-management');
 }
 
 export async function getStreamsByRole(role: StreamRole) {
-  return apiCall<GTDStream[]>(`/gtd-streams/by-role/${role}`);
+  return apiCall<ManagedStream[]>(`/stream-management/by-role/${role}`);
 }
 
 export async function assignStreamRole(streamId: string, gtdRole: StreamRole) {
-  return apiCall<GTDStream>(`/gtd-streams/${streamId}/role`, {
+  return apiCall<ManagedStream>(`/stream-management/${streamId}/role`, {
     method: 'PUT',
     body: JSON.stringify({ gtdRole })
   });
 }
 
-export async function migrateStreamToGTD(
+export async function migrateStream(
   streamId: string, 
   gtdRole: StreamRole, 
   streamType: StreamType
 ) {
-  return apiCall<{ stream: GTDStream; gtdConfig: GTDConfig }>(`/gtd-streams/${streamId}/migrate`, {
+  return apiCall<{ stream: ManagedStream; gtdConfig: StreamConfig }>(`/stream-management/${streamId}/migrate`, {
     method: 'POST',
     body: JSON.stringify({ gtdRole, streamType })
   });
 }
 
 // ========================================
-// GTD CONFIGURATION
+// STREAM CONFIGURATION
 // ========================================
 
-export async function getGTDConfig(streamId: string) {
-  return apiCall<GTDConfig>(`/gtd-streams/${streamId}/config`);
+export async function getStreamConfig(streamId: string) {
+  return apiCall<StreamConfig>(`/stream-management/${streamId}/config`);
 }
 
-export async function updateGTDConfig(
+export async function updateStreamConfig(
   streamId: string, 
-  config: Partial<GTDConfig>, 
+  config: Partial<StreamConfig>, 
   options: any = {}
 ) {
-  return apiCall<GTDConfig>(`/gtd-streams/${streamId}/config`, {
+  return apiCall<StreamConfig>(`/stream-management/${streamId}/config`, {
     method: 'PUT',
     body: JSON.stringify({ config, options })
   });
 }
 
-export async function resetGTDConfig(streamId: string) {
-  return apiCall<GTDConfig>(`/gtd-streams/${streamId}/config/reset`, {
+export async function resetStreamConfig(streamId: string) {
+  return apiCall<StreamConfig>(`/stream-management/${streamId}/config/reset`, {
     method: 'POST'
   });
 }
@@ -209,19 +209,19 @@ export async function getStreamTree(streamId: string, options: any = {}) {
   }
   
   const query = queryParams.toString();
-  return apiCall<any>(`/gtd-streams/${streamId}/tree${query ? `?${query}` : ''}`);
+  return apiCall<any>(`/stream-management/${streamId}/tree${query ? `?${query}` : ''}`);
 }
 
 export async function getStreamAncestors(streamId: string) {
-  return apiCall<GTDStream[]>(`/gtd-streams/${streamId}/ancestors`);
+  return apiCall<ManagedStream[]>(`/stream-management/${streamId}/ancestors`);
 }
 
 export async function getStreamPath(streamId: string) {
-  return apiCall<any>(`/gtd-streams/${streamId}/path`);
+  return apiCall<any>(`/stream-management/${streamId}/path`);
 }
 
-export async function validateGTDHierarchy(streamId: string) {
-  return apiCall<{ valid: boolean; errors: string[] }>(`/gtd-streams/${streamId}/validate-hierarchy`, {
+export async function validateHierarchy(streamId: string) {
+  return apiCall<{ valid: boolean; errors: string[] }>(`/stream-management/${streamId}/validate-hierarchy`, {
     method: 'POST'
   });
 }
@@ -237,7 +237,7 @@ export async function routeTaskToStream(
     forceStream?: boolean;
   } = {}
 ) {
-  return apiCall<RoutingResult>('/gtd-streams/route/task', {
+  return apiCall<RoutingResult>('/stream-management/route/task', {
     method: 'POST',
     body: JSON.stringify({ taskId, ...options })
   });
@@ -249,7 +249,7 @@ export async function routeEmailToStream(
     preferredStreamId?: string;
   } = {}
 ) {
-  return apiCall<RoutingResult>('/gtd-streams/route/email', {
+  return apiCall<RoutingResult>('/stream-management/route/email', {
     method: 'POST',
     body: JSON.stringify({ messageId, ...options })
   });
@@ -258,7 +258,7 @@ export async function routeEmailToStream(
 export async function bulkRouteResources(
   resources: Array<{ type: string; id: string }>
 ) {
-  return apiCall<RoutingResult[]>('/gtd-streams/route/bulk', {
+  return apiCall<RoutingResult[]>('/stream-management/route/bulk', {
     method: 'POST',
     body: JSON.stringify({ resources })
   });
@@ -268,14 +268,14 @@ export async function bulkRouteResources(
 // ANALYSIS & SUGGESTIONS
 // ========================================
 
-export async function analyzeContentForGTD(content: {
+export async function analyzeContent(content: {
   name: string;
   description?: string;
   existingTasks?: number;
   relatedContacts?: number;
   messageVolume?: number;
 }) {
-  return apiCall<GTDAnalysisResult>('/gtd-streams/analyze', {
+  return apiCall<StreamAnalysisResult>('/stream-management/analyze', {
     method: 'POST',
     body: JSON.stringify(content)
   });
@@ -285,16 +285,16 @@ export async function analyzeContentForGTD(content: {
 // STATISTICS & INSIGHTS
 // ========================================
 
-export async function getGTDStats() {
-  return apiCall<GTDStats>('/gtd-streams/stats');
+export async function getStreamManagementStats() {
+  return apiCall<StreamManagementStats>('/stream-management/stats');
 }
 
 export async function getHierarchyStats() {
-  return apiCall<any>('/gtd-streams/hierarchy-stats');
+  return apiCall<any>('/stream-management/hierarchy-stats');
 }
 
 export async function getRoutingStats() {
-  return apiCall<any>('/gtd-streams/routing-stats');
+  return apiCall<any>('/stream-management/routing-stats');
 }
 
 // ========================================
@@ -302,14 +302,14 @@ export async function getRoutingStats() {
 // ========================================
 
 export async function createProcessingRule(streamId: string, ruleData: any) {
-  return apiCall<any>(`/gtd-streams/${streamId}/rules`, {
+  return apiCall<any>(`/stream-management/${streamId}/rules`, {
     method: 'POST',
     body: JSON.stringify(ruleData)
   });
 }
 
 export async function getProcessingRules(streamId: string) {
-  return apiCall<any[]>(`/gtd-streams/${streamId}/rules`);
+  return apiCall<any[]>(`/stream-management/${streamId}/rules`);
 }
 
 export async function executeRules(data: {
@@ -317,7 +317,7 @@ export async function executeRules(data: {
   entityId: string;
   streamId?: string;
 }) {
-  return apiCall<any[]>('/gtd-streams/rules/execute', {
+  return apiCall<any[]>('/stream-management/rules/execute', {
     method: 'POST',
     body: JSON.stringify(data)
   });
@@ -339,22 +339,22 @@ export async function deleteStream(streamId: string) {
 
 export default {
   // Stream management
-  createGTDStream,
-  getGTDStreams,
+  createManagedStream,
+  getManagedStreams,
   getStreamsByRole,
   assignStreamRole,
-  migrateStreamToGTD,
+  migrateStream,
   
   // Configuration
-  getGTDConfig,
-  updateGTDConfig,
-  resetGTDConfig,
+  getStreamConfig,
+  updateStreamConfig,
+  resetStreamConfig,
   
   // Hierarchy
   getStreamTree,
   getStreamAncestors,
   getStreamPath,
-  validateGTDHierarchy,
+  validateHierarchy,
   
   // Routing
   routeTaskToStream,
@@ -362,10 +362,10 @@ export default {
   bulkRouteResources,
   
   // Analysis
-  analyzeContentForGTD,
+  analyzeContent,
   
   // Statistics
-  getGTDStats,
+  getStreamManagementStats,
   getHierarchyStats,
   getRoutingStats,
   

@@ -48,7 +48,7 @@ export interface CreateSmartMailboxData {
 
 // Get all smart mailboxes with counts
 export async function getSmartMailboxes(): Promise<SmartMailbox[]> {
-  const response = await apiClient.get('/smartmailboxes')
+  const response = await apiClient.get('/mailboxes')
   // Map smart_mailbox_rules to rules
   return response.data.map((mailbox: any) => ({
     ...mailbox,
@@ -62,7 +62,7 @@ export async function getSmartMailboxMessages(
   page = 1,
   options: any = {}
 ): Promise<SmartMailboxMessages> {
-  const response = await apiClient.get(`/smartmailboxes/${mailboxId}/messages`, {
+  const response = await apiClient.get(`/mailboxes/${mailboxId}/messages`, {
     params: { page, limit: options.limit || 20 }
   })
   return response.data
@@ -72,7 +72,7 @@ export async function getSmartMailboxMessages(
 export async function createSmartMailbox(
   data: CreateSmartMailboxData
 ): Promise<SmartMailbox> {
-  const response = await apiClient.post('/smartmailboxes', data)
+  const response = await apiClient.post('/mailboxes', data)
   return response.data
 }
 
@@ -81,13 +81,13 @@ export async function updateSmartMailbox(
   mailboxId: string,
   data: CreateSmartMailboxData
 ): Promise<SmartMailbox> {
-  const response = await apiClient.put(`/smartmailboxes/${mailboxId}`, data)
+  const response = await apiClient.put(`/mailboxes/${mailboxId}`, data)
   return response.data
 }
 
 // Delete custom mailbox
 export async function deleteSmartMailbox(mailboxId: string): Promise<void> {
-  await apiClient.delete(`/smartmailboxes/${mailboxId}`)
+  await apiClient.delete(`/mailboxes/${mailboxId}`)
 }
 
 // Archive message

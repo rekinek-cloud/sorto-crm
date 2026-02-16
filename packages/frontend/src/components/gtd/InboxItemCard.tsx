@@ -2,7 +2,7 @@
 
 import { formatDistanceToNow } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import type { InboxItem } from '@/lib/api/gtdInbox';
+import type { InboxItem } from '@/lib/api/sourceInbox';
 
 interface InboxItemCardProps {
   item: InboxItem;

@@ -185,7 +185,7 @@ export default function SourcePage() {
 
             const [sourceItems, streamsResponse] = await Promise.all([
                 sourceApi.getItems(Object.keys(filters).length > 0 ? filters : undefined),
-                apiClient.get('/gtd-streams'),
+                apiClient.get('/stream-management'),
             ]);
 
             setItems(sourceItems || []);

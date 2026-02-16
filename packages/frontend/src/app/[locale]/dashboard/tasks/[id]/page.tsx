@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Contact, Company } from '@/types/crm';
 import { Task, Context, User, Project } from '@/types/streams';
-import { tasksApi } from '@/lib/api/gtd';
+import { tasksApi } from '@/lib/api/workflow';
 import { toast } from 'react-hot-toast';
 import { GraphModal } from '@/components/graph/GraphModal';
 import TaskForm from '@/components/gtd/TaskForm';

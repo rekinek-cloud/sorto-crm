@@ -3,7 +3,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Project } from '@/types/streams';
-import { gtdHelpers } from '@/lib/api/gtd';
+import { workflowHelpers } from '@/lib/api/workflow';
 import {
   Calendar,
   User,
@@ -39,8 +39,8 @@ export default function ProjectCard({ project, onEdit, onDelete, onOpen }: Proje
               <span
                 className="px-2 py-1 text-xs font-medium rounded-full"
                 style={{
-                  backgroundColor: gtdHelpers.getProjectStatusColor(project.status) + '20',
-                  color: gtdHelpers.getProjectStatusColor(project.status)
+                  backgroundColor: workflowHelpers.getProjectStatusColor(project.status) + '20',
+                  color: workflowHelpers.getProjectStatusColor(project.status)
                 }}
               >
                 {project.status}
@@ -48,8 +48,8 @@ export default function ProjectCard({ project, onEdit, onDelete, onOpen }: Proje
               <span
                 className="px-2 py-1 text-xs font-medium rounded-full"
                 style={{
-                  backgroundColor: gtdHelpers.getPriorityColor(project.priority) + '20',
-                  color: gtdHelpers.getPriorityColor(project.priority)
+                  backgroundColor: workflowHelpers.getPriorityColor(project.priority) + '20',
+                  color: workflowHelpers.getPriorityColor(project.priority)
                 }}
               >
                 {project.priority}
@@ -138,7 +138,7 @@ export default function ProjectCard({ project, onEdit, onDelete, onOpen }: Proje
                   ? 'text-red-600 font-medium'
                   : 'text-gray-500'
               }`}>
-                Due: {gtdHelpers.formatDate(project.endDate)}
+                Due: {workflowHelpers.formatDate(project.endDate)}
               </span>
             </div>
           )}
@@ -148,7 +148,7 @@ export default function ProjectCard({ project, onEdit, onDelete, onOpen }: Proje
       {/* Bottom border with priority color */}
       <div
         className="h-1 rounded-b-lg"
-        style={{ backgroundColor: gtdHelpers.getPriorityColor(project.priority) }}
+        style={{ backgroundColor: workflowHelpers.getPriorityColor(project.priority) }}
       />
     </motion.div>
   );

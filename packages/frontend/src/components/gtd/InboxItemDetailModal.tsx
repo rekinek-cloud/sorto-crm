@@ -5,7 +5,7 @@ import { X, Calendar, User, Tag, ExternalLink, Edit, Trash2, Play } from 'lucide
 import { toast } from 'react-hot-toast';
 import { formatDistanceToNow, format } from 'date-fns';
 import { pl } from 'date-fns/locale';
-import type { InboxItem } from '@/lib/api/gtdInbox';
+import type { InboxItem } from '@/lib/api/sourceInbox';
 
 interface InboxItemDetailModalProps {
   item: InboxItem;

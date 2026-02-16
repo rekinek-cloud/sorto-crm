@@ -88,7 +88,7 @@ export default function StreamsMapPage() {
       setLoading(true);
 
       // Fetch GTD streams
-      const streamsResponse = await apiClient.get('/gtd-streams');
+      const streamsResponse = await apiClient.get('/stream-management');
       const streamsData = streamsResponse.data.data || [];
       setStreams(streamsData);
 

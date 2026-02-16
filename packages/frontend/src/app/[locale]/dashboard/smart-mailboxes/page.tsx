@@ -41,7 +41,7 @@ import {
 
 import QuickCaptureModal from '@/components/gtd/QuickCaptureModal'
 import ProcessInboxModal from '@/components/gtd/ProcessInboxModal'
-import { gtdInboxApi } from '@/lib/api/gtdInbox'
+import { sourceInboxApi } from '@/lib/api/sourceInbox'
 import EmailWriterModal from '@/components/email/EmailWriterModal'
 
 const GLASS_CARD = 'bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm'
@@ -356,7 +356,7 @@ export default function SmartMailboxesPage() {
         actionable: true
       }
 
-      await gtdInboxApi.quickCapture(inboxItem)
+      await sourceInboxApi.quickCapture(inboxItem)
       toast.success(`Dodano do ${action === 'INBOX' ? 'Inbox' : action === 'DO' ? 'Do zrobienia' : 'Odlozone'}`)
     } catch {
       toast.error('Blad przetwarzania')

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { tasksApi } from '@/lib/api/gtd';
+import { tasksApi } from '@/lib/api/workflow';
 import { Task } from '@/types/streams';
 import { toast } from 'react-hot-toast';
 import {
