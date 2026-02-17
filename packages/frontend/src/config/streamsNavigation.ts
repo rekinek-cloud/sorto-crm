@@ -174,6 +174,13 @@ export const streamsNavigation: NavItem[] = [
       { name: 'Transakcje', href: '/dashboard/deals', icon: Handshake, iconWeight: 'duotone' },
       { name: 'Pipeline Analytics', href: '/dashboard/analytics/pipeline', icon: ChartLine, iconWeight: 'duotone' },
       { name: 'Eventy', href: '/dashboard/events', icon: MapPin, iconWeight: 'duotone' },
+    ],
+  },
+  {
+    name: 'CRM Analiza',
+    icon: Brain,
+    iconWeight: 'duotone',
+    children: [
       { name: 'Wywiad klienta', href: '/dashboard/client-intelligence', icon: Brain, iconWeight: 'duotone' },
       { name: 'Zdrowie relacji', href: '/dashboard/health-score', icon: Heart, iconWeight: 'duotone' },
       { name: 'Mapa decyzji', href: '/dashboard/decision-map', icon: Compass, iconWeight: 'duotone' },
@@ -230,41 +237,46 @@ export const streamsNavigation: NavItem[] = [
     ],
   },
 
-  // === HOLDING & ZESPÓŁ ===
+  // === AI ===
   {
-    name: 'Holding',
-    icon: Buildings,
-    iconWeight: 'duotone',
-    children: [
-      { name: 'Struktura', href: '/dashboard/holding', icon: Buildings, iconWeight: 'duotone' },
-      { name: 'Zespół', href: '/dashboard/team', icon: UsersThree, iconWeight: 'duotone' },
-      { name: 'AI Agenci', href: '/dashboard/ai-agents', icon: Robot, iconWeight: 'duotone' },
-    ],
-  },
-
-  // === AI & NARZĘDZIA ===
-  {
-    name: 'AI & Narzędzia',
+    name: 'AI',
     icon: Robot,
     iconWeight: 'duotone',
     children: [
-      { name: 'AI Assistant', href: '/dashboard/ai-assistant', icon: Robot, iconWeight: 'duotone' },
-      { name: 'AI Insights', href: '/dashboard/ai-insights', icon: Sparkle, iconWeight: 'duotone' },
-      { name: 'Konfiguracja AI', href: '/dashboard/ai-rules', icon: Sparkle, iconWeight: 'duotone' },
-      { name: 'Wyszukiwanie AI', href: '/dashboard/search', icon: MagnifyingGlass, iconWeight: 'duotone' },
-      { name: 'RAG Search', href: '/dashboard/rag-search', icon: MagnifyingGlassMinus, iconWeight: 'duotone' },
-      { name: 'Rekomendacje', href: '/dashboard/recommendations', icon: Lightbulb, iconWeight: 'duotone' },
-      { name: 'Voice TTS', href: '/dashboard/voice', icon: Microphone, iconWeight: 'duotone' },
-      { name: 'Graf relacji', href: '/dashboard/graph', icon: Graph, iconWeight: 'duotone' },
-      { name: 'Reguły uniwersalne', href: '/dashboard/universal-rules', icon: FlowArrow, iconWeight: 'duotone' },
-      { name: 'AI Chat (Qwen)', href: '/dashboard/ai-chat', icon: ChatCircle, iconWeight: 'duotone' },
+      { name: 'AI Asystent', href: '/dashboard/ai-assistant', icon: Robot, iconWeight: 'duotone' },
+      { name: 'AI Chat', href: '/dashboard/ai-chat', icon: ChatCircle, iconWeight: 'duotone' },
       { name: 'Gemini', href: '/dashboard/gemini', icon: Sparkle, iconWeight: 'duotone' },
-      { name: 'RAG', href: '/dashboard/rag', icon: Database, iconWeight: 'duotone' },
-      { name: 'Voice Assistant', href: '/dashboard/voice-assistant', icon: Microphone, iconWeight: 'duotone' },
-      { name: 'Voice RAG', href: '/dashboard/voice-rag', icon: Microphone, iconWeight: 'duotone' },
-      { name: 'Universal Search', href: '/dashboard/universal-search', icon: MagnifyingGlass, iconWeight: 'duotone' },
+      { name: 'AI Agenci', href: '/dashboard/ai-agents', icon: Robot, iconWeight: 'duotone' },
+      { name: 'AI Insights', href: '/dashboard/ai-insights', icon: Sparkle, iconWeight: 'duotone' },
+      { name: 'Rekomendacje', href: '/dashboard/recommendations', icon: Lightbulb, iconWeight: 'duotone' },
+    ],
+  },
+
+  // === NARZĘDZIA AI ===
+  {
+    name: 'Narzędzia AI',
+    icon: Sparkle,
+    iconWeight: 'duotone',
+    children: [
+      { name: 'Reguły AI', href: '/dashboard/ai-rules', icon: Sparkle, iconWeight: 'duotone' },
+      { name: 'Providerzy AI', href: '/dashboard/admin/ai-config', icon: Sliders, iconWeight: 'duotone' },
+      { name: 'Pipeline AI', href: '/dashboard/admin/pipeline-config', icon: Sliders, iconWeight: 'duotone' },
+      { name: 'Reguły uniwersalne', href: '/dashboard/universal-rules', icon: FlowArrow, iconWeight: 'duotone' },
       { name: 'Flow Engine', href: '/dashboard/flow', icon: FlowArrow, iconWeight: 'duotone' },
-      { name: 'Flow Conversation', href: '/dashboard/flow/conversation', icon: ChatCircle, iconWeight: 'duotone' },
+      { name: 'Voice TTS', href: '/dashboard/voice', icon: Microphone, iconWeight: 'duotone' },
+      { name: 'Voice Assistant', href: '/dashboard/voice-assistant', icon: Microphone, iconWeight: 'duotone' },
+    ],
+  },
+
+  // === WYSZUKIWANIE ===
+  {
+    name: 'Wyszukiwanie',
+    icon: MagnifyingGlass,
+    iconWeight: 'duotone',
+    children: [
+      { name: 'Wyszukiwarka', href: '/dashboard/universal-search', icon: MagnifyingGlass, iconWeight: 'duotone' },
+      { name: 'RAG Search', href: '/dashboard/rag-search', icon: MagnifyingGlassMinus, iconWeight: 'duotone' },
+      { name: 'Graf relacji', href: '/dashboard/graph', icon: Graph, iconWeight: 'duotone' },
     ],
   },
 
@@ -312,12 +324,13 @@ export const streamsNavigation: NavItem[] = [
     ],
   },
 
-  // === ZESPÓŁ ===
+  // === ZESPÓŁ (polaczony z Holding) ===
   {
     name: 'Zespół',
     icon: UsersThree,
     iconWeight: 'duotone',
     children: [
+      { name: 'Struktura', href: '/dashboard/holding', icon: Buildings, iconWeight: 'duotone' },
       { name: 'Członkowie', href: '/dashboard/team', icon: UsersThree, iconWeight: 'duotone' },
       { name: 'Użytkownicy', href: '/dashboard/users', icon: Users, iconWeight: 'duotone' },
       { name: 'Hierarchia', href: '/dashboard/team/hierarchy', icon: TreeStructure, iconWeight: 'duotone' },
@@ -350,8 +363,6 @@ export const streamsNavigation: NavItem[] = [
     children: [
       { name: 'Infrastruktura', href: '/dashboard/infrastructure', icon: HardDrives, iconWeight: 'duotone' },
       { name: 'Klucze MCP', href: '/dashboard/admin/mcp-keys', icon: Key, iconWeight: 'duotone' },
-      { name: 'Konfiguracja AI', href: '/dashboard/admin/ai-config', icon: Sliders, iconWeight: 'duotone' },
-      { name: 'Konfiguracja Pipeline', href: '/dashboard/admin/pipeline-config', icon: Sliders, iconWeight: 'duotone' },
       { name: 'Zgłoszenia błędów', href: '/dashboard/admin/bug-reports', icon: Bug, iconWeight: 'duotone' },
       { name: 'Informacje', href: '/dashboard/info', icon: Info, iconWeight: 'duotone' },
     ],
