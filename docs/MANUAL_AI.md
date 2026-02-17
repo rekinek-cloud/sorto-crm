@@ -39,32 +39,76 @@ Email przychodzacy
 Kategoria ustalona (np. BUSINESS, NEWSLETTER, TRANSACTIONAL)
        |
        v
-Czy istnieje prompt EMAIL_POST_{KATEGORIA}?
+Czy kategoria = BUSINESS i prompt EMAIL_BIZ_TRIAGE istnieje?
        |                    |
       TAK                  NIE
        |                    |
        v                    v
-  AI odpala             Koniec.
-  (sentiment,           Brak AI.
-   urgency,             Zero kosztow.
-   ekstrakcja
-   firm, kontaktow,
-   leadow, deali,
-   zadan)
+  DWUETAPOWY            Czy istnieje prompt EMAIL_POST_{KATEGORIA}?
+  TRIAGE:                   |              |
+                           TAK            NIE
+  Krok 1: Triage            |              |
+  (gpt-4o-mini,             v              v
+   ~200ms)              AI odpala       Koniec.
+  → kategoria:          (jednym         Brak AI.
+    FAKTURA,             promptem)      Zero kosztow.
+    ZAPYTANIE,
+    PLATNOSC...
+       |
+       v
+  Krok 2: Specjalistyczny
+  prompt EMAIL_BIZ_{KAT}
+  (gpt-4o, ~800ms)
+  → pelna analiza
+    z ekstrakcja encji
+       |
+       v
+  Propozycje AI → HITL
+  (czlowiek zatwierdza)
 ```
+
+### Dwuetapowy pipeline BUSINESS — 13 kategorii
+
+Emaile biznesowe przechodza dwuetapowa analize:
+
+| Kod | Opis | Typowe encje | Stream | Energia |
+|-----|------|------|--------|---------|
+| ZAPYTANIE_OFERTOWE | Zapytanie o cene, oferte, produkt | lead, deal, task | NEXT_ACTIONS | HIGH |
+| FAKTURA | Faktura, rachunek, rozliczenie | task(zaplata) | NEXT_ACTIONS | LOW |
+| REKLAMACJA | Skarga, problem, niezadowolenie | task(HIGH) | NEXT_ACTIONS | HIGH |
+| UMOWA | Kontrakt, aneks, warunki | task, deal | PROJECTS | HIGH |
+| WSPOLPRACA | Propozycja partnerstwa | lead, contact | SOMEDAY_MAYBE | MEDIUM |
+| RAPORT | Zestawienie, analiza, metryki | task(review) | REFERENCE | LOW |
+| SPOTKANIE | Termin, zaproszenie, agenda | task(prep) | NEXT_ACTIONS | MEDIUM |
+| ZLECENIE | Zamowienie, task do wykonania | task(exec), deal | NEXT_ACTIONS | HIGH |
+| DOSTAWA | Logistyka, wysylka, tracking | task(verify) | WAITING_FOR | LOW |
+| PLATNOSC | Przelew, potwierdzenie zaplaty | task(verify) | NEXT_ACTIONS | LOW |
+| WSPARCIE_TECH | Help desk, problem IT | task(fix, HIGH) | NEXT_ACTIONS | HIGH |
+| HR | Rekrutacja, urlop, kadry | task | AREAS | MEDIUM |
+| INNE | Fallback — nie pasuje do zadnej | varies | INBOX | MEDIUM |
+
+**Koszt vs stary system**:
+| | Stary (1 prompt) | Nowy (2 kroki) |
+|--|--------|------|
+| Calls/email | 1 (gpt-4o) | 2 (gpt-4o-mini + gpt-4o) |
+| Input tokens | ~6000 | ~1300 + ~4500 |
+| Output tokens | ~2000 | ~100 + ~1500 |
+| Koszt | ~$0.045 | ~$0.027 |
+| **Oszczednosc** | | **~40%** |
 
 ### Przyklady
 
-| Email | Regula | Kategoria | Prompt istnieje? | AI |
-|-------|--------|-----------|------------------|----|
-| `noreply@firma.pl` | Noreply/System | TRANSACTIONAL | Nie | Nie |
-| `"Faktura proforma 123"` | Faktury | TRANSACTIONAL | Nie | Nie |
-| `"Wycena na tuby 30x21"` | Intencja zakupowa | BUSINESS | Tak (`EMAIL_POST_BUSINESS`) | Tak — wyciaga firme, kontakt, deal |
-| Kontakt z CRM | CRM Protection | BUSINESS | Tak | Tak — post-analiza |
-| Losowy mail | Brak reguly | INBOX | Nie | Nie |
-| Newsletter | Newsletter prefix | NEWSLETTER | Nie (domyslnie) | Nie |
+| Email | Regula | Kategoria | Triage | AI |
+|-------|--------|-----------|--------|----|
+| `noreply@firma.pl` | Noreply/System | TRANSACTIONAL | — | Nie |
+| `"Faktura proforma 123"` | Invoice Detection | BUSINESS | FAKTURA | Tak — kwota, termin, NIP |
+| `"Wycena na tuby 30x21"` | Streams: Business | BUSINESS | ZAPYTANIE_OFERTOWE | Tak — firma, kontakt, deal |
+| `"Termin platnosci"` | Streams: Business | BUSINESS | PLATNOSC | Tak — kwota, data, nr sprawy |
+| Kontakt z CRM | CRM Protection | BUSINESS | (wg tresci) | Tak — dwuetapowa analiza |
+| Losowy mail | Brak reguly | INBOX | — | Nie |
+| Newsletter | Newsletter Patterns | NEWSLETTER | — | Nie |
 
-**Kluczowe**: Dodajac prompt `EMAIL_POST_TRANSACTIONAL`, mozesz wlaczyc AI dla faktur. Usuwajac `EMAIL_POST_BUSINESS`, wylaczysz AI dla zapytan biznesowych.
+**Kluczowe**: Pipeline BUSINESS jest dwuetapowy — triage ustala kategorie, potem specjalistyczny prompt wyciaga szczegoly. Usuwajac `EMAIL_BIZ_TRIAGE` z bazy, system wraca do starego flow (fallback). Dodajac `EMAIL_POST_TRANSACTIONAL`, mozesz wlaczyc AI dla faktur.
 
 ---
 
@@ -397,7 +441,7 @@ Reguly z tabeli `ai_rules` sa sprawdzane ZAWSZE, niezaleznie od wynikow etapow 1
 Posortowane wg priorytetu (malejaco). Pierwsza pasujaca regula wygrywa.
 
 Warunki reguly obsluguia pola: `from`, `subject`, `body`, `domain`, `senderName`
-Operatory: `contains`, `equals`, `startsWith`, `endsWith`, `regex`, `in`, `notIn`, `exists`
+Operatory: `contains`, `not_contains`, `equals`, `not_equals`, `startsWith`, `endsWith`, `regex`, `in`, `notIn`, `exists`, `not_exists`
 
 Regula moze zwrocic:
 - `forceClassification` — wymuszenie kategorii
@@ -421,7 +465,35 @@ Pierwsza wartosc wygrywa. Jesli zaden etap nie dopasowal — **INBOX** z pewnosc
 
 ### Etap 4: Post-analiza AI (bramka promptow)
 
-To jedyne miejsce, gdzie LLM jest rzeczywiscie wywolywany. Hierarchia promptow:
+To jedyne miejsce, gdzie LLM jest rzeczywiscie wywolywany.
+
+#### 4a. Dwuetapowy triage BUSINESS (nowy)
+
+Jesli klasyfikacja = **BUSINESS** i prompt `EMAIL_BIZ_TRIAGE` istnieje w bazie:
+
+```
+Krok 1: Triage (gpt-4o-mini, ~200ms, ~300 tokenow)
+  - Truncated body (500 znakow) + subject + from
+  - Zwraca: { category, confidence, reasoning }
+  - Np: { "category": "ZAPYTANIE_OFERTOWE", "confidence": 0.98, "reasoning": "..." }
+       |
+       v
+Krok 2: Specjalistyczny prompt EMAIL_BIZ_{CATEGORY} (gpt-4o, ~800ms)
+  - Pelna tresc emaila + zmienne triage
+  - Zwraca: JSON z leads, contacts, deals, tasks, tags, streamRouting
+  - Kazdy prompt skupiony na swojej domenie (np. FAKTURA wyciaga NIP, kwoty, terminy)
+       |
+       v
+Merge: triage metadata + specjalistyczny wynik → propozycje AI
+```
+
+**Fallback**: Jesli `EMAIL_BIZ_TRIAGE` nie istnieje → przechodzi do starego flow ponizej.
+**Fallback 2**: Jesli `EMAIL_BIZ_{CATEGORY}` nie istnieje → probuje `EMAIL_BIZ_INNE`.
+**Rollback**: Usun `EMAIL_BIZ_TRIAGE` z DB → stary flow dziala bez zmian.
+
+#### 4b. Klasyczny flow (dla nie-BUSINESS lub gdy brak triage)
+
+Hierarchia promptow:
 
 1. **Inline z reguly** — jesli dopasowana regula ma pola `aiPrompt` / `aiSystemPrompt`
 2. **Template z reguly** — jesli regula ma `templateId` → szuka w bazie promptow
@@ -429,15 +501,35 @@ To jedyne miejsce, gdzie LLM jest rzeczywiscie wywolywany. Hierarchia promptow:
 
 Jesli zaden prompt nie istnieje na zadnym poziomie → **AI sie NIE odpala**.
 
-Jesli prompt istnieje, AI analizuje email i zwraca:
-- **Sentiment**: POSITIVE / NEUTRAL / NEGATIVE
-- **Urgency score**: 0-100
-- **Leads**: wykryte leady sprzedazowe
-- **Contacts**: nowe lub zidentyfikowane kontakty
-- **Deals**: potencjalne transakcje
-- **Tasks**: zadania do wykonania
+#### Wyniki analizy AI
 
-Na podstawie odpowiedzi AI system automatycznie tworzy encje CRM (firmy, kontakty, leady, deale, zadania) z 24-godzinnym zabezpieczeniem przed duplikatami.
+Niezaleznie od flow (triage czy klasyczny), AI zwraca:
+- **Category**: kategoria biznesowa (np. ZAPYTANIE_OFERTOWE, FAKTURA, PLATNOSC)
+- **Sentiment**: POSITIVE / NEUTRAL / NEGATIVE
+- **Urgency**: LOW / MEDIUM / HIGH / CRITICAL (lub score 0-100)
+- **Summary**: krotkie podsumowanie
+- **Stream Routing**: sugerowany strumien GTD (NEXT_ACTIONS, WAITING_FOR, itp.)
+- **Contacts**: wykryte kontakty (imie, email, telefon)
+- **Leads**: leady sprzedazowe (firma, priorytet)
+- **Deals**: potencjalne transakcje (tytul, wartosc)
+- **Tasks**: zadania do wykonania (tytul, priorytet, deadline)
+- **Tags**: tematyczne tagi (np. finanse, platnosc, windykacja)
+- **Category Specific**: dane specyficzne dla kategorii (np. kwota, NIP, nr faktury)
+
+#### Propozycje AI (Human-in-the-Loop)
+
+Jesli konfiguracja ma `requireReview: true` (domyslnie dla BUSINESS), AI tworzy **propozycje** w tabeli `ai_suggestions` zamiast automatycznego tworzenia encji:
+
+| Typ propozycji | Opis |
+|----------------|------|
+| ROUTE_TO_STREAM | Sugestia routingu do strumienia GTD |
+| CREATE_TASK | Propozycja zadania z tytulem i priorytetem |
+| CREATE_CONTACT | Nowy kontakt z danymi z emaila |
+| CREATE_COMPANY | Nowa firma z domena i NIP |
+| CREATE_DEAL | Nowy deal z wartoscia |
+| CREATE_LEAD | Nowy lead sprzedazowy |
+
+Propozycje czekaja na zatwierdzenie w zakladce **"Sugestie AI"** lub w **AnalysisPreviewModal** po analizie emaila.
 
 ### Etap 5: Post-akcje
 
@@ -657,15 +749,31 @@ Po zakonczeniu: "Analiza zakonczona! Wykonano N regul"
 
 System sugestii pozwala AI proponowac akcje, ktore MUSISZ zatwierdzic.
 
+**AI SUGERUJE — CZLOWIEK DECYDUJE.** Kazda propozycja AI czeka na Twoja akceptacje lub odrzucenie.
+
 ### Typy sugestii
 
 | Typ | Opis | Co sie dzieje po akceptacji |
 |-----|------|-----------------------------|
+| ROUTE_TO_STREAM | Propozycja routingu do strumienia GTD | Email kierowany do wybranego strumienia |
 | CREATE_TASK | Propozycja utworzenia zadania | Zadanie tworzone w systemie |
-| CREATE_DEAL | Propozycja utworzenia deala | Deal tworzony (wymaga companyId) |
+| CREATE_CONTACT | Propozycja nowego kontaktu | Kontakt tworzony z danymi z emaila |
+| CREATE_COMPANY | Propozycja nowej firmy | Firma tworzona z domena i NIP |
+| CREATE_DEAL | Propozycja utworzenia deala | Deal tworzony z wartoscia |
+| CREATE_LEAD | Propozycja nowego leada | Lead tworzony w CRM |
 | UPDATE_CONTACT | Propozycja aktualizacji kontaktu | Kontakt aktualizowany (wybrane pola) |
 | BLACKLIST_DOMAIN | Propozycja dodania domeny na blacklist | Domena dodana do blacklisty |
 | SEND_NOTIFICATION | Propozycja powiadomienia | Tylko logowane, informacyjne |
+
+### AnalysisPreviewModal
+
+Po analizie emaila w Smart Mailboxes otwiera sie modal z podgladem wszystkich propozycji AI:
+
+- **Podsumowanie**: kategoria, pilnosc, sentyment, opis
+- **Stream Routing**: sugerowany strumien GTD z kontekstem i poziomem energii
+- **Lista propozycji**: karty z typem (ikona + kolor), tytulem, danymi i confidence
+- **Akcje per propozycja**: Zaakceptuj / Odrzuc z powodem
+- **Akcje zbiorcze**: Zaakceptuj wszystkie / Odrzuc wszystkie
 
 ### Akceptacja
 
@@ -715,25 +823,50 @@ Etap 5: Post-akcje wg konfiguracji (np. Flow)
 Wynik: TRANSACTIONAL, 0 tokenow AI, 0 kosztow
 ```
 
-### Scenariusz 2: Zapytanie ofertowe (AI dziala)
+### Scenariusz 2: Zapytanie ofertowe (dwuetapowy triage)
 
 ```
 Email: jan.kowalski@abc-firma.pl → "Wycena na tuby aluminiowe 30x21, 500 szt"
 
 Etap 1: CRM Check — brak kontaktu
 Etap 2: Listy/Patterny — brak
-Etap 2.5: Regula "Intencja zakupowa" (priorytet 500) → body pasuje (regex: wycena|szt)
+Etap 2.5: Regula "Streams: Zaawansowana analiza biznesowa" (priorytet 90)
+           → fromDomain not_contains ["noreply","mailer-daemon","no-reply"] → pasuje
 Etap 3: forceClassification = BUSINESS
-Etap 4: Prompt EMAIL_POST_BUSINESS istnieje → AI odpala!
-  → AI zwraca: sentiment=POSITIVE, urgency=65
-  → AI wyciaga: firma "ABC Firma", kontakt "Jan Kowalski"
-  → AI sugeruje: deal "Tuby aluminiowe 30x21", task "Przygotuj wycene"
-Etap 5: RAG + Flow + tworzenie encji
+Etap 4: Dwuetapowy triage:
+  Krok 1 (triage, gpt-4o-mini): → ZAPYTANIE_OFERTOWE (confidence: 0.98)
+  Krok 2 (EMAIL_BIZ_ZAPYTANIE_OFERTOWE, gpt-4o):
+    → sentiment=POSITIVE, urgency=HIGH
+    → firma "ABC Firma", kontakt "Jan Kowalski", tel: 123456789
+    → deal "Tuby aluminiowe 30x21 500szt", task "Przygotuj wycene"
+    → streamRouting: NEXT_ACTIONS, context: @computer, energy: HIGH
+Etap 5: RAG + Flow + propozycje AI (HITL)
 
-Wynik: BUSINESS, firma+kontakt+deal+task utworzone automatycznie
+Wynik: BUSINESS/ZAPYTANIE_OFERTOWE, 4 propozycje do zatwierdzenia
 ```
 
-### Scenariusz 3: Istniejacy kontakt CRM
+### Scenariusz 3: Platnosc od Vindicat (triage PLATNOSC)
+
+```
+Email: system@vindicat.pl → "Powiadomienie o nadchodzacym terminie platnosci"
+
+Etap 1: CRM Check — brak kontaktu
+Etap 2: Listy/Patterny — brak
+Etap 2.5: Regula "Streams: Business" → fromDomain not_contains noreply → pasuje
+Etap 3: forceClassification = BUSINESS
+Etap 4: Dwuetapowy triage:
+  Krok 1 (triage): → PLATNOSC (confidence: 0.98)
+  Krok 2 (EMAIL_BIZ_PLATNOSC):
+    → kwota: 444,99 PLN, termin: 19.02.2026
+    → nr sprawy: 277131022026, rachunek: 751050016...
+    → task "Zweryfikowac status zobowiazania 444,99 PLN"
+    → streamRouting: NEXT_ACTIONS, tags: finanse, platnosc, windykacja
+Etap 5: RAG + Flow + propozycje AI
+
+Wynik: BUSINESS/PLATNOSC, task + firma + kontakt zaproponowane
+```
+
+### Scenariusz 4: Istniejacy kontakt CRM
 
 ```
 Email: anna@staly-klient.pl → "Dzien dobry, potrzebujemy dodatkowej partii..."
@@ -742,14 +875,15 @@ Etap 1: CRM Check → kontakt "Anna" znaleziony → BUSINESS (100%)
 Etap 2: Pomijany
 Etap 2.5: Reguly sprawdzone (ale CRM juz dopasowal)
 Etap 3: BUSINESS z pewnoscia 1.0
-Etap 4: EMAIL_POST_BUSINESS istnieje → AI analizuje
-  → ekstrakcja potrzeb, aktualizacja kontaktu, utworzenie zadan
-Etap 5: RAG + Flow + task extraction
+Etap 4: Dwuetapowy triage (jesli EMAIL_BIZ_TRIAGE istnieje):
+  Krok 1: → ZLECENIE (confidence: 0.90)
+  Krok 2 (EMAIL_BIZ_ZLECENIE): specyfikacja, deadline, encje
+Etap 5: RAG + Flow + propozycje AI
 
-Wynik: BUSINESS, istniejacy kontakt powiazany, AI post-analiza
+Wynik: BUSINESS/ZLECENIE, istniejacy kontakt powiazany, propozycje HITL
 ```
 
-### Scenariusz 4: Dodanie nowej kategorii
+### Scenariusz 5: Dodanie nowej kategorii (klasyczny flow)
 
 1. **Zakladka Kategorie** → "Nowa kategoria" → `REKLAMACJA` → opis: "Zgloszenia reklamacyjne"
 2. **Zakladka Reguly** → "Nowa regula":
@@ -764,7 +898,9 @@ Wynik: BUSINESS, istniejacy kontakt powiazany, AI post-analiza
 
 Od teraz: kazda reklamacja → regula → REKLAMACJA → AI wyciaga szczegoly → zadanie z HIGH priority
 
-### Scenariusz 5: Zmiana modelu AI per operacja
+**Uwaga**: Kategoria REKLAMACJA jest juz obslugiwana przez dwuetapowy triage (EMAIL_BIZ_REKLAMACJA). Tworzenie osobnej kategorii ma sens tylko jesli chcesz inny flow niz BUSINESS.
+
+### Scenariusz 6: Zmiana modelu AI per operacja
 
 1. **Zakladka Akcje AI** → EMAIL_PIPELINE
 2. Zmien model glowny z `gpt-4o-mini` na `claude-3-sonnet`
@@ -791,11 +927,12 @@ Od teraz: kazda reklamacja → regula → REKLAMACJA → AI wyciaga szczegoly �
 
 ### "Za duzo tokenow / za wysokie koszty"
 
-1. **Zmniejsz AI content limit** w Pipeline Config → Limity (domyslnie 10000 znakow)
-2. **Uzyj tanszego modelu** — np. `gpt-4o-mini` zamiast `gpt-4o`
-3. **Zmniejsz Max Tokens** w prompcie (np. z 4000 na 1000)
-4. **Wylacz AI dla kategorii** — usun prompt `EMAIL_POST_{KATEGORIA}`
-5. **Ogranicz post-akcje** — wylacz niepotrzebne akcje w Pipeline Config → Post-akcje
+1. **Dwuetapowy triage** juz oszczedza ~40% kosztow (triage na gpt-4o-mini)
+2. **Zmniejsz AI content limit** w Pipeline Config → Limity (domyslnie 10000 znakow)
+3. **Uzyj tanszego modelu** — np. `gpt-4o-mini` zamiast `gpt-4o`
+4. **Zmniejsz Max Tokens** w prompcie (np. z 4000 na 1000)
+5. **Wylacz AI dla kategorii** — usun prompt `EMAIL_POST_{KATEGORIA}`
+6. **Ogranicz post-akcje** — wylacz niepotrzebne akcje w Pipeline Config → Post-akcje
 
 ### "Brak modeli w liscie wyboru"
 
@@ -825,9 +962,38 @@ Od teraz: kazda reklamacja → regula → REKLAMACJA → AI wyciaga szczegoly �
 
 ### "Chce wylaczyc AI calkowicie"
 
-1. Usun WSZYSTKIE prompty `EMAIL_POST_*` — AI sie nie odpali na zadnym emailu
+1. Usun WSZYSTKIE prompty `EMAIL_POST_*` i `EMAIL_BIZ_*` — AI sie nie odpali na zadnym emailu
 2. Lub wylacz providerow w zakladce Konfiguracja
 3. Reguly beda dzialac normalnie (klasyfikacja bez AI)
+
+### "Jak wylaczyc dwuetapowy triage?"
+
+1. Usun prompt `EMAIL_BIZ_TRIAGE` z bazy (lub zmien status na DRAFT)
+2. `runBusinessTriage()` zwroci null → automatyczny fallback do starego flow
+3. Stary flow: `EMAIL_POST_BUSINESS` (jesli istnieje) → pojedyncza analiza
+
+### "Triage klasyfikuje bledna kategorie"
+
+1. Edytuj prompt `EMAIL_BIZ_TRIAGE` w zakladce Prompty
+2. Dodaj przykłady lub doprecyzuj definicje kategorii w systemPrompt
+3. Zmniejsz temperature (domyslnie 0.1 — juz niska)
+4. Jesli specjalistyczny prompt nie istnieje, system probuje `EMAIL_BIZ_INNE` (fallback)
+
+### "Regula AI z not_contains nie dziala"
+
+Operator `not_contains` jest obslugiwany od wersji z dwuetapowym triage. Dostepne operatory negacji:
+- `not_contains` — domena/tresc NIE zawiera danego ciagu
+- `not_equals` — pole NIE jest rowne wartosci
+- `not_exists` — pole jest puste
+
+Jesli regula nadal nie dziala, sprawdz logi: `[AIRules] Unknown operator: ...` — nieznany operator bedzie zalogowany.
+
+### "Propozycje AI sie nie pojawiaja"
+
+1. Sprawdz czy `requireReview: true` w Pipeline Config → Post-akcje (domyslnie dla BUSINESS)
+2. Jesli `requireReview: false`, encje sa tworzone automatycznie (bez propozycji)
+3. Przejdz do zakladki "Sugestie AI" i sprawdz filtr statusu (Oczekujace)
+4. Po analizie emaila w Smart Mailboxes powinien sie otworzyc AnalysisPreviewModal
 
 ---
 
@@ -840,8 +1006,12 @@ Od teraz: kazda reklamacja → regula → REKLAMACJA → AI wyciaga szczegoly �
 | Przypisac model do operacji | Konfiguracja AI → Akcje AI |
 | Utworzyc regule klasyfikacji | Konfiguracja AI → Reguly |
 | Wlaczyc AI per kategoria | Konfiguracja AI → Prompty (dodaj `EMAIL_POST_*`) |
+| Edytowac prompt triage | Konfiguracja AI → Prompty → `EMAIL_BIZ_TRIAGE` |
+| Edytowac prompt specjalistyczny | Konfiguracja AI → Prompty → `EMAIL_BIZ_{KATEGORIA}` |
+| Wylaczyc dwuetapowy triage | Usun/zarchiwizuj `EMAIL_BIZ_TRIAGE` |
 | Dodac kategorie | Konfiguracja AI → Kategorie |
 | Przegladac sugestie AI | Konfiguracja AI → Sugestie AI |
+| Zatwierdzic propozycje po analizie | Smart Mailboxes → AnalysisPreviewModal |
 | Skonfigurowac pipeline | Admin → Pipeline Config |
 | Analizowac email reczne | Smart Mailboxes → przycisk Analiza AI |
 | Analizowac element CRM | Projekt/Zadanie/Deal/Kontakt → przycisk Analiza AI |
