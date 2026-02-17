@@ -788,8 +788,12 @@ export class RuleProcessingPipeline {
     switch (operator) {
       case 'contains':
         return lowerTargets.some(t => fieldValue.includes(t));
+      case 'not_contains':
+        return !lowerTargets.some(t => fieldValue.includes(t));
       case 'equals':
         return lowerTargets.some(t => fieldValue === t);
+      case 'not_equals':
+        return !lowerTargets.some(t => fieldValue === t);
       case 'startsWith':
         return lowerTargets.some(t => fieldValue.startsWith(t));
       case 'endsWith':
@@ -802,7 +806,10 @@ export class RuleProcessingPipeline {
         return !lowerTargets.includes(fieldValue);
       case 'exists':
         return fieldValue !== '';
+      case 'not_exists':
+        return fieldValue === '';
       default:
+        logger.warn(`[AIRules] Unknown operator: ${operator}`);
         return false;
     }
   }
@@ -902,6 +909,120 @@ export class RuleProcessingPipeline {
   // Stage 4a: Post-classification AI Analysis (per-classification prompt)
   // ===========================================================================
 
+  /**
+   * Two-step business email triage:
+   * Step 1: Quick category classification (gpt-4o-mini, ~200ms)
+   * Step 2: Specialized analysis based on category (gpt-4o, ~800ms)
+   * Returns combined JSON string or null if triage prompt not found (fallback to legacy).
+   */
+  private async runBusinessTriage(
+    organizationId: string,
+    entityData: EntityData,
+    variables: Record<string, any>
+  ): Promise<string | null> {
+    // --- STEP 1: TRIAGE ---
+    const triageVars = {
+      from: variables.from,
+      subject: variables.subject,
+      body: (entityData.body || entityData.content || '').substring(0, 500),
+      today: variables.today,
+    };
+
+    const triageCompiled = await PromptManager.compilePrompt('EMAIL_BIZ_TRIAGE', {
+      variables: triageVars,
+      organizationId,
+    });
+
+    if (!triageCompiled) {
+      // Triage prompt not seeded — fall through to legacy single-prompt flow
+      return null;
+    }
+
+    const aiRouter = new AIRouter({ organizationId, prisma: this.prisma });
+    await aiRouter.initializeProviders();
+    if (!aiRouter.hasAvailableProviders()) return null;
+
+    const triageResponse = await aiRouter.processRequest({
+      model: triageCompiled.model,
+      messages: [
+        { role: 'system', content: triageCompiled.systemPrompt },
+        { role: 'user', content: triageCompiled.userPrompt },
+      ],
+      config: { temperature: triageCompiled.temperature, maxTokens: triageCompiled.maxTokens },
+    });
+
+    const triageParsed = this.parseAIResponse(triageResponse.content);
+    if (!triageParsed || !triageParsed.category) {
+      logger.warn('[BusinessTriage] Failed to parse triage response, falling back');
+      return null;
+    }
+
+    const category = String(triageParsed.category).toUpperCase();
+    logger.info(`[BusinessTriage] Triage result: ${category} (confidence: ${triageParsed.confidence})`);
+
+    // --- STEP 2: SPECIALIZED ANALYSIS ---
+    const specializedVars = {
+      ...variables,
+      triageCategory: category,
+      triageConfidence: triageParsed.confidence,
+      triageReasoning: triageParsed.reasoning || '',
+    };
+
+    let specializedCode = `EMAIL_BIZ_${category}`;
+    let specializedCompiled = await PromptManager.compilePrompt(specializedCode, {
+      variables: specializedVars,
+      organizationId,
+    });
+
+    if (!specializedCompiled) {
+      // No specialized prompt for this category — fall back to INNE
+      specializedCode = 'EMAIL_BIZ_INNE';
+      specializedCompiled = await PromptManager.compilePrompt(specializedCode, {
+        variables: specializedVars,
+        organizationId,
+      });
+    }
+
+    if (!specializedCompiled) {
+      logger.warn(`[BusinessTriage] No prompt for ${category} and no INNE fallback`);
+      return null;
+    }
+
+    logger.info(`[BusinessTriage] Running specialized: ${specializedCode}`);
+
+    const resolvedModel = await resolveModelForAction(organizationId, 'EMAIL_CLASSIFICATION');
+    const specializedResponse = await aiRouter.processRequest({
+      model: resolvedModel?.modelName ?? specializedCompiled.model,
+      messages: [
+        { role: 'system', content: specializedCompiled.systemPrompt },
+        { role: 'user', content: specializedCompiled.userPrompt },
+      ],
+      config: { temperature: specializedCompiled.temperature, maxTokens: specializedCompiled.maxTokens },
+    });
+
+    // Merge triage metadata into specialized result
+    const specializedParsed = this.parseAIResponse(specializedResponse.content);
+    if (!specializedParsed) {
+      return JSON.stringify({
+        category,
+        triageConfidence: triageParsed.confidence,
+        summary: triageParsed.reasoning || '',
+        urgency: 'MEDIUM',
+        sentiment: 'NEUTRAL',
+      });
+    }
+
+    const merged = {
+      ...specializedParsed,
+      triageCategory: category,
+      triageConfidence: triageParsed.confidence,
+      triageReasoning: triageParsed.reasoning,
+      category: specializedParsed.category || category,
+    };
+
+    return JSON.stringify(merged);
+  }
+
   private async runPostClassificationPrompt(
     organizationId: string,
     entityData: EntityData,
@@ -910,14 +1031,73 @@ export class RuleProcessingPipeline {
   ): Promise<string | null> {
     try {
       const emailBody = (entityData.body || entityData.content || '').substring(0, this.config.contentLimits.aiContentLimit);
-      const variables = {
+      const variables: Record<string, any> = {
         from: entityData.from || entityData.senderName || '',
         subject: entityData.subject || '',
         body: emailBody,
         classification,
+        today: new Date().toISOString().split('T')[0],
       };
 
-      // Prompt hierarchy:
+      // Enrich with CRM context (optional variables)
+      try {
+        const [contacts, streams, deals] = await Promise.all([
+          this.prisma.contact.findMany({
+            where: { organizationId },
+            select: { id: true, firstName: true, lastName: true, email: true, company: true },
+            take: 30,
+            orderBy: { updatedAt: 'desc' },
+          }),
+          this.prisma.stream.findMany({
+            where: { organizationId, status: { not: 'ARCHIVED' } },
+            select: { id: true, name: true, streamRole: true, streamType: true },
+            take: 20,
+            orderBy: { updatedAt: 'desc' },
+          }),
+          this.prisma.deal.findMany({
+            where: { organizationId, stage: { notIn: ['CLOSED_WON', 'CLOSED_LOST'] } },
+            select: { id: true, title: true, value: true, stage: true },
+            take: 15,
+            orderBy: { updatedAt: 'desc' },
+          }),
+        ]);
+
+        if (contacts.length > 0) {
+          variables.knownContacts = contacts.map((c: any) => ({
+            name: `${c.firstName} ${c.lastName}`.trim(),
+            email: c.email || '',
+            companyName: c.company || '',
+          }));
+        }
+        if (streams.length > 0) {
+          variables.activeStreams = streams.map((s: any) => ({
+            name: s.name,
+            role: s.streamRole || 'CUSTOM',
+            category: s.streamType || '',
+          }));
+        }
+        if (deals.length > 0) {
+          variables.existingDeals = deals.map((d: any) => ({
+            title: d.title,
+            stage: d.stage,
+            value: d.value || 0,
+          }));
+        }
+      } catch (ctxError) {
+        logger.debug(`[PostClassification] Could not fetch CRM context: ${ctxError}`);
+      }
+
+      // =====================================================================
+      // Two-step triage for BUSINESS classification
+      // If EMAIL_BIZ_TRIAGE exists in DB, runs triage → specialized prompt.
+      // If not, falls through to legacy single-prompt flow.
+      // =====================================================================
+      if (classification === 'BUSINESS') {
+        const triageResult = await this.runBusinessTriage(organizationId, entityData, variables);
+        if (triageResult) return triageResult;
+      }
+
+      // Prompt hierarchy (legacy / non-BUSINESS):
       // 1) Inline prompt from rule (aiPrompt/aiSystemPrompt fields)
       // 2) Template specified by rule (templateId field)
       // 3) Default: EMAIL_POST_{classification}
@@ -1630,6 +1810,57 @@ export class RuleProcessingPipeline {
             },
             confidence: Math.round((parsed.confidence || 0.6) * 100),
             reasoning: `Zadanie wyekstrahowane z analizy emaila`,
+            status: 'PENDING',
+          },
+        });
+        proposalCount++;
+      }
+
+      // === 6. STREAM ROUTING proposal (from Streams prompt) ===
+      if (parsed.streamRouting && parsed.streamRouting.suggestedRole) {
+        await this.prisma.ai_suggestions.create({
+          data: {
+            id: `sug-stream-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            user_id: adminUser.id,
+            organization_id: organizationId,
+            context: 'ROUTE_TO_STREAM',
+            input_data: inputData,
+            suggestion: {
+              suggestedRole: parsed.streamRouting.suggestedRole,
+              context: parsed.streamRouting.context || null,
+              energyLevel: parsed.streamRouting.energyLevel || null,
+              reasoning: parsed.streamRouting.reasoning || null,
+              category: parsed.category || classification,
+              twoMinuteRule: parsed.twoMinuteRule || false,
+              tags: parsed.tags || [],
+              complexity: parsed.complexity || null,
+              estimatedResponseTime: parsed.estimatedResponseTime || null,
+            },
+            confidence: Math.round((parsed.confidence || 0.7) * 100),
+            reasoning: parsed.streamRouting.reasoning || `Routing do strumienia ${parsed.streamRouting.suggestedRole}`,
+            status: 'PENDING',
+          },
+        });
+        proposalCount++;
+      }
+
+      // === 7. RZUT Goal proposal (if detected in Streams analysis) ===
+      if (parsed.rzut && parsed.rzut.detected && parsed.rzut.rezultat) {
+        await this.prisma.ai_suggestions.create({
+          data: {
+            id: `sug-goal-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            user_id: adminUser.id,
+            organization_id: organizationId,
+            context: 'CREATE_GOAL_RZUT',
+            input_data: inputData,
+            suggestion: {
+              rezultat: parsed.rzut.rezultat,
+              zmierzalnosc: parsed.rzut.zmierzalnosc || null,
+              ujscie: parsed.rzut.ujscie || null,
+              tlo: parsed.rzut.tlo || null,
+            },
+            confidence: Math.round((parsed.confidence || 0.5) * 100),
+            reasoning: `Cel RZUT wykryty w emailu: ${parsed.rzut.rezultat}`,
             status: 'PENDING',
           },
         });

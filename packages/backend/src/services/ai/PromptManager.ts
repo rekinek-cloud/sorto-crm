@@ -77,11 +77,14 @@ class PromptManagerService {
    * Get prompt template by code
    */
   async getPromptByCode(code: string, organizationId?: string): Promise<PromptTemplate | null> {
+    // Try by code first, then by id (ai_rules.templateId stores UUID)
     const prompt = await prisma.ai_prompt_templates.findFirst({
       where: {
-        code,
+        OR: [
+          { code, ...(organizationId ? { organizationId } : {}) },
+          { id: code, ...(organizationId ? { organizationId } : {}) },
+        ],
         status: 'ACTIVE',
-        ...(organizationId ? { organizationId } : {})
       }
     });
 

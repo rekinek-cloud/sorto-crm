@@ -214,6 +214,63 @@ router.post('/:id/accept',
           });
           break;
 
+        case 'ROUTE_TO_STREAM': {
+          const singleStreamRole = data.suggestedRole || 'INBOX';
+          const singleTargetStream = await prisma.stream.findFirst({
+            where: {
+              organizationId: req.user!.organizationId,
+              streamRole: singleStreamRole,
+              status: { not: 'ARCHIVED' },
+            },
+          });
+
+          if (singleTargetStream && suggestion.input_data && typeof suggestion.input_data === 'object') {
+            const singleInputData = suggestion.input_data as Record<string, any>;
+            createdEntity = await prisma.inboxItem.create({
+              data: {
+                content: singleInputData.subject || 'Routed from email',
+                sourceType: 'EMAIL',
+                source: singleInputData.from || 'email',
+                actionable: !data.twoMinuteRule,
+                urgencyScore: data.twoMinuteRule ? 90 : 50,
+                capturedById: req.user!.id,
+                organizationId: req.user!.organizationId,
+                streamId: singleTargetStream.id,
+              },
+            }).catch((): null => null);
+          }
+          break;
+        }
+
+        case 'CREATE_GOAL_RZUT': {
+          // Create a task representing the RZUT goal with full description
+          const rzutDesc = [
+            data.rezultat ? `**R (Rezultat):** ${data.rezultat}` : null,
+            data.zmierzalnosc ? `**Z (Mierzalnosc):** ${data.zmierzalnosc}` : null,
+            data.ujscie ? `**U (Termin):** ${data.ujscie}` : null,
+            data.tlo ? `**T (Tlo):** ${data.tlo}` : null,
+          ].filter(Boolean).join('\n');
+
+          let parsedRzutDate: Date | null = null;
+          if (data.ujscie) {
+            const d = new Date(data.ujscie);
+            if (!isNaN(d.getTime())) parsedRzutDate = d;
+          }
+
+          createdEntity = await prisma.task.create({
+            data: {
+              title: `[RZUT] ${data.rezultat || 'Cel z analizy AI'}`,
+              description: rzutDesc,
+              priority: 'HIGH',
+              status: 'NEW',
+              dueDate: parsedRzutDate,
+              createdById: req.user!.id,
+              organizationId: req.user!.organizationId,
+            },
+          }).catch((): null => null);
+          break;
+        }
+
         case 'SEND_NOTIFICATION':
           // Notification suggestions are informational — just log acceptance
           logger.info(`Notification suggestion accepted: ${data?.subject || 'no subject'}`);
@@ -483,6 +540,64 @@ router.post('/bulk-action',
                   priority: data.priority || 'MEDIUM',
                   status: 'NEW',
                   dueDate: parsedDueDate,
+                  createdById: req.user!.id,
+                  organizationId: req.user!.organizationId,
+                },
+              }).catch((): null => null);
+              break;
+            }
+
+            case 'ROUTE_TO_STREAM': {
+              // Accept stream routing — create inbox_item in target stream
+              const bulkStreamRole = data.suggestedRole || 'INBOX';
+              const bulkTargetStream = await prisma.stream.findFirst({
+                where: {
+                  organizationId: req.user!.organizationId,
+                  streamRole: bulkStreamRole,
+                  status: { not: 'ARCHIVED' },
+                },
+              });
+
+              if (bulkTargetStream && suggestion.input_data && typeof suggestion.input_data === 'object') {
+                const bulkInputData = suggestion.input_data as Record<string, any>;
+                createdEntity = await prisma.inboxItem.create({
+                  data: {
+                    content: bulkInputData.subject || 'Routed from email',
+                    sourceType: 'EMAIL',
+                    source: bulkInputData.from || 'email',
+                    actionable: !data.twoMinuteRule,
+                    urgencyScore: data.twoMinuteRule ? 90 : 50,
+                    capturedById: req.user!.id,
+                    organizationId: req.user!.organizationId,
+                    streamId: bulkTargetStream.id,
+                  },
+                }).catch((): null => null);
+              }
+              break;
+            }
+
+            case 'CREATE_GOAL_RZUT': {
+              // Accept RZUT goal — create task with RZUT description
+              const bulkRzutDesc = [
+                data.rezultat ? `**R (Rezultat):** ${data.rezultat}` : null,
+                data.zmierzalnosc ? `**Z (Mierzalnosc):** ${data.zmierzalnosc}` : null,
+                data.ujscie ? `**U (Termin):** ${data.ujscie}` : null,
+                data.tlo ? `**T (Tlo):** ${data.tlo}` : null,
+              ].filter(Boolean).join('\n');
+
+              let bulkRzutDate: Date | null = null;
+              if (data.ujscie) {
+                const d = new Date(data.ujscie);
+                if (!isNaN(d.getTime())) bulkRzutDate = d;
+              }
+
+              createdEntity = await prisma.task.create({
+                data: {
+                  title: `[RZUT] ${data.rezultat || 'Cel z analizy AI'}`,
+                  description: bulkRzutDesc,
+                  priority: 'HIGH',
+                  status: 'NEW',
+                  dueDate: bulkRzutDate,
                   createdById: req.user!.id,
                   organizationId: req.user!.organizationId,
                 },

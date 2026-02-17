@@ -6,6 +6,7 @@ import { toast } from 'react-hot-toast'
 import {
   X, Check, XCircle, Building2, User, Target,
   Handshake, CheckSquare, Sparkles, AlertTriangle,
+  Navigation, Crosshair, Clock, Tag,
 } from 'lucide-react'
 import { AnalysisProposal, bulkActionSuggestions } from '@/lib/api/smartMailboxes'
 
@@ -25,6 +26,8 @@ const TYPE_CONFIG: Record<string, { icon: any; label: string; color: string; bgC
   CREATE_LEAD: { icon: Target, label: 'Lead', color: 'text-purple-600', bgColor: 'bg-purple-50' },
   CREATE_DEAL: { icon: Handshake, label: 'Transakcja', color: 'text-amber-600', bgColor: 'bg-amber-50' },
   CREATE_TASK: { icon: CheckSquare, label: 'Zadanie', color: 'text-indigo-600', bgColor: 'bg-indigo-50' },
+  ROUTE_TO_STREAM: { icon: Navigation, label: 'Strumien', color: 'text-cyan-600', bgColor: 'bg-cyan-50' },
+  CREATE_GOAL_RZUT: { icon: Crosshair, label: 'Cel RZUT', color: 'text-rose-600', bgColor: 'bg-rose-50' },
 }
 
 const CLASS_COLORS: Record<string, string> = {
@@ -80,6 +83,42 @@ function ProposalFields({ type, data }: { type: string; data: Record<string, any
           <span className="col-span-2">Tytul: <b className="text-gray-800">{data.title}</b></span>
           {data.priority && <span>Priorytet: <b className="text-gray-800">{data.priority}</b></span>}
           {data.deadline && <span>Deadline: <b className="text-gray-800">{data.deadline}</b></span>}
+          {data.context && <span>Kontekst: <b className="text-gray-800">{data.context}</b></span>}
+          {data.estimatedMinutes && <span>Czas: <b className="text-gray-800">~{data.estimatedMinutes}min</b></span>}
+        </div>
+      )
+    case 'ROUTE_TO_STREAM':
+      return (
+        <div className="grid grid-cols-2 gap-1 text-xs text-gray-600">
+          <span>Rola: <b className="text-gray-800">{data.suggestedRole}</b></span>
+          {data.context && <span>Kontekst: <b className="text-gray-800">{data.context}</b></span>}
+          {data.energyLevel && <span>Energia: <b className="text-gray-800">{data.energyLevel}</b></span>}
+          {data.category && <span>Kategoria: <b className="text-gray-800">{data.category}</b></span>}
+          {data.twoMinuteRule && (
+            <span className="col-span-2 flex items-center gap-1">
+              <Clock className="w-3 h-3 text-orange-500" />
+              <b className="text-orange-600">Regula 2 minut — zrob od razu!</b>
+            </span>
+          )}
+          {data.tags && data.tags.length > 0 && (
+            <span className="col-span-2 flex items-center gap-1 flex-wrap">
+              <Tag className="w-3 h-3 text-gray-400" />
+              {data.tags.map((tag: string, i: number) => (
+                <span key={i} className="bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded text-[10px]">{tag}</span>
+              ))}
+            </span>
+          )}
+          {data.complexity && <span>Zlozonosc: <b className="text-gray-800">{data.complexity}</b></span>}
+          {data.estimatedResponseTime && <span>Czas reakcji: <b className="text-gray-800">{data.estimatedResponseTime}</b></span>}
+        </div>
+      )
+    case 'CREATE_GOAL_RZUT':
+      return (
+        <div className="grid grid-cols-1 gap-1 text-xs text-gray-600">
+          <span><b className="text-rose-700">R</b> Rezultat: <b className="text-gray-800">{data.rezultat}</b></span>
+          {data.zmierzalnosc && <span><b className="text-rose-700">Z</b> Mierzalnosc: <b className="text-gray-800">{data.zmierzalnosc}</b></span>}
+          {data.ujscie && <span><b className="text-rose-700">U</b> Termin: <b className="text-gray-800">{data.ujscie}</b></span>}
+          {data.tlo && <span><b className="text-rose-700">T</b> Tlo: <b className="text-gray-800">{data.tlo}</b></span>}
         </div>
       )
     default:
