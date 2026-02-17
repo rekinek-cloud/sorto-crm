@@ -384,7 +384,7 @@ export default function EnhancedStreamPage() {
                         <div className="flex items-center justify-between mb-2">
                           <h4 className="font-medium">
                             <a
-                              href={`/crm/dashboard/projects/${project.id}`}
+                              href={`/dashboard/projects/${project.id}`}
                               className="text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                             >
                               {project.name}
@@ -436,7 +436,7 @@ export default function EnhancedStreamPage() {
                         <div>
                           <h4 className={`font-medium ${task.status === 'COMPLETED' ? 'line-through text-slate-500 dark:text-slate-400' : 'text-slate-900 dark:text-slate-100'}`}>
                             <a
-                              href={`/crm/dashboard/tasks/${task.id}`}
+                              href={`/dashboard/tasks/${task.id}`}
                               className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                             >
                               {task.title}
@@ -486,7 +486,7 @@ export default function EnhancedStreamPage() {
                         <div className="flex items-center justify-between">
                           <h4 className="font-medium">
                             <a
-                              href={`/crm/dashboard/companies/${company.id}`}
+                              href={`/dashboard/companies/${company.id}`}
                               className="text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                             >
                               {company.name}
@@ -515,7 +515,7 @@ export default function EnhancedStreamPage() {
                         <div>
                           <h4 className="font-medium">
                             <a
-                              href={`/crm/dashboard/deals/${deal.id}`}
+                              href={`/dashboard/deals/${deal.id}`}
                               className="text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                             >
                               {deal.title}
@@ -554,7 +554,7 @@ export default function EnhancedStreamPage() {
                         <div className="flex items-center justify-between">
                           <h4 className="font-medium">
                             <a
-                              href={`/crm/dashboard/contacts/${contact.id}`}
+                              href={`/dashboard/contacts/${contact.id}`}
                               className="text-slate-900 dark:text-slate-100 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                             >
                               {contact.firstName} {contact.lastName}

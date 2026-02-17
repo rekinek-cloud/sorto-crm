@@ -255,7 +255,7 @@ export default function NextActionsKanbanPage() {
             <Check className="w-3 h-3" />
           </button>
           <button
-            onClick={() => router.push(`/crm/dashboard/tasks/${action.id}/edit`)}
+            onClick={() => router.push(`/dashboard/tasks/${action.id}/edit`)}
             className="p-1 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
             title="Edit"
           >

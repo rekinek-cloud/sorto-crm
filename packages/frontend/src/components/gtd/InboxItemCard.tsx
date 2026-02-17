@@ -95,7 +95,7 @@ export default function InboxItemCard({ item, onProcess, onDelete, onClick }: In
                   </span>
                   {item.resultingTask && (
                     <a 
-                      href={`/crm/dashboard/tasks/${item.resultingTask.id}`}
+                      href={`/dashboard/tasks/${item.resultingTask.id}`}
                       className="text-xs text-primary-600 hover:underline"
                     >
                       → {item.resultingTask.title}

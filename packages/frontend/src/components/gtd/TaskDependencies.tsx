@@ -354,7 +354,7 @@ export default function TaskDependencies({ taskId, onDependenciesChange }: TaskD
                       <div className="flex items-center space-x-2 mb-2">
                         {getStatusIcon(dep.task.status)}
                         <a 
-                          href={`/crm/dashboard/tasks/${dep.task.id}`}
+                          href={`/dashboard/tasks/${dep.task.id}`}
                           className="font-medium text-blue-600 hover:text-blue-700"
                         >
                           {dep.task.title}
@@ -423,7 +423,7 @@ export default function TaskDependencies({ taskId, onDependenciesChange }: TaskD
                     <div className="flex-1">
                       <div className="flex items-center space-x-2 mb-2">
                         <a 
-                          href={`/crm/dashboard/tasks/${dep.task.id}`}
+                          href={`/dashboard/tasks/${dep.task.id}`}
                           className="font-medium text-blue-600 hover:text-blue-700"
                         >
                           {dep.task.title}

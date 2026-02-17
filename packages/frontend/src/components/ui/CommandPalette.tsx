@@ -294,7 +294,7 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
   const handleQuickCreate = (type: string) => {
     onClose();
     // Navigate to creation form
-    router.push(`/crm/dashboard/${type}s?create=true`);
+    router.push(`/dashboard/${type}s?create=true`);
   };
 
   const handleQuickCapture = () => {

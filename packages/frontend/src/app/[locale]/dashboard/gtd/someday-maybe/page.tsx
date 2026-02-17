@@ -11,7 +11,7 @@ export default function GTDSomedayMaybeRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/crm/dashboard/streams/frozen');
+    router.replace('/dashboard/streams/frozen');
   }, [router]);
 
   return (

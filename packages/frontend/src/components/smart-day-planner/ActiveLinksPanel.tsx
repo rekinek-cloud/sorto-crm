@@ -171,7 +171,7 @@ const ActiveLinksPanel: React.FC<ActiveLinksPanelProps> = ({
           <div>
             <h4 className="text-xs font-medium text-gray-700 mb-2">TERAZ</h4>
             <Link
-              href={`/crm/dashboard/smart-day-planner?block=${currentBlock.id}`}
+              href={`/dashboard/smart-day-planner?block=${currentBlock.id}`}
               className="block p-3 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
             >
               <div className="flex items-center justify-between">

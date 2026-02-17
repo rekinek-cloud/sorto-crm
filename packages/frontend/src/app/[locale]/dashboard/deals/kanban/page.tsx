@@ -274,7 +274,7 @@ export default function DealsKanbanPage() {
             {deal.probability}%
           </span>
           <button
-            onClick={() => router.push(`/crm/dashboard/deals/${deal.id}/edit`)}
+            onClick={() => router.push(`/dashboard/deals/${deal.id}/edit`)}
             className="p-1 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 rounded"
             title="Edit"
           >

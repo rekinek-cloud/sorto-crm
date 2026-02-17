@@ -278,7 +278,7 @@ const StreamManager: React.FC = () => {
 
   // Handle stream open
   const handleOpenStream = (streamId: string) => {
-    router.push(`/crm/dashboard/streams/${streamId}`);
+    router.push(`/dashboard/streams/${streamId}`);
   };
 
   // Handle freeze stream

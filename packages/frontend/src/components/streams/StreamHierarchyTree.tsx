@@ -251,7 +251,7 @@ export default function StreamHierarchyTree({
   const [includePermissions, setIncludePermissions] = useState(showPermissions);
 
   const handleViewDetails = (targetStreamId: string) => {
-    router.push(`/crm/dashboard/streams/${targetStreamId}`);
+    router.push(`/dashboard/streams/${targetStreamId}`);
   };
 
   useEffect(() => {

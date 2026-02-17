@@ -10,7 +10,7 @@ export default function GTDWaitingForRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/crm/dashboard/delegated');
+    router.replace('/dashboard/delegated');
   }, [router]);
 
   return (

@@ -10,7 +10,7 @@ export default function GTDNextActionsRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/crm/dashboard/tasks');
+    router.replace('/dashboard/tasks');
   }, [router]);
 
   return (

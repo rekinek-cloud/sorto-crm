@@ -11,7 +11,7 @@ export default function GTDInboxRedirect() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace('/crm/dashboard/source');
+    router.replace('/dashboard/source');
   }, [router]);
 
   return (
