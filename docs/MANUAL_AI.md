@@ -717,30 +717,407 @@ Skrzynki z "spark", "ai" lub "auto" w nazwie automatycznie wyswietlaja ikone AI 
 
 ## 8. AI w modulach CRM
 
-### UniversalAnalysisButton
+AI w Sorto CRM dziala na dwoch poziomach:
+1. **Reczna analiza** — uzytkownik klika przycisk "Analiza AI" na elemencie CRM (projekt, zadanie, deal, kontakt). System uruchamia pasujace reguly AI i zwraca wynik.
+2. **Automatyczne propozycje z pipeline emailowego** — pipeline analizujacy emaile tworzy propozycje encji (leady, kontakty, transakcje, zadania), ktore pojawiaja sie w zakladce "Sugestie AI" do zatwierdzenia.
 
-Przycisk **"Analiza AI"** (fioletowy gradient z ikona gwiazdek) dostepny w:
+Oba poziomy lacza sie w centralnym miejscu: **zakladce "Sugestie AI"** w Konfiguracji AI (`/dashboard/ai-rules/` → Sugestie AI).
+
+### 8.1 UniversalAnalysisButton
+
+Przycisk **"Analiza AI"** (fioletowy gradient z ikona gwiazdek) to uniwersalny komponent dostepny w:
 - **Projektach** — karta projektu, widok listy
 - **Zadaniach** — widok szczegolowy
 - **Dealach** — karta deala
 - **Kontaktach** — widok kontaktu
+- **Komunikacji** — wiadomosci w Smart Mailboxes
 
-**Uzycie**:
+#### Jak dziala
+
+Przycisk laczy sie z **UniversalRuleEngine** na backendzie. Po kliknieciu:
+
+1. Frontend wysyla POST na `/api/v1/universal-rules/analyze` z parametrami:
+   - `module` — typ modulu (`projects`, `tasks`, `deals`, `contacts`, `communication`)
+   - `itemId` — identyfikator analizowanego elementu
+   - `analysisType` — opcjonalny typ analizy (np. `smart-score`, `risk-assessment`)
+2. Backend pobiera dane elementu z bazy
+3. Backend wyszukuje WSZYSTKIE aktywne reguly AI pasujace do modulu
+4. Kazda pasujaca regula jest wykonywana — AI generuje odpowiedz
+5. Wyniki sa zwracane do frontendu i moga tworzyc sugestie w tabeli `ai_suggestions`
+
+#### Uzycie
+
 1. **Szybkie klikniecie** — uruchamia WSZYSTKIE pasujace reguly AI dla elementu
 2. **Ikona zebatki** — otwiera modal z lista dostepnych analiz:
-   - Nazwa analizy
-   - Opis
-   - Szacowany czas
-   - Model AI
-3. Przycisk "Uruchom wszystkie dostepne analizy" u dolu modala
+   - Nazwa analizy (np. "Analiza SMART", "Ocena ryzyka")
+   - Opis co analiza robi
+   - Szacowany czas wykonania (np. "30-60 sekund")
+   - Model AI uzywany do analizy
+3. Przycisk **"Uruchom wszystkie dostepne analizy"** u dolu modala — odpala wszystko naraz
+4. Mozesz tez kliknac konkretna analize aby uruchomic tylko ja
 
-Po zakonczeniu: "Analiza zakonczona! Wykonano N regul"
+Po zakonczeniu: toast "Analiza zakonczona! Wykonano N regul"
 
-### Warianty wyswietlania
+#### Warianty wyswietlania
 
-- **button** (domyslny) — pelny przycisk z tekstem "Analiza AI" + ikona zebatki
-- **icon** — mala ikona gwiazdek z tooltipem
-- **compact** — kompaktowy tekst "Analizuj" z ikona
+| Wariant | Wyglad | Gdzie uzywany |
+|---------|--------|---------------|
+| **button** (domyslny) | Pelny przycisk z tekstem "Analiza AI" + ikona zebatki | Karty projektow, widoki szczegolowe |
+| **icon** | Mala ikona gwiazdek z tooltipem "Uruchom analize AI" | Tabele, listy kompaktowe |
+| **compact** | Tekst "Analizuj" + mala ikona gwiazdek | Panele boczne, toolbar |
+
+#### Auto-trigger (automatyczne wyzwalanie)
+
+Oprocz recznego klikniecia, reguly moga byc wyzwalane automatycznie przy zmianach danych:
+- Endpoint: POST `/api/v1/universal-rules/auto-trigger`
+- Wyzwalany przy tworzeniu, aktualizacji lub usuwaniu elementow
+- Reguly z wyzwalaczem "Automatyczny" wykonuja sie bez ingerencji uzytkownika
+
+### 8.2 AI w Projektach
+
+Projekty maja dwa dedykowane typy analizy AI dostepne z poziomu `UniversalAnalysisButton`:
+
+#### Analiza SMART (`smart-score`)
+
+AI ocenia projekt wedlug kryteriow SMART:
+- **S** (Specific) — czy cel jest dostatecznie precyzyjny?
+- **M** (Measurable) — czy da sie zmierzyc postep?
+- **A** (Achievable) — czy jest realistyczny?
+- **R** (Relevant) — czy jest istotny dla organizacji?
+- **T** (Time-bound) — czy ma okreslony termin?
+
+**Co widzi uzytkownik**:
+1. Kliknij "Analiza AI" na karcie projektu → wybierz "Analiza SMART"
+2. Czekaj 30-60 sekund (model GPT-4)
+3. Otrzymujesz wynik: ocena kazdego kryterium + sugestie poprawek
+
+**Dane wejsciowe wysylane do AI**:
+- Nazwa projektu, opis
+- Deadline, budzet
+- Wielkosc zespolu, status, priorytet
+
+#### Ocena ryzyka (`risk-assessment`)
+
+AI analizuje ryzyko projektu i prawdopodobienstwo sukcesu:
+- Identyfikacja zagrozen (brak zasobow, nierealne terminy, niejasne wymagania)
+- Ocena prawdopodobienstwa kazdego ryzyka
+- Rekomendacje mitygacji
+
+**Co widzi uzytkownik**:
+1. Kliknij "Analiza AI" → wybierz "Ocena ryzyka"
+2. Czekaj ~45 sekund
+3. Otrzymujesz: liste ryzyk z priorytetami i rekomendacje
+
+#### Automatyczne reguly dla projektow
+
+Mozesz tworzyc reguly AI ktore automatycznie analizuja projekty:
+
+**Przyklad reguly**: "Analizuj SMART nowe projekty"
+- **Modul**: Projekty
+- **Wyzwalacz**: Automatyczny (przy tworzeniu)
+- **Warunek**: status = PLANNING
+- **Akcja**: `ai-analysis` z promptem "Ocen projekt wedlug SMART..."
+- **Model**: GPT-4
+
+### 8.3 AI w Kontaktach
+
+Kontakty korzystaja z AI na dwa sposoby: reczna analiza z przycisku i automatyczne propozycje z pipeline emailowego.
+
+#### Reczna analiza kontaktow
+
+Dwa typy analizy dostepne z `UniversalAnalysisButton`:
+
+**Strategia zaangazowania** (`engagement-strategy`):
+- AI analizuje historye kontaktu (ostatni kontakt, interakcje, status)
+- Generuje plan reaktywacji i budowania relacji
+- Sugeruje nastepne kroki (np. "Umow spotkanie online, kontakt nie odpowiadal od 31 dni")
+- Model: GPT-3.5, czas: 30-45 sekund
+
+**Analiza relacji** (`relationship-analysis`):
+- Ocena jakosci i potencjalu relacji biznesowej
+- Scoring relacji (lead score, engagement score)
+- Sugestie jak poglebic wspolprace
+- Model: GPT-3.5, czas: ~40 sekund
+
+**Dane wejsciowe wysylane do AI**:
+- Imie, stanowisko, firma kontaktu
+- Data ostatniego kontaktu i ile dni temu
+- Status kontaktu (ACTIVE, LEAD, itp.)
+- Historia interakcji, typ relacji, zainteresowania
+
+#### Automatyczne propozycje kontaktow z emaili
+
+Gdy pipeline emailowy analizuje wiadomosc i wykryje nowego nadawce (ktory nie istnieje w CRM), tworzy propozycje `CREATE_CONTACT`:
+
+**Jak to dziala**:
+1. AI analizuje email i wyciaga dane nadawcy
+2. System sprawdza czy kontakt o takim emailu juz istnieje w CRM
+3. Jesli NIE istnieje — tworzy propozycje z danymi:
+   - Imie i nazwisko (z podpisu emaila lub nagłówka "From")
+   - Adres email nadawcy
+   - Telefon (jesli wykryty w tresci)
+   - Stanowisko (jesli wykryte)
+   - Firma (z domeny lub z tresci)
+   - Status: `LEAD` (dla BUSINESS) lub `ACTIVE` (inne)
+   - Tag: `from-email-analysis`
+4. Propozycja pojawia sie w zakladce **Sugestie AI** ze statusem PENDING
+
+**Co widzi uzytkownik**:
+- W zakladce Sugestie AI: karta z ikona kontaktu (zielona), imie i nazwisko, email, firma
+- Pasek pewnosci AI (np. 70%)
+- Akcje: Zaakceptuj (kontakt zostanie utworzony) / Zmien i zaakceptuj / Odrzuc
+
+#### Propozycja aktualizacji kontaktu (`UPDATE_CONTACT`)
+
+Jesli kontakt JUZ istnieje w CRM, ale AI wykryje nowe informacje (zmiana stanowiska, nowy telefon), tworzy propozycje `UPDATE_CONTACT`:
+- Wskazuje ktore pola sa nowe/zmienione
+- Uzytkownik decyduje czy zaktualizowac
+- Aktualizowane moga byc: imie, nazwisko, email, telefon, stanowisko, notatki
+
+### 8.4 AI w Transakcjach (Deals)
+
+#### Reczna analiza transakcji
+
+Dwa typy analizy z `UniversalAnalysisButton`:
+
+**Analiza ryzyka deala** (`risk-assessment`):
+- Ocena prawdopodobienstwa zamkniecia transakcji
+- Identyfikacja ryzyk blokujacych (brak decyzji klienta, konkurencja, budzet)
+- Rekomendacje nastepnych krokow
+- Model: GPT-4, czas: 60-90 sekund
+
+**Strategia negocjacji** (`negotiation-strategy`):
+- Rekomendacje dla procesu negocjacyjnego
+- Analiza pozycji negocjacyjnej
+- Sugestie dotyczace ceny, warunkow, argumentow
+- Model: GPT-4, czas: ~45 sekund
+
+**Dane wejsciowe wysylane do AI**:
+- Nazwa klienta, wartosc transakcji
+- Etap w pipeline (PROSPECT, QUALIFIED, PROPOSAL, NEGOTIATION)
+- Ile dni w pipeline
+- Data ostatniego kontaktu
+- Historia klienta, informacje o konkurencji
+
+#### Automatyczne propozycje deali z emaili
+
+Pipeline emailowy tworzy propozycje `CREATE_DEAL` gdy AI wykryje w emailu informacje o transakcji:
+
+**Kiedy AI proponuje nowy deal**:
+- Email zawiera zapytanie ofertowe z konkretnymi produktami
+- Email zawiera kwote/wartosc zamowienia
+- Triage klasyfikuje email jako ZAPYTANIE_OFERTOWE lub ZLECENIE
+
+**Dane w propozycji**:
+- Tytul (np. "Tuby aluminiowe 30x21 500szt")
+- Wartosc (jesli wykryta w tresci, np. "75000 PLN")
+- Etap: domyslnie `PROSPECT`
+- Zrodlo: `Email`
+- Powiazanie z firma (jesli firma juz istnieje lub zostala zaproponowana)
+- Opis: temat emaila + nadawca
+
+**Deduplikacja**: System sprawdza czy deal o takim samym tytule nie zostal utworzony w ciagu ostatnich 24 godzin. Jesli tak — pomija.
+
+**Co widzi uzytkownik**:
+- W Sugestiach AI: karta z ikona Handshake (zielona/bursztynowa), tytul deala, wartosc, etap
+- Pasek pewnosci (np. 50%)
+- Moze zmienic wartosc, etap, tytul przed akceptacja
+
+### 8.5 AI w Zadaniach
+
+#### Reczna analiza zadan
+
+Dwa typy analizy z `UniversalAnalysisButton`:
+
+**Podzial zadania** (`task-breakdown`):
+- AI analizuje zlozonosc zadania i proponuje podzial na mniejsze czesci
+- Kazdy krok dostaje szacowany czas i priorytet
+- Przydatne dla zadan z estimatedHours > 4h
+- Model: GPT-3.5, czas: 20-40 sekund
+
+**Wskazowki produktywnosci** (`productivity-tips`):
+- Sugestie optymalizacji wykonania zadania
+- Propozycje narzedzi, kontekstow (@computer, @calls) i blokow czasowych
+- Rekomendacje kolejnosci wykonania
+- Model: GPT-3.5, czas: ~30 sekund
+
+**Dane wejsciowe wysylane do AI**:
+- Tytul i opis zadania
+- Szacowane godziny
+- Priorytet i kontekst GTD
+
+#### Automatyczne propozycje zadan z emaili
+
+Pipeline emailowy tworzy propozycje `CREATE_TASK` na trzy sposoby:
+
+**1. Jawne zadania** — AI wyciaga z tresci emaila konkretne "action items":
+- `"Prosze o przygotowanie wyceny do piatku"` → task: "Przygotuj wycene", deadline: piatek, priority: HIGH
+- `"Zadzwon do mnie w sprawie zamowienia"` → task: "Zadzwonic ws. zamowienia", priority: MEDIUM
+
+**2. Wymagane akcje (`requiredActions`)** — pilne dzialania z emaila:
+- `"Prosze pilnie potwierdzic platnosc"` → task: "Potwierdzic platnosc", priority: MEDIUM
+
+**3. Elementy do wykonania (`actionItems`)** — mniej pilne:
+- `"Zapoznac sie z nowa oferta w zalaczniku"` → task: "Zapoznac sie z oferta", priority: LOW
+
+**Limity**: System tworzy maksymalnie 5 propozycji zadan z jednego emaila. Zadanie musi miec tytul dluzszy niz 5 znakow.
+
+**Deduplikacja**: Sprawdzenie czy zadanie o identycznym tytule nie istnieje z ostatnich 24h.
+
+**Dane w propozycji**:
+- Tytul zadania
+- Opis (zawiera temat emaila i nadawce)
+- Priorytet: LOW / MEDIUM / HIGH / URGENT
+- Deadline (jesli wykryty w tresci)
+
+**Co widzi uzytkownik**:
+- W Sugestiach AI: karta z ikona CheckSquare (niebieska), tytul, priorytet, deadline
+- Pasek pewnosci (np. 60%)
+- Moze zmienic tytul, priorytet, dodac projekt/strumien przed akceptacja
+
+### 8.6 Sugestie encji z Pipeline emailowego
+
+Pipeline emailowy to glowne zrodlo automatycznych propozycji AI. Kazdy email przechodzacy przez analize AI (etap 4 pipeline) moze wygenerowac do 7 typow propozycji w jednym przebiegu.
+
+#### Pelny przeplyw generowania propozycji
+
+```
+Email → Klasyfikacja → Triage (BUSINESS) → Analiza specjalistyczna
+                                                      |
+                                                      v
+                                              JSON z encjami:
+                                              {
+                                                leads: [...],
+                                                contacts: [...],
+                                                deals: [...],
+                                                tasks: [...],
+                                                streamRouting: {...},
+                                                rzut: {...}
+                                              }
+                                                      |
+                                                      v
+                                         Walidacja + Deduplikacja
+                                                      |
+                                                      v
+                                    Zapis do tabeli ai_suggestions
+                                         (status: PENDING)
+                                                      |
+                                                      v
+                                    Uzytkownik widzi w UI:
+                                    - Zakladka "Sugestie AI"
+                                    - AnalysisPreviewModal (po analizie emaila)
+```
+
+#### 7 typow propozycji tworzonych przez pipeline
+
+| Nr | Typ | Kontekst w DB | Kiedy tworzony | Warunek |
+|----|-----|---------------|----------------|---------|
+| 1 | Firma | `CREATE_COMPANY` | Nadawca z nieznanej domeny (nie-darmowej) | Firma nie istnieje w CRM |
+| 2 | Kontakt | `CREATE_CONTACT` | Nadawca nie istnieje jako kontakt | Email nadawcy nie znaleziony |
+| 3 | Lead | `CREATE_LEAD` | AI wykryje lead sprzedazowy | Brak identycznego leada z 24h |
+| 4 | Transakcja | `CREATE_DEAL` | AI wykryje okazje sprzedazowa | Brak identycznego deala z 24h |
+| 5 | Zadanie | `CREATE_TASK` | AI wykryje wymagane dzialania | Max 5 na email, min 5 znakow tytulu |
+| 6 | Stream routing | `ROUTE_TO_STREAM` | AI ustali strumien GTD | streamRouting.suggestedRole istnieje |
+| 7 | Cel RZUT | `CREATE_GOAL_RZUT` | AI wykryje cel mierzalny | rzut.detected = true |
+
+#### Kolejnosc przetwarzania i linkowanie
+
+Propozycje sa tworzone w ustalonej kolejnosci, co umozliwia linkowanie miedzy nimi:
+
+1. **Firma** (CREATE_COMPANY) — tworzona jako pierwsza. Jesli firma istnieje w CRM, jej ID jest zapamietywane.
+2. **Kontakt** (CREATE_CONTACT) — korzysta z ID firmy (jesli znaleziona lub zaproponowana).
+3. **Leady** (CREATE_LEAD) — niezalezne, sprawdzane z deduplikacja 24h.
+4. **Deale** (CREATE_DEAL) — linkowane do firmy (jesli znaleziona). Moga miec wartosc wyciagnieta z emaila.
+5. **Zadania** (CREATE_TASK) — z trzech zrodel: `tasks`, `requiredActions`, `actionItems`.
+6. **Stream routing** (ROUTE_TO_STREAM) — propozycja routingu do strumienia GTD z kontekstem i poziomem energii.
+7. **Cel RZUT** (CREATE_GOAL_RZUT) — jesli AI wykryje cel sprzedazowy (R-rezultat, Z-mierzalnosc, U-termin, T-tlo).
+
+#### Przyklad: co pipeline tworzy z jednego emaila
+
+```
+Email: jan.kowalski@abc-firma.pl → "Wycena na tuby aluminiowe 30x21, 500 szt, cena za sztuke?"
+
+Pipeline tworzy 5 propozycji:
+
+1. CREATE_COMPANY
+   → Firma: "ABC Firma", domena: abc-firma.pl, status: PROSPECT
+   → Confidence: 70%
+
+2. CREATE_CONTACT
+   → Jan Kowalski, jan.kowalski@abc-firma.pl, firma: ABC Firma
+   → Status: LEAD, tag: from-email-analysis
+   → Confidence: 70%
+
+3. CREATE_LEAD
+   → "ABC Firma - zapytanie ofertowe"
+   → Firma: ABC Firma, priorytet: MEDIUM, zrodlo: Email
+   → Confidence: 60%
+
+4. CREATE_DEAL
+   → "Tuby aluminiowe 30x21 500szt"
+   → Wartosc: 0 (nie podano), etap: PROSPECT
+   → Confidence: 50%
+
+5. CREATE_TASK
+   → "Przygotuj wycene na tuby 30x21 500szt"
+   → Priorytet: HIGH, deadline: (jesli wykryty)
+   → Confidence: 60%
+```
+
+#### Gdzie uzytkownik widzi propozycje
+
+**1. Zakladka "Sugestie AI"** (`/dashboard/ai-rules/` → druga zakladka):
+- Filtr: Oczekujace / Zaakceptowane / Odrzucone
+- Kazda propozycja wyswietla: typ (ikona + kolor + badge), tytul, opis, confidence, date
+- Rozwiecie karty pokazuje szczegoly (pola encji, uzasadnienie AI, dane emaila)
+- Akcje: Zaakceptuj / Zmien i zaakceptuj / Odrzuc z korekcja
+
+**2. AnalysisPreviewModal** (po analizie emaila w Smart Mailboxes):
+- Otwiera sie automatycznie po zakonczeniu analizy emaila
+- Naglowek: klasyfikacja emaila (np. BUSINESS) + pewnosc (np. 98%)
+- Lista propozycji z checkboxami — mozesz odznaczac te, ktore nie sa potrzebne
+- Kazda propozycja ma ikone i kolor wg typu:
+  - Firma (Building2, niebieska)
+  - Kontakt (User, zielona)
+  - Lead (Target, fioletowa)
+  - Transakcja (Handshake, bursztynowa)
+  - Zadanie (CheckSquare, indigo)
+  - Stream routing (Navigation, cyan)
+  - Cel RZUT (Crosshair, rozowa)
+- Szczegoly encji wyswietlane inline (nazwa, email, wartosc, priorytet, deadline)
+- Przyciski: "Zatwierdz wybrane (N)" / "Odrzuc wszystkie" / "Zamknij"
+
+**3. Akcje zbiorcze (bulk)**:
+- Endpoint: POST `/api/v1/ai-suggestions/bulk-action`
+- Mozna zaakceptowac lub odrzucic wiele propozycji jednoczesnie
+- AnalysisPreviewModal domyslnie zaznacza WSZYSTKIE propozycje
+
+#### Co sie dzieje po akceptacji
+
+Po kliknieciu "Zaakceptuj" system natychmiast tworzy encje w CRM:
+
+| Typ propozycji | Tworzona encja | Tabela |
+|----------------|---------------|--------|
+| CREATE_COMPANY | Firma | `company` |
+| CREATE_CONTACT | Kontakt | `contact` |
+| CREATE_LEAD | Lead | `lead` |
+| CREATE_DEAL | Transakcja | `deal` |
+| CREATE_TASK | Zadanie | `task` |
+| ROUTE_TO_STREAM | Inbox item w strumieniu | `inboxItem` |
+| CREATE_GOAL_RZUT | Zadanie z prefiksem [RZUT] | `task` |
+| UPDATE_CONTACT | Aktualizacja istniejacego kontaktu | `contact` |
+| BLACKLIST_DOMAIN | Domena w blacklistcie | `email_domain_rules` |
+
+#### Nauka AI z decyzji uzytkownika
+
+Kazda decyzja (akceptacja, modyfikacja, odrzucenie) jest zapisywana w polu `user_modifications` sugestii:
+
+- **Akceptacja bez zmian** → `{ acceptedBy: userId }` — AI wie, ze propozycja byla dobra
+- **Akceptacja ze zmianami** → `{ acceptedBy: userId, modifications: { title: "...", priority: "HIGH" } }` — AI dowiaduje sie co poprawic
+- **Odrzucenie z korekcja** → `{ rejectedBy: userId, correctClassification: "BUSINESS", note: "To nasz dostawca" }` — AI uczy sie z bledow
+- **Odrzucenie BLACKLIST z poprawka na BUSINESS** → domena automatycznie trafia na **whitelist**
+
+Im wiecej decyzji podejmujesz, tym lepiej AI rozumie Twoje preferencje.
 
 ---
 

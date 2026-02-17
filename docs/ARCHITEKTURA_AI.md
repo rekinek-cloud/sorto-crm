@@ -41,7 +41,7 @@ Zdarzenie (email / akcja uzytkownika / scheduler)
 
 ---
 
-## 5 punktow wejscia AI
+## 6 punktow wejscia AI
 
 ### 1. Analiza elementow Flow
 

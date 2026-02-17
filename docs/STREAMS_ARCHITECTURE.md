@@ -827,6 +827,332 @@ enum TaskStatus {
 }
 ```
 
+### 11.4 Powiazane modele
+
+Ponizej opisane sa modele Prisma bezposrednio powiazane ze strumieniami (Stream), ktore rozszerzaja ich funkcjonalnosc o cele, zadania cykliczne, historie aktywnosci, zrodla AI, wzorce uczenia oraz reguly przetwarzania komunikacji.
+
+#### 11.4.1 precise_goals - System celow RZUT
+
+**RZUT** to metodologia definiowania celow w SORTO (wersja v3), oparta na czterech filarach:
+
+| Litera | Znaczenie | Pole w modelu |
+|--------|-----------|---------------|
+| **R** | **Rezultat** - co konkretnie chcesz osiagnac | `result` |
+| **Z** | **Zmierzalnosc** - jak zmierzysz postep | `measurement` |
+| **U** | **Ujscie** - gdzie trafi rezultat, kto jest beneficjentem | `outlet` |
+| **T** | **Tlo** - kontekst i motywacja | `background` |
+
+```prisma
+model precise_goals {
+  id              String    @id @default(dbgenerated("(gen_random_uuid())::text"))
+  result          String                              // Rezultat - opis celu
+  measurement     String                              // Zmierzalnosc - jak mierzymy
+  deadline        DateTime  @db.Timestamp(6)          // Termin realizacji
+  background      String?                             // Tlo - kontekst i motywacja
+  outlet          String?                             // Ujscie - beneficjent rezultatu (RZUT)
+  current_value   Decimal?  @default(0) @db.Decimal(10, 2)  // Aktualny postep
+  target_value    Decimal   @db.Decimal(10, 2)        // Wartosc docelowa
+  unit            String?   @default("count") @db.VarChar(50) // Jednostka miary
+  stream_id       String?                             // FK -> Stream (opcjonalne)
+  organization_id String
+  created_by_id   String
+  status          String?   @default("active") @db.VarChar(20)
+  created_at      DateTime? @default(now()) @db.Timestamp(6)
+  updated_at      DateTime? @default(now()) @db.Timestamp(6)
+  achieved_at     DateTime? @db.Timestamp(6)          // Data osiagniecia celu
+
+  streams         Stream?   @relation(fields: [stream_id], references: [id], onUpdate: NoAction)
+}
+```
+
+**Kluczowe pola:**
+
+- **result** - opis celu (filar R). Np. "Zwiekszyc przychody z kanalu online"
+- **measurement** - sposob pomiaru (filar Z). Np. "Miesieczny przychod w PLN"
+- **current_value / target_value** - aktualny i docelowy postep numeryczny (Decimal 10,2)
+- **unit** - jednostka miary (domyslnie "count", moze byc "PLN", "%", "szt." itp.)
+- **deadline** - termin realizacji celu
+- **background** - kontekst (filar T). Np. "Rynek e-commerce rosnie 20% rocznie"
+- **outlet** - ujscie/beneficjent (filar U). Np. "Dzial sprzedazy, klienci B2B"
+- **stream_id** - opcjonalne powiazanie z konkretnym strumieniem
+- **status** - "active", "achieved", "abandoned" itp.
+- **achieved_at** - data faktycznego osiagniecia celu (wypelniana automatycznie gdy current_value >= target_value)
+
+**Przyklad uzycia RZUT:**
+```
+Rezultat:     "Zwiekszyc liczbe aktywnych klientow"
+Zmierzalnosc: "Liczba klientow z co najmniej 1 transakcja w miesiacu"
+Ujscie:       "Zespol sprzedazy - prowizje, klienci - lepsza obsluga"
+Tlo:          "Obecna retencja 60%, cel branzy 75%"
+target_value: 150
+current_value: 98
+unit:         "klientow"
+deadline:     2026-06-30
+```
+
+#### 11.4.2 RecurringTask (recurring_tasks) - Zadania cykliczne
+
+Model zadania cyklicznego powiazanego ze strumieniem. Automatycznie generuje instancje zadan wedlug zdefiniowanego harmonogramu.
+
+```prisma
+model RecurringTask {
+  id               String       @id @default(uuid())
+  title            String                              // Tytul zadania cyklicznego
+  description      String?                             // Opis
+  frequency        Frequency    @default(WEEKLY)       // Czestotliwosc powtarzania
+  pattern          String?                             // Wzorzec (np. cron expression)
+  interval         Int          @default(1)            // Co ile (np. co 2 tygodnie)
+  daysOfWeek       Int[]        @default([])           // Dni tygodnia (0=Nd, 1=Pn, ...)
+  dayOfMonth       Int?                                // Dzien miesiaca
+  weekOfMonth      Int?                                // Tydzien miesiaca
+  months           Int[]        @default([])           // Miesiace (1-12)
+  time             String       @default("09:00")      // Godzina wykonania
+  nextOccurrence   DateTime?                           // Nastepne wystapienie
+  lastExecuted     DateTime?                           // Ostatnie wykonanie
+  executionCount   Int          @default(0)            // Liczba wykonan
+  context          String?                             // Kontekst GTD (@computer itp.)
+  priority         Priority     @default(MEDIUM)       // Priorytet
+  estimatedMinutes Int?                                // Szacowany czas (minuty)
+  isActive         Boolean      @default(true)         // Czy aktywne
+  organizationId   String
+  assignedToId     String?                             // Przypisany uzytkownik
+  companyId        String?                             // Powiazana firma
+  contactId        String?                             // Powiazany kontakt
+  projectId        String?                             // Powiazany projekt
+  streamId         String?                             // FK -> Stream
+  dealId           String?                             // Powiazany deal
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  streams          Stream?      @relation(fields: [streamId], references: [id])
+  // + relacje do User, Company, Contact, Deal, Project, Organization
+
+  @@map("recurring_tasks")
+}
+```
+
+**Enum Frequency:**
+```prisma
+enum Frequency {
+  DAILY       // Codziennie
+  WEEKLY      // Co tydzien
+  BIWEEKLY    // Co dwa tygodnie
+  MONTHLY     // Co miesiac
+  BIMONTHLY   // Co dwa miesiace
+  QUARTERLY   // Co kwartal
+  YEARLY      // Co rok
+  CUSTOM      // Niestandardowy (uzywa pola pattern)
+}
+```
+
+**Kluczowe pola:**
+
+- **frequency** - czestotliwosc powtarzania (DAILY, WEEKLY, MONTHLY itp.)
+- **interval** - mnoznik czestotliwosci (np. interval=2 + frequency=WEEKLY = co 2 tygodnie)
+- **daysOfWeek** - tablica dni tygodnia (np. [1,3,5] = Pn, Sr, Pt)
+- **time** - godzina wykonania w formacie HH:MM
+- **nextOccurrence** - data i czas nastepnego automatycznego utworzenia zadania
+- **executionCount** - ile razy zadanie zostalo juz wygenerowane
+- **streamId** - powiazanie z strumieniem (np. cykliczny przeglad w AREAS)
+- **context** - kontekst GTD dziedziczony przez generowane zadania
+
+#### 11.4.3 Timeline - Historia aktywnosci w strumieniach
+
+Model timeline przechowuje zdarzenia i aktywnosci powiazane ze strumieniami. Sluzy do budowania osi czasu (timeline) aktywnosci w ramach strumienia.
+
+```prisma
+model Timeline {
+  id             String         @id @default(uuid())
+  eventId        String                              // ID powiazanego zdarzenia (task, message, itp.)
+  eventType      String                              // Typ zdarzenia (np. "TASK_CREATED", "MESSAGE_RECEIVED")
+  title          String                              // Tytul zdarzenia
+  startDate      DateTime                            // Data rozpoczecia
+  endDate        DateTime?                           // Data zakonczenia (opcjonalna)
+  status         TimelineStatus @default(SCHEDULED)  // Status zdarzenia
+  organizationId String
+  streamId       String?                             // FK -> Stream (opcjonalne)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  stream         Stream?        @relation(fields: [streamId], references: [id])
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@map("timeline")
+}
+```
+
+**Enum TimelineStatus:**
+```prisma
+enum TimelineStatus {
+  SCHEDULED     // Zaplanowane
+  IN_PROGRESS   // W trakcie
+  COMPLETED     // Ukonczone
+  CANCELED      // Anulowane
+}
+```
+
+**Kluczowe pola:**
+
+- **eventId** - identyfikator powiazanego obiektu (zadanie, wiadomosc, spotkanie itp.)
+- **eventType** - typ zdarzenia jako string (elastyczny, np. "TASK_CREATED", "EMAIL_RECEIVED", "MEETING_SCHEDULED", "GOAL_ACHIEVED")
+- **title** - czytelny tytul zdarzenia wyswietlany na osi czasu
+- **startDate / endDate** - okres trwania zdarzenia
+- **status** - stan zdarzenia na osi czasu (SCHEDULED -> IN_PROGRESS -> COMPLETED/CANCELED)
+- **streamId** - powiazanie ze strumieniem, umozliwia filtrowanie timeline per strumien
+
+#### 11.4.4 AiSource - Zrodlo konwersacji AI w strumieniu
+
+Pole `aiSource` na modelu Stream (typu `AiSource?`) okresla z jakiego serwisu AI pochodza konwersacje przechowywane w strumieniu referencyjnym (StreamRole: REFERENCE).
+
+```prisma
+enum AiSource {
+  CHATGPT    // Konwersacje z OpenAI ChatGPT
+  CLAUDE     // Konwersacje z Anthropic Claude
+  DEEPSEEK   // Konwersacje z DeepSeek
+}
+```
+
+**Powiazane pola na modelu Stream:**
+
+| Pole | Typ | Opis |
+|------|-----|------|
+| `aiSource` | `AiSource?` | Zrodlo konwersacji AI (CHATGPT, CLAUDE, DEEPSEEK) |
+| `aiConversationsCount` | `Int?` | Liczba zsynchronizowanych konwersacji |
+| `aiMessagesCount` | `Int?` | Laczna liczba wiadomosci AI |
+| `aiLastSyncAt` | `DateTime?` | Data ostatniej synchronizacji |
+| `aiKeywords` | `String[]` | Slowa kluczowe wyekstrahowane z konwersacji |
+
+Te pola sa uzywane gdy strumien pelni role bazy wiedzy AI (StreamRole=REFERENCE). Umozliwiaja importowanie i przeszukiwanie konwersacji z roznych serwisow AI. Strumien z `aiSource=CLAUDE` przechowuje konwersacje z Claude, ktore mozna przeszukiwac semantycznie (RAG).
+
+**Relacja z AiConversation:**
+Strumien z ustawionym `aiSource` moze zawierac wiele rekordow `AiConversation` (relacja `aiConversations`), z ktorych kazdy reprezentuje jedna konwersacje AI zsynchronizowana z danego serwisu.
+
+#### 11.4.5 flow_learned_patterns - Wzorce uczone z decyzji uzytkownika
+
+Model `flow_learned_patterns` jest czescia **Flow Engine** - silnika uczacego sie z decyzji uzytkownika. Nie istnieje w schemacie model o nazwie `flow_patterns` - rzeczywista nazwa to `flow_learned_patterns`.
+
+```prisma
+model flow_learned_patterns {
+  id             String @id @default(uuid())
+  organizationId String
+  userId         String
+
+  // Wzorzec wejsciowy
+  elementType    FlowElementType          // Typ elementu (EMAIL, VOICE, DOCUMENT_INVOICE, ...)
+  contentPattern String?  @db.Text        // Wzorzec tresci (regex lub keywords)
+  senderPattern  String?                  // Wzorzec nadawcy
+  subjectPattern String?                  // Wzorzec tematu
+
+  // Nauczona decyzja
+  learnedAction   FlowAction              // Akcja ktora zostala wybrana
+  learnedStreamId String?                 // Stream do ktorego trafilo
+
+  // Statystyki
+  occurrences Int      @default(1)        // Ile razy zastosowane
+  confidence  Float    @default(0.5)      // Pewnosc wzorca (0-1)
+  lastUsedAt  DateTime @default(now())
+
+  // Metadane
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  organization  Organization @relation(...)
+  user          User         @relation(...)
+  learnedStream Stream?      @relation(fields: [learnedStreamId], references: [id])
+
+  @@index([organizationId, userId])
+  @@index([elementType, isActive])
+  @@map("flow_learned_patterns")
+}
+```
+
+**Enum FlowElementType:**
+```prisma
+enum FlowElementType {
+  EMAIL                 // E-mail
+  VOICE                 // Notatka glosowa
+  DOCUMENT_INVOICE      // Faktura
+  DOCUMENT_CONTRACT     // Umowa
+  IMAGE_BUSINESS_CARD   // Wizytowka
+  IMAGE_RECEIPT         // Paragon
+  IMAGE_WHITEBOARD      // Tablica
+  LINK                  // Link
+  IDEA                  // Pomysl
+  EVENT                 // Zdarzenie
+}
+```
+
+**Enum FlowAction:**
+```prisma
+enum FlowAction {
+  ZROB_TERAZ   // Natychmiast, < 2 min
+  ZAPLANUJ     // Zaplanuj na konkretny czas
+  PROJEKT      // Dodaj do projektu
+  KIEDYS_MOZE  // Someday/Maybe
+  REFERENCJA   // Material referencyjny
+  USUN         // Usun
+}
+```
+
+**Jak to dziala:**
+
+1. Uzytkownik przetwarza element w Flow Engine (np. e-mail od klienta -> przenosi do strumienia "Sprzedaz")
+2. System zapisuje wzorzec: `senderPattern=@klient.com`, `learnedAction=ZAPLANUJ`, `learnedStreamId=sprzedaz-id`
+3. Nastepnym razem gdy przyjdzie e-mail od `@klient.com`, system sugeruje ta sama akcje
+4. `confidence` rosnie z kazdym potwierdzeniem (max 1.0), maleje przy odrzuceniu
+5. Wzorce z `confidence > 0.8` moga byc stosowane automatycznie
+
+**API:**
+- `GET /api/v1/flow/patterns` - lista wyuczonych wzorcow
+- `DELETE /api/v1/flow/patterns/:id` - dezaktywacja wzorca
+
+#### 11.4.6 ProcessingRule (processing_rules) - Reguly przetwarzania komunikacji
+
+Model `ProcessingRule` definiuje reguly automatycznego przetwarzania wiadomosci (Message) w kontekscie strumienia i/lub kanalu komunikacji.
+
+```prisma
+model ProcessingRule {
+  id                String                    @id @default(uuid())
+  name              String                              // Nazwa reguly
+  description       String?                             // Opis
+  active            Boolean                   @default(true)
+  conditions        Json                                // Warunki dopasowania (JSON)
+  actions           Json                                // Akcje do wykonania (JSON)
+  priority          Int                       @default(0) // Priorytet (wyzszy = wazniejszy)
+  channelId         String?                             // FK -> CommunicationChannel
+  organizationId    String
+  executionCount    Int                       @default(0) // Liczba wykonan
+  lastExecuted      DateTime?                           // Ostatnie wykonanie
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  streamId          String?                             // FK -> Stream
+
+  processingResults MessageProcessingResult[]            // Historia wykonan
+  channel           CommunicationChannel?     @relation(...)
+  organization      Organization              @relation(...)
+  streams           Stream?                   @relation(fields: [streamId], references: [id], onDelete: Cascade)
+
+  @@map("processing_rules")
+}
+```
+
+**Roznica miedzy ProcessingRule a ai_rules:**
+
+| Cecha | ProcessingRule (processing_rules) | ai_rules |
+|-------|----------------------------------|----------|
+| **Cel** | Przetwarzanie wiadomosci (Message) w strumieniach | Uniwersalne reguly AI dla calego systemu |
+| **Zakres** | Powiazane z konkretnym Stream i/lub CommunicationChannel | Globalne dla organizacji |
+| **Wyzwalacz** | Wiadomosc w kanale/strumieniu | AITriggerType (EVENT_BASED, MANUAL, SCHEDULED, WEBHOOK, API_CALL, AUTOMATIC) |
+| **Akcje** | JSON z akcjami na wiadomosciach (MOVE_TO_STREAM, ASSIGN_CONTEXT, SET_PRIORITY, CREATE_TASK, SEND_NOTIFICATION) | JSON z akcjami AI (analiza, klasyfikacja, generowanie) |
+| **AI** | Reguly warunkowe (bez AI) | Wymaga modelu AI (modelId, fallbackModelIds) |
+| **Metryki** | executionCount, lastExecuted | executionCount, successCount, errorCount, avgExecutionTime |
+| **Powiazanie ze Stream** | Tak (streamId) | Nie - dziala globalnie |
+| **Powiazanie z kanalem** | Tak (channelId -> CommunicationChannel) | Nie |
+| **Wyniki** | MessageProcessingResult (szczegolowa historia per wiadomosc) | ai_rule_executions (ogolna historia wykonan) |
+
+**Podsumowanie:** `ProcessingRule` to reguly warunkowe (if-then) przetwarzajace wiadomosci w ramach strumienia - nie wymagaja AI. `ai_rules` to reguly wykorzystujace modele AI do analizy, klasyfikacji i generowania tresci - dzialaja globalnie w systemie.
+
 ---
 
 ## 12. API Reference
@@ -971,3 +1297,9 @@ A: Tabela `stream_relations` ma constraint `@@unique([parentId, childId])`, ale 
 
 **Q: Czy mogę przenieść zadanie między strumieniami?**
 A: Tak - zmień `streamId` na zadaniu (Task) lub użyj routingu AI.
+
+**Q: Czym jest RZUT?**
+A: RZUT to metodologia definiowania celow w SORTO (v3), implementowana przez model `precise_goals`. Akronim oznacza: **R**ezultat (co chcesz osiagnac), **Z**mierzalnosc (jak zmierzysz postep - pola `current_value`, `target_value`, `unit`), **U**jscie (kto jest beneficjentem rezultatu - pole `outlet`), **T**lo (kontekst i motywacja - pole `background`). Kazdy cel RZUT moze byc powiazany ze strumieniem przez `stream_id`, ma termin (`deadline`) i status (`status`: active/achieved/abandoned). Postep jest sledzony numerycznie przez porownanie `current_value` z `target_value`.
+
+**Q: Jaka jest roznica miedzy processing_rules a ai_rules?**
+A: `ProcessingRule` (tabela `processing_rules`) to reguly warunkowe (if-then) przetwarzajace wiadomosci w ramach konkretnego strumienia i/lub kanalu komunikacji - nie wymagaja AI. Definiujesz warunki (JSON `conditions`) i akcje (JSON `actions`) takie jak MOVE_TO_STREAM, SET_PRIORITY, CREATE_TASK. Sa powiazane z Stream (`streamId`) i CommunicationChannel (`channelId`). Natomiast `ai_rules` to globalne reguly wykorzystujace modele AI (`modelId`) do analizy, klasyfikacji i generowania tresci - dzialaja na poziomie calej organizacji, nie sa powiazane z konkretnym strumieniem i wymagaja skonfigurowanego providera AI.
