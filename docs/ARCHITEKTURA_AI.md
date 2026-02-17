@@ -244,7 +244,7 @@ Email sklasyfikowany jako BUSINESS
        |
        v
   KROK 2: SPECJALISTYCZNY PROMPT (gpt-4o, temp 0.2-0.3, maxTokens 1500-2000)
-    Szablon: EMAIL_BIZ_{CATEGORY} (np. EMAIL_BIZ_FAKTURA)
+    Szablon: EMAIL_BIZ_{CATEGORY} (np. EMAIL_BIZ_FAKTURA_PLATNOSC)
     Input: pelna tresc + zmienne triage (category, confidence, reasoning)
     Output: JSON z leads, contacts, deals, tasks, tags, streamRouting, categorySpecific
        |
@@ -258,10 +258,10 @@ Email sklasyfikowany jako BUSINESS
   createEntityProposals() → ai_suggestions (HITL)
 ```
 
-**13 kategorii triage**: ZAPYTANIE_OFERTOWE, FAKTURA, REKLAMACJA, UMOWA, WSPOLPRACA,
-RAPORT, SPOTKANIE, ZLECENIE, DOSTAWA, PLATNOSC, WSPARCIE_TECH, HR, INNE
+**12 kategorii triage**: ZAPYTANIE_OFERTOWE, ZLECENIE, ADMIN_ORGANIZACJA, REKLAMACJA,
+FAKTURA_PLATNOSC, LOGISTYKA, SPOTKANIE, WSPOLPRACA, SPAM_MARKETING, HR, TECH_SUPPORT, INNE
 
-**14 promptow w bazie**: EMAIL_BIZ_TRIAGE + 13 specjalistycznych EMAIL_BIZ_{KAT}
+**13 promptow w bazie**: EMAIL_BIZ_TRIAGE + 12 specjalistycznych EMAIL_BIZ_{KAT}
 
 **Plik**: `services/ai/RuleProcessingPipeline.ts` → `runBusinessTriage()` (linia ~909)
 **Cel**: Redukcja kosztow (~40%) i poprawa jakosci ekstrakcji przez specjalizacje promptow

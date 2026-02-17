@@ -51,9 +51,9 @@ Czy kategoria = BUSINESS i prompt EMAIL_BIZ_TRIAGE istnieje?
   (gpt-4o-mini,             v              v
    ~200ms)              AI odpala       Koniec.
   → kategoria:          (jednym         Brak AI.
-    FAKTURA,             promptem)      Zero kosztow.
-    ZAPYTANIE,
-    PLATNOSC...
+    ZAPYTANIE,           promptem)      Zero kosztow.
+    FAKTURA_PLATNOSC,
+    ADMIN_ORGANIZACJA...
        |
        v
   Krok 2: Specjalistyczny
@@ -67,24 +67,23 @@ Czy kategoria = BUSINESS i prompt EMAIL_BIZ_TRIAGE istnieje?
   (czlowiek zatwierdza)
 ```
 
-### Dwuetapowy pipeline BUSINESS — 13 kategorii
+### Dwuetapowy pipeline BUSINESS — 12 kategorii
 
 Emaile biznesowe przechodza dwuetapowa analize:
 
 | Kod | Opis | Typowe encje | Stream | Energia |
 |-----|------|------|--------|---------|
-| ZAPYTANIE_OFERTOWE | Zapytanie o cene, oferte, produkt | lead, deal, task | NEXT_ACTIONS | HIGH |
-| FAKTURA | Faktura, rachunek, rozliczenie | task(zaplata) | NEXT_ACTIONS | LOW |
-| REKLAMACJA | Skarga, problem, niezadowolenie | task(HIGH) | NEXT_ACTIONS | HIGH |
-| UMOWA | Kontrakt, aneks, warunki | task, deal | PROJECTS | HIGH |
-| WSPOLPRACA | Propozycja partnerstwa | lead, contact | SOMEDAY_MAYBE | MEDIUM |
-| RAPORT | Zestawienie, analiza, metryki | task(review) | REFERENCE | LOW |
-| SPOTKANIE | Termin, zaproszenie, agenda | task(prep) | NEXT_ACTIONS | MEDIUM |
-| ZLECENIE | Zamowienie, task do wykonania | task(exec), deal | NEXT_ACTIONS | HIGH |
-| DOSTAWA | Logistyka, wysylka, tracking | task(verify) | WAITING_FOR | LOW |
-| PLATNOSC | Przelew, potwierdzenie zaplaty | task(verify) | NEXT_ACTIONS | LOW |
-| WSPARCIE_TECH | Help desk, problem IT | task(fix, HIGH) | NEXT_ACTIONS | HIGH |
-| HR | Rekrutacja, urlop, kadry | task | AREAS | MEDIUM |
+| ZAPYTANIE_OFERTOWE | Nowy klient pyta o produkt/wycene | lead, deal, task | NEXT_ACTIONS | HIGH |
+| ZLECENIE | Zamowienie od stalego klienta | task(exec), deal | NEXT_ACTIONS | HIGH |
+| ADMIN_ORGANIZACJA | Targi, dostawcy, administracja (my jako klient) | task, contact | NEXT_ACTIONS | MEDIUM |
+| REKLAMACJA | Skarga, blad, uszkodzenie | task(HIGH) | NEXT_ACTIONS | HIGH |
+| FAKTURA_PLATNOSC | Faktury, przelewy, monity, rozliczenia | task(zaplata) | NEXT_ACTIONS | LOW |
+| LOGISTYKA | Tracking, awiza, dostawy surowcow | task(verify) | WAITING_FOR | LOW |
+| SPOTKANIE | Call, Teams/Zoom, spotkanie 1-na-1 | task(prep) | NEXT_ACTIONS | MEDIUM |
+| WSPOLPRACA | Partnerstwo B2B, agencje | lead, contact | SOMEDAY_MAYBE | MEDIUM |
+| SPAM_MARKETING | Newslettery, niechciane oferty | — | REFERENCE | LOW |
+| HR | Rekrutacja, CV, sprawy pracownicze | task, contact | AREAS | MEDIUM |
+| TECH_SUPPORT | Problemy z IT, aplikacjami | task(fix, HIGH) | NEXT_ACTIONS | HIGH |
 | INNE | Fallback — nie pasuje do zadnej | varies | INBOX | MEDIUM |
 
 **Koszt vs stary system**:
@@ -101,9 +100,9 @@ Emaile biznesowe przechodza dwuetapowa analize:
 | Email | Regula | Kategoria | Triage | AI |
 |-------|--------|-----------|--------|----|
 | `noreply@firma.pl` | Noreply/System | TRANSACTIONAL | — | Nie |
-| `"Faktura proforma 123"` | Invoice Detection | BUSINESS | FAKTURA | Tak — kwota, termin, NIP |
+| `"Faktura proforma 123"` | Invoice Detection | BUSINESS | FAKTURA_PLATNOSC | Tak — kwota, termin, NIP |
 | `"Wycena na tuby 30x21"` | Streams: Business | BUSINESS | ZAPYTANIE_OFERTOWE | Tak — firma, kontakt, deal |
-| `"Termin platnosci"` | Streams: Business | BUSINESS | PLATNOSC | Tak — kwota, data, nr sprawy |
+| `"Termin platnosci"` | Streams: Business | BUSINESS | FAKTURA_PLATNOSC | Tak — kwota, data, nr sprawy |
 | Kontakt z CRM | CRM Protection | BUSINESS | (wg tresci) | Tak — dwuetapowa analiza |
 | Losowy mail | Brak reguly | INBOX | — | Nie |
 | Newsletter | Newsletter Patterns | NEWSLETTER | — | Nie |
@@ -481,7 +480,7 @@ Krok 1: Triage (gpt-4o-mini, ~200ms, ~300 tokenow)
 Krok 2: Specjalistyczny prompt EMAIL_BIZ_{CATEGORY} (gpt-4o, ~800ms)
   - Pelna tresc emaila + zmienne triage
   - Zwraca: JSON z leads, contacts, deals, tasks, tags, streamRouting
-  - Kazdy prompt skupiony na swojej domenie (np. FAKTURA wyciaga NIP, kwoty, terminy)
+  - Kazdy prompt skupiony na swojej domenie (np. FAKTURA_PLATNOSC wyciaga NIP, kwoty, terminy)
        |
        v
 Merge: triage metadata + specjalistyczny wynik → propozycje AI
@@ -504,7 +503,7 @@ Jesli zaden prompt nie istnieje na zadnym poziomie → **AI sie NIE odpala**.
 #### Wyniki analizy AI
 
 Niezaleznie od flow (triage czy klasyczny), AI zwraca:
-- **Category**: kategoria biznesowa (np. ZAPYTANIE_OFERTOWE, FAKTURA, PLATNOSC)
+- **Category**: kategoria biznesowa (np. ZAPYTANIE_OFERTOWE, FAKTURA_PLATNOSC, ADMIN_ORGANIZACJA)
 - **Sentiment**: POSITIVE / NEUTRAL / NEGATIVE
 - **Urgency**: LOW / MEDIUM / HIGH / CRITICAL (lub score 0-100)
 - **Summary**: krotkie podsumowanie
@@ -845,7 +844,7 @@ Etap 5: RAG + Flow + propozycje AI (HITL)
 Wynik: BUSINESS/ZAPYTANIE_OFERTOWE, 4 propozycje do zatwierdzenia
 ```
 
-### Scenariusz 3: Platnosc od Vindicat (triage PLATNOSC)
+### Scenariusz 3: Platnosc od Vindicat (triage FAKTURA_PLATNOSC)
 
 ```
 Email: system@vindicat.pl → "Powiadomienie o nadchodzacym terminie platnosci"
@@ -855,15 +854,15 @@ Etap 2: Listy/Patterny — brak
 Etap 2.5: Regula "Streams: Business" → fromDomain not_contains noreply → pasuje
 Etap 3: forceClassification = BUSINESS
 Etap 4: Dwuetapowy triage:
-  Krok 1 (triage): → PLATNOSC (confidence: 0.98)
-  Krok 2 (EMAIL_BIZ_PLATNOSC):
+  Krok 1 (triage): → FAKTURA_PLATNOSC (confidence: 0.98)
+  Krok 2 (EMAIL_BIZ_FAKTURA_PLATNOSC):
     → kwota: 444,99 PLN, termin: 19.02.2026
     → nr sprawy: 277131022026, rachunek: 751050016...
     → task "Zweryfikowac status zobowiazania 444,99 PLN"
-    → streamRouting: NEXT_ACTIONS, tags: finanse, platnosc, windykacja
+    → streamRouting: NEXT_ACTIONS, tags: finanse, monit
 Etap 5: RAG + Flow + propozycje AI
 
-Wynik: BUSINESS/PLATNOSC, task + firma + kontakt zaproponowane
+Wynik: BUSINESS/FAKTURA_PLATNOSC, task + firma + kontakt zaproponowane
 ```
 
 ### Scenariusz 4: Istniejacy kontakt CRM

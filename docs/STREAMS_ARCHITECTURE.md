@@ -1,7 +1,7 @@
 # SORTO Streams - Dokumentacja Architektury
 
 > Kompletny przewodnik po systemie Strumieni w SORTO CRM.
-> Wersja: 3.0 | Data: 2026-02-10
+> Wersja: 3.1 | Data: 2026-02-17
 
 ---
 
@@ -9,11 +9,11 @@
 
 1. [Czym są Strumienie?](#1-czym-sa-strumienie)
 2. [Kluczowe koncepcje](#2-kluczowe-koncepcje)
-3. [Typy strumieni (GTDRole)](#3-typy-strumieni-gtdrole)
+3. [Typy strumieni (StreamRole)](#3-typy-strumieni-streamrole)
 4. [Kategorie strumieni (StreamType)](#4-kategorie-strumieni-streamtype)
 5. [Cykl życia strumienia](#5-cykl-zycia-strumienia)
 6. [Hierarchia strumieni](#6-hierarchia-strumieni)
-7. [Konfiguracja GTD](#7-konfiguracja-gtd)
+7. [Konfiguracja strumieni](#7-konfiguracja-strumieni)
 8. [Routing - automatyczne przypisywanie](#8-routing---automatyczne-przypisywanie)
 9. [Reguły przetwarzania](#9-reguly-przetwarzania)
 10. [Scenariusze użycia](#10-scenariusze-uzycia)
@@ -61,19 +61,19 @@
 
 ## 2. Kluczowe koncepcje
 
-### 2.1 Metodologia SORTO Streams
+### 2.1 Filozofia SORTO Streams
 
-SORTO Streams bazuje na metodologii GTD (Getting Things Done) Davida Allena, ale rozszerza ją o:
+SORTO Streams to natywny system organizacji pracy. Każdy strumień pełni określoną **rolę** (StreamRole):
 
-| GTD (oryginał) | SORTO Streams (rozszerzenie) |
-|---|---|
-| Inbox | **Źródło** - z AI pre-processingiem |
-| Projects | **Strumień projektowy** - z hierarchią |
-| Areas of Responsibility | **Strumień ciągły** - z metrykami |
-| Reference | **Strumień referencyjny** - z wyszukiwaniem wektorowym |
-| Someday/Maybe | **Zamrożony strumień** - z automatycznym przypomnieniem |
-| Next Actions | **Strumień zadań** - z kontekstami i energią |
-| Waiting For | **Strumień oczekujący** - z follow-up |
+| StreamRole | Strumień SORTO | Opis |
+|---|---|---|
+| INBOX | **Źródło** | Punkt wejścia z AI pre-processingiem |
+| PROJECTS | **Strumień projektowy** | Projekty z hierarchią i deadlinami |
+| AREAS | **Strumień ciągły** | Obszary odpowiedzialności z metrykami |
+| REFERENCE | **Strumień referencyjny** | Baza wiedzy z wyszukiwaniem wektorowym |
+| SOMEDAY_MAYBE | **Zamrożony strumień** | Pomysły na przyszłość z przypomnieniami |
+| NEXT_ACTIONS | **Strumień zadań** | Zadania z kontekstami i energią |
+| WAITING_FOR | **Strumień oczekujący** | Delegowane elementy z follow-up |
 
 ### 2.2 Stany strumienia (Flow/Freeze)
 
@@ -118,9 +118,9 @@ Każdy element w strumieniu może mieć:
 
 ---
 
-## 3. Typy strumieni (GTDRole)
+## 3. Typy strumieni (StreamRole)
 
-GTDRole definiuje **przeznaczenie** strumienia:
+StreamRole definiuje **przeznaczenie** strumienia:
 
 ### INBOX - Źródło
 
@@ -238,9 +238,9 @@ Ikona: Squares2X2Icon
 
 ## 4. Kategorie strumieni (StreamType)
 
-StreamType definiuje **strukturę** strumienia (niezależnie od GTDRole):
+StreamType definiuje **strukturę** strumienia (niezależnie od StreamRole):
 
-| StreamType | Opis | Typowe GTDRole |
+| StreamType | Opis | Typowa StreamRole |
 |---|---|---|
 | `WORKSPACE` | Główny strumień najwyższego poziomu | INBOX |
 | `PROJECT` | Strumień projektowy z końcem | PROJECTS |
@@ -249,17 +249,17 @@ StreamType definiuje **strukturę** strumienia (niezależnie od GTDRole):
 | `REFERENCE` | Materiały referencyjne | REFERENCE |
 | `CUSTOM` | Niestandardowy | CUSTOM |
 
-**Relacja GTDRole vs StreamType:**
+**Relacja StreamRole vs StreamType:**
 
 ```
-GTDRole  = CO ten strumień robi (jego rola w systemie GTD)
+StreamRole = CO ten strumień robi (jego rola w systemie)
 StreamType = JAK ten strumień jest zorganizowany (jego struktura)
 
 Przykład:
-  GTDRole: PROJECTS  +  StreamType: PROJECT
+  StreamRole: PROJECTS  +  StreamType: PROJECT
   = "To jest strumień projektowy (rola), zorganizowany jako projekt (struktura)"
 
-  GTDRole: AREAS  +  StreamType: AREA
+  StreamRole: AREAS  +  StreamType: AREA
   = "To jest strumień ciągły (rola), bez określonego końca (struktura)"
 ```
 
@@ -277,19 +277,19 @@ Użytkownik klika "Nowy strumień"
 │  Formularz:      │
 │  - Nazwa         │
 │  - Opis          │
-│  - Typ (GTDRole) │
+│  - Rola (StreamRole) │
 │  - Kategoria     │
 │  - Rodzic        │
 │  - Kolor         │
 └──────────────────┘
         │
         ▼
-  POST /api/v1/gtd-streams
+  POST /api/v1/stream-management
         │
         ▼
   Backend tworzy:
   1. Rekord Stream w bazie
-  2. Domyślną konfigurację GTD (gtdConfig)
+  2. Domyślną konfigurację strumienia (streamConfig)
   3. Relację parent-child (jeśli wybrano rodzica)
         │
         ▼
@@ -390,7 +390,7 @@ Strumienie mogą tworzyć drzewa za pomocą tabeli `stream_relations`:
 
 ### 6.3 Reguły dziedziczenia (InheritanceRule)
 
-Konfiguracja GTD może przepływać w hierarchii:
+Konfiguracja strumienia może przepływać w hierarchii:
 
 | Reguła | Kierunek | Użycie |
 |---|---|---|
@@ -408,12 +408,12 @@ Konfiguracja GTD może przepływać w hierarchii:
 
 ---
 
-## 7. Konfiguracja GTD
+## 7. Konfiguracja strumieni
 
-Każdy strumień ma pole `gtdConfig` (JSON) z konfiguracją:
+Każdy strumień ma pole `gtdConfig` (JSON) z konfiguracją (nazwa kolumny historyczna — w kodzie używamy aliasu `StreamConfig`):
 
 ```typescript
-interface GTDConfig {
+interface StreamConfig {
   inboxBehavior: {
     autoProcessing: boolean;        // AI automatycznie przetwarza
     autoCreateTasks: boolean;       // Automatycznie tworzy zadania
@@ -428,7 +428,7 @@ interface GTDConfig {
   reviewFrequency: string;          // DAILY | WEEKLY | MONTHLY | QUARTERLY
 
   processingRules: ProcessingRule[]; // Reguły automatyzacji
-  automations: GTDAutomation[];      // Zaplanowane automatyzacje
+  automations: StreamAutomation[];    // Zaplanowane automatyzacje
 
   advanced: {
     enableAI: boolean;              // Włącz sugestie AI
@@ -449,7 +449,7 @@ interface GTDConfig {
 
 ### Domyślne konfiguracje per rola
 
-Każda GTDRole ma domyślną konfigurację (tworzoną automatycznie):
+Każda StreamRole ma domyślną konfigurację (tworzoną automatycznie):
 
 - **INBOX**: autoProcessing=false, processAfterDays=3, purgeAfterDays=30
 - **PROJECTS**: reviewFrequency=WEEKLY, enableAI=true
@@ -467,7 +467,7 @@ Routing to mechanizm **automatycznego** przypisywania elementów (zadań, e-mail
 ### 8.1 Routing zadania
 
 ```
-POST /api/v1/gtd-streams/route/task
+POST /api/v1/stream-management/route/task
 Body: { taskId: "abc-123", preferredStreamId?: "def-456" }
 
 Proces:
@@ -491,7 +491,7 @@ Odpowiedź:
 ### 8.2 Routing e-maila
 
 ```
-POST /api/v1/gtd-streams/route/email
+POST /api/v1/stream-management/route/email
 Body: { messageId: "msg-123" }
 
 Proces:
@@ -504,7 +504,7 @@ Proces:
 ### 8.3 Bulk routing
 
 ```
-POST /api/v1/gtd-streams/route/bulk
+POST /api/v1/stream-management/route/bulk
 Body: {
   resources: [
     { type: "task", id: "task-1" },
@@ -583,26 +583,26 @@ interface ProcessingRule {
 
 ```
 Struktura strumieni:
-├── [Źródło]                          <- GTDRole: INBOX
-├── [Aktywne zadania]                  <- GTDRole: NEXT_ACTIONS
+├── [Źródło]                          <-INBOX
+├── [Aktywne zadania]                  <-NEXT_ACTIONS
 │   ├── @computer
 │   ├── @phone
 │   └── @meeting
-├── [Klient: Firma ABC]               <- GTDRole: PROJECTS, StreamType: PROJECT
+├── [Klient: Firma ABC]               <-PROJECTS, StreamType: PROJECT
 │   ├── [Redesign strony]             <- Pod-projekt
-│   └── [Utrzymanie - miesięczne]     <- GTDRole: AREAS
-├── [Klient: Startup XYZ]             <- GTDRole: PROJECTS
+│   └── [Utrzymanie - miesięczne]     <-AREAS
+├── [Klient: Startup XYZ]             <-PROJECTS
 │   └── [MVP aplikacji]
-├── [Czekam na]                        <- GTDRole: WAITING_FOR
-├── [Kiedyś/Może]                      <- GTDRole: SOMEDAY_MAYBE (FROZEN)
+├── [Czekam na]                        <-WAITING_FOR
+├── [Kiedyś/Może]                      <-SOMEDAY_MAYBE (FROZEN)
 │   ├── Nauczyć się Rust
 │   ├── Napisać kurs online
 │   └── Zbudować SaaS
-├── [Baza wiedzy]                      <- GTDRole: REFERENCE
+├── [Baza wiedzy]                      <-REFERENCE
 │   ├── Snippety kodu
 │   ├── Dokumentacja API
 │   └── Konwersacje z Claude
-└── [Administracja]                    <- GTDRole: AREAS
+└── [Administracja]                    <-AREAS
     ├── Faktury
     └── Podatki
 ```
@@ -801,7 +801,7 @@ enum StreamType {
   WORKSPACE | PROJECT | AREA | CONTEXT | CUSTOM | REFERENCE
 }
 
-enum GTDRole {
+enum StreamRole {
   INBOX | NEXT_ACTIONS | WAITING_FOR | SOMEDAY_MAYBE |
   PROJECTS | CONTEXTS | AREAS | REFERENCE | CUSTOM
 }
@@ -833,67 +833,67 @@ enum TaskStatus {
 
 ### Bazowy URL: `/api/v1`
 
-### 12.1 Zarządzanie strumieniami GTD
+### 12.1 Zarządzanie strumieniami
 
 | Metoda | Endpoint | Opis |
 |---|---|---|
-| GET | `/gtd-streams` | Lista strumieni GTD (status: ACTIVE/FLOWING/FROZEN) |
-| POST | `/gtd-streams` | Utwórz nowy strumień GTD |
-| GET | `/gtd-streams/by-role/:role` | Strumienie po roli GTD |
-| PUT | `/gtd-streams/:id/role` | Przypisz rolę GTD |
-| POST | `/gtd-streams/:id/migrate` | Migruj istniejący do GTD |
-| POST | `/gtd-streams/:id/freeze` | Zamroź strumień (+ dzieci rekurencyjnie) |
-| POST | `/gtd-streams/:id/unfreeze` | Odmroź strumień (+ rodziców rekurencyjnie) |
+| GET | `/stream-management` | Lista strumieni (status: ACTIVE/FLOWING/FROZEN) |
+| POST | `/stream-management` | Utwórz nowy strumień |
+| GET | `/stream-management/by-role/:role` | Strumienie po roli |
+| PUT | `/stream-management/:id/role` | Przypisz rolę |
+| POST | `/stream-management/:id/migrate` | Migruj istniejący strumień |
+| POST | `/stream-management/:id/freeze` | Zamroź strumień (+ dzieci rekurencyjnie) |
+| POST | `/stream-management/:id/unfreeze` | Odmroź strumień (+ rodziców rekurencyjnie) |
 
-### 12.2 Konfiguracja GTD
+### 12.2 Konfiguracja strumieni
 
 | Metoda | Endpoint | Opis |
 |---|---|---|
-| GET | `/gtd-streams/:id/config` | Pobierz konfigurację GTD |
-| PUT | `/gtd-streams/:id/config` | Aktualizuj konfigurację |
-| POST | `/gtd-streams/:id/config/reset` | Reset do domyślnej konfiguracji |
+| GET | `/stream-management/:id/config` | Pobierz konfigurację strumienia |
+| PUT | `/stream-management/:id/config` | Aktualizuj konfigurację |
+| POST | `/stream-management/:id/config/reset` | Reset do domyślnej konfiguracji |
 
 ### 12.3 Hierarchia
 
 | Metoda | Endpoint | Opis |
 |---|---|---|
-| GET | `/gtd-streams/:id/tree` | Drzewo hierarchii (query: maxDepth, includeGTDAnalysis) |
-| GET | `/gtd-streams/:id/ancestors` | Przodkowie strumienia (breadcrumb w górę) |
-| GET | `/gtd-streams/:id/path` | Ścieżka do strumienia |
-| POST | `/gtd-streams/:id/validate-hierarchy` | Waliduj hierarchię GTD |
+| GET | `/stream-management/:id/tree` | Drzewo hierarchii (query: maxDepth, includeAnalysis) |
+| GET | `/stream-management/:id/ancestors` | Przodkowie strumienia (breadcrumb w górę) |
+| GET | `/stream-management/:id/path` | Ścieżka do strumienia |
+| POST | `/stream-management/:id/validate-hierarchy` | Waliduj hierarchię strumieni |
 
 ### 12.4 Routing (AI)
 
 | Metoda | Endpoint | Opis |
 |---|---|---|
-| POST | `/gtd-streams/route/task` | Routing zadania do strumienia |
-| POST | `/gtd-streams/route/email` | Routing e-maila |
-| POST | `/gtd-streams/route/bulk` | Routing masowy |
-| POST | `/gtd-streams/route/content` | Routing dowolnej treści |
+| POST | `/stream-management/route/task` | Routing zadania do strumienia |
+| POST | `/stream-management/route/email` | Routing e-maila |
+| POST | `/stream-management/route/bulk` | Routing masowy |
+| POST | `/stream-management/route/content` | Routing dowolnej treści |
 
 ### 12.5 Analiza i statystyki
 
 | Metoda | Endpoint | Opis |
 |---|---|---|
-| POST | `/gtd-streams/analyze` | Analiza treści - sugestia GTD |
-| GET | `/gtd-streams/stats` | Statystyki GTD |
-| GET | `/gtd-streams/hierarchy-stats` | Statystyki hierarchii |
-| GET | `/gtd-streams/routing-stats` | Statystyki routingu |
+| POST | `/stream-management/analyze` | Analiza treści - sugestia strumienia |
+| GET | `/stream-management/stats` | Statystyki strumieni |
+| GET | `/stream-management/hierarchy-stats` | Statystyki hierarchii |
+| GET | `/stream-management/routing-stats` | Statystyki routingu |
 
 ### 12.6 Reguły przetwarzania
 
 | Metoda | Endpoint | Opis |
 |---|---|---|
-| POST | `/gtd-streams/:id/rules` | Utwórz regułę przetwarzania |
-| GET | `/gtd-streams/:id/rules` | Lista reguł strumienia |
-| POST | `/gtd-streams/rules/execute` | Wykonaj reguły ręcznie |
+| POST | `/stream-management/:id/rules` | Utwórz regułę przetwarzania |
+| GET | `/stream-management/:id/rules` | Lista reguł strumienia |
+| POST | `/stream-management/rules/execute` | Wykonaj reguły ręcznie |
 
 ### 12.7 Wyszukiwanie wektorowe
 
 | Metoda | Endpoint | Opis |
 |---|---|---|
-| POST | `/gtd-streams/index-vectors` | Indeksuj strumienie dla wyszukiwania |
-| GET | `/gtd-streams/vector-status` | Status indeksowania |
+| POST | `/stream-management/index-vectors` | Indeksuj strumienie dla wyszukiwania |
+| GET | `/stream-management/vector-status` | Status indeksowania |
 
 ### 12.8 Standardowe strumienie (CRUD)
 
@@ -921,32 +921,32 @@ packages/
 │   │   └── schema.prisma              # Model Stream, stream_relations, enumy
 │   ├── src/
 │   │   ├── routes/
-│   │   │   ├── gtdStreams.ts           # 27 endpointów GTD Streams
+│   │   │   ├── streamManagement.ts     # 27 endpointów Stream Management
 │   │   │   ├── streams.ts             # 10 endpointów standardowych
 │   │   │   └── streamsMap.ts           # Mapa strumieni (wizualizacja)
 │   │   ├── services/
 │   │   │   ├── StreamService.ts        # Logika biznesowa strumieni
-│   │   │   └── GTDConfigManager.ts     # Zarządzanie konfiguracją GTD
+│   │   │   └── StreamConfigManager.ts  # Zarządzanie konfiguracją strumieni
 │   │   └── types/
-│   │       └── gtd.ts                  # Typy TypeScript, Zod schemas, defaults
+│   │       └── streams.ts              # Typy TypeScript, Zod schemas, defaults
 │   └── ...
 ├── frontend/
 │   ├── src/
 │   │   ├── components/streams/
-│   │   │   ├── GTDStreamManager.tsx    # Główny widok zarządzania
-│   │   │   ├── GTDStreamForm.tsx       # Formularz tworzenia/edycji
-│   │   │   ├── GTDStreamCard.tsx       # Karta strumienia (metryki, akcje)
-│   │   │   ├── GTDConfigModal.tsx      # Modal konfiguracji GTD
+│   │   │   ├── StreamManager.tsx       # Główny widok zarządzania
+│   │   │   ├── StreamForm.tsx          # Formularz tworzenia/edycji
+│   │   │   ├── StreamCard.tsx          # Karta strumienia (metryki, akcje)
+│   │   │   ├── StreamConfigModal.tsx   # Modal konfiguracji strumienia
 │   │   │   ├── StreamHierarchyModal.tsx # Modal hierarchii
-│   │   │   ├── GTDMigrationModal.tsx   # Modal migracji do GTD
+│   │   │   ├── StreamMigrationModal.tsx # Modal migracji
 │   │   │   └── CreateStreamRelationModal.tsx # Modal tworzenia relacji
 │   │   ├── lib/api/
-│   │   │   ├── gtdStreams.ts           # API client dla GTD Streams
+│   │   │   ├── streamManagement.ts     # API client dla Stream Management
 │   │   │   ├── streams.ts             # API client standardowy
 │   │   │   └── streamHierarchy.ts     # API client hierarchii
 │   │   └── types/
-│   │       ├── gtd.ts                  # Typy frontend (GTDRole, StreamType)
-│   │       └── streams.ts             # Typy Stream, PreciseGoal (RZUT)
+│   │       ├── streams.ts              # Typy frontend (StreamRole, StreamType)
+│   │       └── preciseGoals.ts        # Typy PreciseGoal (RZUT)
 │   └── ...
 ```
 
@@ -954,8 +954,8 @@ packages/
 
 ## FAQ
 
-**Q: Jaka jest różnica między GTDRole a StreamType?**
-A: GTDRole = rola/przeznaczenie (CO robi), StreamType = struktura (JAK jest zorganizowany). Np. GTDRole=PROJECTS + StreamType=PROJECT.
+**Q: Jaka jest różnica między StreamRole a StreamType?**
+A: StreamRole = rola/przeznaczenie (CO robi), StreamType = struktura (JAK jest zorganizowany). Np. StreamRole=PROJECTS + StreamType=PROJECT.
 
 **Q: Czy mogę mieć wiele strumieni Inbox?**
 A: Technicznie tak, ale metodologia zaleca jeden centralny Inbox na organizację.

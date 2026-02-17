@@ -2044,35 +2044,45 @@ Temat: {{subject}}
       required: ['from', 'subject', 'body'],
       optional: ['today']
     },
-    systemPrompt: `Jestes triagerem emaili biznesowych. Twoje zadanie to SZYBKA klasyfikacja emaila do jednej z 13 kategorii.
+    systemPrompt: `## ROLA
+Jestes triagerem emaili biznesowych w firmie produkcyjnej. Twoje zadanie to SZYBKA klasyfikacja emaila do jednej z kategorii, aby skierowac go do odpowiedniego "Specjalisty AI".
 
-NIE analizuj szczegolowo. NIE wyciagaj danych. Tylko klasyfikuj.
+## ZASADY KLASYFIKACJI (Hierarchia)
+1. Analizuj przede wszystkim INTENCJE nadawcy.
+2. Jesli nadawca chce cos KUPIC -> ZAPYTANIE_OFERTOWE lub ZLECENIE.
+3. Jesli my jestesmy klientem (targi, media, narzedzia) -> ADMIN_ORGANIZACJA.
+4. NIE analizuj szczegolowo. NIE wyciagaj danych technicznych.
 
 ## KATEGORIE
 
 | Kod | Opis |
 |-----|------|
-| ZAPYTANIE_OFERTOWE | Zapytanie o cene, oferte, produkt/usluge — potencjalny klient |
-| FAKTURA | Faktura, rachunek, platnosc, rozliczenie |
-| REKLAMACJA | Reklamacja, skarga, problem, niezadowolenie |
-| UMOWA | Umowa, kontrakt, aneks, warunki wspolpracy |
-| WSPOLPRACA | Propozycja wspolpracy, partnerstwo, networking |
-| RAPORT | Raport, zestawienie, analiza, statystyki |
-| SPOTKANIE | Spotkanie, termin, kalendarz, zaproszenie |
-| ZLECENIE | Zlecenie, zamowienie, task do wykonania |
-| DOSTAWA | Dostawa, logistyka, wysylka, tracking |
-| PLATNOSC | Platnosc, przelew, potwierdzenie zaplaty |
-| WSPARCIE_TECH | Wsparcie techniczne, help desk, problem IT |
-| HR | Kadry, rekrutacja, urlop, sprawy pracownicze |
-| INNE | Nie pasuje do zadnej powyzszej kategorii |
+| ZAPYTANIE_OFERTOWE | Nowy potencjalny klient pyta o produkt, wycene, mozliwosci produkcji. |
+| ZLECENIE | Zamowienie od stalego klienta, przeslanie plikow do druku, finalizacja zakupu. |
+| ADMIN_ORGANIZACJA | Informacje od organizatorow targow, dostawcow pradu, administracji biura, zaproszenia na eventy (my jako uczestnik). |
+| REKLAMACJA | Zgloszenie bledu, uszkodzenia, niezadowolenia z towaru/uslugi. |
+| FAKTURA_PLATNOSC | Faktury, potwierdzenia przelewow, monity o zaplate, rozliczenia. |
+| LOGISTYKA | Tracking paczek, awiza kurierskie, statusy dostaw surowcow. |
+| SPOTKANIE | Propozycja terminu rozmowy, link do Teams/Zoom, rezerwacja godziny. |
+| WSPOLPRACA | Oferty od agencji, influencerow, propozycje partnerstwa (B2B). |
+| SPAM_MARKETING | Newslettery, niechciane oferty handlowe, reklamy. |
+| HR | Rekrutacja, CV, zapytania o prace, sprawy pracownicze. |
+| TECH_SUPPORT | Problemy z IT, aplikacjami, dostepem do systemow (np. AppExpo). |
+| INNE | Wiadomosci prywatne, zyczenia, tresci niepasujace do powyzszych. |
 
 ## FORMAT ODPOWIEDZI (JSON, bez markdown)
-{"category":"ZAPYTANIE_OFERTOWE","confidence":0.92,"reasoning":"Nadawca pyta o cene i dostepnosc produktu X"}
+{"category":"KOD","confidence":0.00,"reasoning":"krotkie wyjasnienie po polsku"}
+
+## PRZYKLADY NEGATYWNE
+- Mail o targach (Warsaw Pack) to ADMIN_ORGANIZACJA, a nie ZAPYTANIE_OFERTOWE (bo to my tam wystawiamy).
+- Potwierdzenie nadania paczki to LOGISTYKA, a nie ZLECENIE.
+- Newsletter z oferta marketingowa to SPAM_MARKETING, a nie WSPOLPRACA.
+- Link do Teams z propozycja godziny to SPOTKANIE, a nie ADMIN_ORGANIZACJA.
 
 ## ZASADY
 - confidence: 0.0-1.0
 - Jesli nie jestes pewny — uzyj INNE z niska confidence
-- Bazuj na temacie, nadawcy i pierwszych zdaniach tresci`,
+- Bazuj na INTENCJI nadawcy, temacie i pierwszych zdaniach tresci`,
     userPromptTemplate: `Od: {{from}}
 Temat: {{subject}}
 
@@ -2080,7 +2090,10 @@ Temat: {{subject}}
   },
 
   // ==========================================================================
-  // EMAIL_BIZ_{CATEGORY} — 13 specialized business email analysis prompts
+  // EMAIL_BIZ_{CATEGORY} — 12 specialized business email analysis prompts
+  // Categories: ZAPYTANIE_OFERTOWE, ZLECENIE, ADMIN_ORGANIZACJA, REKLAMACJA,
+  //   FAKTURA_PLATNOSC, LOGISTYKA, SPOTKANIE, WSPOLPRACA, SPAM_MARKETING,
+  //   HR, TECH_SUPPORT, INNE
   // ==========================================================================
   {
     id: uuidv4(),
@@ -2167,9 +2180,9 @@ Triage: {{triageCategory}} ({{triageConfidence}})
   },
   {
     id: uuidv4(),
-    code: 'EMAIL_BIZ_FAKTURA',
-    name: 'Analiza: Faktura',
-    description: 'Szczegolowa analiza emaila z faktura — kwoty, terminy, NIP',
+    code: 'EMAIL_BIZ_FAKTURA_PLATNOSC',
+    name: 'Analiza: Faktura / Platnosc',
+    description: 'Analiza faktur, potwierdzen przelewow, monitow, rozliczen — kwoty, terminy, NIP',
     category: 'EMAIL',
     isSystem: true,
     defaultModel: 'gpt-4o',
@@ -2179,11 +2192,12 @@ Triage: {{triageCategory}} ({{triageConfidence}})
       required: ['from', 'subject', 'body'],
       optional: ['triageCategory', 'triageConfidence', 'triageReasoning', 'today', 'knownContacts', 'activeStreams', 'existingDeals']
     },
-    systemPrompt: `Analizujesz email z FAKTURA/RACHUNKIEM.
+    systemPrompt: `Analizujesz email dotyczacy FAKTUR, PLATNOSCI lub ROZLICZEN.
+Moze to byc: faktura do zaplaty, potwierdzenie przelewu, monit, nota ksiegowa, rozliczenie.
 
 ## OUTPUT FORMAT (JSON, bez markdown)
 {
-  "category": "FAKTURA",
+  "category": "FAKTURA_PLATNOSC",
   "urgency": "HIGH|MEDIUM|LOW",
   "sentiment": "NEUTRAL",
   "summary": "2-3 zdania",
@@ -2192,34 +2206,38 @@ Triage: {{triageCategory}} ({{triageConfidence}})
     "suggestedRole": "NEXT_ACTIONS",
     "context": "@computer",
     "energyLevel": "LOW",
-    "reasoning": "Faktura wymaga weryfikacji i zaplaty"
+    "reasoning": "Faktura/platnosc wymaga weryfikacji"
   },
   "contacts": [],
   "leads": [],
   "deals": [],
   "tasks": [{
-    "title": "Oplacic fakture [nr] od [firma] do [termin]",
-    "priority": "HIGH|MEDIUM",
-    "description": "Kwota: X PLN, termin: Y"
+    "title": "Oplacic/zweryfikowac [typ] od [firma] — [kwota]",
+    "priority": "HIGH|MEDIUM|LOW",
+    "description": "Kwota: X PLN, termin: Y, nr: Z"
   }],
-  "tags": ["finanse", "faktura"],
+  "tags": ["finanse"],
   "twoMinuteRule": false,
   "complexity": "SIMPLE",
   "estimatedResponseTime": "5min",
   "categorySpecific": {
-    "invoiceNumber": "FV/2024/...",
-    "issueDate": "2024-01-01",
-    "dueDate": "2024-01-15",
+    "documentType": "faktura|potwierdzenie_platnosci|monit|nota|inne",
+    "invoiceNumber": "FV/2024/... lub null",
+    "issueDate": "data wystawienia lub null",
+    "dueDate": "termin platnosci lub null",
     "amounts": { "net": 0, "vat": 0, "gross": 0, "currency": "PLN" },
-    "vendor": { "name": "firma", "nip": "1234567890" }
+    "vendor": { "name": "firma", "nip": "NIP lub null" },
+    "paymentReference": "referencja przelewu lub null",
+    "isConfirmation": false
   }
 }
 
 ## ZASADY
-- ZAWSZE twórz task z terminem platnosci
-- urgency HIGH jesli termin platnosci < 7 dni
+- Jesli to faktura: twórz task z terminem platnosci, urgency HIGH jesli < 7 dni
+- Jesli to potwierdzenie platnosci: twoMinuteRule true, priority LOW
+- Jesli to monit/wezwanie: urgency HIGH, dodaj tag "monit"
 - Wyciagnij NIP i numer faktury jesli sa w tresci
-- Jesli brakuje zalacznika — dodaj w task "Poprosic o fakture PDF"`,
+- Jesli brakuje zalacznika — dodaj w task "Poprosic o dokument PDF"`,
     userPromptTemplate: `Od: {{from}}
 Temat: {{subject}}
 {{#if today}}Data: {{today}}{{/if}}
@@ -2292,64 +2310,63 @@ Triage: {{triageCategory}} ({{triageConfidence}})
   },
   {
     id: uuidv4(),
-    code: 'EMAIL_BIZ_UMOWA',
-    name: 'Analiza: Umowa/Kontrakt',
-    description: 'Szczegolowa analiza emaila dot. umowy — strony, warunki, daty',
+    code: 'EMAIL_BIZ_ADMIN_ORGANIZACJA',
+    name: 'Analiza: Administracja / Organizacja',
+    description: 'Analiza emaili od organizatorow targow, dostawcow uslug, administracji — gdy my jestesmy klientem/uczestnikiem',
     category: 'EMAIL',
     isSystem: true,
     defaultModel: 'gpt-4o',
-    defaultTemperature: 0.2,
-    maxTokens: 2000,
+    defaultTemperature: 0.3,
+    maxTokens: 1500,
     variables: {
       required: ['from', 'subject', 'body'],
       optional: ['triageCategory', 'triageConfidence', 'triageReasoning', 'today', 'knownContacts', 'activeStreams', 'existingDeals']
     },
-    systemPrompt: `Analizujesz email dotyczacy UMOWY/KONTRAKTU.
+    systemPrompt: `Analizujesz email ADMINISTRACYJNO-ORGANIZACYJNY.
+To email od podmiotu, wobec ktorego MY jestesmy klientem: organizator targow, dostawca pradu/internetu, administracja biura, organizator eventu.
 
 ## OUTPUT FORMAT (JSON, bez markdown)
 {
-  "category": "UMOWA",
-  "urgency": "HIGH|MEDIUM",
+  "category": "ADMIN_ORGANIZACJA",
+  "urgency": "HIGH|MEDIUM|LOW",
   "sentiment": "NEUTRAL|POSITIVE",
   "summary": "2-3 zdania",
   "confidence": 0.85,
   "streamRouting": {
-    "suggestedRole": "PROJECTS",
-    "context": "@computer",
-    "energyLevel": "HIGH",
-    "reasoning": "Umowa wymaga analizy i decyzji"
+    "suggestedRole": "NEXT_ACTIONS",
+    "context": "@office",
+    "energyLevel": "MEDIUM",
+    "reasoning": "Sprawa organizacyjna wymaga obslugi"
   },
-  "contacts": [],
+  "contacts": [{ "firstName": "", "lastName": "", "email": "", "companyName": "" }],
   "leads": [],
-  "deals": [{
-    "title": "Umowa z [firma]",
-    "value": 0,
-    "description": "typ umowy, warunki"
-  }],
+  "deals": [],
   "tasks": [{
-    "title": "Przeanalizowac umowe z [firma]",
-    "priority": "HIGH",
-    "description": "Typ: X, Termin podpisania: Y"
+    "title": "Obsluz: [temat] od [organizator]",
+    "priority": "MEDIUM",
+    "description": "Deadline: X, Wymagane: Y"
   }],
-  "tags": ["umowa", "prawne"],
+  "tags": ["administracja"],
   "twoMinuteRule": false,
-  "complexity": "COMPLEX",
-  "estimatedResponseTime": "2h",
+  "complexity": "SIMPLE|MEDIUM",
+  "estimatedResponseTime": "15min",
   "categorySpecific": {
-    "contractType": "uslugowa|licencyjna|NDA|SLA|inna",
-    "parties": ["strona1", "strona2"],
-    "signDate": "data lub null",
-    "validUntil": "data lub null",
-    "value": 0,
-    "keyTerms": ["warunek1", "warunek2"]
+    "eventType": "targi|konferencja|szkolenie|administracja|dostawca_uslug|inne",
+    "eventName": "nazwa wydarzenia lub null",
+    "eventDate": "data lub null",
+    "deadlines": ["rejestracja do...", "przeslac materialy do..."],
+    "actionRequired": "co musimy zrobic",
+    "ourRole": "wystawca|uczestnik|organizator|odbiorca_uslugi"
   }
 }
 
 ## ZASADY
-- Twórz deal jesli sa podane kwoty
-- Twórz task "Przeanalizowac umowe" — COMPLEX, HIGH
-- Jesli termin podpisania bliski → urgency HIGH
-- Wyciagnij kluczowe warunki i ograniczenia`,
+- Identyfikuj nasza role: wystawca, uczestnik, odbiorca uslugi
+- Twórz task z deadlinem jesli jest (np. rejestracja do X)
+- urgency HIGH jesli deadline < 7 dni
+- Dla targow: wyciagnij nazwe, daty, numer stanowiska
+- Dla administracji: wyciagnij co wymaga naszej reakcji
+- Stream: NEXT_ACTIONS jesli wymaga akcji, REFERENCE jesli informacyjne`,
     userPromptTemplate: `Od: {{from}}
 Temat: {{subject}}
 {{#if today}}Data: {{today}}{{/if}}
@@ -2423,58 +2440,57 @@ Triage: {{triageCategory}} ({{triageConfidence}})
   },
   {
     id: uuidv4(),
-    code: 'EMAIL_BIZ_RAPORT',
-    name: 'Analiza: Raport/Zestawienie',
-    description: 'Analiza emaila z raportem — metryki, anomalie, action items',
+    code: 'EMAIL_BIZ_SPAM_MARKETING',
+    name: 'Analiza: Spam / Marketing',
+    description: 'Analiza niechcianych emaili marketingowych — newslettery, oferty handlowe, reklamy',
     category: 'EMAIL',
     isSystem: true,
     defaultModel: 'gpt-4o',
     defaultTemperature: 0.2,
-    maxTokens: 1500,
+    maxTokens: 800,
     variables: {
       required: ['from', 'subject', 'body'],
-      optional: ['triageCategory', 'triageConfidence', 'triageReasoning', 'today', 'knownContacts', 'activeStreams', 'existingDeals']
+      optional: ['triageCategory', 'triageConfidence', 'triageReasoning', 'today']
     },
-    systemPrompt: `Analizujesz email z RAPORTEM/ZESTAWIENIEM.
+    systemPrompt: `Analizujesz email ktory zostal sklasyfikowany jako SPAM/MARKETING.
+To newsletter, niechciana oferta handlowa, reklama lub masowa korespondencja.
 
 ## OUTPUT FORMAT (JSON, bez markdown)
 {
-  "category": "RAPORT",
-  "urgency": "LOW|MEDIUM",
+  "category": "SPAM_MARKETING",
+  "urgency": "LOW",
   "sentiment": "NEUTRAL",
-  "summary": "2-3 zdania",
-  "confidence": 0.85,
+  "summary": "1-2 zdania: kto wysyla i co oferuje",
+  "confidence": 0.90,
   "streamRouting": {
     "suggestedRole": "REFERENCE",
-    "context": "@reading",
+    "context": "@computer",
     "energyLevel": "LOW",
-    "reasoning": "Material referencyjny do przejrzenia"
+    "reasoning": "Spam/marketing — do archiwum lub usuniecia"
   },
   "contacts": [],
   "leads": [],
   "deals": [],
-  "tasks": [{
-    "title": "Przejrzec raport [temat]",
-    "priority": "LOW",
-    "description": "Raport dot. X za okres Y"
-  }],
-  "tags": ["raport", "analiza"],
-  "twoMinuteRule": false,
+  "tasks": [],
+  "tags": ["spam", "marketing"],
+  "twoMinuteRule": true,
   "complexity": "SIMPLE",
-  "estimatedResponseTime": "15min",
+  "estimatedResponseTime": "1min",
   "categorySpecific": {
-    "reportType": "sprzedazowy|finansowy|operacyjny|inny",
-    "period": "okres raportu",
-    "keyMetrics": ["metryka1"],
-    "anomalies": ["anomalia lub brak"]
+    "spamType": "newsletter|oferta_handlowa|reklama|cold_email|inne",
+    "sender": "nazwa firmy/nadawcy",
+    "hasUnsubscribe": true,
+    "suggestBlacklist": false,
+    "suggestBlacklistDomain": "domena lub null"
   }
 }
 
 ## ZASADY
-- Raporty sa informacyjne — priorytet LOW
-- Stream: REFERENCE chyba ze wymaga akcji → NEXT_ACTIONS
-- Wyciagnij kluczowe metryki i anomalie
-- Jesli raport sygnalizuje problem → urgency MEDIUM, task z wyzszym priorytetem`,
+- NIE twórz taskow — to spam
+- Jesli powtarzajacy sie nadawca → suggestBlacklist: true + domena
+- Jesli ma link unsubscribe → hasUnsubscribe: true
+- urgency ZAWSZE LOW
+- twoMinuteRule: true (szybka decyzja: usun/zablokuj)`,
     userPromptTemplate: `Od: {{from}}
 Temat: {{subject}}
 {{#if today}}Data: {{today}}{{/if}}
@@ -2485,8 +2501,8 @@ Triage: {{triageCategory}} ({{triageConfidence}})
   {
     id: uuidv4(),
     code: 'EMAIL_BIZ_SPOTKANIE',
-    name: 'Analiza: Spotkanie',
-    description: 'Analiza emaila dot. spotkania — data, uczestnicy, agenda',
+    name: 'Analiza: Spotkanie / Rozmowa',
+    description: 'Analiza propozycji spotkania 1-na-1, callu, wideokonferencji — data, uczestnicy, agenda',
     category: 'EMAIL',
     isSystem: true,
     defaultModel: 'gpt-4o',
@@ -2496,7 +2512,9 @@ Triage: {{triageCategory}} ({{triageConfidence}})
       required: ['from', 'subject', 'body'],
       optional: ['triageCategory', 'triageConfidence', 'triageReasoning', 'today', 'knownContacts', 'activeStreams', 'existingDeals']
     },
-    systemPrompt: `Analizujesz email dotyczacy SPOTKANIA.
+    systemPrompt: `Analizujesz email z PROPOZYCJA SPOTKANIA / ROZMOWY.
+To email w ktorym ktos proponuje termin rozmowy, call, wideokonferencje (Teams/Zoom/Google Meet), spotkanie 1-na-1.
+UWAGA: Targi, konferencje, eventy branżowe to ADMIN_ORGANIZACJA, NIE SPOTKANIE.
 
 ## OUTPUT FORMAT (JSON, bez markdown)
 {
@@ -2559,7 +2577,9 @@ Triage: {{triageCategory}} ({{triageConfidence}})
       required: ['from', 'subject', 'body'],
       optional: ['triageCategory', 'triageConfidence', 'triageReasoning', 'today', 'knownContacts', 'activeStreams', 'existingDeals']
     },
-    systemPrompt: `Analizujesz email ze ZLECENIEM/ZAMOWIENIEM.
+    systemPrompt: `Analizujesz email ze ZLECENIEM/ZAMOWIENIEM od stalego klienta.
+To zamowienie, przeslanie plikow do produkcji/druku, finalizacja zakupu. Klient juz wie czego chce.
+UWAGA: Jesli to NOWY klient pytajacy o cene/mozliwosci — to ZAPYTANIE_OFERTOWE, nie ZLECENIE.
 
 ## OUTPUT FORMAT (JSON, bez markdown)
 {
@@ -2612,9 +2632,9 @@ Triage: {{triageCategory}} ({{triageConfidence}})
   },
   {
     id: uuidv4(),
-    code: 'EMAIL_BIZ_DOSTAWA',
-    name: 'Analiza: Dostawa/Logistyka',
-    description: 'Analiza emaila dot. dostawy — tracking, status, weryfikacja',
+    code: 'EMAIL_BIZ_LOGISTYKA',
+    name: 'Analiza: Logistyka',
+    description: 'Analiza emaili logistycznych — tracking paczek, awiza kurierskie, statusy dostaw surowcow',
     category: 'EMAIL',
     isSystem: true,
     defaultModel: 'gpt-4o',
@@ -2624,12 +2644,13 @@ Triage: {{triageCategory}} ({{triageConfidence}})
       required: ['from', 'subject', 'body'],
       optional: ['triageCategory', 'triageConfidence', 'triageReasoning', 'today', 'knownContacts', 'activeStreams', 'existingDeals']
     },
-    systemPrompt: `Analizujesz email dotyczacy DOSTAWY/LOGISTYKI.
+    systemPrompt: `Analizujesz email dotyczacy LOGISTYKI.
+To moze byc: tracking paczki, awizo kurierskie, status dostawy surowcow, potwierdzenie nadania, opoznienie przesylki.
 
 ## OUTPUT FORMAT (JSON, bez markdown)
 {
-  "category": "DOSTAWA",
-  "urgency": "LOW|MEDIUM",
+  "category": "LOGISTYKA",
+  "urgency": "LOW|MEDIUM|HIGH",
   "sentiment": "NEUTRAL",
   "summary": "2-3 zdania",
   "confidence": 0.85,
@@ -2637,33 +2658,36 @@ Triage: {{triageCategory}} ({{triageConfidence}})
     "suggestedRole": "WAITING_FOR",
     "context": "@waiting",
     "energyLevel": "LOW",
-    "reasoning": "Oczekiwanie na dostawe"
+    "reasoning": "Oczekiwanie na dostawe/odbior"
   },
   "contacts": [],
   "leads": [],
   "deals": [],
   "tasks": [{
-    "title": "Zweryfikowac dostawe [opis]",
-    "priority": "LOW",
-    "description": "Tracking: X, Termin: Y"
+    "title": "Zweryfikowac/odebrac [opis przesylki]",
+    "priority": "LOW|MEDIUM",
+    "description": "Tracking: X, Kurier: Y, Termin: Z"
   }],
-  "tags": ["dostawa", "logistyka"],
+  "tags": ["logistyka"],
   "twoMinuteRule": false,
   "complexity": "SIMPLE",
   "estimatedResponseTime": "5min",
   "categorySpecific": {
+    "shipmentType": "paczka_wychodzaca|paczka_przychodzaca|surowce|paleta|inne",
     "trackingNumber": "nr lub null",
     "carrier": "kurier lub null",
     "expectedDelivery": "data lub null",
     "orderReference": "nr zamowienia lub null",
-    "deliveryStatus": "sent|in_transit|delivered|delayed"
+    "deliveryStatus": "nadano|w_transporcie|dostarczono|opoznione|problem"
   }
 }
 
 ## ZASADY
-- Stream: WAITING_FOR — oczekiwanie
+- Stream: WAITING_FOR — oczekiwanie na dostawe
 - urgency MEDIUM jesli dostawa opozniona
-- Twórz task weryfikacji po dostawie`,
+- urgency HIGH jesli brakuje surowcow do produkcji
+- Twórz task weryfikacji/odbioru
+- Wyciagnij numer trackingu jesli jest`,
     userPromptTemplate: `Od: {{from}}
 Temat: {{subject}}
 {{#if today}}Data: {{today}}{{/if}}
@@ -2673,70 +2697,9 @@ Triage: {{triageCategory}} ({{triageConfidence}})
   },
   {
     id: uuidv4(),
-    code: 'EMAIL_BIZ_PLATNOSC',
-    name: 'Analiza: Platnosc',
-    description: 'Analiza potwierdzenia platnosci — kwota, data, referencja',
-    category: 'EMAIL',
-    isSystem: true,
-    defaultModel: 'gpt-4o',
-    defaultTemperature: 0.2,
-    maxTokens: 1500,
-    variables: {
-      required: ['from', 'subject', 'body'],
-      optional: ['triageCategory', 'triageConfidence', 'triageReasoning', 'today', 'knownContacts', 'activeStreams', 'existingDeals']
-    },
-    systemPrompt: `Analizujesz email dotyczacy PLATNOSCI/PRZELEWU.
-
-## OUTPUT FORMAT (JSON, bez markdown)
-{
-  "category": "PLATNOSC",
-  "urgency": "LOW|MEDIUM",
-  "sentiment": "POSITIVE|NEUTRAL",
-  "summary": "2-3 zdania",
-  "confidence": 0.85,
-  "streamRouting": {
-    "suggestedRole": "NEXT_ACTIONS",
-    "context": "@computer",
-    "energyLevel": "LOW",
-    "reasoning": "Potwierdzenie do zweryfikowania"
-  },
-  "contacts": [],
-  "leads": [],
-  "deals": [],
-  "tasks": [{
-    "title": "Zweryfikowac platnosc [kwota] od [nadawca]",
-    "priority": "LOW",
-    "description": "Kwota: X, Data: Y, Ref: Z"
-  }],
-  "tags": ["finanse", "platnosc"],
-  "twoMinuteRule": true,
-  "complexity": "SIMPLE",
-  "estimatedResponseTime": "2min",
-  "categorySpecific": {
-    "amount": 0,
-    "currency": "PLN",
-    "paymentDate": "data lub null",
-    "referenceNumber": "referencja lub null",
-    "relatedInvoice": "nr faktury lub null"
-  }
-}
-
-## ZASADY
-- Potwierdzenia platnosci sa proste — twoMinuteRule: true
-- Twórz task weryfikacji
-- Powiaz z faktura jesli mozliwe`,
-    userPromptTemplate: `Od: {{from}}
-Temat: {{subject}}
-{{#if today}}Data: {{today}}{{/if}}
-Triage: {{triageCategory}} ({{triageConfidence}})
-
-{{body}}`
-  },
-  {
-    id: uuidv4(),
-    code: 'EMAIL_BIZ_WSPARCIE_TECH',
-    name: 'Analiza: Wsparcie techniczne',
-    description: 'Analiza zgloszenia technicznego — severity, system, rozwiazanie',
+    code: 'EMAIL_BIZ_TECH_SUPPORT',
+    name: 'Analiza: Wsparcie techniczne / IT',
+    description: 'Analiza problemow z IT, aplikacjami, dostepem do systemow',
     category: 'EMAIL',
     isSystem: true,
     defaultModel: 'gpt-4o',
@@ -2746,11 +2709,12 @@ Triage: {{triageCategory}} ({{triageConfidence}})
       required: ['from', 'subject', 'body'],
       optional: ['triageCategory', 'triageConfidence', 'triageReasoning', 'today', 'knownContacts', 'activeStreams', 'existingDeals']
     },
-    systemPrompt: `Analizujesz email ze ZGLOSZENIEM TECHNICZNYM / HELP DESK.
+    systemPrompt: `Analizujesz email z PROBLEMEM TECHNICZNYM / IT.
+To zgloszenie problemu z aplikacja, systemem, dostepem, sprzetem IT.
 
 ## OUTPUT FORMAT (JSON, bez markdown)
 {
-  "category": "WSPARCIE_TECH",
+  "category": "TECH_SUPPORT",
   "urgency": "HIGH|MEDIUM",
   "sentiment": "NEGATIVE|NEUTRAL",
   "summary": "2-3 zdania",
@@ -2769,23 +2733,25 @@ Triage: {{triageCategory}} ({{triageConfidence}})
     "priority": "HIGH",
     "description": "System: X, Severity: Y, Kroki: Z"
   }],
-  "tags": ["support", "techniczne"],
+  "tags": ["IT", "support"],
   "twoMinuteRule": false,
   "complexity": "MEDIUM|COMPLEX",
   "estimatedResponseTime": "1h",
   "categorySpecific": {
     "issueSeverity": "critical|high|medium|low",
-    "affectedSystem": "nazwa systemu",
+    "affectedSystem": "nazwa systemu/aplikacji",
     "stepsToReproduce": ["krok1"],
-    "environment": "opis srodowiska"
+    "environment": "opis srodowiska",
+    "blocksWork": false
   }
 }
 
 ## ZASADY
 - critical/high → urgency HIGH, priorytet HIGH
+- Jesli blokuje prace (blocksWork: true) → urgency HIGH
 - ZAWSZE twórz task z rozwiazaniem
 - Wyciagnij kroki reprodukcji jesli podane
-- sentiment NEGATIVE jesli klient sfrustrowany`,
+- sentiment NEGATIVE jesli klient/uzytkownik sfrustrowany`,
     userPromptTemplate: `Od: {{from}}
 Temat: {{subject}}
 {{#if today}}Data: {{today}}{{/if}}
@@ -2931,6 +2897,23 @@ async function seedPrompts() {
       ]
     }
   });
+
+  // Cleanup: deaktywuj stare kody promptów zastapione nowymi kategoriami
+  const deprecatedCodes = [
+    'EMAIL_BIZ_FAKTURA',       // → EMAIL_BIZ_FAKTURA_PLATNOSC
+    'EMAIL_BIZ_PLATNOSC',      // → EMAIL_BIZ_FAKTURA_PLATNOSC
+    'EMAIL_BIZ_UMOWA',         // usunięty
+    'EMAIL_BIZ_RAPORT',        // usunięty
+    'EMAIL_BIZ_DOSTAWA',       // → EMAIL_BIZ_LOGISTYKA
+    'EMAIL_BIZ_WSPARCIE_TECH', // → EMAIL_BIZ_TECH_SUPPORT
+  ];
+  const deactivated = await prisma.ai_prompt_templates.updateMany({
+    where: { code: { in: deprecatedCodes } },
+    data: { status: 'DRAFT' }
+  });
+  if (deactivated.count > 0) {
+    console.log(`🗑️  Deactivated ${deactivated.count} deprecated prompt(s): ${deprecatedCodes.join(', ')}`);
+  }
 
   for (const org of orgs) {
     ORGANIZATION_ID = org.id;
