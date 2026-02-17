@@ -814,16 +814,47 @@ router.post('/analyze/:messageId', authenticateToken, async (req: AuthenticatedR
       orderBy: { createdAt: 'desc' },
     });
 
+    // Count proposals from actionsExecuted
+    const allActions = result.actionsExecuted || [];
+    const proposalActions = allActions.filter((a: string) => a.startsWith('PROPOSED_'));
+    const proposalCount = proposalActions.reduce((sum: number, a: string) => {
+      const match = a.match(/:(\d+)$/);
+      return sum + (match ? parseInt(match[1]) : 1);
+    }, 0);
+
+    // Fetch proposal details if any were created
+    let proposals: any[] = [];
+    if (proposalCount > 0) {
+      const suggestions = await prisma.ai_suggestions.findMany({
+        where: {
+          organization_id: organizationId,
+          status: 'PENDING',
+          input_data: { path: ['messageId'], equals: messageId },
+        },
+        orderBy: { created_at: 'desc' },
+      });
+      proposals = suggestions.map(s => ({
+        id: s.id,
+        type: s.context,
+        title: (s.suggestion as any)?.title || (s.suggestion as any)?.name || 'Propozycja AI',
+        data: s.suggestion,
+        confidence: s.confidence || 0,
+        reasoning: s.reasoning,
+      }));
+    }
+
     return res.json({
       success: true,
       data: {
         classification: result.finalClass,
         confidence: result.finalConfidence,
-        actionsExecuted: result.actionsExecuted || [],
+        actionsExecuted: allActions,
         linkedEntities: result.linkedEntities || {},
         entitiesCreated: dpRecord?.aiExtraction
           ? (dpRecord.aiExtraction as any).entitiesCreated || []
           : [],
+        proposals,
+        requiresReview: proposals.length > 0,
         analysis: dpRecord?.aiExtraction
           ? (dpRecord.aiExtraction as any).postClassificationAnalysis || null
           : null,

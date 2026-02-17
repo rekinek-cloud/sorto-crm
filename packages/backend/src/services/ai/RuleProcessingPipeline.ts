@@ -364,12 +364,21 @@ export class RuleProcessingPipeline {
         }
       }
 
-      // Auto-create CRM entities from post-classification analysis
+      // Create CRM entities from post-classification analysis
+      // If requireReview is set, create ai_suggestions proposals instead of auto-creating
       if (postClassificationAnalysis && finalClass !== 'SPAM' && finalClass !== 'UNKNOWN') {
-        await this.createEntitiesFromAnalysis(
-          organizationId, entityId, finalClass,
-          postClassificationAnalysis, entityData, linkedEntities, actionsExecuted
-        );
+        const entityActions = this.config.postActions[finalClass] || {};
+        if (entityActions.requireReview) {
+          await this.createEntityProposals(
+            organizationId, entityId, finalClass,
+            postClassificationAnalysis, entityData, linkedEntities, actionsExecuted
+          );
+        } else {
+          await this.createEntitiesFromAnalysis(
+            organizationId, entityId, finalClass,
+            postClassificationAnalysis, entityData, linkedEntities, actionsExecuted
+          );
+        }
       }
 
       // Update processing record with all results
@@ -1370,6 +1379,270 @@ export class RuleProcessingPipeline {
     }).catch(() => {});
 
     return { updated: true, patternCreated };
+  }
+
+  // ===========================================================================
+  // Stage 4b-review: Create ai_suggestions proposals instead of auto-creating
+  // ===========================================================================
+
+  private async createEntityProposals(
+    organizationId: string,
+    entityId: string,
+    classification: string,
+    analysisJson: string,
+    entityData: EntityData,
+    linkedEntities: { contactId?: string; companyId?: string; dealId?: string },
+    actionsExecuted: string[]
+  ): Promise<void> {
+    const parsed = this.parseAIResponse(analysisJson);
+    if (!parsed) {
+      logger.warn(`[EntityProposals] Failed to parse analysis JSON for ${entityId}`);
+      return;
+    }
+
+    const adminUser = await this.prisma.user.findFirst({
+      where: { organizationId },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (!adminUser) return;
+
+    const senderEmail = entityData.from || '';
+    const senderDomain = entityData.senderDomain || this.extractDomain(senderEmail);
+    const inputData = {
+      messageId: entityId,
+      subject: entityData.subject || '',
+      from: senderEmail,
+      classification,
+    };
+
+    let proposalCount = 0;
+
+    try {
+      // === 1. COMPANY proposal ===
+      const isFreeEmail = !senderDomain || this.freeEmailDomains.has(senderDomain);
+      const aiCompanyName = parsed.leads?.[0]?.company || parsed.contacts?.[0]?.company || null;
+
+      if (!linkedEntities.companyId) {
+        // Check if company already exists (same logic as createEntitiesFromAnalysis)
+        if (!isFreeEmail) {
+          const existingCompany = await this.prisma.company.findFirst({
+            where: {
+              organizationId,
+              OR: [
+                { domain: { equals: senderDomain, mode: 'insensitive' as const } },
+                { website: { contains: senderDomain, mode: 'insensitive' as const } },
+              ],
+            },
+          });
+          if (existingCompany) linkedEntities.companyId = existingCompany.id;
+        }
+        if (!linkedEntities.companyId && aiCompanyName) {
+          const existingByName = await this.prisma.company.findFirst({
+            where: { organizationId, name: { equals: aiCompanyName, mode: 'insensitive' as const } },
+          });
+          if (existingByName) linkedEntities.companyId = existingByName.id;
+        }
+
+        // Propose new company if no match
+        if (!linkedEntities.companyId && (!isFreeEmail || aiCompanyName)) {
+          const companyName = aiCompanyName
+            || senderDomain.split('.')[0].charAt(0).toUpperCase() + senderDomain.split('.')[0].slice(1);
+
+          let nip: string | null = null;
+          const allText = JSON.stringify(parsed);
+          const nipMatch = allText.match(/\b(\d{10})\b/);
+          if (nipMatch) nip = nipMatch[1];
+
+          await this.prisma.ai_suggestions.create({
+            data: {
+              id: `sug-company-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+              user_id: adminUser.id,
+              organization_id: organizationId,
+              context: 'CREATE_COMPANY',
+              input_data: inputData,
+              suggestion: {
+                name: companyName,
+                domain: isFreeEmail ? null : senderDomain,
+                website: isFreeEmail ? null : `https://${senderDomain}`,
+                email: senderEmail || null,
+                nip,
+                status: 'PROSPECT',
+                tags: ['from-email-analysis'],
+              },
+              confidence: Math.round((parsed.confidence || 0.7) * 100),
+              reasoning: `Firma wyekstrahowana z emaila: ${entityData.subject || senderEmail}`,
+              status: 'PENDING',
+            },
+          });
+          proposalCount++;
+        }
+      }
+
+      // === 2. CONTACT proposal ===
+      if (!linkedEntities.contactId && senderEmail) {
+        const existingContact = await this.prisma.contact.findFirst({
+          where: { organizationId, email: { equals: senderEmail, mode: 'insensitive' as const } },
+        });
+
+        if (existingContact) {
+          linkedEntities.contactId = existingContact.id;
+        } else {
+          const leadData = parsed.leads?.[0];
+          const contactData = parsed.contacts?.[0];
+          const senderName = entityData.senderName || entityData.fromName || leadData?.name || '';
+          const nameParts = senderName.split(' ');
+
+          await this.prisma.ai_suggestions.create({
+            data: {
+              id: `sug-contact-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+              user_id: adminUser.id,
+              organization_id: organizationId,
+              context: 'CREATE_CONTACT',
+              input_data: inputData,
+              suggestion: {
+                firstName: contactData?.firstName || nameParts[0] || senderEmail.split('@')[0],
+                lastName: contactData?.lastName || nameParts.slice(1).join(' ') || '',
+                email: senderEmail,
+                phone: contactData?.phone || null,
+                companyName: leadData?.company || contactData?.company || null,
+                position: contactData?.position || null,
+                source: 'Email',
+                status: classification === 'BUSINESS' ? 'LEAD' : 'ACTIVE',
+                tags: ['from-email-analysis'],
+              },
+              confidence: Math.round((parsed.confidence || 0.7) * 100),
+              reasoning: `Kontakt z emaila od ${senderEmail}`,
+              status: 'PENDING',
+            },
+          });
+          proposalCount++;
+        }
+      }
+
+      // === 3. LEADS proposals ===
+      if (parsed.leads && Array.isArray(parsed.leads)) {
+        const dedup24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        for (const lead of parsed.leads) {
+          if (!lead.name && !lead.email) continue;
+          const leadTitle = lead.name || `Lead from ${senderEmail}`;
+
+          const existing = await this.prisma.lead.findFirst({
+            where: { organizationId, title: leadTitle, createdAt: { gte: dedup24h } },
+          });
+          if (existing) continue;
+
+          await this.prisma.ai_suggestions.create({
+            data: {
+              id: `sug-lead-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+              user_id: adminUser.id,
+              organization_id: organizationId,
+              context: 'CREATE_LEAD',
+              input_data: inputData,
+              suggestion: {
+                title: leadTitle,
+                description: lead.notes || `From email: ${entityData.subject || ''}`,
+                company: lead.company || null,
+                contactPerson: lead.email || senderEmail || null,
+                priority: 'MEDIUM',
+                source: lead.source || 'Email',
+              },
+              confidence: Math.round((parsed.confidence || 0.6) * 100),
+              reasoning: `Lead wyekstrahowany z analizy emaila`,
+              status: 'PENDING',
+            },
+          });
+          proposalCount++;
+        }
+      }
+
+      // === 4. DEALS proposals ===
+      if (parsed.deals && Array.isArray(parsed.deals)) {
+        const dedup24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        for (const deal of parsed.deals) {
+          if (!deal.title) continue;
+
+          const existing = await this.prisma.deal.findFirst({
+            where: { organizationId, title: deal.title, createdAt: { gte: dedup24h } },
+          });
+          if (existing) continue;
+
+          const stageMap: Record<string, string> = {
+            prospect: 'PROSPECT', qualified: 'QUALIFIED', proposal: 'PROPOSAL',
+            negotiation: 'NEGOTIATION', closed_won: 'CLOSED_WON', closed_lost: 'CLOSED_LOST',
+          };
+
+          await this.prisma.ai_suggestions.create({
+            data: {
+              id: `sug-deal-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+              user_id: adminUser.id,
+              organization_id: organizationId,
+              context: 'CREATE_DEAL',
+              input_data: inputData,
+              suggestion: {
+                title: deal.title,
+                description: `Z emaila: ${entityData.subject || ''}\nOd: ${senderEmail}`,
+                value: deal.value || 0,
+                stage: stageMap[(deal.stage || '').toLowerCase()] || 'PROSPECT',
+                source: 'Email',
+                companyId: linkedEntities.companyId || null,
+              },
+              confidence: Math.round((parsed.confidence || 0.5) * 100),
+              reasoning: `Transakcja wyekstrahowana z analizy emaila`,
+              status: 'PENDING',
+            },
+          });
+          proposalCount++;
+        }
+      }
+
+      // === 5. TASKS proposals ===
+      const allTasks = [
+        ...(parsed.tasks || []),
+        ...(parsed.requiredActions?.map((a: string) => ({ title: a, priority: 'MEDIUM' })) || []),
+        ...(parsed.actionItems?.map((a: string) => ({ title: a, priority: 'LOW' })) || []),
+      ];
+
+      const dedup24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      for (const task of allTasks.slice(0, 5)) {
+        if (!task.title || task.title.length < 5) continue;
+
+        const existing = await this.prisma.task.findFirst({
+          where: { organizationId, title: task.title, createdAt: { gte: dedup24h } },
+        });
+        if (existing) continue;
+
+        const priorityMap: Record<string, string> = {
+          low: 'LOW', medium: 'MEDIUM', high: 'HIGH', urgent: 'URGENT',
+        };
+
+        await this.prisma.ai_suggestions.create({
+          data: {
+            id: `sug-task-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            user_id: adminUser.id,
+            organization_id: organizationId,
+            context: 'CREATE_TASK',
+            input_data: inputData,
+            suggestion: {
+              title: task.title,
+              description: `Z emaila: ${entityData.subject || ''}\nOd: ${senderEmail}`,
+              priority: priorityMap[(task.priority || '').toLowerCase()] || 'MEDIUM',
+              deadline: task.deadline || null,
+            },
+            confidence: Math.round((parsed.confidence || 0.6) * 100),
+            reasoning: `Zadanie wyekstrahowane z analizy emaila`,
+            status: 'PENDING',
+          },
+        });
+        proposalCount++;
+      }
+
+      if (proposalCount > 0) {
+        actionsExecuted.push(`PROPOSED_ENTITIES:${proposalCount}`);
+        logger.info(`[EntityProposals] Created ${proposalCount} proposals for email ${entityId}`);
+      }
+    } catch (error) {
+      logger.warn(`[EntityProposals] Error creating proposals for ${entityId}:`, error);
+    }
   }
 
   // ===========================================================================

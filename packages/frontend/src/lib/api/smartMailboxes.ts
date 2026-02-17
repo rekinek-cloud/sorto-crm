@@ -121,6 +121,15 @@ export async function forwardMessage(messageId: string, data: { to: string; cont
 }
 
 // Analyze message with AI pipeline (manual trigger)
+export interface AnalysisProposal {
+  id: string
+  type: string
+  title: string
+  data: Record<string, any>
+  confidence: number
+  reasoning: string | null
+}
+
 export async function analyzeMessage(messageId: string): Promise<{
   success: boolean
   data: {
@@ -130,9 +139,23 @@ export async function analyzeMessage(messageId: string): Promise<{
     actionsExecuted: string[]
     linkedEntities: Record<string, string>
     entitiesCreated: string[]
+    proposals: AnalysisProposal[]
+    requiresReview: boolean
     analysis: string | null
   }
 }> {
   const response = await apiClient.post(`/email-pipeline/analyze/${messageId}`)
+  return response.data
+}
+
+// Bulk accept/reject AI suggestions
+export async function bulkActionSuggestions(
+  ids: string[],
+  action: 'accept' | 'reject'
+): Promise<{
+  success: boolean
+  data: { accepted: number; rejected: number; created: Array<{ id: string; type: string }> }
+}> {
+  const response = await apiClient.post('/ai-suggestions/bulk-action', { ids, action })
   return response.data
 }

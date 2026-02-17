@@ -83,6 +83,7 @@ export interface PostActionsConfig {
     suggestBlacklist?: boolean;
     autoBlacklist?: boolean;
     extractTasks?: boolean;
+    requireReview?: boolean;
   };
 }
 
@@ -207,7 +208,7 @@ Rules:
 
   // --- Post-Actions per Classification ---
   postActions: {
-    BUSINESS: { rag: true, flow: true, extractTasks: true },
+    BUSINESS: { rag: true, flow: true, extractTasks: true, requireReview: true },
     NEWSLETTER: { rag: true, suggestBlacklist: true },
     SPAM: { autoBlacklist: true },
     TRANSACTIONAL: {},

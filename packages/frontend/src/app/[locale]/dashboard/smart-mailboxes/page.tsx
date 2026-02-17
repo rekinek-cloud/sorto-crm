@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SmartMailboxBuilder } from '@/components/communication/smart-mailboxes/SmartMailboxBuilder'
-import { getSmartMailboxMessages, getSmartMailboxes, archiveMessage, deleteMessage, deleteSmartMailbox, analyzeMessage } from '@/lib/api/smartMailboxes'
+import { getSmartMailboxMessages, getSmartMailboxes, archiveMessage, deleteMessage, deleteSmartMailbox, analyzeMessage, AnalysisProposal } from '@/lib/api/smartMailboxes'
 import { communicationApi, CommunicationChannel } from '@/lib/api/communication'
 import { getUnifiedRules, executeUnifiedRule, UnifiedRule } from '@/lib/api/unifiedRules'
 import { useMessageFilters } from '@/hooks/useMessageFilters'
@@ -44,6 +44,7 @@ import QuickCaptureModal from '@/components/gtd/QuickCaptureModal'
 import ProcessInboxModal from '@/components/gtd/ProcessInboxModal'
 import { sourceInboxApi } from '@/lib/api/sourceInbox'
 import EmailWriterModal from '@/components/email/EmailWriterModal'
+import AnalysisPreviewModal from '@/components/email/AnalysisPreviewModal'
 
 const GLASS_CARD = 'bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm'
 
@@ -121,6 +122,13 @@ export default function SmartMailboxesPage() {
   const [showGTDModal, setShowGTDModal] = useState(false)
   const [showEmailWriterModal, setShowEmailWriterModal] = useState(false)
   const [currentMessage, setCurrentMessage] = useState<any>(null)
+
+  // Analysis preview modal state
+  const [showAnalysisPreview, setShowAnalysisPreview] = useState(false)
+  const [analysisClassification, setAnalysisClassification] = useState('')
+  const [analysisConfidence, setAnalysisConfidence] = useState(0)
+  const [analysisProposals, setAnalysisProposals] = useState<AnalysisProposal[]>([])
+  const [analysisText, setAnalysisText] = useState<string | null>(null)
 
   // Advanced filters panel visibility
   const [showFilters, setShowFilters] = useState(false)
@@ -332,12 +340,25 @@ export default function SmartMailboxesPage() {
     const toastId = toast.loading('Analizowanie wiadomosci...')
     try {
       const result = await analyzeMessage(id)
-      const created = result.data?.entitiesCreated || []
-      const classification = result.data?.classification || 'N/A'
-      const msg = created.length > 0
-        ? `Analiza: ${classification}. Utworzono: ${created.length} encji CRM`
-        : `Analiza: ${classification}`
-      toast.success(msg, { id: toastId })
+      toast.dismiss(toastId)
+
+      if (result.data?.requiresReview && result.data.proposals?.length > 0) {
+        // Open preview modal with proposals for human review
+        setAnalysisClassification(result.data.classification || 'N/A')
+        setAnalysisConfidence(result.data.confidence || 0)
+        setAnalysisProposals(result.data.proposals)
+        setAnalysisText(result.data.analysis)
+        setShowAnalysisPreview(true)
+        toast.success(`Analiza: ${result.data.classification}. ${result.data.proposals.length} propozycji do zatwierdzenia.`, { duration: 3000 })
+      } else {
+        // No proposals (auto-created or no entities found)
+        const created = result.data?.entitiesCreated || []
+        const classification = result.data?.classification || 'N/A'
+        const msg = created.length > 0
+          ? `Analiza: ${classification}. Utworzono: ${created.length} encji CRM`
+          : `Analiza: ${classification}`
+        toast.success(msg)
+      }
       loadMessages()
     } catch {
       toast.error('Blad analizy AI', { id: toastId })
@@ -1142,6 +1163,23 @@ export default function SmartMailboxesPage() {
             setCurrentMessage(null)
             toast.success('Wiadomosc przetworzona')
           }}
+        />
+      )}
+
+      {showAnalysisPreview && (
+        <AnalysisPreviewModal
+          isOpen={showAnalysisPreview}
+          onClose={() => {
+            setShowAnalysisPreview(false)
+            setAnalysisProposals([])
+          }}
+          onComplete={() => {
+            loadMessages()
+          }}
+          classification={analysisClassification}
+          confidence={analysisConfidence}
+          proposals={analysisProposals}
+          analysis={analysisText}
         />
       )}
     </div>

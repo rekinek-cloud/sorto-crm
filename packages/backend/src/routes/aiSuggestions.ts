@@ -14,7 +14,7 @@ router.get('/',
   authenticateToken,
   async (req, res) => {
     try {
-      const { status, type, limit = '50' } = req.query;
+      const { status, type, messageId, limit = '50' } = req.query;
 
       const where: any = {
         organization_id: req.user!.organizationId,
@@ -23,6 +23,9 @@ router.get('/',
       if (status) where.status = status;
       if (type) {
         where.context = type; // Use context field for suggestion type
+      }
+      if (messageId) {
+        where.input_data = { path: ['messageId'], equals: messageId };
       }
 
       const suggestions = await prisma.ai_suggestions.findMany({
@@ -101,14 +104,20 @@ router.post('/:id/accept',
           }
           break;
 
-        case 'CREATE_TASK':
+        case 'CREATE_TASK': {
+          const dueDate = data.dueDate || data.deadline;
+          let parsedDueDate: Date | null = null;
+          if (dueDate) {
+            const d = new Date(dueDate);
+            if (!isNaN(d.getTime())) parsedDueDate = d;
+          }
           createdEntity = await prisma.task.create({
             data: {
               title: data.title || 'Zadanie z sugestii AI',
               description: data.description || null,
               priority: data.priority || 'MEDIUM',
               status: 'NEW',
-              dueDate: data.dueDate ? new Date(data.dueDate) : null,
+              dueDate: parsedDueDate,
               estimatedHours: data.estimatedTime ? data.estimatedTime / 60 : null,
               createdById: req.user!.id,
               organizationId: req.user!.organizationId,
@@ -117,21 +126,20 @@ router.post('/:id/accept',
             },
           });
           break;
+        }
 
         case 'CREATE_DEAL':
-          if (!data.companyId) {
-            return res.status(400).json({ error: 'companyId is required for CREATE_DEAL' });
-          }
           createdEntity = await prisma.deal.create({
             data: {
               title: data.title || 'Transakcja z sugestii AI',
-              value: data.value ? parseFloat(data.value) : 0,
+              value: data.value ? parseFloat(String(data.value)) : 0,
               currency: data.currency || 'PLN',
               stage: data.stage || 'PROSPECT',
               probability: data.probability || 0,
               expectedCloseDate: data.expectedCloseDate ? new Date(data.expectedCloseDate) : null,
-              notes: data.notes || null,
-              companyId: data.companyId,
+              notes: data.notes || data.description || null,
+              source: data.source || undefined,
+              companyId: data.companyId || undefined,
               organizationId: req.user!.organizationId,
               ownerId: req.user!.id,
             },
@@ -156,6 +164,54 @@ router.post('/:id/accept',
               });
             }
           }
+          break;
+
+        case 'CREATE_COMPANY':
+          createdEntity = await prisma.company.create({
+            data: {
+              name: data.name || 'Firma z sugestii AI',
+              domain: data.domain || undefined,
+              website: data.website || undefined,
+              email: data.email || undefined,
+              nip: data.nip || undefined,
+              status: data.status || 'PROSPECT',
+              tags: data.tags || ['from-email-analysis'],
+              organizationId: req.user!.organizationId,
+            },
+          });
+          break;
+
+        case 'CREATE_CONTACT':
+          createdEntity = await prisma.contact.create({
+            data: {
+              firstName: data.firstName || 'Nieznany',
+              lastName: data.lastName || '',
+              email: data.email || undefined,
+              phone: data.phone || undefined,
+              company: data.companyName || undefined,
+              position: data.position || undefined,
+              source: data.source || 'Email',
+              status: data.status || 'LEAD',
+              companyId: data.companyId || undefined,
+              tags: data.tags || ['from-email-analysis'],
+              organizationId: req.user!.organizationId,
+            },
+          });
+          break;
+
+        case 'CREATE_LEAD':
+          createdEntity = await prisma.lead.create({
+            data: {
+              title: data.title || 'Lead z sugestii AI',
+              description: data.description || null,
+              company: data.company || undefined,
+              contactPerson: data.contactPerson || undefined,
+              status: 'NEW',
+              priority: data.priority || 'MEDIUM',
+              source: data.source || 'Email',
+              organizationId: req.user!.organizationId,
+            },
+          });
           break;
 
         case 'SEND_NOTIFICATION':
@@ -311,6 +367,179 @@ router.put('/:id',
       logger.error('Failed to edit suggestion:', error);
       if (error instanceof AppError) throw error;
       throw new AppError('Nie udalo sie edytowac sugestii', 500);
+    }
+  }
+);
+
+/**
+ * POST /api/v1/ai-suggestions/bulk-action
+ * Accept or reject multiple suggestions at once
+ */
+router.post('/bulk-action',
+  authenticateToken,
+  requireRole(['OWNER', 'ADMIN', 'MANAGER']),
+  async (req, res) => {
+    try {
+      const { ids, action } = req.body;
+
+      if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: 'ids array is required' });
+      }
+      if (!['accept', 'reject'].includes(action)) {
+        return res.status(400).json({ error: 'action must be "accept" or "reject"' });
+      }
+
+      const results: { accepted: number; rejected: number; created: Array<{ id: string; type: string }> } = {
+        accepted: 0,
+        rejected: 0,
+        created: [],
+      };
+
+      for (const id of ids) {
+        const suggestion = await prisma.ai_suggestions.findFirst({
+          where: { id, organization_id: req.user!.organizationId, status: 'PENDING' },
+        });
+        if (!suggestion) continue;
+
+        const data = suggestion.suggestion as any;
+
+        if (action === 'accept') {
+          let createdEntity: any = null;
+
+          switch (suggestion.context) {
+            case 'CREATE_COMPANY':
+              createdEntity = await prisma.company.create({
+                data: {
+                  name: data.name || 'Firma z sugestii AI',
+                  domain: data.domain || undefined,
+                  website: data.website || undefined,
+                  email: data.email || undefined,
+                  nip: data.nip || undefined,
+                  status: data.status || 'PROSPECT',
+                  tags: data.tags || ['from-email-analysis'],
+                  organizationId: req.user!.organizationId,
+                },
+              }).catch((): null => null);
+              break;
+
+            case 'CREATE_CONTACT':
+              createdEntity = await prisma.contact.create({
+                data: {
+                  firstName: data.firstName || 'Nieznany',
+                  lastName: data.lastName || '',
+                  email: data.email || undefined,
+                  phone: data.phone || undefined,
+                  company: data.companyName || undefined,
+                  position: data.position || undefined,
+                  source: data.source || 'Email',
+                  status: data.status || 'LEAD',
+                  companyId: data.companyId || undefined,
+                  tags: data.tags || ['from-email-analysis'],
+                  organizationId: req.user!.organizationId,
+                },
+              }).catch((): null => null);
+              break;
+
+            case 'CREATE_LEAD':
+              createdEntity = await prisma.lead.create({
+                data: {
+                  title: data.title || 'Lead z sugestii AI',
+                  description: data.description || null,
+                  company: data.company || undefined,
+                  contactPerson: data.contactPerson || undefined,
+                  status: 'NEW',
+                  priority: data.priority || 'MEDIUM',
+                  source: data.source || 'Email',
+                  organizationId: req.user!.organizationId,
+                },
+              }).catch((): null => null);
+              break;
+
+            case 'CREATE_DEAL':
+              createdEntity = await prisma.deal.create({
+                data: {
+                  title: data.title || 'Transakcja z sugestii AI',
+                  value: data.value ? parseFloat(String(data.value)) : 0,
+                  stage: data.stage || 'PROSPECT',
+                  source: data.source || undefined,
+                  companyId: data.companyId || undefined,
+                  organizationId: req.user!.organizationId,
+                  ownerId: req.user!.id,
+                },
+              }).catch((): null => null);
+              break;
+
+            case 'CREATE_TASK': {
+              const dueDate = data.dueDate || data.deadline;
+              let parsedDueDate: Date | null = null;
+              if (dueDate) {
+                const d = new Date(dueDate);
+                if (!isNaN(d.getTime())) parsedDueDate = d;
+              }
+              createdEntity = await prisma.task.create({
+                data: {
+                  title: data.title || 'Zadanie z sugestii AI',
+                  description: data.description || null,
+                  priority: data.priority || 'MEDIUM',
+                  status: 'NEW',
+                  dueDate: parsedDueDate,
+                  createdById: req.user!.id,
+                  organizationId: req.user!.organizationId,
+                },
+              }).catch((): null => null);
+              break;
+            }
+
+            case 'BLACKLIST_DOMAIN':
+              if (data?.domain) {
+                await prisma.email_domain_rules.create({
+                  data: {
+                    pattern: data.domain,
+                    patternType: 'DOMAIN',
+                    listType: 'BLACKLIST',
+                    classification: data.classification || 'NEWSLETTER',
+                    source: 'AI_SUGGESTED',
+                    reason: 'Bulk accept',
+                    confidence: (suggestion.confidence || 0) / 100,
+                    createdBy: req.user!.id,
+                    organizationId: req.user!.organizationId,
+                  },
+                }).catch((): null => null);
+              }
+              break;
+          }
+
+          await prisma.ai_suggestions.update({
+            where: { id },
+            data: {
+              status: 'ACCEPTED',
+              resolved_at: new Date(),
+              user_modifications: { acceptedBy: req.user!.id, bulk: true },
+            },
+          });
+          results.accepted++;
+          if (createdEntity) {
+            results.created.push({ id: createdEntity.id, type: suggestion.context });
+          }
+        } else {
+          // reject
+          await prisma.ai_suggestions.update({
+            where: { id },
+            data: {
+              status: 'REJECTED',
+              resolved_at: new Date(),
+              user_modifications: { rejectedBy: req.user!.id, bulk: true },
+            },
+          });
+          results.rejected++;
+        }
+      }
+
+      logger.info(`Bulk ${action}: ${results.accepted} accepted, ${results.rejected} rejected by ${req.user!.email}`);
+      return res.json({ success: true, data: results });
+    } catch (error) {
+      logger.error('Failed to bulk action suggestions:', error);
+      throw new AppError('Nie udalo sie wykonac akcji zbiorczej', 500);
     }
   }
 );
