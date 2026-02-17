@@ -661,7 +661,7 @@ router.get('/manager/team-activity', requireAuth, async (req: AuthenticatedReque
     const userNameMap = new Map<string, string>();
     for (const r of relations) {
       const u = r.users_user_relations_employeeIdTousers;
-      userNameMap.set(u.id, `${u.firstName} ${u.lastName}`);
+      if (u) userNameMap.set(u.id, `${u.firstName} ${u.lastName}`);
     }
 
     if (managedUserIds.length === 0) {
@@ -807,15 +807,17 @@ router.get('/manager/productivity', requireAuth, async (req: AuthenticatedReques
       if (t.assignedToId) totalMap.set(t.assignedToId, t._count);
     }
 
-    const members = relations.map(r => {
-      const u = r.users_user_relations_employeeIdTousers;
-      return {
-        userId: u.id,
-        name: `${u.firstName} ${u.lastName}`,
-        tasksCompleted: completedMap.get(u.id) || 0,
-        tasksTotal: totalMap.get(u.id) || 0,
-      };
-    });
+    const members = relations
+      .filter(r => r.users_user_relations_employeeIdTousers)
+      .map(r => {
+        const u = r.users_user_relations_employeeIdTousers!;
+        return {
+          userId: u.id,
+          name: `${u.firstName} ${u.lastName}`,
+          tasksCompleted: completedMap.get(u.id) || 0,
+          tasksTotal: totalMap.get(u.id) || 0,
+        };
+      });
 
     // Sort descending by tasksCompleted
     members.sort((a, b) => b.tasksCompleted - a.tasksCompleted);
