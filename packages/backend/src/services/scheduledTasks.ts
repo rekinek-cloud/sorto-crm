@@ -6,7 +6,7 @@ import { emailPipeline } from './emailPipeline';
 import { RuleProcessingPipeline } from './ai/RuleProcessingPipeline';
 import { PipelineConfigLoader } from './ai/PipelineConfigLoader';
 import { DEFAULT_PIPELINE_CONFIG } from './ai/PipelineConfigDefaults';
-import { EmailSyncService } from './EmailSyncService';
+import { emailService } from './emailService';
 
 export class ScheduledTasksService {
   private intervals: Map<string, NodeJS.Timeout> = new Map();
@@ -467,15 +467,37 @@ export class ScheduledTasksService {
 
     const task = async () => {
       try {
-        const emailSyncService = new EmailSyncService(prisma);
-        const results = await emailSyncService.syncAllAccounts({ forceSync: false });
+        // Query active EMAIL channels from communication_channels (same table as manual sync)
+        const emailChannels = await prisma.communicationChannel.findMany({
+          where: {
+            type: 'EMAIL',
+            active: true,
+            config: { not: { equals: null } }
+          },
+          select: { id: true, name: true }
+        });
 
-        const successful = results.filter(r => r.success).length;
-        const totalNew = results.reduce((sum, r) => sum + r.newMessages, 0);
+        if (emailChannels.length === 0) return;
 
-        if (results.length > 0) {
-          logger.info(`[EmailSync] Synced ${successful}/${results.length} accounts, ${totalNew} new messages`);
+        let synced = 0;
+        let totalNew = 0;
+
+        for (const channel of emailChannels) {
+          try {
+            const result = await emailService.syncMessages(channel.id);
+            if (result.syncedCount > 0) {
+              totalNew += result.syncedCount;
+              synced++;
+            }
+            if (result.errors.length > 0) {
+              logger.warn(`[EmailSync] Channel ${channel.name}: ${result.errors.join(', ')}`);
+            }
+          } catch (err: any) {
+            logger.error(`[EmailSync] Failed to sync channel ${channel.name}: ${err.message}`);
+          }
         }
+
+        logger.info(`[EmailSync] Synced ${synced}/${emailChannels.length} channels, ${totalNew} new messages`);
       } catch (error: any) {
         logger.error('[EmailSync] Task error:', { error: error.message });
       }
