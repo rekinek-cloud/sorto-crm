@@ -7,6 +7,7 @@ import { RuleProcessingPipeline } from './ai/RuleProcessingPipeline';
 import { PipelineConfigLoader } from './ai/PipelineConfigLoader';
 import { DEFAULT_PIPELINE_CONFIG } from './ai/PipelineConfigDefaults';
 import { emailService } from './emailService';
+import { getFlowEngine } from '../routes/flow';
 
 export class ScheduledTasksService {
   private intervals: Map<string, NodeJS.Timeout> = new Map();
@@ -423,6 +424,65 @@ export class ScheduledTasksService {
                   }
                 } catch (classErr: any) {
                   logger.warn(`[EmailProcessing] Classification error for ${message.id}: ${classErr.message}`);
+                }
+
+                // Step 3: FlowEngine integration — create InboxItem for actionable emails
+                try {
+                  if (!pipelineResult.isSpam && message.content && message.content.length >= 10) {
+                    // Check if InboxItem already exists for this message
+                    const existingItem = await prisma.inboxItem.findFirst({
+                      where: {
+                        organizationId: org.id,
+                        sourceType: 'EMAIL',
+                        source: message.fromAddress || '',
+                        content: { startsWith: `[${message.subject || ''}]` }
+                      },
+                      select: { id: true }
+                    });
+
+                    if (!existingItem) {
+                      // Find a user for this org to act as capturedBy
+                      const orgUser = await prisma.user.findFirst({
+                        where: { organizationId: org.id },
+                        select: { id: true }
+                      });
+
+                      if (orgUser) {
+                        const inboxItem = await prisma.inboxItem.create({
+                          data: {
+                            content: `[${message.subject || 'Bez tematu'}] ${message.content.slice(0, 2000)}`,
+                            sourceType: 'EMAIL',
+                            source: message.fromAddress || 'unknown',
+                            elementType: 'EMAIL',
+                            rawContent: message.content.slice(0, 5000),
+                            urgencyScore: pipelineResult.aiAnalysis?.urgency ? Math.round(pipelineResult.aiAnalysis.urgency * 100) : 0,
+                            actionable: true,
+                            flowStatus: 'PENDING',
+                            organizationId: org.id,
+                            capturedById: orgUser.id,
+                            contactId: message.contactId || undefined,
+                            companyId: message.companyId || undefined,
+                          }
+                        });
+
+                        // Fire-and-forget FlowEngine processing
+                        getFlowEngine(org.id).then(engine => {
+                          engine.processSourceItem({
+                            organizationId: org.id,
+                            userId: orgUser.id,
+                            inboxItemId: inboxItem.id,
+                            autoExecute: false,
+                          }).catch(flowErr => {
+                            logger.warn(`[EmailProcessing] FlowEngine error for message ${message.id}: ${flowErr.message}`);
+                          });
+                        }).catch(flowErr => {
+                          logger.warn(`[EmailProcessing] FlowEngine init error: ${flowErr.message}`);
+                        });
+                      }
+                    }
+                  }
+                } catch (flowErr: any) {
+                  logger.warn(`[EmailProcessing] FlowEngine step error for ${message.id}: ${flowErr.message}`);
                 }
 
                 processed++;
