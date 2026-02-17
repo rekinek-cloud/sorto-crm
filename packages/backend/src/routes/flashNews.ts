@@ -326,7 +326,7 @@ router.get('/', authenticateToken, async (req, res) => {
     // Limit to 5 most important news items
     const limitedNews = allNews.slice(0, 5);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         items: limitedNews,
@@ -337,7 +337,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
   } catch (error) {
     logger.error('Failed to get flash news:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to get flash news',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -373,14 +373,14 @@ router.post('/', authenticateToken, async (req, res) => {
     // TODO: Store in database table when flash_news table is created
     // For now, return the created item
     
-    res.json({
+    return res.json({
       success: true,
       data: newsItem
     });
 
   } catch (error) {
     logger.error('Failed to create flash news:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to create flash news',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -396,14 +396,14 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     // TODO: Implement actual delete from database
     // For now, just return success
     
-    res.json({
+    return res.json({
       success: true,
       message: 'Flash news item hidden'
     });
 
   } catch (error) {
     logger.error('Failed to delete flash news:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to delete flash news',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -434,7 +434,7 @@ router.get('/test', async (req, res) => {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         items: allNews.slice(0, 5),
@@ -450,7 +450,7 @@ router.get('/test', async (req, res) => {
 
   } catch (error) {
     logger.error('Failed to test flash news:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to test flash news',
       message: error instanceof Error ? error.message : 'Unknown error'

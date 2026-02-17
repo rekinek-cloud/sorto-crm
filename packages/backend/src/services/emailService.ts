@@ -1,5 +1,5 @@
-import Imap from 'imap';
-import { simpleParser } from 'mailparser';
+const Imap = require('imap');
+const { simpleParser } = require('mailparser');
 import * as nodemailer from 'nodemailer';
 import { prisma } from '../config/database';
 import { processMessageContent } from './messageProcessor';
@@ -34,7 +34,7 @@ export interface EmailMessage {
 }
 
 export class EmailService {
-  private imapConnections: Map<string, Imap> = new Map();
+  private imapConnections: Map<string, InstanceType<typeof Imap>> = new Map();
   private smtpTransporters: Map<string, nodemailer.Transporter> = new Map();
 
   async connectToChannel(channelId: string): Promise<void> {
@@ -91,7 +91,7 @@ export class EmailService {
     this.setupImapHandlers(channelId, imap);
   }
 
-  private setupImapHandlers(channelId: string, imap: Imap): void {
+  private setupImapHandlers(channelId: string, imap: InstanceType<typeof Imap>): void {
     imap.once('ready', () => {
       console.log(`IMAP connected for channel ${channelId}`);
       this.openInbox(channelId, imap);
@@ -108,8 +108,8 @@ export class EmailService {
     imap.connect();
   }
 
-  private openInbox(channelId: string, imap: Imap): void {
-    imap.openBox('INBOX', false, (err, box) => {
+  private openInbox(channelId: string, imap: InstanceType<typeof Imap>): void {
+    imap.openBox('INBOX', false, (err: Error | null, box: any) => {
       if (err) {
         console.error(`Error opening inbox for channel ${channelId}:`, err);
         return;
@@ -128,14 +128,14 @@ export class EmailService {
     });
   }
 
-  private async fetchRecentMessages(channelId: string, imap: Imap): Promise<void> {
+  private async fetchRecentMessages(channelId: string, imap: InstanceType<typeof Imap>): Promise<void> {
     // Fetch messages from last 7 days
     const since = new Date();
     since.setDate(since.getDate() - 7);
 
     const searchCriteria = ['UNSEEN']; // Only unread messages
     
-    imap.search(searchCriteria, (err, results) => {
+    imap.search(searchCriteria, (err: Error | null, results: any) => {
       if (err) {
         console.error('Search error:', err);
         return;
@@ -151,9 +151,9 @@ export class EmailService {
     });
   }
 
-  private async fetchNewMessages(channelId: string, imap: Imap): Promise<void> {
+  private async fetchNewMessages(channelId: string, imap: InstanceType<typeof Imap>): Promise<void> {
     // Fetch only new unread messages
-    imap.search(['UNSEEN'], (err, results) => {
+    imap.search(['UNSEEN'], (err: Error | null, results: any) => {
       if (err) {
         console.error('Search error:', err);
         return;
@@ -165,17 +165,17 @@ export class EmailService {
     });
   }
 
-  private fetchMessages(channelId: string, imap: Imap, messageIds: number[]): void {
+  private fetchMessages(channelId: string, imap: InstanceType<typeof Imap>, messageIds: number[]): void {
     const fetch = imap.fetch(messageIds, { 
       bodies: '',
       markSeen: false // Don't mark as read automatically
     });
 
-    fetch.on('message', (msg, seqno) => {
+    fetch.on('message', (msg: any, seqno: number) => {
       let messageData = '';
 
-      msg.on('body', (stream) => {
-        stream.on('data', (chunk) => {
+      msg.on('body', (stream: any) => {
+        stream.on('data', (chunk: Buffer) => {
           messageData += chunk.toString('utf8');
         });
       });
@@ -191,7 +191,7 @@ export class EmailService {
       });
     });
 
-    fetch.once('error', (err) => {
+    fetch.once('error', (err: Error) => {
       console.error('Fetch error:', err);
     });
 
@@ -428,7 +428,7 @@ export class EmailService {
         });
 
         imap.once('ready', () => {
-          imap.openBox('INBOX', false, (err, box) => {
+          imap.openBox('INBOX', false, (err: Error | null, box: any) => {
             if (err) {
               errors.push(`Failed to open inbox: ${err.message}`);
               imap.end();
@@ -452,11 +452,11 @@ export class EmailService {
 
             const messagePromises: Promise<void>[] = [];
 
-            f.on('message', (msg, seqno) => {
+            f.on('message', (msg: any, seqno: number) => {
               const promise = new Promise<void>((resolveMsg) => {
                 let messageData = '';
 
-                msg.on('body', (stream) => {
+                msg.on('body', (stream: any) => {
                   stream.on('data', (chunk: Buffer) => {
                     messageData += chunk.toString('utf8');
                   });
@@ -471,7 +471,7 @@ export class EmailService {
                         address: parsed.from?.value?.[0]?.address || 'unknown@unknown.com',
                         name: parsed.from?.value?.[0]?.name
                       },
-                      to: parsed.to?.value?.map(addr => ({
+                      to: parsed.to?.value?.map((addr: any) => ({
                         address: addr.address!,
                         name: addr.name
                       })) || [],
@@ -479,7 +479,7 @@ export class EmailService {
                       text: parsed.text,
                       html: parsed.html,
                       date: parsed.date || new Date(),
-                      attachments: parsed.attachments?.map(att => ({
+                      attachments: parsed.attachments?.map((att: any) => ({
                         filename: att.filename || 'unknown',
                         contentType: att.contentType,
                         size: att.size,
@@ -500,7 +500,7 @@ export class EmailService {
               messagePromises.push(promise);
             });
 
-            f.once('error', (err) => {
+            f.once('error', (err: Error) => {
               errors.push(`Fetch error: ${err.message}`);
             });
 
@@ -521,17 +521,17 @@ export class EmailService {
           });
         });
 
-        imap.once('error', (err) => {
+        imap.once('error', (err: Error) => {
           errors.push(`IMAP connection error: ${err.message}`);
           resolve({ syncedCount, errors });
         });
 
         imap.connect();
       });
-    } catch (error) {
-      return { 
-        syncedCount: 0, 
-        errors: [`Sync failed: ${error.message}`] 
+    } catch (error: any) {
+      return {
+        syncedCount: 0,
+        errors: [`Sync failed: ${error.message}`]
       };
     }
   }

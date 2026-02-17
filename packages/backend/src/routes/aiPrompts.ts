@@ -101,13 +101,13 @@ router.get('/', authenticateToken, async (req: Request, res: Response, next: Nex
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: prompts,
       count: prompts.length
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -140,12 +140,12 @@ router.get('/:code', authenticateToken, async (req: Request, res: Response, next
       throw new AppError('Prompt not found', 404);
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: prompt
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -198,12 +198,12 @@ router.post('/',
 
       logger.info(`Created new AI prompt: ${prompt.code}`, { userId, organizationId });
 
-      res.status(201).json({
+      return res.status(201).json({
         success: true,
         data: prompt
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 );
@@ -254,12 +254,12 @@ router.put('/:code',
 
       logger.info(`Updated AI prompt: ${code}`, { userId, organizationId });
 
-      res.json({
+      return res.json({
         success: true,
         data: updatedPrompt
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 );
@@ -302,12 +302,12 @@ router.delete('/:code',
 
       logger.info(`Archived AI prompt: ${code}`, { userId, organizationId });
 
-      res.json({
+      return res.json({
         success: true,
         message: 'Prompt archived successfully'
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 );
@@ -333,13 +333,13 @@ router.get('/:code/versions', authenticateToken, async (req: Request, res: Respo
 
     const versions = await PromptManager.getVersionHistory(prompt.id);
 
-    res.json({
+    return res.json({
       success: true,
       data: versions,
       currentVersion: prompt.version
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -376,12 +376,12 @@ router.post('/:code/restore/:version',
 
       logger.info(`Restored AI prompt ${code} to version ${version}`, { userId, organizationId });
 
-      res.json({
+      return res.json({
         success: true,
         message: `Prompt restored to version ${version}`
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 );
@@ -415,7 +415,7 @@ router.post('/:code/test',
       const processingTime = Date.now() - startTime;
 
       // Return compiled prompt without executing
-      res.json({
+      return res.json({
         success: true,
         data: {
           systemPrompt: compiledPrompt.systemPrompt,
@@ -428,7 +428,7 @@ router.post('/:code/test',
         note: 'Prompt compiled but not executed. Use AI Chat to test execution.'
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 );
@@ -461,12 +461,12 @@ router.get('/:code/overrides', authenticateToken, async (req: Request, res: Resp
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: override || null
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 
@@ -523,12 +523,12 @@ router.put('/:code/overrides',
       // Clear template cache
       PromptManager.clearCache();
 
-      res.json({
+      return res.json({
         success: true,
         data: override
       });
     } catch (error) {
-      next(error);
+      return next(error);
     }
   }
 );
@@ -546,7 +546,7 @@ router.get('/meta/categories', authenticateToken, async (req: Request, res: Resp
       select: { category: true }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: categories
         .map((c: { category: string | null }) => c.category)
@@ -554,7 +554,7 @@ router.get('/meta/categories', authenticateToken, async (req: Request, res: Resp
         .sort()
     });
   } catch (error) {
-    next(error);
+    return next(error);
   }
 });
 

@@ -40,10 +40,10 @@ router.get('/', authenticateToken, async (req: any, res: any) => {
       orderBy: { dueDate: 'asc' }
     });
 
-    res.json(milestones);
+    return res.json(milestones);
   } catch (error) {
     console.error('Error fetching milestones:', error);
-    res.status(500).json({ error: 'Failed to fetch milestones' });
+    return res.status(500).json({ error: 'Failed to fetch milestones' });
   }
 });
 
@@ -76,10 +76,10 @@ router.get('/:id', authenticateToken, async (req: any, res: any) => {
       return res.status(404).json({ error: 'Milestone not found' });
     }
 
-    res.json(milestone);
+    return res.json(milestone);
   } catch (error) {
     console.error('Error fetching milestone:', error);
-    res.status(500).json({ error: 'Failed to fetch milestone' });
+    return res.status(500).json({ error: 'Failed to fetch milestone' });
   }
 });
 
@@ -126,10 +126,10 @@ router.post('/', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    res.status(201).json(milestone);
+    return res.status(201).json(milestone);
   } catch (error) {
     console.error('Error creating milestone:', error);
-    res.status(500).json({ error: 'Failed to create milestone' });
+    return res.status(500).json({ error: 'Failed to create milestone' });
   }
 });
 
@@ -172,10 +172,10 @@ router.patch('/:id', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    res.json(updated);
+    return res.json(updated);
   } catch (error) {
     console.error('Error updating milestone:', error);
-    res.status(500).json({ error: 'Failed to update milestone' });
+    return res.status(500).json({ error: 'Failed to update milestone' });
   }
 });
 
@@ -197,10 +197,10 @@ router.delete('/:id', authenticateToken, async (req: any, res: any) => {
       where: { id: req.params.id }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error deleting milestone:', error);
-    res.status(500).json({ error: 'Failed to delete milestone' });
+    return res.status(500).json({ error: 'Failed to delete milestone' });
   }
 });
 

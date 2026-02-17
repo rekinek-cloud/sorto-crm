@@ -196,7 +196,7 @@ export class IndustryService {
       data: {
         settings: {
           update: {
-            pipelineStages: stages,
+            pipelineStages: stages as any,
           },
         },
       },

@@ -665,7 +665,7 @@ export default function CompanyDetailsPage() {
                         const name = prompt('Nazwa projektu:');
                         if (!name?.trim()) return;
                         try {
-                          await projectsApi.createProject({ name: name.trim(), companyId });
+                          await projectsApi.createProject({ name: name.trim(), companyId } as any);
                           toast.success('Projekt utworzony');
                           await loadCompany();
                         } catch (err: any) {
@@ -728,7 +728,7 @@ export default function CompanyDetailsPage() {
                         const title = prompt('Tytul zadania:');
                         if (!title?.trim()) return;
                         try {
-                          await tasksApi.createTask({ title: title.trim(), companyId });
+                          await tasksApi.createTask({ title: title.trim(), companyId } as any);
                           toast.success('Zadanie utworzone');
                           await loadCompany();
                         } catch (err: any) {

@@ -131,10 +131,10 @@ router.post('/log', validateRequest({ body: createCommunicationSchema }), async 
       }
     });
 
-    res.status(201).json(activity);
+    return res.status(201).json(activity);
   } catch (error) {
     console.error('Error logging communication:', error);
-    res.status(500).json({ error: 'Failed to log communication' });
+    return res.status(500).json({ error: 'Failed to log communication' });
   }
 });
 
@@ -169,14 +169,14 @@ router.post('/email', authenticateUser, validateRequest({ body: sendEmailSchema 
       }
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Email sent successfully',
       activity
     });
   } catch (error) {
     console.error('Error sending email:', error);
-    res.status(500).json({ error: 'Failed to send email' });
+    return res.status(500).json({ error: 'Failed to send email' });
   }
 });
 
@@ -229,14 +229,14 @@ router.post('/call', validateRequest({ body: logCallSchema }), async (req, res) 
       }
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Call logged successfully',
       activity
     });
   } catch (error) {
     console.error('Error logging call:', error);
-    res.status(500).json({ error: 'Failed to log call' });
+    return res.status(500).json({ error: 'Failed to log call' });
   }
 });
 
@@ -322,7 +322,7 @@ router.get('/company/:id', async (req, res) => {
         ? (message.messageType === 'SENT' ? 'Email sent' : 'Email received')
         : 'Message',
       description: message.content,
-      user: null,
+      user: null as any,
       organizationId: req.user.organizationId,
       companyId: message.companyId || id,
       contactId: message.contactId,
@@ -368,10 +368,10 @@ router.get('/company/:id', async (req, res) => {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 50);
 
-    res.json(allCommunications);
+    return res.json(allCommunications);
   } catch (error) {
     console.error('Error fetching company communications:', error);
-    res.status(500).json({ error: 'Failed to fetch communications' });
+    return res.status(500).json({ error: 'Failed to fetch communications' });
   }
 });
 
@@ -438,7 +438,7 @@ router.get('/contact/:id', async (req, res) => {
         ? (message.messageType === 'SENT' ? 'Email sent' : 'Email received')
         : 'Message',
       description: message.content,
-      user: null,
+      user: null as any,
       organizationId: req.user.organizationId,
       companyId: message.companyId,
       contactId: message.contactId,
@@ -483,10 +483,10 @@ router.get('/contact/:id', async (req, res) => {
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, 50);
 
-    res.json(allCommunications);
+    return res.json(allCommunications);
   } catch (error) {
     console.error('Error fetching contact communications:', error);
-    res.status(500).json({ error: 'Failed to fetch communications' });
+    return res.status(500).json({ error: 'Failed to fetch communications' });
   }
 });
 
@@ -551,7 +551,7 @@ router.post('/seed-messages', async (req, res) => {
           receivedAt: new Date(Date.now() - 3600000), // 1 hour ago
           contactId: contact.id,
           companyId: company.id
-        }
+        } as any
       });
       messages.push(incomingEmail);
 
@@ -570,7 +570,7 @@ router.post('/seed-messages', async (req, res) => {
           receivedAt: new Date(Date.now() - 1800000), // 30 min ago
           contactId: contact.id,
           companyId: company.id
-        }
+        } as any
       });
       messages.push(outgoingReply);
 
@@ -589,12 +589,12 @@ router.post('/seed-messages', async (req, res) => {
           receivedAt: new Date(Date.now() - 600000), // 10 min ago
           contactId: contact.id,
           companyId: company.id
-        }
+        } as any
       });
       messages.push(recentIncoming);
     }
 
-    res.json({
+    return res.json({
       success: true,
       message: `Created ${messages.length} sample messages`,
       messages: messages.map(m => ({ id: m.id, subject: m.subject, type: m.messageType }))
@@ -602,7 +602,7 @@ router.post('/seed-messages', async (req, res) => {
 
   } catch (error) {
     console.error('Error creating sample messages:', error);
-    res.status(500).json({ error: 'Failed to create sample messages' });
+    return res.status(500).json({ error: 'Failed to create sample messages' });
   }
 });
 

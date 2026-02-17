@@ -6,11 +6,30 @@
 
 import { Router, Request, Response } from 'express';
 import { authenticateToken as authMiddleware } from '../shared/middleware/auth';
-import { logger } from '../config/logger';
+import logger from '../config/logger';
 
 const router = Router();
 
-const DEFAULT_BRANDING = {
+const DEFAULT_BRANDING: {
+  id: string;
+  organizationId: string;
+  logoUrl: string | null;
+  faviconUrl: string | null;
+  primaryColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  companyName: string | null;
+  tagline: string | null;
+  footerText: string | null;
+  customDomain: string | null;
+  emailFromName: string | null;
+  emailSignature: string | null;
+  customCss: string | null;
+  customJs: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+} = {
   id: '',
   organizationId: '',
   logoUrl: null,
@@ -38,10 +57,10 @@ const DEFAULT_BRANDING = {
 router.get('/', authMiddleware, async (req: Request, res: Response) => {
   try {
     const organizationId = req.user.organizationId;
-    res.json({ branding: { ...DEFAULT_BRANDING, organizationId } });
+    return res.json({ branding: { ...DEFAULT_BRANDING, organizationId } });
   } catch (error) {
     logger.error('Error fetching branding:', error);
-    res.status(500).json({ error: 'Failed to fetch branding' });
+    return res.status(500).json({ error: 'Failed to fetch branding' });
   }
 });
 
@@ -50,7 +69,7 @@ router.get('/', authMiddleware, async (req: Request, res: Response) => {
  * Update organization branding
  */
 router.put('/', authMiddleware, async (req: Request, res: Response) => {
-  res.status(501).json({ error: 'Branding feature is not yet available' });
+  return res.status(501).json({ error: 'Branding feature is not yet available' });
 });
 
 /**
@@ -58,7 +77,7 @@ router.put('/', authMiddleware, async (req: Request, res: Response) => {
  * Reset branding to defaults
  */
 router.delete('/', authMiddleware, async (req: Request, res: Response) => {
-  res.json({ success: true, message: 'Branding reset to defaults' });
+  return res.json({ success: true, message: 'Branding reset to defaults' });
 });
 
 /**
@@ -66,7 +85,7 @@ router.delete('/', authMiddleware, async (req: Request, res: Response) => {
  * Get branding by custom domain (public endpoint for white label)
  */
 router.get('/domain/:domain', async (req: Request, res: Response) => {
-  res.status(404).json({ error: 'Domain not found' });
+  return res.status(404).json({ error: 'Domain not found' });
 });
 
 /**
@@ -74,7 +93,7 @@ router.get('/domain/:domain', async (req: Request, res: Response) => {
  * Verify custom domain ownership
  */
 router.post('/verify-domain', authMiddleware, async (req: Request, res: Response) => {
-  res.status(501).json({ error: 'Domain verification is not yet available' });
+  return res.status(501).json({ error: 'Domain verification is not yet available' });
 });
 
 export default router;

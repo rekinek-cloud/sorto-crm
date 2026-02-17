@@ -14,8 +14,7 @@ export class SsoController {
       const { moduleSlug } = req.body;
 
       if (!moduleSlug) {
-        res.status(400).json({ error: 'moduleSlug is required' });
-        return;
+        return res.status(400).json({ error: 'moduleSlug is required' });
       }
 
       const result = await ssoService.generateToken(
@@ -25,10 +24,10 @@ export class SsoController {
       );
 
       logger.info(`SSO token generated for user ${req.user!.id} to module ${moduleSlug}`);
-      res.json({ message: 'SSO token generated', data: result });
+      return res.json({ message: 'SSO token generated', data: result });
     } catch (error: any) {
       logger.warn(`SSO token generation failed: ${error.message}`);
-      res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: error.message });
     }
   };
 
@@ -43,25 +42,24 @@ export class SsoController {
       const { token, clientId, clientSecret } = req.body;
 
       if (!token || !clientId || !clientSecret) {
-        res.status(400).json({
+        return res.status(400).json({
           error: 'token, clientId, and clientSecret are required',
           valid: false
         });
-        return;
       }
 
       const result = await ssoService.verifyToken(token, clientId, clientSecret);
 
       if (result.valid) {
         logger.info(`SSO token verified for module clientId ${clientId}`);
-        res.json({ message: 'SSO token verified', data: result });
+        return res.json({ message: 'SSO token verified', data: result });
       } else {
         logger.warn(`SSO token verification failed: ${result.error}`);
-        res.status(401).json({ error: result.error, valid: false });
+        return res.status(401).json({ error: result.error, valid: false });
       }
     } catch (error: any) {
       logger.error('SSO verify error:', error);
-      res.status(500).json({ error: error.message, valid: false });
+      return res.status(500).json({ error: error.message, valid: false });
     }
   };
 
@@ -73,10 +71,10 @@ export class SsoController {
     try {
       const result = await ssoService.invalidateUserTokens(req.user!.id);
       logger.info(`SSO sessions invalidated for user ${req.user!.id}`);
-      res.json({ message: 'SSO sessions invalidated', data: result });
+      return res.json({ message: 'SSO sessions invalidated', data: result });
     } catch (error: any) {
       logger.error('SSO logout error:', error);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   };
 }

@@ -49,10 +49,10 @@ router.get('/', async (req, res) => {
       })
     )
 
-    res.json(mailboxesWithCounts)
+    return res.json(mailboxesWithCounts)
   } catch (error) {
     console.error('Error fetching smart mailboxes:', error)
-    res.status(500).json({ error: 'Failed to fetch smart mailboxes' })
+    return res.status(500).json({ error: 'Failed to fetch smart mailboxes' })
   }
 })
 
@@ -111,7 +111,7 @@ router.get('/:id/messages', async (req, res) => {
       prisma.message.count({ where: whereClause })
     ])
 
-    res.json({
+    return res.json({
       messages,
       pagination: {
         page: pageNum,
@@ -122,7 +122,7 @@ router.get('/:id/messages', async (req, res) => {
     })
   } catch (error) {
     console.error('Error fetching mailbox messages:', error)
-    res.status(500).json({ error: 'Failed to fetch messages' })
+    return res.status(500).json({ error: 'Failed to fetch messages' })
   }
 })
 
@@ -173,10 +173,10 @@ router.post('/', async (req, res) => {
     // Get count
     const count = await getMailboxMessageCount(mailbox, organizationId)
 
-    res.status(201).json({ ...mailbox, count })
+    return res.status(201).json({ ...mailbox, count })
   } catch (error) {
     console.error('Error creating smart mailbox:', error)
-    res.status(500).json({ error: 'Failed to create smart mailbox' })
+    return res.status(500).json({ error: 'Failed to create smart mailbox' })
   }
 })
 
@@ -239,10 +239,10 @@ router.put('/:id', async (req, res) => {
     // Get count
     const count = await getMailboxMessageCount(mailbox, organizationId)
 
-    res.json({ ...mailbox, count })
+    return res.json({ ...mailbox, count })
   } catch (error) {
     console.error('Error updating smart mailbox:', error)
-    res.status(500).json({ error: 'Failed to update smart mailbox' })
+    return res.status(500).json({ error: 'Failed to update smart mailbox' })
   }
 })
 
@@ -274,10 +274,10 @@ router.delete('/:id', async (req, res) => {
       where: { id }
     })
 
-    res.json({ success: true, message: 'Smart mailbox deleted' })
+    return res.json({ success: true, message: 'Smart mailbox deleted' })
   } catch (error) {
     console.error('Error deleting smart mailbox:', error)
-    res.status(500).json({ error: 'Failed to delete smart mailbox' })
+    return res.status(500).json({ error: 'Failed to delete smart mailbox' })
   }
 })
 

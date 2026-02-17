@@ -122,7 +122,7 @@ router.get('/', async (req, res) => {
       teamMembers.push(...aiMembers);
     }
 
-    res.json({
+    return res.json({
       team: teamMembers,
       counts: {
         total: teamMembers.length,
@@ -132,7 +132,7 @@ router.get('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error listing team:', error);
-    res.status(500).json({ error: 'Failed to list team' });
+    return res.status(500).json({ error: 'Failed to list team' });
   }
 });
 

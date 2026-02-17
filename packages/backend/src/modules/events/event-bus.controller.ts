@@ -15,19 +15,17 @@ export class EventBusController {
 
       // Validate required fields
       if (!type || typeof type !== 'string') {
-        res.status(400).json({
+        return res.status(400).json({
           error: 'Validation error',
           message: 'Event type is required and must be a string',
         });
-        return;
       }
 
       if (!source || typeof source !== 'string') {
-        res.status(400).json({
+        return res.status(400).json({
           error: 'Validation error',
           message: 'Event source is required and must be a string',
         });
-        return;
       }
 
       // Build the event input
@@ -45,7 +43,7 @@ export class EventBusController {
 
       logger.info(`Event published: ${type} from ${source} by user ${req.user!.id}`);
 
-      res.status(201).json({
+      return res.status(201).json({
         message: 'Event published successfully',
         data: {
           id: eventId,
@@ -58,7 +56,7 @@ export class EventBusController {
       });
     } catch (error: any) {
       logger.error('Failed to publish event:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Failed to publish event',
         message: error.message,
       });
@@ -87,13 +85,13 @@ export class EventBusController {
         limit: limit ? parseInt(limit as string, 10) : 50,
       });
 
-      res.json({
+      return res.json({
         message: 'Events retrieved',
         data: result,
       });
     } catch (error: any) {
       logger.error('Failed to list events:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Failed to retrieve events',
         message: error.message,
       });
@@ -109,29 +107,27 @@ export class EventBusController {
       const event = await eventBusService.getEventById(req.params.id);
 
       if (!event) {
-        res.status(404).json({
+        return res.status(404).json({
           error: 'Not found',
           message: 'Event not found',
         });
-        return;
       }
 
       // Check if user has access to this event (same organization)
       if (event.organizationId && event.organizationId !== req.user!.organizationId) {
-        res.status(403).json({
+        return res.status(403).json({
           error: 'Forbidden',
           message: 'You do not have access to this event',
         });
-        return;
       }
 
-      res.json({
+      return res.json({
         message: 'Event retrieved',
         data: event,
       });
     } catch (error: any) {
       logger.error('Failed to get event:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Failed to retrieve event',
         message: error.message,
       });
@@ -146,7 +142,7 @@ export class EventBusController {
     try {
       const isConnected = eventBusService.isRedisConnected();
 
-      res.json({
+      return res.json({
         message: 'Event bus status',
         data: {
           redis: {
@@ -158,7 +154,7 @@ export class EventBusController {
       });
     } catch (error: any) {
       logger.error('Failed to get event bus status:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Failed to get status',
         message: error.message,
       });

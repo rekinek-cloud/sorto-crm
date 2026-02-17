@@ -24,7 +24,7 @@ export default function ModuleFrame({
 }: ModuleFrameProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { branding } = useOverlay();
-  const { user } = useAuth();
+  const { user, organization } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [iframeHeight, setIframeHeight] = useState<number | null>(null);
@@ -45,7 +45,7 @@ export default function ModuleFrame({
       firstName: user.firstName || '',
       lastName: user.lastName || '',
       role: user.role,
-      organizationId: user.organizationId,
+      organizationId: organization?.id || '',
       organizationName: '', // Could be fetched
     } : {
       id: '',

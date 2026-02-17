@@ -41,7 +41,7 @@ router.use(authenticateUser);
 // GET /api/v1/pipeline/stages - List stages for organization
 router.get('/stages', async (req, res) => {
   try {
-    const stages = await prisma.pipelineStage.findMany({
+    const stages = await (prisma as any).pipelineStage.findMany({
       where: { organizationId: req.user.organizationId },
       orderBy: { position: 'asc' },
       include: {
@@ -49,10 +49,10 @@ router.get('/stages', async (req, res) => {
       }
     });
 
-    res.json(stages);
+    return res.json(stages);
   } catch (error) {
     console.error('Error fetching pipeline stages:', error);
-    res.status(500).json({ error: 'Failed to fetch pipeline stages' });
+    return res.status(500).json({ error: 'Failed to fetch pipeline stages' });
   }
 });
 
@@ -68,7 +68,7 @@ router.post('/stages', async (req, res) => {
 
     // If no position specified, add at the end
     if (data.position === undefined) {
-      const lastStage = await prisma.pipelineStage.findFirst({
+      const lastStage = await (prisma as any).pipelineStage.findFirst({
         where: { organizationId: req.user.organizationId },
         orderBy: { position: 'desc' }
       });
@@ -76,7 +76,7 @@ router.post('/stages', async (req, res) => {
     }
 
     // Shift existing stages at or after this position
-    await prisma.pipelineStage.updateMany({
+    await (prisma as any).pipelineStage.updateMany({
       where: {
         organizationId: req.user.organizationId,
         position: { gte: data.position }
@@ -84,7 +84,7 @@ router.post('/stages', async (req, res) => {
       data: { position: { increment: 1 } }
     });
 
-    const stage = await prisma.pipelineStage.create({
+    const stage = await (prisma as any).pipelineStage.create({
       data: {
         name: data.name,
         slug: data.slug,
@@ -97,13 +97,13 @@ router.post('/stages', async (req, res) => {
       }
     });
 
-    res.status(201).json(stage);
+    return res.status(201).json(stage);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
     console.error('Error creating pipeline stage:', error);
-    res.status(500).json({ error: 'Failed to create pipeline stage' });
+    return res.status(500).json({ error: 'Failed to create pipeline stage' });
   }
 });
 
@@ -113,7 +113,7 @@ router.put('/stages/:id', async (req, res) => {
     const { id } = req.params;
     const data = updateStageSchema.parse(req.body);
 
-    const existing = await prisma.pipelineStage.findFirst({
+    const existing = await (prisma as any).pipelineStage.findFirst({
       where: { id, organizationId: req.user.organizationId }
     });
 
@@ -121,18 +121,18 @@ router.put('/stages/:id', async (req, res) => {
       return res.status(404).json({ error: 'Pipeline stage not found' });
     }
 
-    const stage = await prisma.pipelineStage.update({
+    const stage = await (prisma as any).pipelineStage.update({
       where: { id },
       data
     });
 
-    res.json(stage);
+    return res.json(stage);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
     console.error('Error updating pipeline stage:', error);
-    res.status(500).json({ error: 'Failed to update pipeline stage' });
+    return res.status(500).json({ error: 'Failed to update pipeline stage' });
   }
 });
 
@@ -141,7 +141,7 @@ router.delete('/stages/:id', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const existing = await prisma.pipelineStage.findFirst({
+    const existing = await (prisma as any).pipelineStage.findFirst({
       where: { id, organizationId: req.user.organizationId },
       include: { _count: { select: { deals: true } } }
     });
@@ -158,45 +158,45 @@ router.delete('/stages/:id', async (req, res) => {
     }
 
     // Ensure at least one won and one lost stage remain
-    const allStages = await prisma.pipelineStage.findMany({
+    const allStages = await (prisma as any).pipelineStage.findMany({
       where: { organizationId: req.user.organizationId }
     });
 
     if (existing.isWon) {
-      const otherWonStages = allStages.filter(s => s.isWon && s.id !== id);
+      const otherWonStages = allStages.filter((s: any) => s.isWon && s.id !== id);
       if (otherWonStages.length === 0) {
         return res.status(400).json({ error: 'Organization must have at least one "won" stage' });
       }
     }
 
     if (existing.isClosed && !existing.isWon) {
-      const otherLostStages = allStages.filter(s => s.isClosed && !s.isWon && s.id !== id);
+      const otherLostStages = allStages.filter((s: any) => s.isClosed && !s.isWon && s.id !== id);
       if (otherLostStages.length === 0) {
         return res.status(400).json({ error: 'Organization must have at least one "lost" stage' });
       }
     }
 
-    await prisma.pipelineStage.delete({ where: { id } });
+    await (prisma as any).pipelineStage.delete({ where: { id } });
 
     // Reorder remaining stages
-    const remaining = await prisma.pipelineStage.findMany({
+    const remaining = await (prisma as any).pipelineStage.findMany({
       where: { organizationId: req.user.organizationId },
       orderBy: { position: 'asc' }
     });
 
     for (let i = 0; i < remaining.length; i++) {
       if (remaining[i].position !== i) {
-        await prisma.pipelineStage.update({
+        await (prisma as any).pipelineStage.update({
           where: { id: remaining[i].id },
           data: { position: i }
         });
       }
     }
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error deleting pipeline stage:', error);
-    res.status(500).json({ error: 'Failed to delete pipeline stage' });
+    return res.status(500).json({ error: 'Failed to delete pipeline stage' });
   }
 });
 
@@ -206,11 +206,11 @@ router.put('/stages/reorder', async (req, res) => {
     const { stages } = reorderSchema.parse(req.body);
 
     // Verify all stages belong to organization
-    const orgStages = await prisma.pipelineStage.findMany({
+    const orgStages = await (prisma as any).pipelineStage.findMany({
       where: { organizationId: req.user.organizationId }
     });
 
-    const orgStageIds = new Set(orgStages.map(s => s.id));
+    const orgStageIds = new Set(orgStages.map((s: any) => s.id));
     for (const stage of stages) {
       if (!orgStageIds.has(stage.id)) {
         return res.status(400).json({ error: `Stage ${stage.id} not found` });
@@ -221,31 +221,31 @@ router.put('/stages/reorder', async (req, res) => {
     // First set all positions to negative (temp), then set final values
     await prisma.$transaction(async (tx) => {
       for (const stage of stages) {
-        await tx.pipelineStage.update({
+        await (tx as any).pipelineStage.update({
           where: { id: stage.id },
           data: { position: -(stage.position + 1000) }
         });
       }
       for (const stage of stages) {
-        await tx.pipelineStage.update({
+        await (tx as any).pipelineStage.update({
           where: { id: stage.id },
           data: { position: stage.position }
         });
       }
     });
 
-    const updated = await prisma.pipelineStage.findMany({
+    const updated = await (prisma as any).pipelineStage.findMany({
       where: { organizationId: req.user.organizationId },
       orderBy: { position: 'asc' }
     });
 
-    res.json(updated);
+    return res.json(updated);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
     console.error('Error reordering pipeline stages:', error);
-    res.status(500).json({ error: 'Failed to reorder pipeline stages' });
+    return res.status(500).json({ error: 'Failed to reorder pipeline stages' });
   }
 });
 

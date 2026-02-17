@@ -225,7 +225,7 @@ router.get('/relationships', authenticateToken, async (req, res) => {
     // Start fetching from root entity
     await fetchRelatedEntities(entityId, entityType, 0);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         nodes,
@@ -235,7 +235,7 @@ router.get('/relationships', authenticateToken, async (req, res) => {
 
   } catch (error) {
     logger.error('❌ Graph API Error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch relationship data'
     });
@@ -245,7 +245,7 @@ router.get('/relationships', authenticateToken, async (req, res) => {
 // Debug endpoint without auth
 router.get('/debug', async (req, res) => {
   console.log('🕸️ Graph DEBUG called');
-  res.json({ 
+  return res.json({ 
     success: true, 
     message: 'Graph debug endpoint working',
     timestamp: new Date().toISOString()

@@ -83,7 +83,7 @@ router.get('/', async (req, res) => {
       prisma.deal.count({ where })
     ]);
 
-    res.json({
+    return res.json({
       deals,
       pagination: {
         page: pageNum,
@@ -94,7 +94,7 @@ router.get('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching deals:', error);
-    res.status(500).json({ error: 'Failed to fetch deals' });
+    return res.status(500).json({ error: 'Failed to fetch deals' });
   }
 });
 
@@ -135,10 +135,10 @@ router.get('/pipeline', async (req, res) => {
       };
     });
 
-    res.json(pipelineData);
+    return res.json(pipelineData);
   } catch (error) {
     console.error('Error fetching pipeline:', error);
-    res.status(500).json({ error: 'Failed to fetch pipeline' });
+    return res.status(500).json({ error: 'Failed to fetch pipeline' });
   }
 });
 
@@ -166,10 +166,10 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Deal not found' });
     }
 
-    res.json(deal);
+    return res.json(deal);
   } catch (error) {
     console.error('Error fetching deal:', error);
-    res.status(500).json({ error: 'Failed to fetch deal' });
+    return res.status(500).json({ error: 'Failed to fetch deal' });
   }
 });
 
@@ -204,14 +204,16 @@ router.post('/', async (req, res) => {
       }
     }
 
+    const { companyId: cId, ownerId: oId, expectedCloseDate, actualCloseDate, ...restData } = validatedData;
     const deal = await prisma.deal.create({
       data: {
-        ...validatedData,
-        organizationId: req.user.organizationId,
-        ownerId: validatedData.ownerId || req.user.id,
-        expectedCloseDate: validatedData.expectedCloseDate ? new Date(validatedData.expectedCloseDate) : undefined,
-        actualCloseDate: validatedData.actualCloseDate ? new Date(validatedData.actualCloseDate) : undefined
-      },
+        ...restData,
+        organizationId: req.user!.organizationId,
+        companyId: cId,
+        ownerId: oId || req.user!.id,
+        expectedCloseDate: expectedCloseDate ? new Date(expectedCloseDate) : undefined,
+        actualCloseDate: actualCloseDate ? new Date(actualCloseDate) : undefined
+      } as any,
       include: {
         company: {
           select: { id: true, name: true }
@@ -222,7 +224,7 @@ router.post('/', async (req, res) => {
       }
     });
 
-    res.status(201).json(deal);
+    return res.status(201).json(deal);
 
       // Auto-index to RAG
       syncDeals(req.user.organizationId, deal.id).catch(err =>
@@ -233,7 +235,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
     console.error('Error creating deal:', error);
-    res.status(500).json({ error: 'Failed to create deal' });
+    return res.status(500).json({ error: 'Failed to create deal' });
   }
 });
 
@@ -270,10 +272,10 @@ router.put('/:id', async (req, res) => {
     }
 
     // If contactId is being updated, verify it exists and belongs to the company
-    if (validatedData.contactId) {
+    if ((validatedData as any).contactId) {
       const contact = await prisma.contact.findFirst({
         where: {
-          id: validatedData.contactId,
+          id: (validatedData as any).contactId,
           companyId: validatedData.companyId || existingDeal.companyId,
           organizationId: req.user.organizationId
         }
@@ -285,10 +287,10 @@ router.put('/:id', async (req, res) => {
     }
 
     // If assignedToId is being updated, verify user belongs to tenant
-    if (validatedData.assignedToId) {
+    if ((validatedData as any).assignedToId) {
       const assignedUser = await prisma.user.findFirst({
         where: {
-          id: validatedData.assignedToId,
+          id: (validatedData as any).assignedToId,
           organizationId: req.user.organizationId
         }
       });
@@ -329,7 +331,7 @@ router.put('/:id', async (req, res) => {
       }
     });
 
-    res.json(deal);
+    return res.json(deal);
 
       // Auto-index to RAG
       syncDeals(req.user.organizationId, deal.id, true).catch(err =>
@@ -340,7 +342,7 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
     console.error('Error updating deal:', error);
-    res.status(500).json({ error: 'Failed to update deal' });
+    return res.status(500).json({ error: 'Failed to update deal' });
   }
 });
 
@@ -365,10 +367,10 @@ router.delete('/:id', async (req, res) => {
       where: { id }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error deleting deal:', error);
-    res.status(500).json({ error: 'Failed to delete deal' });
+    return res.status(500).json({ error: 'Failed to delete deal' });
   }
 });
 

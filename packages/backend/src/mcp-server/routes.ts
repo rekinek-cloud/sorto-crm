@@ -21,9 +21,9 @@ router.get('/openapi.yaml', (req, res) => {
   res.setHeader('Access-Control-Allow-Methods', 'GET');
   const yamlPath = path.join(__dirname, '../openapi/chatgpt-actions.yaml');
   if (fs.existsSync(yamlPath)) {
-    res.type('text/yaml').sendFile(yamlPath);
+    return res.type('text/yaml').sendFile(yamlPath);
   } else {
-    res.status(404).json({ error: 'OpenAPI schema not found' });
+    return res.status(404).json({ error: 'OpenAPI schema not found' });
   }
 });
 
@@ -37,12 +37,12 @@ router.get('/openapi.json', (req, res) => {
       const yaml = require('js-yaml');
       const content = fs.readFileSync(yamlPath, 'utf8');
       const json = yaml.load(content);
-      res.json(json);
+      return res.json(json);
     } catch (e) {
-      res.status(500).json({ error: 'Failed to parse OpenAPI schema' });
+      return res.status(500).json({ error: 'Failed to parse OpenAPI schema' });
     }
   } else {
-    res.status(404).json({ error: 'OpenAPI schema not found' });
+    return res.status(404).json({ error: 'OpenAPI schema not found' });
   }
 });
 

@@ -154,7 +154,7 @@ export class QwenChatService {
       streamId?: string;
     } = {}
   ) {
-    const conversation = await this.prisma.aiChatConversation.create({
+    const conversation = await (this.prisma.aiConversation as any).create({
       data: {
         organizationId,
         userId,
@@ -183,7 +183,7 @@ export class QwenChatService {
     conversationId: string,
     organizationId: string
   ): Promise<ConversationWithMessages | null> {
-    const conversation = await this.prisma.aiChatConversation.findFirst({
+    const conversation = await (this.prisma.aiConversation as any).findFirst({
       where: {
         id: conversationId,
         organizationId,
@@ -195,7 +195,7 @@ export class QwenChatService {
       },
     });
 
-    return conversation;
+    return conversation as ConversationWithMessages | null;
   }
 
   /**
@@ -210,7 +210,7 @@ export class QwenChatService {
       streamId?: string;
     } = {}
   ) {
-    const conversations = await this.prisma.aiChatConversation.findMany({
+    const conversations = await (this.prisma.aiConversation as any).findMany({
       where: {
         organizationId,
         userId,
@@ -231,7 +231,7 @@ export class QwenChatService {
       },
     });
 
-    return conversations.map(conv => {
+    return conversations.map((conv: any) => {
       const { messages, ...rest } = conv;
       return {
         ...rest,
@@ -252,7 +252,7 @@ export class QwenChatService {
     const startTime = Date.now();
 
     // Get conversation with history
-    const conversation = await this.prisma.aiChatConversation.findFirst({
+    const conversation: any = await (this.prisma.aiConversation as any).findFirst({
       where: {
         id: conversationId,
         organizationId,
@@ -269,7 +269,7 @@ export class QwenChatService {
     }
 
     // Save user message
-    await this.prisma.aiChatMessage.create({
+    await (this.prisma as any).aiChatMessage.create({
       data: {
         conversationId,
         role: 'user',
@@ -324,7 +324,7 @@ export class QwenChatService {
     const completionTokens = Math.ceil(fullResponse.length / 4);
 
     // Save assistant message
-    await this.prisma.aiChatMessage.create({
+    await (this.prisma as any).aiChatMessage.create({
       data: {
         conversationId,
         role: 'assistant',
@@ -337,7 +337,7 @@ export class QwenChatService {
     });
 
     // Update conversation stats
-    await this.prisma.aiChatConversation.update({
+    await (this.prisma.aiConversation as any).update({
       where: { id: conversationId },
       data: {
         messageCount: { increment: 2 },
@@ -381,7 +381,7 @@ export class QwenChatService {
       streamId?: string;
     }
   ) {
-    return this.prisma.aiChatConversation.updateMany({
+    return (this.prisma.aiConversation as any).updateMany({
       where: {
         id: conversationId,
         organizationId,
@@ -394,7 +394,7 @@ export class QwenChatService {
    * Delete conversation
    */
   async deleteConversation(conversationId: string, organizationId: string) {
-    return this.prisma.aiChatConversation.deleteMany({
+    return (this.prisma.aiConversation as any).deleteMany({
       where: {
         id: conversationId,
         organizationId,

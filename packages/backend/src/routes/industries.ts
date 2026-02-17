@@ -17,10 +17,10 @@ const router = Router();
 router.get('/', optionalAuth, async (req: Request, res: Response) => {
   try {
     const templates = await industryService.getAllTemplates();
-    res.json({ templates });
+    return res.json({ templates });
   } catch (error) {
     logger.error('Error fetching industry templates:', error);
-    res.status(500).json({ error: 'Failed to fetch industry templates' });
+    return res.status(500).json({ error: 'Failed to fetch industry templates' });
   }
 });
 
@@ -31,10 +31,10 @@ router.get('/', optionalAuth, async (req: Request, res: Response) => {
 router.get('/categories', async (req: Request, res: Response) => {
   try {
     const categories = await industryService.getCategories();
-    res.json({ categories });
+    return res.json({ categories });
   } catch (error) {
     logger.error('Error fetching categories:', error);
-    res.status(500).json({ error: 'Failed to fetch categories' });
+    return res.status(500).json({ error: 'Failed to fetch categories' });
   }
 });
 
@@ -46,10 +46,10 @@ router.get('/category/:category', async (req: Request, res: Response) => {
   try {
     const { category } = req.params;
     const templates = await industryService.getTemplatesByCategory(category);
-    res.json({ templates });
+    return res.json({ templates });
   } catch (error) {
     logger.error('Error fetching templates by category:', error);
-    res.status(500).json({ error: 'Failed to fetch templates' });
+    return res.status(500).json({ error: 'Failed to fetch templates' });
   }
 });
 
@@ -66,10 +66,10 @@ router.get('/:slug', async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Template not found' });
     }
 
-    res.json({ template });
+    return res.json({ template });
   } catch (error) {
     logger.error('Error fetching template:', error);
-    res.status(500).json({ error: 'Failed to fetch template' });
+    return res.status(500).json({ error: 'Failed to fetch template' });
   }
 });
 
@@ -98,10 +98,10 @@ router.post('/apply', authenticateToken, async (req: Request, res: Response) => 
       return res.status(400).json({ error: result.message });
     }
 
-    res.json(result);
+    return res.json(result);
   } catch (error) {
     logger.error('Error applying template:', error);
-    res.status(500).json({ error: 'Failed to apply template' });
+    return res.status(500).json({ error: 'Failed to apply template' });
   }
 });
 

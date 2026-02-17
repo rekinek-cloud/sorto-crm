@@ -30,10 +30,10 @@ router.get('/', async (req, res) => {
       orderBy: { createdAt: 'desc' },
     });
 
-    res.json({ success: true, keys });
+    return res.json({ success: true, keys });
   } catch (error: any) {
     logger.error('Error listing MCP keys:', error);
-    res.status(500).json({ success: false, error: 'Failed to list MCP keys' });
+    return res.status(500).json({ success: false, error: 'Failed to list MCP keys' });
   }
 });
 
@@ -62,7 +62,7 @@ router.post('/', async (req, res) => {
       },
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       id: apiKey.id,
       key: rawKey, // Only returned once!
@@ -72,7 +72,7 @@ router.post('/', async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error creating MCP key:', error);
-    res.status(500).json({ success: false, error: 'Failed to create MCP key' });
+    return res.status(500).json({ success: false, error: 'Failed to create MCP key' });
   }
 });
 
@@ -118,7 +118,7 @@ router.get('/:keyId', async (req, res) => {
       }),
     ]);
 
-    res.json({
+    return res.json({
       success: true,
       key: apiKey,
       stats: {
@@ -130,7 +130,7 @@ router.get('/:keyId', async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error getting MCP key:', error);
-    res.status(500).json({ success: false, error: 'Failed to get MCP key' });
+    return res.status(500).json({ success: false, error: 'Failed to get MCP key' });
   }
 });
 
@@ -166,10 +166,10 @@ router.patch('/:keyId', async (req, res) => {
       },
     });
 
-    res.json({ success: true, key: updated });
+    return res.json({ success: true, key: updated });
   } catch (error: any) {
     logger.error('Error updating MCP key:', error);
-    res.status(500).json({ success: false, error: 'Failed to update MCP key' });
+    return res.status(500).json({ success: false, error: 'Failed to update MCP key' });
   }
 });
 
@@ -195,10 +195,10 @@ router.post('/:keyId/revoke', async (req, res) => {
       data: { isActive: false },
     });
 
-    res.json({ success: true, message: 'Key revoked' });
+    return res.json({ success: true, message: 'Key revoked' });
   } catch (error: any) {
     logger.error('Error revoking MCP key:', error);
-    res.status(500).json({ success: false, error: 'Failed to revoke MCP key' });
+    return res.status(500).json({ success: false, error: 'Failed to revoke MCP key' });
   }
 });
 
@@ -221,10 +221,10 @@ router.delete('/:keyId', async (req, res) => {
 
     await prisma.mcp_api_keys.delete({ where: { id: keyId } });
 
-    res.json({ success: true, message: 'Key deleted' });
+    return res.json({ success: true, message: 'Key deleted' });
   } catch (error: any) {
     logger.error('Error deleting MCP key:', error);
-    res.status(500).json({ success: false, error: 'Failed to delete MCP key' });
+    return res.status(500).json({ success: false, error: 'Failed to delete MCP key' });
   }
 });
 
@@ -273,7 +273,7 @@ router.get('/:keyId/usage', async (req, res) => {
       }),
     ]);
 
-    res.json({
+    return res.json({
       success: true,
       stats: {
         totalCalls,
@@ -285,7 +285,7 @@ router.get('/:keyId/usage', async (req, res) => {
     });
   } catch (error: any) {
     logger.error('Error getting MCP key usage:', error);
-    res.status(500).json({ success: false, error: 'Failed to get MCP key usage' });
+    return res.status(500).json({ success: false, error: 'Failed to get MCP key usage' });
   }
 });
 

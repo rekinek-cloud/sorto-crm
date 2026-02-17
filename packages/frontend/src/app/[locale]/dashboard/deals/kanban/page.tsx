@@ -121,8 +121,8 @@ export default function DealsKanbanPage() {
         limit: 500
       });
 
-      setDeals(response.deals || []);
-      calculatePipelineStats(response.deals || []);
+      setDeals((response.deals || []) as any as Deal[]);
+      calculatePipelineStats((response.deals || []) as any as Deal[]);
     } catch (error: any) {
       console.error('Error loading deals:', error);
       toast.error('Failed to load deals');

@@ -54,14 +54,14 @@ router.get('/stats', async (req, res) => {
   try {
     const stats = await cacheService.getStats();
 
-    res.json({
+    return res.json({
       success: true,
       data: stats
     });
 
   } catch (error) {
     logger.error('Failed to get cache stats:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to get cache statistics'
     });
@@ -86,7 +86,7 @@ router.get('/:key', async (req, res) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         key,
@@ -105,7 +105,7 @@ router.get('/:key', async (req, res) => {
     }
 
     logger.error('Cache get error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to get cache value'
     });
@@ -122,7 +122,7 @@ router.post('/', async (req, res) => {
 
     await cacheService.set(key, value, options);
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Cache entry created successfully',
       data: {
@@ -142,7 +142,7 @@ router.post('/', async (req, res) => {
     }
 
     logger.error('Cache set error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to set cache value'
     });
@@ -169,14 +169,14 @@ router.put('/:key', async (req, res) => {
 
     await cacheService.set(key, value, options || {});
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Cache entry updated successfully'
     });
 
   } catch (error) {
     logger.error('Cache update error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to update cache value'
     });
@@ -194,14 +194,14 @@ router.delete('/:key', async (req, res) => {
 
     await cacheService.delete(key, namespace as string);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Cache entry deleted successfully'
     });
 
   } catch (error) {
     logger.error('Cache delete error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to delete cache value'
     });
@@ -230,7 +230,7 @@ router.post('/clear', async (req, res) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       message: `Cleared ${deletedCount} cache entries`,
       data: { deletedCount }
@@ -246,7 +246,7 @@ router.post('/clear', async (req, res) => {
     }
 
     logger.error('Cache clear error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to clear cache'
     });
@@ -269,7 +269,7 @@ router.post('/warm', async (req, res) => {
 
     await cacheService.warmCache(namespace, warmingFunctions);
 
-    res.json({
+    return res.json({
       success: true,
       message: `Cache warming completed for namespace: ${namespace}`,
       data: {
@@ -288,7 +288,7 @@ router.post('/warm', async (req, res) => {
     }
 
     logger.error('Cache warm error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to warm cache'
     });
@@ -386,7 +386,7 @@ router.post('/warm-system', async (req, res) => {
 
     await cacheService.warmCache('system', systemWarmingFunctions);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'System cache warming completed',
       data: {
@@ -398,7 +398,7 @@ router.post('/warm-system', async (req, res) => {
 
   } catch (error) {
     logger.error('System cache warm error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to warm system cache'
     });
@@ -419,7 +419,7 @@ router.get('/health', async (req, res) => {
       totalEntries: stats.totalEntries,
       totalSize: stats.totalSize,
       expiredEntries: stats.expiredEntries,
-      recommendations: []
+      recommendations: [] as any[]
     };
 
     // Generate recommendations
@@ -439,14 +439,14 @@ router.get('/health', async (req, res) => {
 
     health.recommendations = recommendations;
 
-    res.json({
+    return res.json({
       success: true,
       data: health
     });
 
   } catch (error) {
     logger.error('Cache health check error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to check cache health'
     });
@@ -488,7 +488,7 @@ router.post('/test', async (req, res) => {
     // Cleanup
     await cacheService.delete(testKey, namespace);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         performance: {
@@ -506,7 +506,7 @@ router.post('/test', async (req, res) => {
 
   } catch (error) {
     logger.error('Cache test error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Cache test failed'
     });

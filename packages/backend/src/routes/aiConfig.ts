@@ -208,7 +208,7 @@ router.get('/models',
         updatedAt: new Date().toISOString(),
       }));
 
-      res.json(models);
+      return res.json(models);
     } catch (error) {
       logger.error('Failed to get AI models config:', error);
       throw new AppError('Failed to retrieve AI models configuration', 500);
@@ -240,12 +240,12 @@ router.put('/models/:modelId',
         ...defaultAIModels[modelIndex],
         ...updateData,
         updated_at: new Date().toISOString(),
-        updated_by: req.user!.userId
+        updated_by: req.user!.id
       };
 
       logger.info(`AI model ${modelId} configuration updated by ${req.user!.email}`);
 
-      res.json(defaultAIModels[modelIndex]);
+      return res.json(defaultAIModels[modelIndex]);
     } catch (error) {
       logger.error('Failed to update AI model config:', error);
       throw new AppError('Failed to update AI model configuration', 500);
@@ -281,7 +281,7 @@ router.get('/usage',
         }))
       }));
 
-      res.json(usageStats);
+      return res.json(usageStats);
     } catch (error) {
       logger.error('Failed to get AI usage statistics:', error);
       throw new AppError('Failed to retrieve AI usage statistics', 500);
@@ -337,7 +337,7 @@ router.post('/test/:modelId',
 
       logger.info(`AI model ${modelId} test performed by ${req.user!.email}`, testResult);
 
-      res.json(testResult);
+      return res.json(testResult);
     } catch (error) {
       logger.error('Failed to test AI model:', error);
       throw new AppError('Failed to test AI model', 500);
@@ -361,7 +361,7 @@ router.get('/models/:modelId',
         throw new AppError('AI model not found', 404);
       }
 
-      res.json(model);
+      return res.json(model);
     } catch (error) {
       logger.error('Failed to get AI model:', error);
       throw new AppError('Failed to retrieve AI model', 500);
@@ -383,7 +383,7 @@ router.post('/models',
         id: `model_${Date.now()}`,
         ...req.body,
         createdAt: new Date().toISOString(),
-        createdBy: req.user!.userId
+        createdBy: req.user!.id
       };
 
       // In real app, save to database
@@ -391,7 +391,7 @@ router.post('/models',
 
       logger.info(`New AI model created by ${req.user!.email}`, { modelId: newModel.id });
 
-      res.status(201).json(newModel);
+      return res.status(201).json(newModel);
     } catch (error) {
       logger.error('Failed to create AI model:', error);
       throw new AppError('Failed to create AI model', 500);
@@ -420,7 +420,7 @@ router.delete('/models/:modelId',
 
       logger.info(`AI model ${modelId} deleted by ${req.user!.email}`);
 
-      res.json({
+      return res.json({
         success: true,
         message: 'AI model deleted successfully'
       });
@@ -443,7 +443,7 @@ router.get('/providers',
     try {
       logger.info('GET /providers called', {
         organizationId: req.user!.organizationId,
-        userId: req.user!.userId
+        userId: req.user!.id
       });
 
       const dbProviders = await prisma.ai_providers.findMany({
@@ -466,16 +466,16 @@ router.get('/providers',
         authType: 'api-key' as const,
         enabled: dbProvider.status === 'ACTIVE',
         configSchema: dbProvider.config,
-        supportedModels: [],
+        supportedModels: [] as any[],
         rateLimit: dbProvider.limits || { requestsPerMinute: 60, tokensPerMinute: 10000 },
         createdAt: dbProvider.createdAt.toISOString(),
         updatedAt: dbProvider.updatedAt.toISOString(),
       }));
 
-      res.json({ success: true, data: providers });
+      return res.json({ success: true, data: providers });
     } catch (error: any) {
       logger.error('Failed to get AI providers:', { message: error.message, stack: error.stack });
-      next(new AppError('Failed to retrieve AI providers', 500));
+      return next(new AppError('Failed to retrieve AI providers', 500));
     }
   }
 );
@@ -511,13 +511,13 @@ router.get('/providers/:providerId',
         authType: 'api-key' as const,
         enabled: dbProvider.status === 'ACTIVE',
         configSchema: dbProvider.config,
-        supportedModels: [],
+        supportedModels: [] as any[],
         rateLimit: dbProvider.limits || { requestsPerMinute: 60, tokensPerMinute: 10000 },
         createdAt: dbProvider.createdAt.toISOString(),
         updatedAt: dbProvider.updatedAt.toISOString(),
       };
 
-      res.json(provider);
+      return res.json(provider);
     } catch (error) {
       logger.error('Failed to get AI provider:', error);
       throw new AppError('Failed to retrieve AI provider', 500);
@@ -561,16 +561,16 @@ router.post('/providers',
         authType: 'api-key' as const,
         enabled: newProvider.status === 'ACTIVE',
         configSchema: newProvider.config,
-        supportedModels: [],
+        supportedModels: [] as any[],
         rateLimit: newProvider.limits || { requestsPerMinute: 60, tokensPerMinute: 10000 },
         createdAt: newProvider.createdAt.toISOString(),
         updatedAt: newProvider.updatedAt.toISOString(),
       };
 
-      res.status(201).json({ success: true, data: responseProvider });
+      return res.status(201).json({ success: true, data: responseProvider });
     } catch (error: any) {
       logger.error('Failed to create AI provider:', { message: error.message, stack: error.stack });
-      res.status(500).json({ success: false, error: 'Failed to create AI provider', code: 'INTERNAL_ERROR' });
+      return res.status(500).json({ success: false, error: 'Failed to create AI provider', code: 'INTERNAL_ERROR' });
     }
   }
 );
@@ -614,13 +614,13 @@ router.put('/providers/:providerId',
         authType: 'api-key' as const,
         enabled: updatedProvider.status === 'ACTIVE',
         configSchema: updatedProvider.config,
-        supportedModels: [],
+        supportedModels: [] as any[],
         rateLimit: updatedProvider.limits || { requestsPerMinute: 60, tokensPerMinute: 10000 },
         createdAt: updatedProvider.createdAt.toISOString(),
         updatedAt: updatedProvider.updatedAt.toISOString(),
       };
 
-      res.json(responseProvider);
+      return res.json(responseProvider);
     } catch (error) {
       logger.error('Failed to update AI provider:', error);
       throw new AppError('Failed to update AI provider', 500);
@@ -649,7 +649,7 @@ router.delete('/providers/:providerId',
 
       logger.info(`AI provider ${providerId} deleted by ${req.user!.email}`);
 
-      res.json({
+      return res.json({
         success: true,
         message: 'AI provider deleted successfully'
       });
@@ -756,7 +756,7 @@ router.post('/providers/:providerId/test',
 
       logger.info(`AI provider ${providerId} tested by ${req.user!.email}: ${testSuccess ? 'OK' : 'FAIL'}`);
 
-      res.json({
+      return res.json({
         success: testSuccess,
         message: testSuccess ? 'Provider działa prawidłowo' : `Weryfikacja nie powiodła się: ${testMessage}`,
         responseTime,
@@ -788,7 +788,7 @@ router.get('/providers/:providerId/config',
         retryAttempts: 3,
       };
 
-      res.json({
+      return res.json({
         success: true,
         data: config
       });
@@ -839,7 +839,7 @@ router.put('/providers/:providerId/config',
 
       logger.info(`AI provider ${provider.name} (${providerId}) config updated by ${req.user!.email}`);
 
-      res.json({
+      return res.json({
         success: true,
         message: 'Provider configuration updated successfully',
         data: {

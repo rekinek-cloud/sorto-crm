@@ -288,7 +288,7 @@ export class PlatformModulesService {
         activatedAt: new Date(),
         // Set expiry to 30 days for trial
         expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      },
+      } as any,
     });
 
     logger.info(`Module '${moduleSlug}' activated for organization ${organizationId} (trial)`);

@@ -53,7 +53,7 @@ router.get('/', authenticateToken, async (req: any, res: any) => {
       prisma.note.count({ where })
     ]);
 
-    res.json({
+    return res.json({
       notes,
       pagination: {
         page: pageNum,
@@ -64,7 +64,7 @@ router.get('/', authenticateToken, async (req: any, res: any) => {
     });
   } catch (error) {
     console.error('Error fetching notes:', error);
-    res.status(500).json({ error: 'Failed to fetch notes' });
+    return res.status(500).json({ error: 'Failed to fetch notes' });
   }
 });
 
@@ -85,10 +85,10 @@ router.get('/:id', authenticateToken, async (req: any, res: any) => {
       return res.status(404).json({ error: 'Note not found' });
     }
 
-    res.json(note);
+    return res.json(note);
   } catch (error) {
     console.error('Error fetching note:', error);
-    res.status(500).json({ error: 'Failed to fetch note' });
+    return res.status(500).json({ error: 'Failed to fetch note' });
   }
 });
 
@@ -132,10 +132,10 @@ router.post('/', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    res.status(201).json(note);
+    return res.status(201).json(note);
   } catch (error) {
     console.error('Error creating note:', error);
-    res.status(500).json({ error: 'Failed to create note' });
+    return res.status(500).json({ error: 'Failed to create note' });
   }
 });
 
@@ -166,10 +166,10 @@ router.patch('/:id', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    res.json(note);
+    return res.json(note);
   } catch (error) {
     console.error('Error updating note:', error);
-    res.status(500).json({ error: 'Failed to update note' });
+    return res.status(500).json({ error: 'Failed to update note' });
   }
 });
 
@@ -191,10 +191,10 @@ router.delete('/:id', authenticateToken, async (req: any, res: any) => {
       where: { id: req.params.id }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error deleting note:', error);
-    res.status(500).json({ error: 'Failed to delete note' });
+    return res.status(500).json({ error: 'Failed to delete note' });
   }
 });
 

@@ -1,13 +1,27 @@
 import { apiClient } from './client';
 
-export type EmailProvider = 'GMAIL' | 'OUTLOOK' | 'YAHOO' | 'EXCHANGE' | 'CUSTOM';
+export type EmailProviderType = 'GMAIL' | 'OUTLOOK' | 'YAHOO' | 'EXCHANGE' | 'CUSTOM';
 export type EmailAccountStatus = 'PENDING' | 'ACTIVE' | 'ERROR' | 'DISABLED';
+
+/** EmailProvider used as a selectable provider object in the UI */
+export interface EmailProvider {
+  provider: EmailProviderType;
+  name: string;
+  description: string;
+  imapHost: string;
+  imapPort: number;
+  imapSecure: boolean;
+  smtpHost: string;
+  smtpPort: number;
+  smtpSecure: boolean;
+  helpText?: string;
+}
 
 export interface EmailAccount {
   id: string;
   name: string;
   email: string;
-  provider: EmailProvider;
+  provider: EmailProviderType;
   isActive: boolean;
   status: EmailAccountStatus;
   lastSyncAt?: string;
@@ -33,7 +47,7 @@ export interface EmailAccount {
 export interface CreateEmailAccountData {
   name: string;
   email: string;
-  provider: EmailProvider;
+  provider: EmailProviderType;
   imapHost: string;
   imapPort: number;
   imapSecure: boolean;
@@ -50,7 +64,7 @@ export interface CreateEmailAccountData {
 }
 
 export interface EmailProviderConfig {
-  provider: EmailProvider;
+  provider: EmailProviderType;
   name: string;
   description: string;
   imapHost: string;
@@ -87,7 +101,7 @@ export const emailAccountsApi = {
   },
 
   // Create email account
-  async createAccount(data: CreateEmailAccountData): Promise<{ data: EmailAccount }> {
+  async createAccount(data: CreateEmailAccountData): Promise<{ success: boolean; data: EmailAccount }> {
     const response = await apiClient.post('/email-accounts', data);
     return response.data;
   },
@@ -116,13 +130,13 @@ export const emailAccountsApi = {
   },
 
   // Sync all accounts
-  async syncAllAccounts(): Promise<{ success: boolean; data: SyncResult[] }> {
+  async syncAllAccounts(): Promise<{ success: boolean; message?: string; data: SyncResult[] }> {
     const response = await apiClient.post('/email-accounts/sync-all');
     return response.data;
   },
 
   // Get available providers
-  async getProviders(): Promise<{ data: EmailProviderConfig[] }> {
+  async getProviders(): Promise<{ data: EmailProvider[] }> {
     const response = await apiClient.get('/email-accounts/providers');
     return response.data;
   }

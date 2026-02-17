@@ -4,7 +4,7 @@
  */
 
 import nodemailer, { Transporter, SendMailOptions } from 'nodemailer';
-import { PrismaClient, EmailAccount } from '@prisma/client';
+import { PrismaClient, email_accounts as EmailAccount } from '@prisma/client';
 import { prisma } from '../config/database';
 import logger from '../config/logger';
 
@@ -57,7 +57,7 @@ export class SMTPService {
    */
   async initialize(): Promise<void> {
     try {
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         host: this.config.host,
         port: this.config.port,
         secure: this.config.secure,
@@ -315,7 +315,7 @@ export class SMTPService {
       // Note: This would need organizationId context
       // For now, we'll skip database logging or get it from context
       /*
-      await this.prisma.emailLog.create({
+      await this.prisma.email_logs.create({
         data: {
           messageId,
           fromAddress: this.config.from || this.config.user,
@@ -355,7 +355,7 @@ export class SMTPService {
     accountId: string,
     prisma: PrismaClient
   ): Promise<SMTPService> {
-    const account = await prisma.emailAccount.findUnique({
+    const account = await prisma.email_accounts.findUnique({
       where: { id: accountId }
     });
 

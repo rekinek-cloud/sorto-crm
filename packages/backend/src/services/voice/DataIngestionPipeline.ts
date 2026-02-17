@@ -190,7 +190,7 @@ export class DataIngestionPipeline {
               createdAt: task.createdAt,
               updatedAt: task.updatedAt,
               source: 'internal',
-              tags: [task.status, task.priority, task.context || ''].filter(Boolean),
+              tags: [task.status, task.priority, task.contextId || ''].filter(Boolean),
               importance: this.calculateTaskImportance(task)
             }
           };
@@ -226,10 +226,7 @@ export class DataIngestionPipeline {
         where: filter,
         include: {
           tasks: { select: { title: true, status: true } },
-          createdBy: { select: { firstName: true, lastName: true } },
-          collaborators: { 
-            include: { user: { select: { firstName: true, lastName: true } } }
-          }
+          createdBy: { select: { firstName: true, lastName: true } }
         }
       });
 
@@ -250,7 +247,7 @@ export class DataIngestionPipeline {
               createdAt: project.createdAt,
               updatedAt: project.updatedAt,
               source: 'internal',
-              tags: [project.status, project.priority, project.methodology].filter(Boolean),
+              tags: [project.status, project.priority].filter(Boolean),
               importance: this.calculateProjectImportance(project)
             }
           };

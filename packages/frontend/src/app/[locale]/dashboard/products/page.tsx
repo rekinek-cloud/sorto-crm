@@ -682,7 +682,7 @@ const ProductsPage: React.FC = () => {
       {/* Formularz produktu */}
       <ProductForm
         product={editingProduct}
-        onSubmit={editingProduct ? handleUpdateProduct : handleCreateProduct}
+        onSubmit={(editingProduct ? handleUpdateProduct : handleCreateProduct) as any}
         onCancel={() => {
           setShowForm(false);
           setEditingProduct(undefined);

@@ -12,7 +12,7 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
   try {
     const organizationId = req.user?.organizationId;
     if (!organizationId) {
-      res.status(401).json({ error: 'Unauthorized' });
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
     // Get basic counts
@@ -36,7 +36,7 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         overview: {
@@ -53,7 +53,7 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Analytics dashboard error:', error);
-    res.status(500).json({ error: 'Failed to fetch analytics dashboard' });
+    return res.status(500).json({ error: 'Failed to fetch analytics dashboard' });
   }
 });
 
@@ -62,7 +62,7 @@ router.get('/dashboard', authenticateToken, async (req, res) => {
  * Get analytics overview
  */
 router.get('/', authenticateToken, async (req, res) => {
-  res.json({
+  return res.json({
     success: true,
     data: {
       endpoints: {

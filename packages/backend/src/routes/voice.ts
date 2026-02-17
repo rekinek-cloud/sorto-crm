@@ -14,6 +14,12 @@ import { coquiTTSService } from '../services/voice/CoquiTTSService';
 // import { getDataIngestionPipeline } from '../services/voice/DataIngestionPipeline';
 import { prisma } from '../config/database';
 
+// Stub functions for disabled voice services
+function getAIVoiceProcessor(_prisma: any): any { throw new Error('AIVoiceProcessor is temporarily disabled'); }
+function getVectorStore(_prisma: any): any { throw new Error('VectorStore is temporarily disabled'); }
+function getEnhancedAIVoiceProcessor(_prisma: any, _vectorStore: any): any { throw new Error('EnhancedAIVoiceProcessor is temporarily disabled'); }
+function getDataIngestionPipeline(_prisma: any, _vectorStore: any): any { throw new Error('DataIngestionPipeline is temporarily disabled'); }
+
 import multer from 'multer';
 
 const router = Router();
@@ -60,7 +66,7 @@ router.post('/test-synthesis-public', async (req, res) => {
 
     const result = await coquiTTSService.synthesizeText(testText, 'pl');
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         audioSize: result.audioBuffer.length,
@@ -73,7 +79,7 @@ router.post('/test-synthesis-public', async (req, res) => {
 
   } catch (error) {
     console.error('Public TTS test failed:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Test synthesis failed',
     });
@@ -91,7 +97,7 @@ router.get('/health', async (req, res) => {
   try {
     const isHealthy = await coquiTTSService.healthCheck();
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         ttsService: isHealthy ? 'healthy' : 'unhealthy',
@@ -100,7 +106,7 @@ router.get('/health', async (req, res) => {
     });
   } catch (error) {
     console.error('Voice health check error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Health check failed',
     });
@@ -115,7 +121,7 @@ router.get('/models', async (req, res) => {
   try {
     const models = await coquiTTSService.getAvailableModels();
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         models,
@@ -124,7 +130,7 @@ router.get('/models', async (req, res) => {
     });
   } catch (error) {
     console.error('Failed to get TTS models:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to retrieve TTS models',
     });
@@ -156,7 +162,7 @@ router.post('/synthesize', async (req, res) => {
     res.setHeader('Content-Disposition', 'inline; filename="tts_output.wav"');
 
     // Send audio data
-    res.send(result.audioBuffer);
+    return res.send(result.audioBuffer);
 
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -168,7 +174,7 @@ router.post('/synthesize', async (req, res) => {
     }
 
     console.error('TTS synthesis error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Text-to-speech synthesis failed',
     });
@@ -205,7 +211,7 @@ router.post('/synthesize-clone', upload.single('speaker_wav'), async (req, res) 
     res.setHeader('X-Audio-Duration', result.duration.toString());
     res.setHeader('Content-Disposition', 'inline; filename="cloned_voice.wav"');
 
-    res.send(result.audioBuffer);
+    return res.send(result.audioBuffer);
 
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -217,7 +223,7 @@ router.post('/synthesize-clone', upload.single('speaker_wav'), async (req, res) 
     }
 
     console.error('Voice cloning error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Voice cloning synthesis failed',
     });
@@ -248,17 +254,18 @@ router.post('/synthesize-stream', async (req, res) => {
       }
     );
 
-    res.end();
+    return res.end();
 
   } catch (error) {
     console.error('Streaming TTS error:', error);
     
     if (!res.headersSent) {
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Streaming synthesis failed',
       });
     }
+    return res.end();
   }
 });
 
@@ -274,7 +281,7 @@ router.post('/test-synthesis', async (req, res) => {
 
     const result = await coquiTTSService.synthesizeText(testText, 'pl');
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         audioSize: result.audioBuffer.length,
@@ -287,7 +294,7 @@ router.post('/test-synthesis', async (req, res) => {
 
   } catch (error) {
     console.error('Test synthesis error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Test synthesis failed',
     });
@@ -322,7 +329,7 @@ router.get('/demo-voices', async (req, res) => {
       };
     }));
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         demoText,
@@ -332,7 +339,7 @@ router.get('/demo-voices', async (req, res) => {
 
   } catch (error) {
     console.error('Demo voices error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Demo voices generation failed',
     });
@@ -375,7 +382,7 @@ router.post('/process-command', async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         ...result,
@@ -394,7 +401,7 @@ router.post('/process-command', async (req, res) => {
     }
 
     console.error('Voice command processing error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to process voice command'
     });
@@ -409,7 +416,7 @@ router.post('/start-conversation', async (req, res) => {
   try {
     const conversationId = `conv_${Date.now()}_${req.user.id.substring(0, 8)}`;
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         conversationId,
@@ -420,7 +427,7 @@ router.post('/start-conversation', async (req, res) => {
 
   } catch (error) {
     console.error('Start conversation error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to start conversation'
     });
@@ -437,7 +444,7 @@ router.get('/conversation/:id', async (req, res) => {
     // For now, return mock data
     const conversationId = req.params.id;
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         conversationId,
@@ -449,7 +456,7 @@ router.get('/conversation/:id', async (req, res) => {
 
   } catch (error) {
     console.error('Get conversation error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to get conversation history'
     });
@@ -471,7 +478,7 @@ router.post('/speech-to-text', upload.single('audio'), async (req, res) => {
 
     // In production, this would use a speech-to-text service
     // For now, return mock data
-    res.json({
+    return res.json({
       success: true,
       data: {
         transcript: 'Mock transcription of audio',
@@ -483,7 +490,7 @@ router.post('/speech-to-text', upload.single('audio'), async (req, res) => {
 
   } catch (error) {
     console.error('Speech-to-text error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to convert speech to text'
     });
@@ -517,7 +524,7 @@ router.post('/process-command-enhanced', async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         ...result,
@@ -536,7 +543,7 @@ router.post('/process-command-enhanced', async (req, res) => {
     }
 
     console.error('Enhanced voice command processing error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to process enhanced voice command'
     });
@@ -554,7 +561,7 @@ router.post('/initialize-knowledge', async (req, res) => {
     
     await enhancedProcessor.initializeUserVectorStore(req.user.organizationId);
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         message: 'Knowledge initialization started',
@@ -565,7 +572,7 @@ router.post('/initialize-knowledge', async (req, res) => {
 
   } catch (error) {
     console.error('Knowledge initialization error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to initialize knowledge base'
     });
@@ -581,14 +588,14 @@ router.get('/knowledge-stats', async (req, res) => {
     const vectorStore = getVectorStore(prisma);
     const stats = await vectorStore.getStats(req.user.organizationId);
     
-    res.json({
+    return res.json({
       success: true,
       data: stats
     });
 
   } catch (error) {
     console.error('Knowledge stats error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to get knowledge stats'
     });
@@ -615,11 +622,11 @@ router.post('/search-knowledge', async (req, res) => {
       threshold
     });
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         query,
-        results: results.map(r => ({
+        results: results.map((r: any) => ({
           id: r.document.id,
           content: r.document.content.substring(0, 200) + '...',
           type: r.document.metadata.type,
@@ -641,7 +648,7 @@ router.post('/search-knowledge', async (req, res) => {
     }
 
     console.error('Knowledge search error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Knowledge search failed'
     });
@@ -660,7 +667,7 @@ router.get('/ingestion-status', async (req, res) => {
     const currentJob = pipeline.getCurrentJob();
     const isRunning = pipeline.isIngestionRunning();
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         isRunning,
@@ -671,7 +678,7 @@ router.get('/ingestion-status', async (req, res) => {
 
   } catch (error) {
     console.error('Ingestion status error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to get ingestion status'
     });

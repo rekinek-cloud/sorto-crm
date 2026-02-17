@@ -26,7 +26,13 @@ export interface AIRule {
   conditions: RuleCondition[];
   actions: RuleAction[];
   aiPrompt?: string;
+  aiSystemPrompt?: string;
   aiModel?: string;
+  aiModelName?: string;
+  category?: string;
+  dataType?: string;
+  status?: string;
+  isSystem?: boolean;
   createdAt: string;
   updatedAt?: string;
   lastExecuted?: string;
@@ -44,10 +50,15 @@ export interface CreateRuleRequest {
   trigger: 'manual' | 'automatic' | 'both';
   enabled?: boolean;
   priority?: number;
-  conditions: RuleCondition[];
-  actions: RuleAction[];
+  conditions: RuleCondition[] | { operator: string; conditions: any[] };
+  actions: RuleAction[] | Record<string, any>;
   aiPrompt?: string;
+  aiSystemPrompt?: string;
   aiModel?: string;
+  modelId?: string;
+  category?: string;
+  dataType?: string;
+  status?: string;
 }
 
 export interface UpdateRuleRequest extends Partial<CreateRuleRequest> {}

@@ -41,7 +41,7 @@ router.get('/', authenticateToken, async (req: any, res: any) => {
         include: {
           product: { select: { id: true, name: true } },
           service: { select: { id: true, name: true } },
-          deal: { select: { id: true, name: true } },
+          deal: { select: { id: true, title: true } },
           project: { select: { id: true, name: true } },
           createdBy: { select: { id: true, firstName: true, lastName: true } },
         },
@@ -52,7 +52,7 @@ router.get('/', authenticateToken, async (req: any, res: any) => {
       prisma.clientProduct.count({ where })
     ]);
 
-    res.json({
+    return res.json({
       products,
       pagination: {
         page: pageNum,
@@ -63,7 +63,7 @@ router.get('/', authenticateToken, async (req: any, res: any) => {
     });
   } catch (error) {
     console.error('Error fetching client products:', error);
-    res.status(500).json({ error: 'Failed to fetch client products' });
+    return res.status(500).json({ error: 'Failed to fetch client products' });
   }
 });
 
@@ -122,10 +122,10 @@ router.get('/stats/:companyId', authenticateToken, async (req: any, res: any) =>
       firstOrderAt
     };
 
-    res.json(stats);
+    return res.json(stats);
   } catch (error) {
     console.error('Error fetching client product stats:', error);
-    res.status(500).json({ error: 'Failed to fetch client product stats' });
+    return res.status(500).json({ error: 'Failed to fetch client product stats' });
   }
 });
 
@@ -141,7 +141,7 @@ router.get('/:id', authenticateToken, async (req: any, res: any) => {
         company: { select: { id: true, name: true } },
         product: { select: { id: true, name: true } },
         service: { select: { id: true, name: true } },
-        deal: { select: { id: true, name: true } },
+        deal: { select: { id: true, title: true } },
         project: { select: { id: true, name: true } },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
       }
@@ -151,10 +151,10 @@ router.get('/:id', authenticateToken, async (req: any, res: any) => {
       return res.status(404).json({ error: 'Client product not found' });
     }
 
-    res.json(item);
+    return res.json(item);
   } catch (error) {
     console.error('Error fetching client product:', error);
-    res.status(500).json({ error: 'Failed to fetch client product' });
+    return res.status(500).json({ error: 'Failed to fetch client product' });
   }
 });
 
@@ -216,10 +216,10 @@ router.post('/', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    res.status(201).json(item);
+    return res.status(201).json(item);
   } catch (error) {
     console.error('Error creating client product:', error);
-    res.status(500).json({ error: 'Failed to create client product' });
+    return res.status(500).json({ error: 'Failed to create client product' });
   }
 });
 
@@ -256,10 +256,10 @@ router.patch('/:id', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    res.json(item);
+    return res.json(item);
   } catch (error) {
     console.error('Error updating client product:', error);
-    res.status(500).json({ error: 'Failed to update client product' });
+    return res.status(500).json({ error: 'Failed to update client product' });
   }
 });
 
@@ -281,10 +281,10 @@ router.delete('/:id', authenticateToken, async (req: any, res: any) => {
       where: { id: req.params.id }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error deleting client product:', error);
-    res.status(500).json({ error: 'Failed to delete client product' });
+    return res.status(500).json({ error: 'Failed to delete client product' });
   }
 });
 

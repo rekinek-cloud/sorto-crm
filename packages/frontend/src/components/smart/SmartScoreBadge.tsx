@@ -61,7 +61,7 @@ export default function SmartScoreBadge({
         }`}
         title="Click to analyze SMART criteria"
       >
-        {showIcon && <ChartBarIcon className={`mr-1 ${getIconSize()}`} />}
+        {showIcon && <BarChart3 className={`mr-1 ${getIconSize()}`} />}
         <span>Analyze</span>
       </button>
     );
@@ -75,7 +75,7 @@ export default function SmartScoreBadge({
       }`}
       title={`SMART Score: ${score}/100 (${getScoreLabel(score)}) - Click for details`}
     >
-      {showIcon && <ChartBarIcon className={`mr-1 ${getIconSize()}`} />}
+      {showIcon && <BarChart3 className={`mr-1 ${getIconSize()}`} />}
       <span>{score}</span>
       {size === 'lg' && (
         <span className="ml-1 opacity-75">/ 100</span>

@@ -22,18 +22,18 @@ router.post('/search', async (req, res) => {
     console.log(`🔍 Test RAG search: "${query}"`);
 
     // Najpierw sprawdź ile mamy wektorów
-    const totalVectors = await prisma.$queryRaw`SELECT COUNT(*)::int as count FROM vectors`;
+    const totalVectors = await prisma.$queryRaw`SELECT COUNT(*)::int as count FROM vectors` as any[];
     console.log(`📊 Total vectors in database: ${totalVectors[0]?.count}`);
 
     // Sprawdź organizacje
     const orgStats = await prisma.$queryRaw`
-      SELECT 
+      SELECT
         metadata->>'organizationId' as org_id,
         COUNT(*)::int as vector_count
       FROM vectors
       GROUP BY metadata->>'organizationId'
       ORDER BY vector_count DESC
-    `;
+    ` as any[];
     console.log('🏢 Organizations:', orgStats);
 
     // Użyj pierwszej organizacji z danymi
@@ -58,8 +58,8 @@ router.post('/search', async (req, res) => {
     const startTime = Date.now();
 
     // Proste wyszukiwanie z opcjonalnym filtrem typu
-    let results;
-    
+    let results: any[];
+
     if (filters.type && filters.type !== 'all') {
       results = await prisma.$queryRaw`
         SELECT 
@@ -130,11 +130,11 @@ router.post('/search', async (req, res) => {
     }));
 
     // Log pierwszych kilka wyników dla debugowania
-    formattedResults.slice(0, 3).forEach((result, i) => {
+    formattedResults.slice(0, 3).forEach((result: any, i: any) => {
       console.log(`${i + 1}. [${result.type}] ${result.title}`);
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         query,
@@ -153,7 +153,7 @@ router.post('/search', async (req, res) => {
 
   } catch (error) {
     logger.error('Test RAG search error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Search failed',
       message: error instanceof Error ? error.message : 'Unknown error',
@@ -168,8 +168,8 @@ router.post('/search', async (req, res) => {
  */
 router.get('/debug', async (req, res) => {
   try {
-    const totalVectors = await prisma.$queryRaw`SELECT COUNT(*) as count FROM vectors`;
-    
+    const totalVectors = await prisma.$queryRaw`SELECT COUNT(*) as count FROM vectors` as any[];
+
     const typeStats = await prisma.$queryRaw`
       SELECT 
         metadata->>'type' as type,
@@ -189,7 +189,7 @@ router.get('/debug', async (req, res) => {
       LIMIT 10
     `;
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         totalVectors: totalVectors[0]?.count,
@@ -200,7 +200,7 @@ router.get('/debug', async (req, res) => {
 
   } catch (error) {
     logger.error('Debug error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Debug failed'
     });

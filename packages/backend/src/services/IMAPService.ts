@@ -4,7 +4,8 @@
  */
 
 const Imap = require('imap');
-import { simpleParser, ParsedMail } from 'mailparser';
+const { simpleParser } = require('mailparser');
+type ParsedMail = any;
 import { PrismaClient } from '@prisma/client';
 import { prisma } from '../config/database';
 import logger from '../config/logger';
@@ -39,7 +40,7 @@ export interface EmailMessage {
 }
 
 export class IMAPService {
-  private imap: Imap | null = null;
+  private imap: any = null;
   private config: IMAPConfig;
   private prisma: PrismaClient;
   
@@ -120,17 +121,17 @@ export class IMAPService {
         return reject(new Error('IMAP not connected'));
       }
 
-      this.imap.getBoxes((err, boxes) => {
+      this.imap.getBoxes((err: Error | null, boxes: any) => {
         if (err) {
           return reject(err);
         }
 
         const folderNames: string[] = [];
         const extractFolders = (boxList: any, prefix = '') => {
-          for (const [name, box] of Object.entries(boxList)) {
+          for (const [name, box] of Object.entries(boxList) as [string, any][]) {
             const fullName = prefix ? `${prefix}${box.delimiter}${name}` : name;
             folderNames.push(fullName);
-            
+
             if (box.children) {
               extractFolders(box.children, fullName);
             }
@@ -152,7 +153,7 @@ export class IMAPService {
         return reject(new Error('IMAP not connected'));
       }
 
-      this.imap.openBox(folderName, readOnly, (err, box) => {
+      this.imap.openBox(folderName, readOnly, (err: Error | null, box: any) => {
         if (err) {
           return reject(err);
         }
@@ -180,7 +181,7 @@ export class IMAPService {
         return reject(new Error('IMAP not connected'));
       }
 
-      this.imap.search(searchCriteria, (err, results) => {
+      this.imap.search(searchCriteria, (err: Error | null, results: any) => {
         if (err) {
           return reject(err);
         }
@@ -199,17 +200,17 @@ export class IMAPService {
           struct: true
         });
 
-        fetch.on('message', (msg, seqno) => {
+        fetch.on('message', (msg: any, seqno: number) => {
           let buffer = '';
           let attrs: any;
 
-          msg.on('body', (stream) => {
-            stream.on('data', (chunk) => {
+          msg.on('body', (stream: any) => {
+            stream.on('data', (chunk: Buffer) => {
               buffer += chunk.toString('utf8');
             });
           });
 
-          msg.once('attributes', (attributes) => {
+          msg.once('attributes', (attributes: any) => {
             attrs = attributes;
           });
 
@@ -246,7 +247,7 @@ export class IMAPService {
           });
         });
 
-        fetch.once('error', (fetchErr) => {
+        fetch.once('error', (fetchErr: Error) => {
           logger.error(`❌ IMAP fetch error: ${fetchErr.message}`, {
             service: 'imap-service',
             error: fetchErr.message
@@ -274,7 +275,7 @@ export class IMAPService {
         return reject(new Error('IMAP not connected'));
       }
 
-      this.imap.addFlags(uid, ['\\Seen'], (err) => {
+      this.imap.addFlags(uid, ['\\Seen'], (err: Error | null) => {
         if (err) {
           return reject(err);
         }
@@ -292,7 +293,7 @@ export class IMAPService {
         return reject(new Error('IMAP not connected'));
       }
 
-      this.imap.move(uid, folderName, (err) => {
+      this.imap.move(uid, folderName, (err: Error | null) => {
         if (err) {
           return reject(err);
         }
@@ -310,12 +311,12 @@ export class IMAPService {
         return reject(new Error('IMAP not connected'));
       }
 
-      this.imap.addFlags(uid, ['\\Deleted'], (err) => {
+      this.imap.addFlags(uid, ['\\Deleted'], (err: Error | null) => {
         if (err) {
           return reject(err);
         }
 
-        this.imap!.expunge([uid], (expungeErr) => {
+        this.imap!.expunge([uid], (expungeErr: Error | null) => {
           if (expungeErr) {
             return reject(expungeErr);
           }

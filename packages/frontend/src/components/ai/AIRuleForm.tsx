@@ -54,8 +54,14 @@ const aiModels = [
   { value: 'claude-3-haiku', label: 'Claude 3 Haiku', description: 'Najszybszy model' },
 ];
 
+// Form-specific type where conditions/actions are always arrays
+interface FormData extends Omit<CreateRuleRequest, 'conditions' | 'actions'> {
+  conditions: RuleCondition[];
+  actions: RuleAction[];
+}
+
 export default function AIRuleForm({ rule, onSubmit, onCancel }: AIRuleFormProps) {
-  const [formData, setFormData] = useState<CreateRuleRequest>({
+  const [formData, setFormData] = useState<FormData>({
     name: '',
     description: '',
     module: 'projects',
@@ -81,8 +87,8 @@ export default function AIRuleForm({ rule, onSubmit, onCancel }: AIRuleFormProps
         trigger: rule.trigger || 'manual',
         enabled: rule.enabled ?? true,
         priority: rule.priority || 5,
-        conditions: rule.conditions || [],
-        actions: rule.actions || [],
+        conditions: (Array.isArray(rule.conditions) ? rule.conditions : (rule.conditions as any)?.conditions || []) as RuleCondition[],
+        actions: (Array.isArray(rule.actions) ? rule.actions : []) as RuleAction[],
         aiPrompt: rule.aiPrompt,
         aiModel: rule.aiModel,
       });
@@ -190,11 +196,11 @@ export default function AIRuleForm({ rule, onSubmit, onCancel }: AIRuleFormProps
       let result: AIRule;
       if (rule) {
         logger.info('Updating existing AI rule', { ruleId: rule.id }, 'AIRuleForm');
-        result = await aiRulesApi.updateRule(rule.id, formData);
+        result = await aiRulesApi.updateRule(rule.id, formData as CreateRuleRequest);
         toast.success('Reguła została zaktualizowana');
       } else {
         logger.info('Creating new AI rule', undefined, 'AIRuleForm');
-        result = await aiRulesApi.createRule(formData);
+        result = await aiRulesApi.createRule(formData as CreateRuleRequest);
         toast.success('Reguła została utworzona');
       }
       logger.info('AI rule save successful', { result }, 'AIRuleForm');

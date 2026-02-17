@@ -2,9 +2,15 @@
  * Shared Components
  */
 
-export { AIPredictionBadge } from './AIPredictionBadge';
+import AIPredictionBadge from './AIPredictionBadge';
+import GTDContextBadge from './GTDContextBadge';
+import PriorityIndicator from './PriorityIndicator';
+import TagBadge from './TagBadge';
+import UserAvatar from './UserAvatar';
+
+export { AIPredictionBadge };
 export { EnrichedBadge, EnrichedIcon } from './EnrichedBadge';
-export { GTDContextBadge } from './GTDContextBadge';
-export { PriorityIndicator } from './PriorityIndicator';
-export { TagBadge } from './TagBadge';
-export { UserAvatar } from './UserAvatar';
+export { GTDContextBadge };
+export { PriorityIndicator };
+export { TagBadge };
+export { UserAvatar };

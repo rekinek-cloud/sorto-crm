@@ -191,7 +191,7 @@ router.get('/',
 
       const rules = dbRules.map(mapRuleToFrontend);
 
-      res.json({
+      return res.json({
         success: true,
         data: rules,
         pagination: { total: rules.length, page: 1, limit: 100, pages: 1 },
@@ -218,7 +218,7 @@ router.get('/:id',
 
       if (!rule) throw new AppError('Reguła nie znaleziona', 404);
 
-      res.json({ success: true, data: mapRuleToFrontend(rule) });
+      return res.json({ success: true, data: mapRuleToFrontend(rule) });
     } catch (error) {
       if (error instanceof AppError) throw error;
       logger.error('Failed to get AI rule:', error);
@@ -266,7 +266,7 @@ router.post('/',
       });
 
       logger.info(`AI rule created: ${dbRule.name} by ${req.user!.email}`);
-      res.status(201).json({ success: true, data: mapRuleToFrontend(dbRule) });
+      return res.status(201).json({ success: true, data: mapRuleToFrontend(dbRule) });
     } catch (error: any) {
       if (error?.code === 'P2002') {
         throw new AppError('Reguła o tej nazwie już istnieje', 409);
@@ -293,13 +293,13 @@ router.post('/seed-flow-rules',
 
       logger.info(`Flow analysis rules seeded by ${req.user!.email}: ${result.rulesCreated} rules, ${result.modelsCreated} models`);
 
-      res.json({
+      return res.json({
         success: true,
         data: result,
       });
     } catch (error) {
       logger.error('Failed to seed flow analysis rules:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Nie udało się utworzyć reguł Flow Analysis',
         details: error instanceof Error ? error.message : 'Unknown error',
@@ -358,7 +358,7 @@ router.put('/:id',
       });
 
       logger.info(`AI rule updated: ${id} by ${req.user!.email}`);
-      res.json({ success: true, data: mapRuleToFrontend(dbRule) });
+      return res.json({ success: true, data: mapRuleToFrontend(dbRule) });
     } catch (error) {
       if (error instanceof AppError) throw error;
       logger.error('Failed to update AI rule:', error);
@@ -387,7 +387,7 @@ router.delete('/:id',
       await prisma.ai_rules.delete({ where: { id } });
 
       logger.info(`AI rule deleted: ${id} by ${req.user!.email}`);
-      res.json({ success: true, message: 'Reguła usunięta' });
+      return res.json({ success: true, message: 'Reguła usunięta' });
     } catch (error) {
       if (error instanceof AppError) throw error;
       logger.error('Failed to delete AI rule:', error);
@@ -415,7 +415,7 @@ router.post('/:id/toggle',
         data: { status: enabled ? 'ACTIVE' : 'INACTIVE', updatedAt: new Date() },
       });
 
-      res.json({ success: true, data: { id, enabled, updatedAt: dbRule.updatedAt.toISOString() } });
+      return res.json({ success: true, data: { id, enabled, updatedAt: dbRule.updatedAt.toISOString() } });
     } catch (error) {
       if (error instanceof AppError) throw error;
       logger.error('Failed to toggle AI rule:', error);
@@ -446,7 +446,7 @@ router.patch('/:id/status',
         data: { status, updatedAt: new Date() },
       });
 
-      res.json({ success: true, data: mapRuleToFrontend(dbRule) });
+      return res.json({ success: true, data: mapRuleToFrontend(dbRule) });
     } catch (error) {
       if (error instanceof AppError) throw error;
       logger.error('Failed to change rule status:', error);
@@ -490,7 +490,7 @@ router.post('/:id/test',
         where: { entityId: testEntityId },
       }).catch(() => {});
 
-      res.json({
+      return res.json({
         success: true,
         data: {
           ruleId: id,
@@ -533,7 +533,7 @@ router.get('/fields/:module',
       };
 
       const fields = moduleFields[module.toUpperCase()] || [];
-      res.json({ success: true, data: fields });
+      return res.json({ success: true, data: fields });
     } catch (error) {
       logger.error('Failed to get module fields:', error);
       throw new AppError('Nie udało się pobrać pól', 500);
@@ -569,11 +569,11 @@ router.get('/execution-history/:id',
         error: e.errorMessage,
       }));
 
-      res.json({ success: true, data: history });
+      return res.json({ success: true, data: history });
     } catch (error) {
       logger.error('Failed to get execution history:', error);
       // Fallback to empty if table doesn't have expected columns
-      res.json({ success: true, data: [] });
+      return res.json({ success: true, data: [] });
     }
   }
 );

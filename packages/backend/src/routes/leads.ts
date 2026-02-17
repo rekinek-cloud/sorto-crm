@@ -65,7 +65,7 @@ router.get('/', async (req, res) => {
       prisma.lead.count({ where })
     ]);
 
-    res.json({
+    return res.json({
       leads,
       pagination: {
         page: pageNum,
@@ -76,7 +76,7 @@ router.get('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching leads:', error);
-    res.status(500).json({ error: 'Failed to fetch leads' });
+    return res.status(500).json({ error: 'Failed to fetch leads' });
   }
 });
 
@@ -96,10 +96,10 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Lead not found' });
     }
 
-    res.json(lead);
+    return res.json(lead);
   } catch (error) {
     console.error('Error fetching lead:', error);
-    res.status(500).json({ error: 'Failed to fetch lead' });
+    return res.status(500).json({ error: 'Failed to fetch lead' });
   }
 });
 
@@ -112,16 +112,16 @@ router.post('/', async (req, res) => {
       data: {
         ...validatedData,
         organizationId: req.user.organizationId,
-      }
+      } as any
     });
 
-    res.status(201).json(lead);
+    return res.status(201).json(lead);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
     console.error('Error creating lead:', error);
-    res.status(500).json({ error: 'Failed to create lead' });
+    return res.status(500).json({ error: 'Failed to create lead' });
   }
 });
 
@@ -150,13 +150,13 @@ router.put('/:id', async (req, res) => {
       }
     });
 
-    res.json(lead);
+    return res.json(lead);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
     console.error('Error updating lead:', error);
-    res.status(500).json({ error: 'Failed to update lead' });
+    return res.status(500).json({ error: 'Failed to update lead' });
   }
 });
 
@@ -180,10 +180,10 @@ router.delete('/:id', async (req, res) => {
       where: { id }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error deleting lead:', error);
-    res.status(500).json({ error: 'Failed to delete lead' });
+    return res.status(500).json({ error: 'Failed to delete lead' });
   }
 });
 

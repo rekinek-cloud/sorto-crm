@@ -302,7 +302,7 @@ export class AIAnalysisService {
       }
     };
 
-    let bestMatch = { category: 'GENERAL', confidence: 0, subcategory: undefined };
+    let bestMatch = { category: 'GENERAL', confidence: 0, subcategory: undefined as any };
     const foundTags: string[] = [];
 
     Object.entries(categories).forEach(([category, config]) => {
@@ -641,19 +641,23 @@ export class AIAnalysisService {
         if (message) {
           for (const task of analysis.tasks.extractedTasks) {
             if (task.confidence > 0.6) { // Only create high-confidence tasks
-              await prisma.task.create({
+              const createdTask = await prisma.task.create({
                 data: {
                   title: task.title,
                   description: task.description,
                   priority: task.priority,
                   status: 'NEW',
-                  context: task.context,
+                  ...(task.context ? { contextId: task.context } : {}),
                   dueDate: task.dueDate,
                   organizationId: message.organizationId,
                   createdById: message.channel.userId,
-                  messageId: messageId,
                   smartScore: Math.round(task.confidence * 100)
                 }
+              });
+              // Link message to created task
+              await prisma.message.update({
+                where: { id: messageId },
+                data: { taskId: createdTask.id }
               });
             }
           }

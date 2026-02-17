@@ -1,4 +1,4 @@
-import { EmailCategory, EmailRule } from '@prisma/client';
+import { EmailCategory, email_rules as EmailRule } from '@prisma/client';
 import { prisma } from '../config/database';
 import logger from '../config/logger';
 
@@ -110,8 +110,9 @@ class EmailFilterService {
     priority?: number;
     organizationId: string;
   }): Promise<EmailRule> {
-    return await prisma.emailRule.create({
+    return await prisma.email_rules.create({
       data: {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
         name: ruleData.name,
         description: ruleData.description,
         senderEmail: ruleData.senderEmail,
@@ -125,7 +126,8 @@ class EmailFilterService {
         autoDelete: ruleData.autoDelete || false,
         createTask: ruleData.createTask || false,
         priority: ruleData.priority || 0,
-        organizationId: ruleData.organizationId
+        organizationId: ruleData.organizationId,
+        updatedAt: new Date(),
       }
     });
   }
@@ -140,7 +142,7 @@ class EmailFilterService {
     categoryBreakdown: Record<EmailCategory, number>;
     topRules: Array<{ rule: EmailRule; matchCount: number }>;
   }> {
-    const rules = await prisma.emailRule.findMany({
+    const rules = await prisma.email_rules.findMany({
       where: { organizationId },
       orderBy: { matchCount: 'desc' },
       take: 10
@@ -183,7 +185,7 @@ class EmailFilterService {
   }
 
   private async findMatchingRule(messageData: EmailMessageData): Promise<EmailRule | null> {
-    const rules = await prisma.emailRule.findMany({
+    const rules = await prisma.email_rules.findMany({
       where: {
         organizationId: messageData.organizationId,
         isActive: true
@@ -238,7 +240,7 @@ class EmailFilterService {
   }
 
   private async updateRuleStats(ruleId: string): Promise<void> {
-    await prisma.emailRule.update({
+    await prisma.email_rules.update({
       where: { id: ruleId },
       data: {
         matchCount: { increment: 1 },

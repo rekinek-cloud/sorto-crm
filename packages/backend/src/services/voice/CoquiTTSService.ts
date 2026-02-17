@@ -201,7 +201,7 @@ export class CoquiTTSService {
       modifiedText = text.replace(/\./g, '... ').replace(/!/g, '?!');
     }
 
-    return this.synthesizeText(modifiedText, language, settings);
+    return this.synthesizeText(modifiedText, language, settings as Partial<TTSRequest>);
   }
 
   /**

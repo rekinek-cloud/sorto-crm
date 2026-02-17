@@ -133,7 +133,7 @@ export class SlackService {
         is_mpim: !!channel.is_mpim,
         is_private: !!channel.is_private,
         is_archived: !!channel.is_archived,
-        members: channel.members || []
+        members: (channel as any).members || []
       }));
     } catch (error) {
       console.error('Error fetching Slack channels:', error);
@@ -243,7 +243,7 @@ export class SlackService {
                   actionNeeded: actionNeeded,
                   urgencyScore: urgencyScore,
                   organizationId: channel.organizationId
-                }
+                } as any
               });
 
               syncedCount++;

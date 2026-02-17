@@ -40,10 +40,10 @@ router.get('/sources', authenticateToken, async (req: Request, res: Response) =>
     const service = getService(organizationId);
     const sources = await service.listSources();
 
-    res.json({ success: true, data: sources });
+    return res.json({ success: true, data: sources });
   } catch (error: any) {
     logger.error('RAG list sources error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -67,10 +67,10 @@ router.post('/sources', authenticateToken, async (req: Request, res: Response) =
       streamId,
     });
 
-    res.json({ success: true, data: result });
+    return res.json({ success: true, data: result });
   } catch (error: any) {
     logger.error('RAG index document error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -109,10 +109,10 @@ router.post('/sources/upload', authenticateToken, upload.single('file'), async (
 
     fs.unlinkSync(filePath);
 
-    res.json({ success: true, data: result });
+    return res.json({ success: true, data: result });
   } catch (error: any) {
     logger.error('RAG upload file error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -128,10 +128,10 @@ router.get('/sources/:id', authenticateToken, async (req: Request, res: Response
       return res.status(404).json({ error: 'Source not found' });
     }
 
-    res.json({ success: true, data: source });
+    return res.json({ success: true, data: source });
   } catch (error: any) {
     logger.error('RAG get source error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -143,10 +143,10 @@ router.delete('/sources/:id', authenticateToken, async (req: Request, res: Respo
     const service = getService(organizationId);
     await service.deleteSource(req.params.id);
 
-    res.json({ success: true, message: 'Source deleted' });
+    return res.json({ success: true, message: 'Source deleted' });
   } catch (error: any) {
     logger.error('RAG delete source error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -159,10 +159,10 @@ router.patch('/sources/:id', authenticateToken, async (req: Request, res: Respon
     const service = getService(organizationId);
     await service.updateSourceStatus(req.params.id, isActive);
 
-    res.json({ success: true, message: 'Source updated' });
+    return res.json({ success: true, message: 'Source updated' });
   } catch (error: any) {
     logger.error('RAG update source error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -187,10 +187,10 @@ router.post('/query', authenticateToken, async (req: Request, res: Response) => 
       threshold: threshold || 0.5,
     });
 
-    res.json({ success: true, data: result });
+    return res.json({ success: true, data: result });
   } catch (error: any) {
     logger.error('RAG query error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -220,10 +220,10 @@ router.post('/search', authenticateToken, async (req: Request, res: Response) =>
       metadata: r.metadata || {},
     }));
 
-    res.json({ success: true, data: mappedResults });
+    return res.json({ success: true, data: mappedResults });
   } catch (error: any) {
     logger.error('RAG search error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -235,7 +235,7 @@ router.get('/status', authenticateToken, async (req: Request, res: Response) => 
   try {
     const apiKey = process.env.QWEN_API_KEY;
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         configured: !!apiKey,
@@ -245,7 +245,7 @@ router.get('/status', authenticateToken, async (req: Request, res: Response) => 
     });
   } catch (error: any) {
     logger.error('RAG status error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 

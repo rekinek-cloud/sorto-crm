@@ -36,7 +36,7 @@ router.get('/', authenticateToken, async (req, res) => {
       prisma.recurringTask.count({ where })
     ]);
 
-    res.json({
+    return res.json({
       recurringTasks: tasks,
       pagination: {
         page: pageNum,
@@ -49,7 +49,7 @@ router.get('/', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     logger.error('Error fetching recurring tasks:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -74,10 +74,10 @@ router.post('/', authenticateToken, async (req, res) => {
     });
 
     logger.info(`Created recurring task: ${task.id}`);
-    res.status(201).json(task);
+    return res.status(201).json(task);
   } catch (error) {
     logger.error('Error creating recurring task:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -100,10 +100,10 @@ router.put('/:id', authenticateToken, async (req, res) => {
       data: req.body
     });
 
-    res.json(updated);
+    return res.json(updated);
   } catch (error) {
     logger.error('Error updating recurring task:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -188,10 +188,10 @@ router.post('/generate', authenticateToken, async (req, res) => {
     }
 
     logger.info(`Generated ${generated} tasks from ${dueTasks.length} recurring tasks for org ${organizationId}`);
-    res.json({ generated, errors });
+    return res.json({ generated, errors });
   } catch (error) {
     logger.error('Error generating recurring tasks:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -210,10 +210,10 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     }
 
     await prisma.recurringTask.delete({ where: { id } });
-    res.json({ message: 'Recurring task deleted successfully' });
+    return res.json({ message: 'Recurring task deleted successfully' });
   } catch (error) {
     logger.error('Error deleting recurring task:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 

@@ -131,7 +131,7 @@ export class BillingService {
         moduleId,
         isActive: true,
         activatedAt: new Date(),
-      },
+      } as any,
       include: {
         module: {
           select: {

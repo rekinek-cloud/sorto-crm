@@ -127,7 +127,7 @@ router.post('/search', async (req, res) => {
     const searchTime = Date.now() - startTime;
 
     // Format results to match frontend interface
-    const formattedResults = results.map((result: any) => ({
+    const formattedResults = (results as any[]).map((result: any) => ({
       id: result.id,
       type: result.type,
       title: result.title || `${result.type} without title`,
@@ -164,7 +164,7 @@ router.post('/search', async (req, res) => {
 
     logger.info(`Real vector search completed: ${formattedResults.length} results in ${searchTime}ms`);
 
-    res.json({
+    return res.json({
       success: true,
       data: response
     });
@@ -179,7 +179,7 @@ router.post('/search', async (req, res) => {
     }
 
     logger.error('Real vector search error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Vector search failed',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -225,10 +225,10 @@ router.get('/stats', async (req, res) => {
     // Convert BigInt to Number for JSON serialization
     const serializeBigInt = (obj: any) => JSON.parse(JSON.stringify(obj, (_, v) => typeof v === 'bigint' ? Number(v) : v));
 
-    res.json({
+    return res.json({
       success: true,
       data: {
-        overview: serializeBigInt(stats[0]),
+        overview: serializeBigInt((stats as any)[0]),
         typeBreakdown: serializeBigInt(typeBreakdown),
         organizationId
       }
@@ -236,7 +236,7 @@ router.get('/stats', async (req, res) => {
 
   } catch (error) {
     logger.error('Vector stats error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to get vector statistics'
     });
@@ -266,9 +266,9 @@ router.get('/suggestions/:query', async (req, res) => {
       LIMIT 10
     `;
 
-    const suggestions = relatedTerms.map((term: any) => term.title).filter(Boolean);
+    const suggestions = (relatedTerms as any[]).map((term: any) => term.title).filter(Boolean);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         suggestions: [...new Set(suggestions)].slice(0, 5)
@@ -277,7 +277,7 @@ router.get('/suggestions/:query', async (req, res) => {
 
   } catch (error) {
     logger.error('Suggestions error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to get suggestions'
     });

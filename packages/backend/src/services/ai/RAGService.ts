@@ -346,8 +346,9 @@ ZASADY:
       }
     });
 
-    if (provider?.apiKey) {
-      this.apiKey = provider.apiKey;
+    const providerConfig = provider?.config as any;
+    if (providerConfig?.apiKey) {
+      this.apiKey = providerConfig.apiKey;
       console.log('✅ RAG Service initialized with OpenAI API key');
     } else {
       console.warn('⚠️ RAG Service: No OpenAI API key found');
@@ -661,7 +662,7 @@ ZASADY:
     // Index Contacts
     const contacts = await this.prisma.contact.findMany({
       where: { organizationId: this.organizationId },
-      include: { company: true }
+      include: { assignedCompany: true }
     });
 
     for (const contact of contacts) {
@@ -673,7 +674,7 @@ ZASADY:
         metadata: {
           name: `${contact.firstName} ${contact.lastName}`,
           email: contact.email,
-          company: contact.company?.name
+          company: contact.assignedCompany?.name || contact.company
         }
       });
       indexed ? success++ : failed++;
@@ -682,7 +683,7 @@ ZASADY:
     // Index Deals
     const deals = await this.prisma.deal.findMany({
       where: { organizationId: this.organizationId },
-      include: { contact: true, company: true }
+      include: { company: true }
     });
 
     for (const deal of deals) {
@@ -692,7 +693,7 @@ ZASADY:
         sourceId: deal.id,
         content,
         metadata: {
-          name: deal.name,
+          name: deal.title,
           value: deal.value,
           stage: deal.stage,
           probability: deal.probability
@@ -907,7 +908,7 @@ ZASADY:
   }
 
   private buildDealContent(deal: any): string {
-    let content = `Deal: ${deal.name}\n`;
+    let content = `Deal: ${deal.title}\n`;
     content += `Wartość: ${deal.value} ${deal.currency || 'PLN'}\n`;
     content += `Etap: ${deal.stage}\n`;
     content += `Prawdopodobieństwo: ${deal.probability || 0}%\n`;

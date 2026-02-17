@@ -90,7 +90,7 @@ export default function EmailAccountsPage() {
   const loadProviders = async () => {
     try {
       const { data } = await emailAccountsApi.getProviders();
-      setProviders(data || []);
+      setProviders((data || []) as any);
     } catch (error: any) {
       console.error('Failed to load providers:', error);
     }
@@ -102,7 +102,7 @@ export default function EmailAccountsPage() {
       const result = await emailAccountsApi.syncAllAccounts();
 
       if (result.success) {
-        toast.success(result.message || 'Synchronizacja ukończona');
+        toast.success((result as any).message || 'Synchronizacja ukończona');
         loadAccounts(); // Refresh data
       } else {
         toast.error('Synchronizacja nie powiodła się');
@@ -223,7 +223,7 @@ export default function EmailAccountsPage() {
         syncFolders: formData.syncFolders.split(',').map(f => f.trim())
       };
 
-      const result = await emailAccountsApi.createAccount(accountData);
+      const result = await emailAccountsApi.createAccount(accountData) as any;
 
       if (result.success) {
         toast.success('Konto email zostało utworzone!');

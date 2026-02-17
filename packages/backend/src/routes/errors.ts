@@ -39,10 +39,10 @@ router.post('/', async (req, res) => {
       }
     });
 
-    res.status(201).json({ success: true });
+    return res.status(201).json({ success: true });
   } catch (error) {
     console.error('Failed to log error:', error);
-    res.status(500).json({ error: 'Failed to log error' });
+    return res.status(500).json({ error: 'Failed to log error' });
   }
 });
 
@@ -75,10 +75,10 @@ router.get('/', async (req, res) => {
       }
     });
 
-    res.json(errors);
+    return res.json(errors);
   } catch (error) {
     console.error('Failed to fetch errors:', error);
-    res.status(500).json({ error: 'Failed to fetch errors' });
+    return res.status(500).json({ error: 'Failed to fetch errors' });
   }
 });
 
@@ -114,7 +114,7 @@ router.get('/stats', async (req, res) => {
       })
     ]);
 
-    res.json({
+    return res.json({
       totalErrors,
       criticalErrors,
       errorsBySeverity,
@@ -125,7 +125,7 @@ router.get('/stats', async (req, res) => {
     });
   } catch (error) {
     console.error('Failed to fetch error stats:', error);
-    res.status(500).json({ error: 'Failed to fetch error stats' });
+    return res.status(500).json({ error: 'Failed to fetch error stats' });
   }
 });
 

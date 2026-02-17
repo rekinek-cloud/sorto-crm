@@ -72,7 +72,7 @@ router.get('/stats', requireAuth, async (req: AuthenticatedRequest, res) => {
         contextName: task.context?.name
       }));
 
-    res.json({
+    return res.json({
       stats,
       recentTasks,
       timestamp: new Date().toISOString()
@@ -80,7 +80,7 @@ router.get('/stats', requireAuth, async (req: AuthenticatedRequest, res) => {
 
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
-    res.status(500).json({ error: 'Failed to fetch dashboard statistics' });
+    return res.status(500).json({ error: 'Failed to fetch dashboard statistics' });
   }
 });
 
@@ -107,7 +107,7 @@ router.get('/weekly-summary', requireAuth, async (req: AuthenticatedRequest, res
       })
     ]);
 
-    res.json({
+    return res.json({
       completedThisWeek,
       createdThisWeek,
       productivity: completedThisWeek / Math.max(createdThisWeek, 1) * 100
@@ -115,7 +115,7 @@ router.get('/weekly-summary', requireAuth, async (req: AuthenticatedRequest, res
 
   } catch (error) {
     console.error('Error fetching weekly summary:', error);
-    res.status(500).json({ error: 'Failed to fetch weekly summary' });
+    return res.status(500).json({ error: 'Failed to fetch weekly summary' });
   }
 });
 
@@ -143,7 +143,7 @@ router.get('/upcoming-deadlines', requireAuth, async (req: AuthenticatedRequest,
       take: 10
     });
 
-    res.json({
+    return res.json({
       upcomingTasks: upcomingTasks.map(task => ({
         id: task.id,
         title: task.title,
@@ -156,7 +156,7 @@ router.get('/upcoming-deadlines', requireAuth, async (req: AuthenticatedRequest,
 
   } catch (error) {
     console.error('Error fetching upcoming deadlines:', error);
-    res.status(500).json({ error: 'Failed to fetch upcoming deadlines' });
+    return res.status(500).json({ error: 'Failed to fetch upcoming deadlines' });
   }
 });
 
@@ -478,7 +478,7 @@ router.get('/day', requireAuth, async (req: AuthenticatedRequest, res) => {
     if (overdueCount > 3 || urgentCount > 2) urgencyLevel = 'critical';
     else if (overdueCount > 0 || focusTasks.length > 5) urgencyLevel = 'busy';
 
-    res.json({
+    return res.json({
       briefing: {
         greeting: `Dzien dobry, ${firstName}!`,
         date: formatPolishDate(now),
@@ -504,7 +504,7 @@ router.get('/day', requireAuth, async (req: AuthenticatedRequest, res) => {
 
   } catch (error) {
     console.error('Error fetching day dashboard:', error);
-    res.status(500).json({ error: 'Failed to fetch day dashboard' });
+    return res.status(500).json({ error: 'Failed to fetch day dashboard' });
   }
 });
 

@@ -157,7 +157,7 @@ export class CacheService {
       this.memoryCache.delete(fullKey);
       
       // Remove from database cache
-      await this.prisma.vectorCache.delete({
+      await this.prisma.vector_cache.delete({
         where: { cacheKey: fullKey }
       }).catch(() => {}); // Ignore if not found
 
@@ -184,7 +184,7 @@ export class CacheService {
       }
 
       // Clear from database
-      const dbResult = await this.prisma.vectorCache.deleteMany({
+      const dbResult = await this.prisma.vector_cache.deleteMany({
         where: {
           cacheKey: { startsWith: `${namespace}:` }
         }
@@ -424,7 +424,7 @@ export class CacheService {
 
   private async getFromDatabase(key: string): Promise<CacheEntry | null> {
     try {
-      const cached = await this.prisma.vectorCache.findUnique({
+      const cached = await this.prisma.vector_cache.findUnique({
         where: { cacheKey: key }
       });
 
@@ -454,7 +454,7 @@ export class CacheService {
   private async setInDatabase(entry: CacheEntry): Promise<void> {
     try {
       // For now, only use vector cache table - in production you'd want a dedicated cache table
-      await this.prisma.vectorCache.upsert({
+      await this.prisma.vector_cache.upsert({
         where: { cacheKey: entry.key },
         update: {
           queryText: 'cached_value',
@@ -471,7 +471,7 @@ export class CacheService {
           filters: {},
           limit: 0,
           threshold: 0
-        }
+        } as any
       });
 
     } catch (error) {
@@ -482,7 +482,7 @@ export class CacheService {
 
   private async updateHitStats(key: string, hitCount: number, lastHit: Date): Promise<void> {
     try {
-      await this.prisma.vectorCache.update({
+      await this.prisma.vector_cache.update({
         where: { cacheKey: key },
         data: {
           hitCount,
@@ -524,7 +524,7 @@ export class CacheService {
     }
 
     // Cleanup database cache as well
-    this.prisma.vectorCache.deleteMany({
+    this.prisma.vector_cache.deleteMany({
       where: {
         expiresAt: { lt: now }
       }

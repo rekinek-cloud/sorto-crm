@@ -61,14 +61,14 @@ router.get('/conversion-rates', requireAuth, async (req: AuthenticatedRequest, r
       });
     }
 
-    res.json({
+    return res.json({
       timeFrame: daysBack || 'all',
       conversionRates,
       totalDeals: deals.length
     });
   } catch (error) {
     console.error('Error calculating conversion rates:', error);
-    res.status(500).json({ error: 'Failed to calculate conversion rates' });
+    return res.status(500).json({ error: 'Failed to calculate conversion rates' });
   }
 });
 
@@ -136,7 +136,7 @@ router.get('/velocity', requireAuth, async (req: AuthenticatedRequest, res) => {
         const stageDeals = await prisma.deal.findMany({
           where: {
             organizationId: req.user!.organizationId,
-            stage,
+            stage: stage as any,
             ...(dateFilter && { createdAt: dateFilter })
           }
         });
@@ -156,7 +156,7 @@ router.get('/velocity', requireAuth, async (req: AuthenticatedRequest, res) => {
       })
     );
 
-    res.json({
+    return res.json({
       timeFrame: daysBack || 'all',
       overallMetrics: {
         averageCycleTime: Math.round(averageCycleTime),
@@ -171,7 +171,7 @@ router.get('/velocity', requireAuth, async (req: AuthenticatedRequest, res) => {
     });
   } catch (error) {
     console.error('Error calculating velocity metrics:', error);
-    res.status(500).json({ error: 'Failed to calculate velocity metrics' });
+    return res.status(500).json({ error: 'Failed to calculate velocity metrics' });
   }
 });
 
@@ -275,7 +275,7 @@ router.get('/forecasting', requireAuth, async (req: AuthenticatedRequest, res) =
       }))
     };
 
-    res.json({
+    return res.json({
       forecasts,
       pipelineHealth,
       totalWeightedRevenue: weightedPipeline,
@@ -283,7 +283,7 @@ router.get('/forecasting', requireAuth, async (req: AuthenticatedRequest, res) =
     });
   } catch (error) {
     console.error('Error calculating forecast:', error);
-    res.status(500).json({ error: 'Failed to calculate forecast' });
+    return res.status(500).json({ error: 'Failed to calculate forecast' });
   }
 });
 
@@ -396,7 +396,7 @@ router.get('/performance', requireAuth, async (req: AuthenticatedRequest, res) =
       quotaAttainment: (rep.wonValue / 100000) * 100
     }));
 
-    res.json({
+    return res.json({
       timeFrame: daysBack,
       groupBy,
       performanceByPeriod: performanceData.sort((a, b) => a.period.localeCompare(b.period)),
@@ -410,7 +410,7 @@ router.get('/performance', requireAuth, async (req: AuthenticatedRequest, res) =
     });
   } catch (error) {
     console.error('Error calculating performance metrics:', error);
-    res.status(500).json({ error: 'Failed to calculate performance metrics' });
+    return res.status(500).json({ error: 'Failed to calculate performance metrics' });
   }
 });
 

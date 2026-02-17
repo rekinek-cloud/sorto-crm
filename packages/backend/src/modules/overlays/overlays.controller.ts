@@ -11,13 +11,13 @@ export class OverlaysController {
   list = async (req: Request, res: Response) => {
     try {
       const overlays = await overlaysService.getAllOverlays();
-      res.json({
+      return res.json({
         message: 'Overlays retrieved',
         data: overlays,
       });
     } catch (error: any) {
       logger.error('Error listing overlays:', error);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   };
 
@@ -33,13 +33,13 @@ export class OverlaysController {
         req.user!.organizationId,
         hostname
       );
-      res.json({
+      return res.json({
         message: 'Current overlay retrieved',
         data: overlay,
       });
     } catch (error: any) {
       logger.error('Error getting current overlay:', error);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   };
 
@@ -56,7 +56,7 @@ export class OverlaysController {
         hostname
       );
 
-      res.json({
+      return res.json({
         message: 'Navigation retrieved',
         data: {
           navigation: overlay.navigation,
@@ -69,7 +69,7 @@ export class OverlaysController {
       });
     } catch (error: any) {
       logger.error('Error getting navigation:', error);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   };
 
@@ -84,7 +84,7 @@ export class OverlaysController {
       const overlay = await overlaysService.getOverlayByDomain(hostname);
 
       if (overlay) {
-        res.json({
+        return res.json({
           message: 'Branding retrieved',
           data: {
             name: overlay.name,
@@ -95,7 +95,7 @@ export class OverlaysController {
         });
       } else {
         // Return default branding if no domain mapping
-        res.json({
+        return res.json({
           message: 'Default branding',
           data: {
             name: 'STREAMS',
@@ -108,7 +108,7 @@ export class OverlaysController {
     } catch (error: any) {
       logger.error('Error getting branding:', error);
       // Return default on error
-      res.json({
+      return res.json({
         message: 'Default branding',
         data: {
           name: 'STREAMS',
@@ -130,17 +130,16 @@ export class OverlaysController {
       const overlay = await overlaysService.getOverlayBySlug(slug);
 
       if (!overlay) {
-        res.status(404).json({ error: 'Overlay not found' });
-        return;
+        return res.status(404).json({ error: 'Overlay not found' });
       }
 
-      res.json({
+      return res.json({
         message: 'Overlay retrieved',
         data: overlay,
       });
     } catch (error: any) {
       logger.error('Error getting overlay:', error);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   };
 
@@ -153,8 +152,7 @@ export class OverlaysController {
       const { overlaySlug } = req.body;
 
       if (!overlaySlug) {
-        res.status(400).json({ error: 'overlaySlug is required' });
-        return;
+        return res.status(400).json({ error: 'overlaySlug is required' });
       }
 
       await overlaysService.setOrganizationOverlay(
@@ -166,13 +164,13 @@ export class OverlaysController {
         req.user!.organizationId
       );
 
-      res.json({
+      return res.json({
         message: 'Overlay updated',
         data: overlay,
       });
     } catch (error: any) {
       logger.error('Error setting overlay:', error);
-      res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: error.message });
     }
   };
 
@@ -189,13 +187,13 @@ export class OverlaysController {
         moduleSlug
       );
 
-      res.json({
+      return res.json({
         message: 'Module visibility checked',
         data: { moduleSlug, visible },
       });
     } catch (error: any) {
       logger.error('Error checking module visibility:', error);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   };
 
@@ -206,12 +204,12 @@ export class OverlaysController {
   seedDefaults = async (req: AuthenticatedRequest, res: Response) => {
     try {
       await overlaysService.seedDefaultOverlays();
-      res.json({
+      return res.json({
         message: 'Default overlays seeded',
       });
     } catch (error: any) {
       logger.error('Error seeding overlays:', error);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   };
 }

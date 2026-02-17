@@ -1,7 +1,7 @@
 import express from 'express';
 import { authenticateToken as requireAuth, AuthenticatedRequest } from '../shared/middleware/auth';
 import { gtdInboxService } from '../services/gtdInboxService';
-import { ProcessingDecision } from '@prisma/client';
+import { ProcessingDecision, DayOfWeek } from '@prisma/client';
 import { prisma } from '../config/database';
 import { getFlowEngine } from './flow';
 
@@ -105,7 +105,7 @@ router.get('/test-public', async (req, res) => {
     const processed = stats.find(s => s.processed)?._count || 0;
     const total = unprocessed + processed;
 
-    res.json({
+    return res.json({
       message: 'Source API is working',
       timestamp: new Date().toISOString(),
       testData: sampleItems,
@@ -118,7 +118,7 @@ router.get('/test-public', async (req, res) => {
     });
   } catch (error) {
     console.error('Error in test endpoint:', error);
-    res.status(500).json({ error: 'Test endpoint failed' });
+    return res.status(500).json({ error: 'Test endpoint failed' });
   }
 });
 
@@ -128,7 +128,7 @@ router.get('/test-public', async (req, res) => {
  */
 router.get('/stats-public', async (req, res) => {
   try {
-    res.json({
+    return res.json({
       unprocessed: 0,
       processed: 0,
       actionable: 0,
@@ -138,7 +138,7 @@ router.get('/stats-public', async (req, res) => {
     });
   } catch (error) {
     console.error('Error in test stats endpoint:', error);
-    res.status(500).json({ error: 'Test stats endpoint failed' });
+    return res.status(500).json({ error: 'Test stats endpoint failed' });
   }
 });
 
@@ -193,10 +193,10 @@ router.get('/', requireAuth, async (req: AuthenticatedRequest, res) => {
       filters
     );
     
-    res.json(items);
+    return res.json(items);
   } catch (error) {
     console.error('Error fetching inbox items:', error);
-    res.status(500).json({ error: 'Failed to fetch inbox items' });
+    return res.status(500).json({ error: 'Failed to fetch inbox items' });
   }
 });
 
@@ -209,10 +209,10 @@ router.get('/stats', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const stats = await gtdInboxService.getInboxStats(req.user!.organizationId);
     console.log('📊 Stats calculated:', stats);
-    res.json(stats);
+    return res.json(stats);
   } catch (error) {
     console.error('Error fetching inbox stats:', error);
-    res.status(500).json({ error: 'Failed to fetch inbox statistics' });
+    return res.status(500).json({ error: 'Failed to fetch inbox statistics' });
   }
 });
 
@@ -234,7 +234,7 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
       { content, note, source, sourceUrl }
     );
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       id: item.id,
       message: 'Inbox item created successfully',
@@ -247,7 +247,7 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
     );
   } catch (error) {
     console.error('Error creating inbox item:', error);
-    res.status(500).json({ error: 'Failed to create inbox item' });
+    return res.status(500).json({ error: 'Failed to create inbox item' });
   }
 });
 
@@ -301,7 +301,7 @@ router.post('/quick-capture', requireAuth, async (req: AuthenticatedRequest, res
       }
     );
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'Item captured successfully',
       item
     });
@@ -312,7 +312,7 @@ router.post('/quick-capture', requireAuth, async (req: AuthenticatedRequest, res
     );
   } catch (error) {
     console.error('Error capturing item:', error);
-    res.status(500).json({ error: 'Failed to capture item' });
+    return res.status(500).json({ error: 'Failed to capture item' });
   }
 });
 
@@ -367,13 +367,13 @@ router.post('/:id/process', requireAuth, async (req: AuthenticatedRequest, res) 
       }
     );
     
-    res.json({
+    return res.json({
       message: 'Item processed successfully',
       item: result
     });
   } catch (error) {
     console.error('Error processing inbox item:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Failed to process item' 
     });
   }
@@ -403,13 +403,13 @@ router.post('/:id/quick-action', requireAuth, async (req: AuthenticatedRequest, 
       assignedToId
     );
     
-    res.json({
+    return res.json({
       message: `Item ${action.toLowerCase()}ed successfully`,
       item: result
     });
   } catch (error) {
     console.error('Error processing quick action:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Failed to process quick action' 
     });
   }
@@ -433,12 +433,12 @@ router.post('/bulk-process', requireAuth, async (req: AuthenticatedRequest, res)
       items
     );
     
-    res.json({
+    return res.json({
       message: `${items.length} items processed successfully`
     });
   } catch (error) {
     console.error('Error bulk processing items:', error);
-    res.status(500).json({ error: 'Failed to bulk process items' });
+    return res.status(500).json({ error: 'Failed to bulk process items' });
   }
 });
 
@@ -455,12 +455,12 @@ router.delete('/clear-processed', requireAuth, async (req: AuthenticatedRequest,
       parseInt(olderThanDays as string)
     );
     
-    res.json({
+    return res.json({
       message: `${count} processed items cleared`
     });
   } catch (error) {
     console.error('Error clearing processed items:', error);
-    res.status(500).json({ error: 'Failed to clear processed items' });
+    return res.status(500).json({ error: 'Failed to clear processed items' });
   }
 });
 
@@ -499,10 +499,10 @@ router.get('/context/contacts', requireAuth, async (req: AuthenticatedRequest, r
       email: contact.email
     }));
 
-    res.json(formatted);
+    return res.json(formatted);
   } catch (error) {
     console.error('Error fetching contacts:', error);
-    res.status(500).json({ error: 'Failed to fetch contacts' });
+    return res.status(500).json({ error: 'Failed to fetch contacts' });
   }
 });
 
@@ -535,10 +535,10 @@ router.get('/context/companies', requireAuth, async (req: AuthenticatedRequest, 
       status: company.status
     }));
 
-    res.json(formatted);
+    return res.json(formatted);
   } catch (error) {
     console.error('Error fetching companies:', error);
-    res.status(500).json({ error: 'Failed to fetch companies' });
+    return res.status(500).json({ error: 'Failed to fetch companies' });
   }
 });
 
@@ -559,7 +559,7 @@ router.get('/context/projects', requireAuth, async (req: AuthenticatedRequest, r
         status: true,
         priority: true,
         description: true,
-        company: {
+        companies: {
           select: {
             name: true
           }
@@ -575,17 +575,17 @@ router.get('/context/projects', requireAuth, async (req: AuthenticatedRequest, r
     const formatted = projects.map(project => ({
       value: project.id,
       label: project.name,
-      description: project.company?.name 
-        ? `${project.company.name} - ${project.status}`
+      description: project.companies?.name
+        ? `${project.companies.name} - ${project.status}`
         : project.status,
       status: project.status,
       priority: project.priority
     }));
 
-    res.json(formatted);
+    return res.json(formatted);
   } catch (error) {
     console.error('Error fetching projects:', error);
-    res.status(500).json({ error: 'Failed to fetch projects' });
+    return res.status(500).json({ error: 'Failed to fetch projects' });
   }
 });
 
@@ -631,10 +631,10 @@ router.get('/context/tasks', requireAuth, async (req: AuthenticatedRequest, res)
       dueDate: task.dueDate
     }));
 
-    res.json(formatted);
+    return res.json(formatted);
   } catch (error) {
     console.error('Error fetching tasks:', error);
-    res.status(500).json({ error: 'Failed to fetch tasks' });
+    return res.status(500).json({ error: 'Failed to fetch tasks' });
   }
 });
 
@@ -668,10 +668,10 @@ router.get('/context/streams', requireAuth, async (req: AuthenticatedRequest, re
       icon: stream.icon
     }));
 
-    res.json(formatted);
+    return res.json(formatted);
   } catch (error) {
     console.error('Error fetching streams:', error);
-    res.status(500).json({ error: 'Failed to fetch streams' });
+    return res.status(500).json({ error: 'Failed to fetch streams' });
   }
 });
 
@@ -708,7 +708,7 @@ router.post('/:id/analyze-for-planning', requireAuth, async (req: AuthenticatedR
     // Get AI analysis only
     const aiAnalysis = analyzeInboxItemForScheduling(inboxItem);
     
-    res.json({
+    return res.json({
       success: true,
       aiAnalysis,
       item: {
@@ -720,7 +720,7 @@ router.post('/:id/analyze-for-planning', requireAuth, async (req: AuthenticatedR
     });
   } catch (error) {
     console.error('Error analyzing item for planning:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false,
       error: 'Failed to analyze item for planning' 
     });
@@ -792,7 +792,7 @@ router.post('/:id/plan-as-time-block', requireAuth, async (req: AuthenticatedReq
     }
 
     // 5. Create time block
-    const timeBlock = await prisma.energy_time_blocks.create({
+    const timeBlock = await (prisma.energy_time_blocks.create as any)({
       data: {
         name: inboxItem.content.substring(0, 100), // Truncate to fit
         startTime: finalStartTime,
@@ -809,7 +809,7 @@ router.post('/:id/plan-as-time-block', requireAuth, async (req: AuthenticatedReq
     });
 
     // 6. Create scheduled task linking to time block
-    const scheduledTask = await prisma.scheduled_tasks.create({
+    const scheduledTask = await (prisma.scheduled_tasks.create as any)({
       data: {
         title: inboxItem.content,
         description: inboxItem.note || '',
@@ -835,7 +835,7 @@ router.post('/:id/plan-as-time-block', requireAuth, async (req: AuthenticatedReq
       }
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Inbox item converted to time block successfully',
       data: {
@@ -848,7 +848,7 @@ router.post('/:id/plan-as-time-block', requireAuth, async (req: AuthenticatedReq
     console.error('❌ ERROR converting inbox item to time block:', error);
     console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     console.error('❌ Error message:', error instanceof Error ? error.message : String(error));
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false,
       error: 'Failed to convert inbox item to time block',
       details: error instanceof Error ? error.message : String(error)
@@ -944,7 +944,7 @@ async function suggestOptimalTimeSlot(userId: string, date: Date, energyLevel: s
     'LOW': ['13:00', '16:00', '17:00']
   };
 
-  const possibleStartTimes = defaultTimeSlots[energyLevel] || defaultTimeSlots['MEDIUM'];
+  const possibleStartTimes = defaultTimeSlots[energyLevel as keyof typeof defaultTimeSlots] || defaultTimeSlots['MEDIUM'];
   
   // Find first available slot
   for (const startTime of possibleStartTimes) {
@@ -1009,17 +1009,17 @@ function mapUrgencyToPriority(urgencyScore: number): 'LOW' | 'MEDIUM' | 'HIGH' {
 /**
  * Get day of week from date
  */
-function getDayOfWeek(date: Date): string {
-  const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+function getDayOfWeek(date: Date): DayOfWeek {
+  const days: DayOfWeek[] = [DayOfWeek.SUNDAY, DayOfWeek.MONDAY, DayOfWeek.TUESDAY, DayOfWeek.WEDNESDAY, DayOfWeek.THURSDAY, DayOfWeek.FRIDAY, DayOfWeek.SATURDAY];
   return days[date.getDay()];
 }
 
 /**
  * Get next order for time block
  */
-async function getNextOrder(userId: string, dayOfWeek: string): Promise<number> {
+async function getNextOrder(userId: string, dayOfWeek: DayOfWeek): Promise<number> {
   const lastBlock = await prisma.energy_time_blocks.findFirst({
-    where: { userId, dayOfWeek: dayOfWeek as any },
+    where: { userId, dayOfWeek },
     orderBy: { order: 'desc' }
   });
   return (lastBlock?.order || 0) + 1;

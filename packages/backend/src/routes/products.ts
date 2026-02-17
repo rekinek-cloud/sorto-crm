@@ -88,7 +88,7 @@ router.get('/', authenticateToken, async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       products,
       pagination: {
         page: pageNum,
@@ -99,7 +99,7 @@ router.get('/', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching products:', error);
-    res.status(500).json({ error: 'Failed to fetch products' });
+    return res.status(500).json({ error: 'Failed to fetch products' });
   }
 });
 
@@ -143,10 +143,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    res.json(product);
+    return res.json(product);
   } catch (error) {
     console.error('Error fetching product:', error);
-    res.status(500).json({ error: 'Failed to fetch product' });
+    return res.status(500).json({ error: 'Failed to fetch product' });
   }
 });
 
@@ -174,16 +174,16 @@ router.post('/', authenticateToken, async (req, res) => {
       data: {
         ...productData,
         organizationId
-      }
+      } as any
     });
 
-    res.status(201).json(product);
+    return res.status(201).json(product);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
     console.error('Error creating product:', error);
-    res.status(500).json({ error: 'Failed to create product' });
+    return res.status(500).json({ error: 'Failed to create product' });
   }
 });
 
@@ -223,13 +223,13 @@ router.put('/:id', authenticateToken, async (req, res) => {
       data: productData
     });
 
-    res.json(product);
+    return res.json(product);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
     console.error('Error updating product:', error);
-    res.status(500).json({ error: 'Failed to update product' });
+    return res.status(500).json({ error: 'Failed to update product' });
   }
 });
 
@@ -267,10 +267,10 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       where: { id }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error deleting product:', error);
-    res.status(500).json({ error: 'Failed to delete product' });
+    return res.status(500).json({ error: 'Failed to delete product' });
   }
 });
 
@@ -298,10 +298,10 @@ router.post('/:id/duplicate', authenticateToken, async (req, res) => {
       }
     });
 
-    res.status(201).json(duplicate);
+    return res.status(201).json(duplicate);
   } catch (error) {
     console.error('Error duplicating product:', error);
-    res.status(500).json({ error: 'Failed to duplicate product' });
+    return res.status(500).json({ error: 'Failed to duplicate product' });
   }
 });
 
@@ -341,10 +341,10 @@ router.get('/meta/categories', authenticateToken, async (req, res) => {
       subcategories: Array.from(subcategories)
     }));
 
-    res.json(result);
+    return res.json(result);
   } catch (error) {
     console.error('Error fetching product categories:', error);
-    res.status(500).json({ error: 'Failed to fetch categories' });
+    return res.status(500).json({ error: 'Failed to fetch categories' });
   }
 });
 

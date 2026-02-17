@@ -247,7 +247,7 @@ export default function UniversalAnalysisButton({
                   onClick={() => setIsOpen(false)}
                   className="text-gray-400 hover:text-gray-500"
                 >
-                  <XCircleIcon className="w-6 h-6" />
+                  <XCircle className="w-6 h-6" />
                 </button>
               </div>
             </div>

@@ -115,7 +115,7 @@ router.get('/', authenticateToken, async (req, res) => {
       };
     });
 
-    res.json({
+    return res.json({
       projects: projectsWithStats,
       pagination: {
         page: pageNum,
@@ -126,7 +126,7 @@ router.get('/', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching projects:', error);
-    res.status(500).json({ error: 'Failed to fetch projects' });
+    return res.status(500).json({ error: 'Failed to fetch projects' });
   }
 });
 
@@ -178,10 +178,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
       }
     };
 
-    res.json(projectWithStats);
+    return res.json(projectWithStats);
   } catch (error) {
     console.error('Error fetching project:', error);
-    res.status(500).json({ error: 'Failed to fetch project' });
+    return res.status(500).json({ error: 'Failed to fetch project' });
   }
 });
 
@@ -219,7 +219,7 @@ router.post('/', authenticateToken, validateRequest({ body: createProjectSchema 
       }
     });
 
-    res.status(201).json(project);
+    return res.status(201).json(project);
 
       // Auto-index to RAG
       syncProjects(req.user.organizationId, project.id).catch(err =>
@@ -227,7 +227,7 @@ router.post('/', authenticateToken, validateRequest({ body: createProjectSchema 
       );
   } catch (error) {
     console.error('Error creating project:', error);
-    res.status(500).json({ error: 'Failed to create project' });
+    return res.status(500).json({ error: 'Failed to create project' });
   }
 });
 
@@ -270,7 +270,7 @@ router.put('/:id', authenticateToken, validateRequest({ body: updateProjectSchem
       }
     });
 
-    res.json(project);
+    return res.json(project);
 
       // Auto-index to RAG
       syncProjects(req.user.organizationId, project.id, true).catch(err =>
@@ -278,7 +278,7 @@ router.put('/:id', authenticateToken, validateRequest({ body: updateProjectSchem
       );
   } catch (error) {
     console.error('Error updating project:', error);
-    res.status(500).json({ error: 'Failed to update project' });
+    return res.status(500).json({ error: 'Failed to update project' });
   }
 });
 
@@ -310,10 +310,10 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       where: { id: projectId }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error deleting project:', error);
-    res.status(500).json({ error: 'Failed to delete project' });
+    return res.status(500).json({ error: 'Failed to delete project' });
   }
 });
 

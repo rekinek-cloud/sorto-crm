@@ -256,7 +256,7 @@ export class VectorStore {
             id: row.id,
             content: row.content,
             metadata,
-            embedding: [] // Don't return embeddings
+            embedding: [] as any[] // Don't return embeddings
           },
           similarity: row.similarity,
           relevanceScore: this.calculateRelevanceScore(row.similarity, metadata)

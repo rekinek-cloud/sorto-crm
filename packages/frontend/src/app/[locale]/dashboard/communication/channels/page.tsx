@@ -63,14 +63,15 @@ interface CommunicationChannel {
   config: ChannelConfig;
   emailAddress?: string;
   displayName?: string;
-  autoProcess: boolean;
-  createTasks: boolean;
+  autoProcess?: boolean;
+  createTasks?: boolean;
   unreadCount: number;
   lastMessage?: string;
   lastMessageAt?: string;
   lastSyncAt?: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
+  _count?: Record<string, number>;
 }
 
 export default function ChannelsPage() {
@@ -156,8 +157,9 @@ export default function ChannelsPage() {
         type: formData.type,
         config: formData.config,
         active: true,
-      });
-      setChannels(prev => [{ ...newChannel, unreadCount: 0, lastMessage: '', lastMessageAt: new Date().toISOString() }, ...prev]);
+      } as any);
+      const enrichedChannel: CommunicationChannel = { ...(newChannel as any), unreadCount: 0, lastMessage: '', lastMessageAt: new Date().toISOString(), createdAt: new Date().toISOString() };
+      setChannels(prev => [enrichedChannel, ...prev]);
       setShowCreateModal(false);
       resetForm();
       toast.success('Kanał został utworzony pomyślnie');
@@ -167,7 +169,7 @@ export default function ChannelsPage() {
         toast('Uruchamiam początkową synchronizację...', { duration: 3000 });
         // Add a small delay to ensure the channel is fully created
         setTimeout(() => {
-          handleSyncChannel({ ...newChannel, unreadCount: 0, lastMessage: '', lastMessageAt: new Date().toISOString() });
+          handleSyncChannel(enrichedChannel);
         }, 1000);
       }
     } catch (error: any) {
@@ -188,12 +190,14 @@ export default function ChannelsPage() {
         config: formData.config,
         autoProcess: formData.autoProcess,
         createTasks: formData.createTasks,
-      });
-      setChannels(prev => prev.map(channel =>
-        channel.id === selectedChannel.id
-          ? { ...updatedChannel, unreadCount: channel.unreadCount, lastMessage: channel.lastMessage, lastMessageAt: channel.lastMessageAt }
-          : channel
-      ));
+      } as any);
+      setChannels(prev => prev.map(channel => {
+        if (channel.id === selectedChannel.id) {
+          const merged: CommunicationChannel = { ...(updatedChannel as any), unreadCount: channel.unreadCount, lastMessage: channel.lastMessage, lastMessageAt: channel.lastMessageAt, createdAt: channel.createdAt };
+          return merged;
+        }
+        return channel;
+      }));
 
       setShowEditModal(false);
       setSelectedChannel(null);
@@ -286,12 +290,14 @@ export default function ChannelsPage() {
 
       const updatedChannel = await communicationApi.updateChannel(channelId, {
         active: !channel.active
-      });
-      setChannels(prev => prev.map(ch =>
-        ch.id === channelId
-          ? { ...updatedChannel, unreadCount: ch.unreadCount, lastMessage: ch.lastMessage, lastMessageAt: ch.lastMessageAt }
-          : ch
-      ));
+      } as any);
+      setChannels(prev => prev.map(ch => {
+        if (ch.id === channelId) {
+          const merged: CommunicationChannel = { ...(updatedChannel as any), unreadCount: ch.unreadCount, lastMessage: ch.lastMessage, lastMessageAt: ch.lastMessageAt, createdAt: ch.createdAt };
+          return merged;
+        }
+        return ch;
+      }));
       toast.success('Status kanału został zmieniony');
     } catch (error: any) {
       console.error('Error toggling channel status:', error);
@@ -306,8 +312,8 @@ export default function ChannelsPage() {
       type: channel.type,
       emailAddress: channel.emailAddress || '',
       displayName: channel.displayName || '',
-      autoProcess: channel.autoProcess,
-      createTasks: channel.createTasks,
+      autoProcess: channel.autoProcess ?? true,
+      createTasks: channel.createTasks ?? false,
       config: channel.config
     });
     setShowEditModal(true);

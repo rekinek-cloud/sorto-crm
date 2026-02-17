@@ -404,7 +404,7 @@ export class StreamInboxService {
             priority: input.taskData.priority || Priority.MEDIUM,
             status: input.decision === ProcessingDecision.DO
               ? TaskStatus.IN_PROGRESS
-              : TaskStatus.PENDING,
+              : TaskStatus.NEW,
             dueDate: input.taskData.dueDate,
             contextId: contextId,
             streamId: input.taskData.streamId || null,
@@ -429,7 +429,7 @@ export class StreamInboxService {
                 waitingForWho: input.taskData.assignedToId,
                 sinceDate: new Date(),
                 expectedResponseDate: input.taskData.dueDate,
-                status: 'ACTIVE',
+                status: 'PENDING',
                 taskId: task.id,
                 organizationId: item.organizationId,
                 createdById: userId
@@ -461,7 +461,7 @@ export class StreamInboxService {
               title: `Plan ${input.projectData.name}`,
               description: 'Define project scope and initial tasks',
               priority: input.projectData.priority || Priority.MEDIUM,
-              status: TaskStatus.PENDING,
+              status: TaskStatus.NEW,
               projectId: project.id,
               organizationId: item.organizationId,
               createdById: userId
@@ -478,7 +478,7 @@ export class StreamInboxService {
             data: {
               title: input.somedayMaybeData.title,
               description: input.somedayMaybeData.description || item.content,
-              category: input.somedayMaybeData.category || 'IDEAS',
+              category: (input.somedayMaybeData.category || 'IDEAS') as any,
               priority: input.somedayMaybeData.priority || Priority.LOW,
               status: 'ACTIVE',
               organizationId: item.organizationId,
@@ -496,7 +496,7 @@ export class StreamInboxService {
               title: input.referenceData.title,
               content: input.referenceData.content || item.content,
               topic: input.referenceData.topic,
-              importance: input.referenceData.importance || 'MEDIUM',
+              importance: (input.referenceData.importance || 'MEDIUM') as any,
               organizationId: item.organizationId
             }
           });
@@ -604,7 +604,7 @@ export class StreamInboxService {
       data: {
         content: data.content,
         note: data.note,
-        sourceType: data.sourceType || 'QUICK_CAPTURE',
+        sourceType: (data.sourceType || 'QUICK_CAPTURE') as any,
         source: data.source || 'manual',
         context: null, // GTD context will be set during processing
         urgencyScore: data.urgencyScore || 50,

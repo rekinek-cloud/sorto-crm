@@ -254,7 +254,7 @@ export default function AIAssistantPage() {
             {/* Main Chat Interface */}
             <motion.div variants={itemAnimation} className="grid grid-cols-1 xl:grid-cols-3 gap-6">
               <div className="xl:col-span-2">
-                <KnowledgeChat context={selectedContext} />
+                <KnowledgeChat context={selectedContext as any} />
               </div>
 
               {/* Sidebar */}

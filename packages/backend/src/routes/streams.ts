@@ -45,7 +45,7 @@ router.get('/', requireAuth, async (req: AuthenticatedRequest, res) => {
       prisma.stream.count({ where })
     ]);
 
-    res.json({
+    return res.json({
       streams,
       pagination: {
         page: parseInt(page as string),
@@ -56,7 +56,7 @@ router.get('/', requireAuth, async (req: AuthenticatedRequest, res) => {
     });
   } catch (error) {
     console.error('Error fetching streams:', error);
-    res.status(500).json({ error: 'Failed to fetch streams' });
+    return res.status(500).json({ error: 'Failed to fetch streams' });
   }
 });
 
@@ -89,7 +89,7 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
       }
     });
 
-    res.status(201).json(stream);
+    return res.status(201).json(stream);
 
     // Auto-index to RAG
     vectorService.indexStream(
@@ -97,7 +97,7 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
     ).catch(err => console.error('RAG index failed for stream:', err.message));
   } catch (error) {
     console.error('Error creating stream:', error);
-    res.status(500).json({ error: 'Failed to create stream' });
+    return res.status(500).json({ error: 'Failed to create stream' });
   }
 });
 
@@ -175,7 +175,7 @@ Kolory do wyboru: #3B82F6 (niebieski), #10B981 (zielony), #F59E0B (zolty), #EF44
 
     const suggestion = JSON.parse(result);
 
-    res.json({
+    return res.json({
       success: true,
       suggestion: {
         name: suggestion.name || 'Nowy strumien',
@@ -191,7 +191,7 @@ Kolory do wyboru: #3B82F6 (niebieski), #10B981 (zielony), #F59E0B (zolty), #EF44
 
     // Fallback to simple suggestion
     const suggestion = generateSimpleSuggestion(req.body.input || '', []);
-    res.json({
+    return res.json({
       success: true,
       suggestion,
       fallback: true
@@ -241,7 +241,7 @@ function generateSimpleSuggestion(input: string, existingStreams: any[]) {
     description: description || `Strumien utworzony na podstawie: ${input}`,
     color,
     icon,
-    suggestedTasks: [],
+    suggestedTasks: [] as any[],
     reasoning: 'Sugestia oparta na analizie slow kluczowych'
   };
 }
@@ -282,7 +282,7 @@ router.get('/stats', requireAuth, async (req: AuthenticatedRequest, res) => {
       })
     ]);
 
-    res.json({
+    return res.json({
       totalStreams,
       activeStreams,
       archivedStreams,
@@ -292,7 +292,7 @@ router.get('/stats', requireAuth, async (req: AuthenticatedRequest, res) => {
     });
   } catch (error) {
     console.error('Error fetching streams stats:', error);
-    res.status(500).json({ error: 'Failed to fetch streams statistics' });
+    return res.status(500).json({ error: 'Failed to fetch streams statistics' });
   }
 });
 
@@ -315,10 +315,10 @@ router.get('/frozen', requireAuth, async (req: AuthenticatedRequest, res) => {
       orderBy: { updatedAt: 'desc' }
     });
 
-    res.json(streams);
+    return res.json(streams);
   } catch (error) {
     console.error('Error fetching frozen streams:', error);
-    res.status(500).json({ error: 'Failed to fetch frozen streams' });
+    return res.status(500).json({ error: 'Failed to fetch frozen streams' });
   }
 });
 
@@ -356,10 +356,10 @@ router.get('/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
       return res.status(404).json({ error: 'Stream not found' });
     }
 
-    res.json(stream);
+    return res.json(stream);
   } catch (error) {
     console.error('Error fetching stream:', error);
-    res.status(500).json({ error: 'Failed to fetch stream' });
+    return res.status(500).json({ error: 'Failed to fetch stream' });
   }
 });
 
@@ -400,7 +400,7 @@ router.put('/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
       }
     });
 
-    res.json(stream);
+    return res.json(stream);
 
     // Auto-index to RAG
     vectorService.indexStream(
@@ -408,7 +408,7 @@ router.put('/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
     ).catch(err => console.error('RAG reindex failed for stream:', err.message));
   } catch (error) {
     console.error('Error updating stream:', error);
-    res.status(500).json({ error: 'Failed to update stream' });
+    return res.status(500).json({ error: 'Failed to update stream' });
   }
 });
 
@@ -446,10 +446,10 @@ router.delete('/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
       where: { id }
     });
 
-    res.json({ message: 'Stream deleted successfully' });
+    return res.json({ message: 'Stream deleted successfully' });
   } catch (error) {
     console.error('Error deleting stream:', error);
-    res.status(500).json({ error: 'Failed to delete stream' });
+    return res.status(500).json({ error: 'Failed to delete stream' });
   }
 });
 
@@ -485,10 +485,10 @@ router.post('/:id/archive', requireAuth, async (req: AuthenticatedRequest, res) 
       }
     });
 
-    res.json(stream);
+    return res.json(stream);
   } catch (error) {
     console.error('Error archiving stream:', error);
-    res.status(500).json({ error: 'Failed to archive stream' });
+    return res.status(500).json({ error: 'Failed to archive stream' });
   }
 });
 
@@ -533,10 +533,10 @@ router.post('/:id/duplicate', requireAuth, async (req: AuthenticatedRequest, res
       }
     });
 
-    res.status(201).json(duplicatedStream);
+    return res.status(201).json(duplicatedStream);
   } catch (error) {
     console.error('Error duplicating stream:', error);
-    res.status(500).json({ error: 'Failed to duplicate stream' });
+    return res.status(500).json({ error: 'Failed to duplicate stream' });
   }
 });
 
@@ -562,10 +562,10 @@ router.get('/inbox', requireAuth, async (req: AuthenticatedRequest, res) => {
 
     const items = await streamWorkflowService.getInboxItems(req.user!.organizationId, filters);
 
-    res.json(items);
+    return res.json(items);
   } catch (error) {
     console.error('Error fetching inbox items:', error);
-    res.status(500).json({ error: 'Failed to fetch inbox items' });
+    return res.status(500).json({ error: 'Failed to fetch inbox items' });
   }
 });
 
@@ -573,10 +573,10 @@ router.get('/inbox', requireAuth, async (req: AuthenticatedRequest, res) => {
 router.get('/inbox/stats', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const stats = await streamWorkflowService.getInboxStats(req.user!.organizationId);
-    res.json(stats);
+    return res.json(stats);
   } catch (error) {
     console.error('Error fetching inbox stats:', error);
-    res.status(500).json({ error: 'Failed to fetch inbox statistics' });
+    return res.status(500).json({ error: 'Failed to fetch inbox statistics' });
   }
 });
 
@@ -616,7 +616,7 @@ router.post('/inbox', requireAuth, async (req: AuthenticatedRequest, res) => {
       }
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'Inbox item created successfully',
       item: {
         id: task.id,
@@ -638,7 +638,7 @@ router.post('/inbox', requireAuth, async (req: AuthenticatedRequest, res) => {
     });
   } catch (error) {
     console.error('Error creating inbox item:', error);
-    res.status(500).json({ error: 'Failed to create inbox item' });
+    return res.status(500).json({ error: 'Failed to create inbox item' });
   }
 });
 
@@ -652,13 +652,13 @@ router.post('/inbox/:id/process', requireAuth, async (req: AuthenticatedRequest,
 
     const result = await streamWorkflowService.processInboxItem(id, decision, req.user!.id);
 
-    res.json({
+    return res.json({
       message: 'Item processed successfully',
       result
     });
   } catch (error) {
     console.error('Error processing inbox item:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: error instanceof Error ? error.message : 'Failed to process item'
     });
   }
@@ -676,13 +676,13 @@ router.post('/inbox/:id/quick-action', requireAuth, async (req: AuthenticatedReq
 
     const result = await streamWorkflowService.quickAction(id, action, req.user!.id);
 
-    res.json({
+    return res.json({
       message: 'Quick action completed',
       result
     });
   } catch (error) {
     console.error('Error performing quick action:', error);
-    res.status(500).json({ error: 'Failed to perform quick action' });
+    return res.status(500).json({ error: 'Failed to perform quick action' });
   }
 });
 
@@ -698,10 +698,10 @@ router.get('/contexts', requireAuth, async (req: AuthenticatedRequest, res) => {
       orderBy: { name: 'asc' }
     });
 
-    res.json(contexts);
+    return res.json(contexts);
   } catch (error) {
     console.error('Error fetching contexts:', error);
-    res.status(500).json({ error: 'Failed to fetch contexts' });
+    return res.status(500).json({ error: 'Failed to fetch contexts' });
   }
 });
 

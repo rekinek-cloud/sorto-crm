@@ -30,7 +30,7 @@ router.get('/:type', authenticateUser, async (req, res) => {
         viewType: type.toUpperCase() as any
       },
       include: {
-        kanban_columnss: {
+        kanban_columns: {
           orderBy: { position: 'asc' }
         }
       },
@@ -40,14 +40,14 @@ router.get('/:type', authenticateUser, async (req, res) => {
       ]
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: views
     });
 
   } catch (error) {
     console.error('Error fetching views:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false, 
       error: 'Failed to fetch views' 
     });
@@ -91,10 +91,10 @@ router.post('/:type', authenticateUser, async (req, res) => {
 
     // Create view with columns in transaction
     const view = await prisma.$transaction(async (tx) => {
-      const createdView = await tx.view_configurations.create({
+      const createdView = await (tx.view_configurations.create as any)({
         data: {
           userId,
-          viewType: type.toUpperCase() as any,
+          viewType: type.toUpperCase(),
           viewName,
           configuration,
           isDefault
@@ -103,7 +103,7 @@ router.post('/:type', authenticateUser, async (req, res) => {
 
       // Create columns for Kanban views
       if (type.toUpperCase() === 'KANBAN' && columns && Array.isArray(columns)) {
-        await tx.kanban_columns.createMany({
+        await (tx.kanban_columns.createMany as any)({
           data: columns.map((col: any, index: number) => ({
             viewId: createdView.id,
             title: col.title,
@@ -119,21 +119,21 @@ router.post('/:type', authenticateUser, async (req, res) => {
       return tx.view_configurations.findUnique({
         where: { id: createdView.id },
         include: {
-          kanban_columnss: {
+          kanban_columns: {
             orderBy: { position: 'asc' }
           }
         }
       });
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: view
     });
 
   } catch (error) {
     console.error('Error creating view:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false, 
       error: 'Failed to create view' 
     });
@@ -199,7 +199,7 @@ router.put('/:type/:id', authenticateUser, async (req, res) => {
         });
 
         // Create new columns
-        await tx.kanban_columns.createMany({
+        await (tx.kanban_columns.createMany as any)({
           data: columns.map((col: any, index: number) => ({
             viewId: id,
             title: col.title,
@@ -215,21 +215,21 @@ router.put('/:type/:id', authenticateUser, async (req, res) => {
       return tx.view_configurations.findUnique({
         where: { id },
         include: {
-          kanban_columnss: {
+          kanban_columns: {
             orderBy: { position: 'asc' }
           }
         }
       });
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: updatedView
     });
 
   } catch (error) {
     console.error('Error updating view:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false, 
       error: 'Failed to update view' 
     });
@@ -263,14 +263,14 @@ router.delete('/:type/:id', authenticateUser, async (req, res) => {
       where: { id }
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'View deleted successfully'
     });
 
   } catch (error) {
     console.error('Error deleting view:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false, 
       error: 'Failed to delete view' 
     });
@@ -296,7 +296,7 @@ router.post('/:type/:id/duplicate', authenticateUser, async (req, res) => {
         viewType: type.toUpperCase() as any
       },
       include: {
-        kanban_columnss: {
+        kanban_columns: {
           orderBy: { position: 'asc' }
         }
       }
@@ -308,7 +308,7 @@ router.post('/:type/:id/duplicate', authenticateUser, async (req, res) => {
 
     // Create duplicate
     const duplicatedView = await prisma.$transaction(async (tx) => {
-      const newView = await tx.view_configurations.create({
+      const newView = await (tx.view_configurations.create as any)({
         data: {
           userId,
           viewType: originalView.viewType,
@@ -320,9 +320,9 @@ router.post('/:type/:id/duplicate', authenticateUser, async (req, res) => {
       });
 
       // Duplicate columns for Kanban views
-      if (type.toUpperCase() === 'KANBAN' && originalView.kanban_columnss.length > 0) {
-        await tx.kanban_columns.createMany({
-          data: originalView.kanban_columnss.map(col => ({
+      if (type.toUpperCase() === 'KANBAN' && originalView.kanban_columns.length > 0) {
+        await (tx.kanban_columns.createMany as any)({
+          data: originalView.kanban_columns.map((col: any) => ({
             viewId: newView.id,
             title: col.title,
             position: col.position,
@@ -337,21 +337,21 @@ router.post('/:type/:id/duplicate', authenticateUser, async (req, res) => {
       return tx.view_configurations.findUnique({
         where: { id: newView.id },
         include: {
-          kanban_columnss: {
+          kanban_columns: {
             orderBy: { position: 'asc' }
           }
         }
       });
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: duplicatedView
     });
 
   } catch (error) {
     console.error('Error duplicating view:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false, 
       error: 'Failed to duplicate view' 
     });
@@ -536,7 +536,7 @@ router.get('/kanban/:boardType/data', authenticateUser, async (req, res) => {
       };
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         boardType,
@@ -547,7 +547,7 @@ router.get('/kanban/:boardType/data', authenticateUser, async (req, res) => {
 
   } catch (error) {
     console.error('Error fetching kanban data:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false, 
       error: 'Failed to fetch kanban data' 
     });
@@ -639,7 +639,7 @@ router.post('/kanban/:boardType/move', authenticateUser, async (req, res) => {
 
     // Create activity log for the move
     try {
-      await prisma.activities.create({
+      await (prisma.activities.create as any)({
         data: {
           type: 'DEAL_UPDATED',
           title: `Deal "${deal.title}" moved`,
@@ -660,14 +660,14 @@ router.post('/kanban/:boardType/move', authenticateUser, async (req, res) => {
       console.error('Error creating move activity:', activityError);
     }
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Deal moved successfully'
     });
 
   } catch (error) {
     console.error('Error moving deal:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false, 
       error: 'Failed to move deal' 
     });
@@ -697,14 +697,14 @@ router.get('/preferences/:type', authenticateUser, async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: preferences || { preferences: {} }
     });
 
   } catch (error) {
     console.error('Error fetching preferences:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false, 
       error: 'Failed to fetch preferences' 
     });
@@ -741,17 +741,17 @@ router.put('/preferences/:type', authenticateUser, async (req, res) => {
         userId,
         viewType: type.toUpperCase() as any,
         preferences
-      }
+      } as any
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: updatedPreferences
     });
 
   } catch (error) {
     console.error('Error updating preferences:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false, 
       error: 'Failed to update preferences' 
     });

@@ -81,10 +81,10 @@ router.get('/', async (req, res) => {
       },
     });
 
-    res.json({ agents });
+    return res.json({ agents });
   } catch (error) {
     console.error('Error listing AI agents:', error);
-    res.status(500).json({ error: 'Failed to list AI agents' });
+    return res.status(500).json({ error: 'Failed to list AI agents' });
   }
 });
 
@@ -108,10 +108,10 @@ router.get('/templates', async (req, res) => {
       orderBy: { name: 'asc' },
     });
 
-    res.json({ templates });
+    return res.json({ templates });
   } catch (error) {
     console.error('Error listing AI agent templates:', error);
-    res.status(500).json({ error: 'Failed to list AI agent templates' });
+    return res.status(500).json({ error: 'Failed to list AI agent templates' });
   }
 });
 
@@ -123,8 +123,7 @@ router.post('/', async (req, res) => {
 
     const parsed = createAgentSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
-      return;
+      return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
     }
 
     // If templateId provided, merge template defaults
@@ -155,10 +154,9 @@ router.post('/', async (req, res) => {
       });
 
       if (!ownedHolding) {
-        res.status(400).json({
+        return res.status(400).json({
           error: 'No holding found. AI agents must belong to a holding.',
         });
-        return;
       }
 
       org!.holdingId = ownedHolding.id;
@@ -192,10 +190,10 @@ router.post('/', async (req, res) => {
       },
     });
 
-    res.status(201).json({ agent });
+    return res.status(201).json({ agent });
   } catch (error) {
     console.error('Error creating AI agent:', error);
-    res.status(500).json({ error: 'Failed to create AI agent' });
+    return res.status(500).json({ error: 'Failed to create AI agent' });
   }
 });
 
@@ -236,8 +234,7 @@ router.get('/:id', async (req, res) => {
     });
 
     if (!agent) {
-      res.status(404).json({ error: 'AI agent not found' });
-      return;
+      return res.status(404).json({ error: 'AI agent not found' });
     }
 
     // Verify access: agent is assigned to current org
@@ -246,14 +243,13 @@ router.get('/:id', async (req, res) => {
     );
 
     if (!hasAccess) {
-      res.status(403).json({ error: 'Access denied to this AI agent' });
-      return;
+      return res.status(403).json({ error: 'Access denied to this AI agent' });
     }
 
-    res.json({ agent });
+    return res.json({ agent });
   } catch (error) {
     console.error('Error getting AI agent:', error);
-    res.status(500).json({ error: 'Failed to get AI agent' });
+    return res.status(500).json({ error: 'Failed to get AI agent' });
   }
 });
 
@@ -265,8 +261,7 @@ router.patch('/:id', async (req, res) => {
 
     const parsed = updateAgentSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
-      return;
+      return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
     }
 
     // Verify access
@@ -275,8 +270,7 @@ router.patch('/:id', async (req, res) => {
     });
 
     if (!assignment) {
-      res.status(403).json({ error: 'Access denied to this AI agent' });
-      return;
+      return res.status(403).json({ error: 'Access denied to this AI agent' });
     }
 
     const updated = await prisma.aIAgentManaged.update({
@@ -289,10 +283,10 @@ router.patch('/:id', async (req, res) => {
       },
     });
 
-    res.json({ agent: updated });
+    return res.json({ agent: updated });
   } catch (error) {
     console.error('Error updating AI agent:', error);
-    res.status(500).json({ error: 'Failed to update AI agent' });
+    return res.status(500).json({ error: 'Failed to update AI agent' });
   }
 });
 
@@ -308,18 +302,17 @@ router.delete('/:id', async (req, res) => {
     });
 
     if (!assignment) {
-      res.status(403).json({ error: 'Access denied to this AI agent' });
-      return;
+      return res.status(403).json({ error: 'Access denied to this AI agent' });
     }
 
     await prisma.aIAgentManaged.delete({
       where: { id },
     });
 
-    res.json({ message: 'AI agent deleted successfully' });
+    return res.json({ message: 'AI agent deleted successfully' });
   } catch (error) {
     console.error('Error deleting AI agent:', error);
-    res.status(500).json({ error: 'Failed to delete AI agent' });
+    return res.status(500).json({ error: 'Failed to delete AI agent' });
   }
 });
 
@@ -332,8 +325,7 @@ router.post('/:id/tasks', async (req, res) => {
 
     const parsed = createTaskSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
-      return;
+      return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
     }
 
     // Verify agent is assigned to current org
@@ -342,8 +334,7 @@ router.post('/:id/tasks', async (req, res) => {
     });
 
     if (!assignment) {
-      res.status(403).json({ error: 'Access denied to this AI agent' });
-      return;
+      return res.status(403).json({ error: 'Access denied to this AI agent' });
     }
 
     const task = await prisma.aIAgentManagedTask.create({
@@ -358,10 +349,10 @@ router.post('/:id/tasks', async (req, res) => {
       },
     });
 
-    res.status(201).json({ task });
+    return res.status(201).json({ task });
   } catch (error) {
     console.error('Error creating AI agent task:', error);
-    res.status(500).json({ error: 'Failed to create AI agent task' });
+    return res.status(500).json({ error: 'Failed to create AI agent task' });
   }
 });
 
@@ -382,8 +373,7 @@ router.get('/:id/tasks', async (req, res) => {
     });
 
     if (!assignment) {
-      res.status(403).json({ error: 'Access denied to this AI agent' });
-      return;
+      return res.status(403).json({ error: 'Access denied to this AI agent' });
     }
 
     const where: any = {
@@ -405,7 +395,7 @@ router.get('/:id/tasks', async (req, res) => {
       prisma.aIAgentManagedTask.count({ where }),
     ]);
 
-    res.json({
+    return res.json({
       tasks,
       pagination: {
         page: pageNum,
@@ -416,7 +406,7 @@ router.get('/:id/tasks', async (req, res) => {
     });
   } catch (error) {
     console.error('Error listing AI agent tasks:', error);
-    res.status(500).json({ error: 'Failed to list AI agent tasks' });
+    return res.status(500).json({ error: 'Failed to list AI agent tasks' });
   }
 });
 

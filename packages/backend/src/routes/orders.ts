@@ -97,7 +97,7 @@ router.get('/', authenticateToken, async (req: AuthenticatedRequest, res) => {
       prisma.order.count({ where }),
     ]);
 
-    res.json({
+    return res.json({
       orders,
       pagination: {
         total,
@@ -108,7 +108,7 @@ router.get('/', authenticateToken, async (req: AuthenticatedRequest, res) => {
     });
   } catch (error: any) {
     logger.error('Error fetching orders:', error);
-    res.status(500).json({ error: 'Failed to fetch orders' });
+    return res.status(500).json({ error: 'Failed to fetch orders' });
   }
 });
 
@@ -131,7 +131,7 @@ router.get('/stats', authenticateToken, async (req: AuthenticatedRequest, res) =
       _sum: { totalAmount: true },
     });
 
-    res.json({
+    return res.json({
       total,
       pending,
       inProgress,
@@ -142,7 +142,7 @@ router.get('/stats', authenticateToken, async (req: AuthenticatedRequest, res) =
     });
   } catch (error: any) {
     logger.error('Error fetching order stats:', error);
-    res.status(500).json({ error: 'Failed to fetch order statistics' });
+    return res.status(500).json({ error: 'Failed to fetch order statistics' });
   }
 });
 
@@ -168,10 +168,10 @@ router.get('/:id', authenticateToken, async (req: AuthenticatedRequest, res) => 
       return res.status(404).json({ error: 'Order not found' });
     }
 
-    res.json(order);
+    return res.json(order);
   } catch (error: any) {
     logger.error('Error fetching order:', error);
-    res.status(500).json({ error: 'Failed to fetch order' });
+    return res.status(500).json({ error: 'Failed to fetch order' });
   }
 });
 
@@ -222,7 +222,7 @@ router.post('/', authenticateToken, async (req: AuthenticatedRequest, res) => {
             customDescription: item.customDescription || undefined,
           })),
         } : undefined,
-      },
+      } as any,
       include: {
         items: {
           include: {
@@ -234,13 +234,13 @@ router.post('/', authenticateToken, async (req: AuthenticatedRequest, res) => {
     });
 
     logger.info(`Order created: ${order.orderNumber} by org ${organizationId}`);
-    res.status(201).json(order);
+    return res.status(201).json(order);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
     logger.error('Error creating order:', error);
-    res.status(500).json({ error: 'Failed to create order' });
+    return res.status(500).json({ error: 'Failed to create order' });
   }
 });
 
@@ -312,13 +312,13 @@ router.put('/:id', authenticateToken, async (req: AuthenticatedRequest, res) => 
       },
     });
 
-    res.json(order);
+    return res.json(order);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
     logger.error('Error updating order:', error);
-    res.status(500).json({ error: 'Failed to update order' });
+    return res.status(500).json({ error: 'Failed to update order' });
   }
 });
 
@@ -341,13 +341,13 @@ router.patch('/:id/status', authenticateToken, async (req: AuthenticatedRequest,
       data: { status },
     });
 
-    res.json(order);
+    return res.json(order);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation error', details: error.errors });
     }
     logger.error('Error updating order status:', error);
-    res.status(500).json({ error: 'Failed to update order status' });
+    return res.status(500).json({ error: 'Failed to update order status' });
   }
 });
 
@@ -363,10 +363,10 @@ router.delete('/:id', authenticateToken, async (req: AuthenticatedRequest, res) 
     }
 
     await prisma.order.delete({ where: { id } });
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error: any) {
     logger.error('Error deleting order:', error);
-    res.status(500).json({ error: 'Failed to delete order' });
+    return res.status(500).json({ error: 'Failed to delete order' });
   }
 });
 

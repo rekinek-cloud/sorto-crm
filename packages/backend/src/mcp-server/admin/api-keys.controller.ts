@@ -24,7 +24,7 @@ export class ApiKeysController {
    * POST /admin/mcp/api-keys
    * Generuj nowy klucz API
    */
-  async createKey(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async createKey(req: AuthenticatedRequest, res: Response): Promise<any> {
     try {
       const { organizationId, name } = req.body;
 
@@ -32,7 +32,7 @@ export class ApiKeysController {
       const targetOrgId = organizationId || req.user?.organizationId;
 
       if (!targetOrgId) {
-        res.status(400).json({
+        return res.status(400).json({
           error: 'Brak organizationId',
           code: 'MISSING_ORG_ID',
         });
@@ -47,7 +47,7 @@ export class ApiKeysController {
 
       logger.info(`[ApiKeysController] Created key for org: ${targetOrgId}`);
 
-      res.status(201).json({
+      return res.status(201).json({
         message: 'Klucz API został utworzony. Zapisz go - nie będzie można go ponownie wyświetlić!',
         key: result.key,
         keyPrefix: result.keyPrefix,
@@ -55,7 +55,7 @@ export class ApiKeysController {
       });
     } catch (error) {
       logger.error('[ApiKeysController] createKey error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Błąd tworzenia klucza',
         code: 'CREATE_KEY_ERROR',
       });
@@ -66,12 +66,12 @@ export class ApiKeysController {
    * GET /admin/mcp/api-keys
    * Lista kluczy organizacji
    */
-  async listKeys(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async listKeys(req: AuthenticatedRequest, res: Response): Promise<any> {
     try {
       const organizationId = (req.query.organizationId as string) || req.user?.organizationId;
 
       if (!organizationId) {
-        res.status(400).json({
+        return res.status(400).json({
           error: 'Brak organizationId',
           code: 'MISSING_ORG_ID',
         });
@@ -80,10 +80,10 @@ export class ApiKeysController {
 
       const keys = await apiKeysService.listKeys(organizationId);
 
-      res.json({ keys });
+      return res.json({ keys });
     } catch (error) {
       logger.error('[ApiKeysController] listKeys error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Błąd pobierania kluczy',
         code: 'LIST_KEYS_ERROR',
       });
@@ -94,14 +94,14 @@ export class ApiKeysController {
    * GET /admin/mcp/api-keys/:id
    * Szczegóły klucza
    */
-  async getKey(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async getKey(req: AuthenticatedRequest, res: Response): Promise<any> {
     try {
       const { id } = req.params;
 
       const key = await apiKeysService.getKey(id);
 
       if (!key) {
-        res.status(404).json({
+        return res.status(404).json({
           error: 'Klucz nie znaleziony',
           code: 'KEY_NOT_FOUND',
         });
@@ -110,10 +110,10 @@ export class ApiKeysController {
 
       const stats = await apiKeysService.getKeyUsageStats(id);
 
-      res.json({ key, stats });
+      return res.json({ key, stats });
     } catch (error) {
       logger.error('[ApiKeysController] getKey error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Błąd pobierania klucza',
         code: 'GET_KEY_ERROR',
       });
@@ -124,16 +124,16 @@ export class ApiKeysController {
    * DELETE /admin/mcp/api-keys/:id
    * Usuń klucz
    */
-  async deleteKey(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async deleteKey(req: AuthenticatedRequest, res: Response): Promise<any> {
     try {
       const { id } = req.params;
 
       await apiKeysService.deleteKey(id);
 
-      res.json({ message: 'Klucz został usunięty' });
+      return res.json({ message: 'Klucz został usunięty' });
     } catch (error) {
       logger.error('[ApiKeysController] deleteKey error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Błąd usuwania klucza',
         code: 'DELETE_KEY_ERROR',
       });
@@ -144,16 +144,16 @@ export class ApiKeysController {
    * POST /admin/mcp/api-keys/:id/revoke
    * Dezaktywuj klucz
    */
-  async revokeKey(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async revokeKey(req: AuthenticatedRequest, res: Response): Promise<any> {
     try {
       const { id } = req.params;
 
       await apiKeysService.revokeKey(id);
 
-      res.json({ message: 'Klucz został dezaktywowany' });
+      return res.json({ message: 'Klucz został dezaktywowany' });
     } catch (error) {
       logger.error('[ApiKeysController] revokeKey error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Błąd dezaktywacji klucza',
         code: 'REVOKE_KEY_ERROR',
       });
@@ -164,7 +164,7 @@ export class ApiKeysController {
    * PATCH /admin/mcp/api-keys/:id
    * Aktualizuj klucz
    */
-  async updateKey(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async updateKey(req: AuthenticatedRequest, res: Response): Promise<any> {
     try {
       const { id } = req.params;
       const { name } = req.body;
@@ -175,10 +175,10 @@ export class ApiKeysController {
 
       const key = await apiKeysService.getKey(id);
 
-      res.json({ key });
+      return res.json({ key });
     } catch (error) {
       logger.error('[ApiKeysController] updateKey error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Błąd aktualizacji klucza',
         code: 'UPDATE_KEY_ERROR',
       });
@@ -189,7 +189,7 @@ export class ApiKeysController {
    * GET /admin/mcp/api-keys/:id/usage
    * Historia użycia klucza
    */
-  async getKeyUsage(req: AuthenticatedRequest, res: Response): Promise<void> {
+  async getKeyUsage(req: AuthenticatedRequest, res: Response): Promise<any> {
     try {
       const { id } = req.params;
       const limit = parseInt(req.query.limit as string) || 50;
@@ -197,10 +197,10 @@ export class ApiKeysController {
       const history = await apiKeysService.getKeyUsageHistory(id, limit);
       const stats = await apiKeysService.getKeyUsageStats(id);
 
-      res.json({ stats, history });
+      return res.json({ stats, history });
     } catch (error) {
       logger.error('[ApiKeysController] getKeyUsage error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Błąd pobierania historii',
         code: 'GET_USAGE_ERROR',
       });

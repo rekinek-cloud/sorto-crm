@@ -75,14 +75,14 @@ router.post('/generate',
       // Store response for analytics
       await storeVoiceResponse(responseId, userId, response);
 
-      res.json({
+      return res.json({
         message: 'Voice response generated successfully',
         data: response
       });
 
     } catch (error) {
       console.error('Voice response generation failed:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Failed to generate voice response',
         details: error.message
       });
@@ -108,13 +108,13 @@ router.post('/feedback',
         }
       });
 
-      res.json({
+      return res.json({
         message: 'Feedback submitted successfully'
       });
 
     } catch (error) {
       console.error('Feedback submission failed:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Failed to submit feedback',
         details: error.message
       });
@@ -132,14 +132,14 @@ router.get('/analytics',
 
       const analytics = await getVoiceAnalytics(userId, timeRange);
 
-      res.json({
+      return res.json({
         message: 'Voice analytics retrieved successfully',
         data: analytics
       });
 
     } catch (error) {
       console.error('Analytics retrieval failed:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Failed to retrieve analytics',
         details: error.message
       });
@@ -158,14 +158,14 @@ router.post('/ab-tests',
 
       const testId = await createABTest(userId, config);
 
-      res.json({
+      return res.json({
         message: 'A/B test created successfully',
         data: { testId }
       });
 
     } catch (error) {
       console.error('A/B test creation failed:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Failed to create A/B test',
         details: error.message
       });
@@ -180,14 +180,14 @@ router.get('/ab-tests/results',
       const userId = req.user?.id;
       const results = await getABTestResults(userId);
 
-      res.json({
+      return res.json({
         message: 'A/B test results retrieved successfully',
         data: results
       });
 
     } catch (error) {
       console.error('A/B test results retrieval failed:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Failed to retrieve A/B test results',
         details: error.message
       });
@@ -205,13 +205,13 @@ router.post('/ab-tests/:testId/promote',
 
       await promoteWinningVariant(userId, testId, variantId);
 
-      res.json({
+      return res.json({
         message: 'Variant promoted successfully'
       });
 
     } catch (error) {
       console.error('Variant promotion failed:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Failed to promote variant',
         details: error.message
       });
@@ -229,13 +229,13 @@ router.post('/ab-tests/:testId/stop',
 
       await stopABTest(userId, testId, reason);
 
-      res.json({
+      return res.json({
         message: 'A/B test stopped successfully'
       });
 
     } catch (error) {
       console.error('A/B test stop failed:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Failed to stop A/B test',
         details: error.message
       });
@@ -251,14 +251,14 @@ router.get('/preferences',
       const userId = req.user?.id;
       const preferences = await getUserVoicePreferences(userId);
 
-      res.json({
+      return res.json({
         message: 'Voice preferences retrieved successfully',
         data: preferences
       });
 
     } catch (error) {
       console.error('Preferences retrieval failed:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Failed to retrieve preferences',
         details: error.message
       });
@@ -275,13 +275,13 @@ router.put('/preferences',
 
       await updateUserVoicePreferences(userId, preferences);
 
-      res.json({
+      return res.json({
         message: 'Voice preferences updated successfully'
       });
 
     } catch (error) {
       console.error('Preferences update failed:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Failed to update preferences',
         details: error.message
       });
@@ -302,7 +302,7 @@ async function generateVoiceResponse(request: any) {
     ERROR: generateErrorResponse(query, context)
   };
 
-  const baseResponse = responses[responseType] || responses.ERROR;
+  const baseResponse = (responses as any)[responseType] || responses.ERROR;
   
   return {
     id,
@@ -482,7 +482,7 @@ async function getABTestResults(userId: string) {
       testId: 'abtest_12345',
       testName: 'Task Response Optimization',
       status: 'active',
-      variants: [],
+      variants: [] as any[],
       significance: {
         significant: true,
         confidence: 0.96,

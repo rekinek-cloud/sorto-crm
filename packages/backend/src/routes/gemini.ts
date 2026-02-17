@@ -61,13 +61,13 @@ router.post('/chat', authenticateToken, async (req: Request, res: Response) => {
     const service = getGeminiService();
     const response = await service.chat(prompt, { model });
 
-    res.json({
+    return res.json({
       success: true,
       data: { response },
     });
   } catch (error: any) {
     logger.error('Gemini chat error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -94,14 +94,14 @@ router.post('/chat/stream', authenticateToken, async (req: Request, res: Respons
     }
 
     res.write('data: [DONE]\n\n');
-    res.end();
+    return res.end();
   } catch (error: any) {
     logger.error('Gemini stream error:', error);
     if (!res.headersSent) {
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     } else {
       res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
-      res.end();
+      return res.end();
     }
   }
 });
@@ -128,7 +128,7 @@ router.post('/vision/analyze', authenticateToken, upload.single('image'), async 
     // Clean up temp file
     fs.unlinkSync(req.file.path);
 
-    res.json({
+    return res.json({
       success: true,
       data: { analysis },
     });
@@ -137,7 +137,7 @@ router.post('/vision/analyze', authenticateToken, upload.single('image'), async 
     if (req.file) {
       try { fs.unlinkSync(req.file.path); } catch (e) {}
     }
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -161,13 +161,13 @@ router.post('/vision/analyze-base64', authenticateToken, async (req: Request, re
       prompt || 'Opisz ten obraz szczegółowo po polsku.'
     );
 
-    res.json({
+    return res.json({
       success: true,
       data: { analysis },
     });
   } catch (error: any) {
     logger.error('Gemini vision base64 error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -187,7 +187,7 @@ router.post('/vision/tags', authenticateToken, upload.single('image'), async (re
     // Clean up temp file
     fs.unlinkSync(req.file.path);
 
-    res.json({
+    return res.json({
       success: true,
       data: tags,
     });
@@ -196,7 +196,7 @@ router.post('/vision/tags', authenticateToken, upload.single('image'), async (re
     if (req.file) {
       try { fs.unlinkSync(req.file.path); } catch (e) {}
     }
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -217,7 +217,7 @@ router.post('/vision/ocr', authenticateToken, upload.single('image'), async (req
     // Clean up temp file
     fs.unlinkSync(req.file.path);
 
-    res.json({
+    return res.json({
       success: true,
       data: { text },
     });
@@ -226,7 +226,7 @@ router.post('/vision/ocr', authenticateToken, upload.single('image'), async (req
     if (req.file) {
       try { fs.unlinkSync(req.file.path); } catch (e) {}
     }
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -249,13 +249,13 @@ router.post('/cache/create', authenticateToken, async (req: Request, res: Respon
     const service = getCacheService();
     const cacheInfo = await service.createRAGCache(name, documents, { ttlSeconds });
 
-    res.json({
+    return res.json({
       success: true,
       data: cacheInfo,
     });
   } catch (error: any) {
     logger.error('Gemini cache create error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -274,13 +274,13 @@ router.post('/cache/query', authenticateToken, async (req: Request, res: Respons
     const service = getCacheService();
     const answer = await service.ragQueryWithCache(cacheName, question);
 
-    res.json({
+    return res.json({
       success: true,
       data: { answer },
     });
   } catch (error: any) {
     logger.error('Gemini cache query error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -293,13 +293,13 @@ router.get('/cache/list', authenticateToken, async (req: Request, res: Response)
     const service = getCacheService();
     const caches = await service.listCaches();
 
-    res.json({
+    return res.json({
       success: true,
       data: caches,
     });
   } catch (error: any) {
     logger.error('Gemini cache list error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -312,13 +312,13 @@ router.delete('/cache/:name', authenticateToken, async (req: Request, res: Respo
     const service = getCacheService();
     await service.deleteCache(req.params.name);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Cache deleted',
     });
   } catch (error: any) {
     logger.error('Gemini cache delete error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -341,13 +341,13 @@ router.post('/analyze-context', authenticateToken, async (req: Request, res: Res
     const service = getGeminiService();
     const analysis = await service.analyzeLargeContext(files, prompt);
 
-    res.json({
+    return res.json({
       success: true,
       data: { analysis },
     });
   } catch (error: any) {
     logger.error('Gemini analyze context error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -366,13 +366,13 @@ router.post('/count-tokens', authenticateToken, async (req: Request, res: Respon
     const service = getGeminiService();
     const tokens = await service.countTokens(text);
 
-    res.json({
+    return res.json({
       success: true,
       data: { tokens },
     });
   } catch (error: any) {
     logger.error('Gemini count tokens error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -389,13 +389,13 @@ router.get('/models', authenticateToken, async (req: Request, res: Response) => 
     const service = getGeminiService();
     const models = service.getAvailableModels();
 
-    res.json({
+    return res.json({
       success: true,
       data: models,
     });
   } catch (error: any) {
     logger.error('Gemini get models error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -420,7 +420,7 @@ router.get('/status', authenticateToken, async (req: Request, res: Response) => 
     const service = getGeminiService();
     const status = await service.checkStatus();
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         configured: true,
@@ -429,7 +429,7 @@ router.get('/status', authenticateToken, async (req: Request, res: Response) => 
       },
     });
   } catch (error: any) {
-    res.json({
+    return res.json({
       success: true,
       data: {
         configured: true,

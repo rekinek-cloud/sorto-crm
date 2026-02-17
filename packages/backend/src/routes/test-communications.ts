@@ -115,7 +115,7 @@ router.post('/seed', async (req, res) => {
       activities.push(smsActivity);
     }
 
-    res.json({
+    return res.json({
       success: true,
       message: `Created ${activities.length} sample communication activities`,
       activities: activities.map(a => ({ id: a.id, type: a.type, title: a.title }))
@@ -123,7 +123,7 @@ router.post('/seed', async (req, res) => {
 
   } catch (error) {
     console.error('Error creating sample communications:', error);
-    res.status(500).json({ error: 'Failed to create sample communications' });
+    return res.status(500).json({ error: 'Failed to create sample communications' });
   }
 });
 

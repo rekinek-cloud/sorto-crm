@@ -53,7 +53,7 @@ router.get('/stats', authenticateToken, async (req: AuthenticatedRequest, res) =
       ? Math.round((1 - aiAnalyzed / Math.max(1, totalMessages)) * 100)
       : 0;
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         period: `${days} days`,
@@ -77,7 +77,7 @@ router.get('/stats', authenticateToken, async (req: AuthenticatedRequest, res) =
     });
   } catch (error) {
     console.error('Error fetching pipeline stats:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch pipeline stats' });
+    return res.status(500).json({ success: false, error: 'Failed to fetch pipeline stats' });
   }
 });
 
@@ -111,7 +111,7 @@ router.get('/rules', authenticateToken, async (req: AuthenticatedRequest, res) =
       AI_ANALYSIS: rules.filter(r => r.category === 'AI_ANALYSIS')
     };
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         rules,
@@ -125,7 +125,7 @@ router.get('/rules', authenticateToken, async (req: AuthenticatedRequest, res) =
     });
   } catch (error) {
     console.error('Error fetching pipeline rules:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch pipeline rules' });
+    return res.status(500).json({ success: false, error: 'Failed to fetch pipeline rules' });
   }
 });
 
@@ -156,13 +156,13 @@ router.post('/rules', authenticateToken, async (req: AuthenticatedRequest, res) 
         actions: { actions: actions || [], stopProcessing: stopProcessing || false },
         status: 'ACTIVE',
         organizationId
-      }
+      } as any
     });
 
-    res.json({ success: true, data: rule });
+    return res.json({ success: true, data: rule });
   } catch (error) {
     console.error('Error creating pipeline rule:', error);
-    res.status(500).json({ success: false, error: 'Failed to create pipeline rule' });
+    return res.status(500).json({ success: false, error: 'Failed to create pipeline rule' });
   }
 });
 
@@ -194,10 +194,10 @@ router.put('/rules/:id', authenticateToken, async (req: AuthenticatedRequest, re
       }
     });
 
-    res.json({ success: true, data: rule });
+    return res.json({ success: true, data: rule });
   } catch (error) {
     console.error('Error updating pipeline rule:', error);
-    res.status(500).json({ success: false, error: 'Failed to update pipeline rule' });
+    return res.status(500).json({ success: false, error: 'Failed to update pipeline rule' });
   }
 });
 
@@ -217,10 +217,10 @@ router.delete('/rules/:id', authenticateToken, async (req: AuthenticatedRequest,
 
     await prisma.unified_rules.delete({ where: { id } });
 
-    res.json({ success: true, message: 'Rule deleted' });
+    return res.json({ success: true, message: 'Rule deleted' });
   } catch (error) {
     console.error('Error deleting pipeline rule:', error);
-    res.status(500).json({ success: false, error: 'Failed to delete pipeline rule' });
+    return res.status(500).json({ success: false, error: 'Failed to delete pipeline rule' });
   }
 });
 
@@ -246,7 +246,7 @@ router.post('/test', authenticateToken, async (req: AuthenticatedRequest, res) =
 
     const result = await emailPipeline.processEmail(testMessage, organizationId);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         result,
@@ -265,7 +265,7 @@ router.post('/test', authenticateToken, async (req: AuthenticatedRequest, res) =
     });
   } catch (error) {
     console.error('Error testing pipeline:', error);
-    res.status(500).json({ success: false, error: 'Failed to test pipeline' });
+    return res.status(500).json({ success: false, error: 'Failed to test pipeline' });
   }
 });
 
@@ -367,18 +367,18 @@ router.post('/seed-defaults', authenticateToken, async (req: AuthenticatedReques
           actions: rule.actions,
           status: 'ACTIVE',
           organizationId
-        }
+        } as any
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       message: `Created ${defaultRules.length} default pipeline rules`,
       created: defaultRules.length
     });
   } catch (error) {
     console.error('Error seeding default rules:', error);
-    res.status(500).json({ success: false, error: 'Failed to seed default rules' });
+    return res.status(500).json({ success: false, error: 'Failed to seed default rules' });
   }
 });
 
@@ -461,7 +461,7 @@ router.get('/messages', authenticateToken, async (req: AuthenticatedRequest, res
 
     const [totalAll, unprocessed, processed, byCategory] = statsData;
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         messages,
@@ -484,7 +484,7 @@ router.get('/messages', authenticateToken, async (req: AuthenticatedRequest, res
     });
   } catch (error) {
     console.error('Error fetching messages:', error);
-    res.status(500).json({ success: false, error: 'Failed to fetch messages' });
+    return res.status(500).json({ success: false, error: 'Failed to fetch messages' });
   }
 });
 
@@ -617,7 +617,7 @@ router.post('/process-batch', authenticateToken, async (req: AuthenticatedReques
     const successful = results.filter(r => r.success).length;
     const failed = results.filter(r => !r.success).length;
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         processed: successful,
@@ -627,7 +627,7 @@ router.post('/process-batch', authenticateToken, async (req: AuthenticatedReques
     });
   } catch (error) {
     console.error('Error processing batch:', error);
-    res.status(500).json({ success: false, error: 'Failed to process batch' });
+    return res.status(500).json({ success: false, error: 'Failed to process batch' });
   }
 });
 
@@ -759,7 +759,7 @@ router.post('/process-all', authenticateToken, async (req: AuthenticatedRequest,
 
     const processingTime = Date.now() - startTime;
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         processed,
@@ -778,7 +778,7 @@ router.post('/process-all', authenticateToken, async (req: AuthenticatedRequest,
     });
   } catch (error) {
     console.error('Error processing all messages:', error);
-    res.status(500).json({ success: false, error: 'Failed to process messages' });
+    return res.status(500).json({ success: false, error: 'Failed to process messages' });
   }
 });
 
@@ -806,7 +806,7 @@ router.post('/reprocess', authenticateToken, async (req: AuthenticatedRequest, r
       data: { pipelineProcessed: false }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         reset: updated.count,
@@ -815,7 +815,7 @@ router.post('/reprocess', authenticateToken, async (req: AuthenticatedRequest, r
     });
   } catch (error) {
     console.error('Error resetting messages:', error);
-    res.status(500).json({ success: false, error: 'Failed to reset messages' });
+    return res.status(500).json({ success: false, error: 'Failed to reset messages' });
   }
 });
 

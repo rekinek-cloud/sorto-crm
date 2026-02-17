@@ -210,7 +210,7 @@ const TreeNode: React.FC<TreeNodeProps> = ({
                   )}
                   <div className="flex items-center gap-1 ml-auto">
                     {!relation.isActive && (
-                      <AlertTriangle className="h-4 w-4 text-amber-500" title="Nieaktywna relacja" />
+                      <AlertTriangle className="h-4 w-4 text-amber-500" {...{ title: "Nieaktywna relacja" } as any} />
                     )}
                     <span className="text-xs">
                       {relation.inheritanceRule.replace('_', ' ').toLowerCase()}

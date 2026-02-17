@@ -83,7 +83,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
     const pages = Math.ceil(total / limitNum);
 
-    res.json({
+    return res.json({
       delegatedTasks,
       pagination: {
         page: pageNum,
@@ -96,7 +96,7 @@ router.get('/', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     logger.error('Error fetching delegated tasks:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -177,7 +177,7 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
       take: 5
     });
 
-    res.json({
+    return res.json({
       totalDelegated,
       activeDelegated,
       completedDelegated,
@@ -194,7 +194,7 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     logger.error('Error fetching delegated tasks stats:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -226,10 +226,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Delegated task not found' });
     }
 
-    res.json(delegatedTask);
+    return res.json(delegatedTask);
   } catch (error) {
     logger.error('Error fetching delegated task:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -289,10 +289,10 @@ router.post('/', authenticateToken, async (req, res) => {
     });
 
     logger.info(`Created delegated task: ${delegatedTask.id} for organization: ${organizationId}`);
-    res.status(201).json(delegatedTask);
+    return res.status(201).json(delegatedTask);
   } catch (error) {
     logger.error('Error creating delegated task:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -356,10 +356,10 @@ router.put('/:id', authenticateToken, async (req, res) => {
     });
 
     logger.info(`Updated delegated task: ${id} for organization: ${organizationId}`);
-    res.json(delegatedTask);
+    return res.json(delegatedTask);
   } catch (error) {
     logger.error('Error updating delegated task:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -382,10 +382,10 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     });
 
     logger.info(`Deleted delegated task: ${id} for organization: ${organizationId}`);
-    res.json({ message: 'Delegated task deleted successfully' });
+    return res.json({ message: 'Delegated task deleted successfully' });
   } catch (error) {
     logger.error('Error deleting delegated task:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -448,7 +448,7 @@ router.get('/delegate/:name/history', authenticateToken, async (req, res) => {
       _count: true
     });
 
-    res.json({
+    return res.json({
       delegate: name,
       tasks,
       stats: stats.reduce((acc, item) => {
@@ -464,7 +464,7 @@ router.get('/delegate/:name/history', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     logger.error('Error fetching delegation history:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 

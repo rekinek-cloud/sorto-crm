@@ -13,13 +13,13 @@ router.use(authenticateToken);
 // GET /api/v1/ai/goal-recommendations - Get AI-powered goal recommendations
 router.get('/goal-recommendations', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.id;
 
     logger.info('Fetching AI goal recommendations', { userId });
 
     const recommendations = await goalEngine.generateRecommendations(userId);
 
-    res.json({
+    return res.json({
       message: 'Goal recommendations generated successfully',
       data: recommendations,
       meta: {
@@ -29,11 +29,11 @@ router.get('/goal-recommendations', async (req, res) => {
     });
   } catch (error) {
     logger.error('Failed to generate goal recommendations', { 
-      userId: req.user?.userId, 
+      userId: req.user?.id, 
       error: error instanceof Error ? error.message : error 
     });
     
-    res.status(500).json({
+    return res.status(500).json({
       message: 'Failed to generate goal recommendations',
       error: process.env.NODE_ENV === 'development' ? error : 'Internal server error'
     });
@@ -43,7 +43,7 @@ router.get('/goal-recommendations', async (req, res) => {
 // POST /api/v1/ai/analyze-productivity - Analyze user productivity patterns
 router.post('/analyze-productivity', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.id;
     const { timeframe = '30d' } = req.body;
 
     logger.info('Analyzing user productivity', { userId, timeframe });
@@ -193,18 +193,18 @@ router.post('/analyze-productivity', async (req, res) => {
       generatedAt: new Date().toISOString()
     };
 
-    res.json({
+    return res.json({
       message: 'Productivity analysis completed',
       data: analysis
     });
 
   } catch (error) {
     logger.error('Failed to analyze productivity', { 
-      userId: req.user?.userId, 
+      userId: req.user?.id, 
       error: error instanceof Error ? error.message : error 
     });
     
-    res.status(500).json({
+    return res.status(500).json({
       message: 'Failed to analyze productivity',
       error: process.env.NODE_ENV === 'development' ? error : 'Internal server error'
     });
@@ -214,7 +214,7 @@ router.post('/analyze-productivity', async (req, res) => {
 // POST /api/v1/ai/predict-project-success - Predict project success probability
 router.post('/predict-project-success', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.id;
     const { projectId } = req.body;
 
     if (!projectId) {
@@ -366,18 +366,18 @@ router.post('/predict-project-success', async (req, res) => {
       predictedAt: new Date().toISOString()
     };
 
-    res.json({
+    return res.json({
       message: 'Project success prediction completed',
       data: prediction
     });
 
   } catch (error) {
     logger.error('Failed to predict project success', { 
-      userId: req.user?.userId, 
+      userId: req.user?.id, 
       error: error instanceof Error ? error.message : error 
     });
     
-    res.status(500).json({
+    return res.status(500).json({
       message: 'Failed to predict project success',
       error: process.env.NODE_ENV === 'development' ? error : 'Internal server error'
     });

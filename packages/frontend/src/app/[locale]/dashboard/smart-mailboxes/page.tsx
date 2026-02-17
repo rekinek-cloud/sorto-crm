@@ -356,7 +356,7 @@ export default function SmartMailboxesPage() {
         actionable: true
       }
 
-      await sourceInboxApi.quickCapture(inboxItem)
+      await sourceInboxApi.quickCapture(inboxItem as any)
       toast.success(`Dodano do ${action === 'INBOX' ? 'Inbox' : action === 'DO' ? 'Do zrobienia' : 'Odlozone'}`)
     } catch {
       toast.error('Blad przetwarzania')
@@ -1069,7 +1069,7 @@ export default function SmartMailboxesPage() {
       <AnimatePresence>
         {showBuilder && (
           <SmartMailboxBuilder
-            mailbox={editingMailbox}
+            mailbox={editingMailbox as any}
             onClose={() => {
               setShowBuilder(false)
               setEditingMailbox(null)
@@ -1111,9 +1111,10 @@ export default function SmartMailboxesPage() {
             processed: false,
             organizationId: '',
             capturedById: '',
+            capturedBy: { id: '', firstName: '', lastName: '', email: '' },
             createdAt: currentMessage.receivedAt,
             updatedAt: currentMessage.receivedAt
-          }}
+          } as any}
           onClose={() => {
             setShowGTDModal(false)
             setCurrentMessage(null)

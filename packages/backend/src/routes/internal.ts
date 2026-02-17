@@ -29,7 +29,7 @@ const validateServiceToken = (req: express.Request, res: express.Response, next:
     return res.status(401).json({ error: 'Invalid service token' });
   }
 
-  next();
+  return next();
 };
 
 // Apply service token validation to all internal routes
@@ -100,10 +100,10 @@ router.get('/user-relations', async (req, res) => {
       }
     });
 
-    res.json(relations);
+    return res.json(relations);
   } catch (error: any) {
     console.error('Error fetching user relations:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to fetch user relations',
       message: error.message
     });
@@ -163,10 +163,10 @@ router.get('/user-streams', async (req, res) => {
       }
     });
 
-    res.json(streams);
+    return res.json(streams);
   } catch (error: any) {
     console.error('Error fetching user streams:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to fetch user streams',
       message: error.message
     });
@@ -287,7 +287,7 @@ router.get('/user-context', async (req, res) => {
     // Add based on role
     if (user.role === 'OWNER' || user.role === 'ADMIN') {
       // OWNER/ADMIN see everyone - return empty set (means no filter)
-      res.json({
+      return res.json({
         userId: user.id,
         userRole: user.role,
         userName: `${user.firstName} ${user.lastName}`,
@@ -298,7 +298,6 @@ router.get('/user-context', async (req, res) => {
         accessibleUserIds: [], // Empty = no filter (full access)
         fullAccess: true
       });
-      return;
     }
 
     // MANAGER sees subordinates
@@ -307,7 +306,7 @@ router.get('/user-context', async (req, res) => {
     // MEMBER sees team members
     teamMemberIds.forEach(id => accessibleUserIds.add(id));
 
-    res.json({
+    return res.json({
       userId: user.id,
       userRole: user.role,
       userName: `${user.firstName} ${user.lastName}`,
@@ -321,7 +320,7 @@ router.get('/user-context', async (req, res) => {
 
   } catch (error: any) {
     console.error('Error fetching user context:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to fetch user context',
       message: error.message
     });
@@ -333,7 +332,7 @@ router.get('/user-context', async (req, res) => {
  * Health check dla internal API
  */
 router.get('/health', (req, res) => {
-  res.json({
+  return res.json({
     status: 'ok',
     service: 'crm-internal-api',
     timestamp: new Date().toISOString()

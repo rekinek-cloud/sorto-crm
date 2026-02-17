@@ -54,13 +54,13 @@ export class AIConfigService {
 
     try {
       // Get active AI providers for organization
-      const providers = await this.prisma.aiProvider.findMany({
+      const providers = await this.prisma.ai_providers.findMany({
         where: {
           organizationId,
           status: 'ACTIVE'
         },
         include: {
-          models: {
+          ai_models: {
             where: { status: 'ACTIVE' }
           }
         },
@@ -79,24 +79,24 @@ export class AIConfigService {
       // Process each provider
       for (const provider of providers) {
         const configData = provider.config as any;
-        
+
         if (provider.name.toLowerCase() === 'openai' && configData?.apiKey) {
-          const openaiModel = provider.models.find(m => 
+          const openaiModel = provider.ai_models.find((m: any) =>
             m.name.includes('gpt-4') || m.name.includes('gpt-3.5')
           );
-          
+
           config.openai = {
             apiKey: configData.apiKey,
             model: openaiModel?.name || 'gpt-4-turbo-preview',
             embeddingModel: 'text-embedding-3-small'
           };
-          
+
           config.defaultProvider = 'openai';
           console.log(`✅ OpenAI provider configured with model: ${config.openai.model}`);
         }
-        
+
         if (provider.name.toLowerCase() === 'anthropic' && configData?.apiKey) {
-          const anthropicModel = provider.models.find(m => 
+          const anthropicModel = provider.ai_models.find((m: any) =>
             m.name.includes('claude')
           );
           
@@ -256,13 +256,13 @@ export class AIConfigService {
     provider: string;
     models: string[];
   }[]> {
-    const providers = await this.prisma.aiProvider.findMany({
+    const providers = await this.prisma.ai_providers.findMany({
       where: {
         organizationId,
         status: 'ACTIVE'
       },
       include: {
-        models: {
+        ai_models: {
           where: { status: 'ACTIVE' }
         }
       }
@@ -270,7 +270,7 @@ export class AIConfigService {
 
     return providers.map(provider => ({
       provider: provider.name,
-      models: provider.models.map(model => model.name)
+      models: provider.ai_models.map((model: any) => model.name)
     }));
   }
 

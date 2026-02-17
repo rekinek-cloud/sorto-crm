@@ -46,7 +46,7 @@ export function RuleCard({ rule, onToggle, onDelete, expanded, onToggleExpand }:
                   {rule.name}
                 </Link>
                 {rule.isSystem && (
-                  <ShieldAlert className="w-4 h-4 text-amber-500 flex-shrink-0" title="Regula systemowa" />
+                  <ShieldAlert className="w-4 h-4 text-amber-500 flex-shrink-0" {...{ title: "Regula systemowa" } as any} />
                 )}
               </div>
               <p className="text-sm text-slate-500 dark:text-slate-400 truncate">{rule.description}</p>

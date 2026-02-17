@@ -43,7 +43,7 @@ router.get('/', validateRequest({ query: activityQuerySchema }), async (req, res
       userId
     } = req.query;
 
-    const skip = (page - 1) * limit;
+    const skip = (Number(page) - 1) * Number(limit);
 
     // Build where clause
     const where: any = {
@@ -83,50 +83,50 @@ router.get('/', validateRequest({ query: activityQuerySchema }), async (req, res
 
     // Get activities
     const [activities, total] = await Promise.all([
-      prisma.activity.findMany({
+      prisma.activities.findMany({
         where,
         skip,
-        take: limit,
+        take: Number(limit),
         orderBy: { createdAt: 'desc' },
         include: {
-          user: {
+          users: {
             select: { id: true, firstName: true, lastName: true }
           },
-          company: {
+          companies: {
             select: { id: true, name: true }
           },
-          contact: {
+          contacts: {
             select: { id: true, firstName: true, lastName: true }
           },
-          deal: {
+          deals: {
             select: { id: true, title: true, value: true, stage: true }
           },
-          task: {
+          tasks: {
             select: { id: true, title: true, status: true }
           },
-          project: {
+          projects: {
             select: { id: true, name: true, status: true }
           },
-          meeting: {
+          meetings: {
             select: { id: true, title: true, startTime: true }
           }
         }
       }),
-      prisma.activity.count({ where })
+      prisma.activities.count({ where })
     ]);
 
-    res.json({
+    return res.json({
       activities,
       pagination: {
         page,
         limit,
         total,
-        pages: Math.ceil(total / limit)
+        pages: Math.ceil(total / Number(limit))
       }
     });
   } catch (error) {
     console.error('Error fetching activities:', error);
-    res.status(500).json({ error: 'Failed to fetch activities' });
+    return res.status(500).json({ error: 'Failed to fetch activities' });
   }
 });
 
@@ -161,7 +161,7 @@ router.get('/company/:id', validateRequest({ params: companyActivitiesSchema }),
     }).then(deals => deals.map(d => d.id));
 
     // Get activities related to this company
-    const activities = await prisma.activity.findMany({
+    const activities = await prisma.activities.findMany({
       where: {
         organizationId: req.user.organizationId,
         OR: [
@@ -173,25 +173,25 @@ router.get('/company/:id', validateRequest({ params: companyActivitiesSchema }),
       take: Math.floor(limit * 0.7), // Reserve 30% for messages
       orderBy: { createdAt: 'desc' },
       include: {
-        user: {
+        users: {
           select: { id: true, firstName: true, lastName: true }
         },
-        company: {
+        companies: {
           select: { id: true, name: true }
         },
-        contact: {
+        contacts: {
           select: { id: true, firstName: true, lastName: true }
         },
-        deal: {
+        deals: {
           select: { id: true, title: true, value: true, stage: true }
         },
-        task: {
+        tasks: {
           select: { id: true, title: true, status: true }
         },
-        project: {
+        projects: {
           select: { id: true, name: true, status: true }
         },
-        meeting: {
+        meetings: {
           select: { id: true, title: true, startTime: true }
         }
       }
@@ -220,28 +220,28 @@ router.get('/company/:id', validateRequest({ params: companyActivitiesSchema }),
     // Convert messages to activity-like format
     const messageActivities = messages.map(message => ({
       id: `msg_${message.id}`,
-      type: message.channel.type === 'EMAIL' 
+      type: message.channel.type === 'EMAIL'
         ? (message.messageType === 'SENT' ? 'EMAIL_SENT' : 'EMAIL_RECEIVED')
         : 'CHAT_MESSAGE',
-      title: message.channel.type === 'EMAIL' 
+      title: message.channel.type === 'EMAIL'
         ? (message.messageType === 'SENT' ? 'Email sent' : 'Email received')
         : `Message via ${message.channel.name}`,
       description: message.content,
       createdAt: message.receivedAt,
       updatedAt: message.receivedAt,
       organizationId: req.user.organizationId,
-      userId: null,
+      userId: null as string | null,
       companyId: message.companyId || id,
       contactId: message.contactId,
       dealId: message.dealId,
       taskId: message.taskId,
-      projectId: null,
-      meetingId: null,
+      projectId: null as string | null,
+      meetingId: null as string | null,
       communicationType: message.channel.type.toLowerCase(),
       communicationDirection: message.messageType === 'SENT' ? 'outbound' : 'inbound',
       communicationSubject: message.subject,
       communicationBody: message.content,
-      communicationDuration: null,
+      communicationDuration: null as number | null,
       communicationStatus: message.messageType === 'SENT' ? 'sent' : 'received',
       metadata: {
         messageId: message.id,
@@ -260,11 +260,11 @@ router.get('/company/:id', validateRequest({ params: companyActivitiesSchema }),
       },
       // Include relations for consistency
       contact: message.contact,
-      user: null,
-      deal: null,
-      task: null,
-      project: null,
-      meeting: null
+      user: null as any,
+      deal: null as any,
+      task: null as any,
+      project: null as any,
+      meeting: null as any
     }));
 
     // Combine activities and messages, sort by date
@@ -272,10 +272,10 @@ router.get('/company/:id', validateRequest({ params: companyActivitiesSchema }),
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
       .slice(0, limit);
 
-    res.json(allActivities);
+    return res.json(allActivities);
   } catch (error) {
     console.error('Error fetching company activities:', error);
-    res.status(500).json({ error: 'Failed to fetch company activities' });
+    return res.status(500).json({ error: 'Failed to fetch company activities' });
   }
 });
 
@@ -302,7 +302,7 @@ export const createActivity = async (data: {
   communicationStatus?: string;
 }) => {
   try {
-    return await prisma.activity.create({
+    return await (prisma.activities.create as any)({
       data: {
         ...data,
         metadata: data.metadata || {}

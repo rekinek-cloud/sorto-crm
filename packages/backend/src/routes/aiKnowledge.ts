@@ -40,7 +40,7 @@ router.get('/debug-providers', async (req, res) => {
     
     console.log('Available providers:', providers);
     
-    res.json({
+    return res.json({
       success: true,
       organizationId,
       providers
@@ -48,7 +48,7 @@ router.get('/debug-providers', async (req, res) => {
     
   } catch (error) {
     console.error('Debug providers error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -65,14 +65,14 @@ router.post('/clear-cache', async (req, res) => {
     
     knowledgeEngine.clearCache();
     
-    res.json({
+    return res.json({
       success: true,
       message: 'AI router cache cleared'
     });
     
   } catch (error) {
     console.error('Clear cache error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error'
     });
@@ -180,7 +180,7 @@ router.post('/query', async (req, res) => {
     // Log query for analytics
     console.log(`Knowledge query from ${req.user.email}: "${question}" (${response.executionTime}ms)`);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         ...response,
@@ -199,7 +199,7 @@ router.post('/query', async (req, res) => {
     }
 
     console.error('Knowledge query error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to process knowledge query'
     });
@@ -231,7 +231,7 @@ router.get('/insights/:type', async (req, res) => {
 
     const response = await knowledgeEngine.queryKnowledge(query);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         insights: response.insights,
@@ -242,7 +242,7 @@ router.get('/insights/:type', async (req, res) => {
 
   } catch (error) {
     console.error('Insights error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch insights'
     });
@@ -282,14 +282,14 @@ router.get('/stats', async (req, res) => {
       ]
     };
 
-    res.json({
+    return res.json({
       success: true,
       data: stats
     });
 
   } catch (error) {
     console.error('Stats error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch statistics'
     });
@@ -316,7 +316,7 @@ router.post('/suggestions', async (req, res) => {
       "Które firmy wymagają kontaktu?"
     ];
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         suggestions: suggestions.slice(0, 6), // Return 6 random suggestions
@@ -331,7 +331,7 @@ router.post('/suggestions', async (req, res) => {
 
   } catch (error) {
     console.error('Suggestions error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch suggestions'
     });
@@ -355,7 +355,7 @@ router.post('/rag/index', async (req, res) => {
 
     console.log(`✅ RAG indexing complete: ${result.success} success, ${result.failed} failed`);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         message: 'Indexing complete',
@@ -365,7 +365,7 @@ router.post('/rag/index', async (req, res) => {
     });
   } catch (error) {
     console.error('RAG indexing error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to index data'
     });
@@ -392,7 +392,7 @@ router.post('/rag/search', async (req, res) => {
 
     const results = await ragService.search(query, limit);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         query,
@@ -402,7 +402,7 @@ router.post('/rag/search', async (req, res) => {
     });
   } catch (error) {
     console.error('RAG search error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Search failed'
     });
@@ -420,13 +420,13 @@ router.get('/rag/stats', async (req, res) => {
 
     const stats = await ragService.getStats();
 
-    res.json({
+    return res.json({
       success: true,
       data: stats
     });
   } catch (error) {
     console.error('RAG stats error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get stats'
     });
@@ -476,7 +476,7 @@ router.post('/rag/query', async (req, res) => {
 
     const executionTime = Date.now() - startTime;
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         ...response,
@@ -492,7 +492,7 @@ router.post('/rag/query', async (req, res) => {
 
   } catch (error) {
     console.error('RAG query error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'RAG query failed'
     });

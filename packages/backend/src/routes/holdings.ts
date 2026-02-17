@@ -78,10 +78,10 @@ router.get('/', async (req, res) => {
 
     const holdings = [...ownedHoldings, ...orgHoldings];
 
-    res.json({ holdings });
+    return res.json({ holdings });
   } catch (error) {
     console.error('Error listing holdings:', error);
-    res.status(500).json({ error: 'Failed to list holdings' });
+    return res.status(500).json({ error: 'Failed to list holdings' });
   }
 });
 
@@ -92,8 +92,7 @@ router.post('/', async (req, res) => {
     const parsed = createHoldingSchema.safeParse(req.body);
 
     if (!parsed.success) {
-      res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
-      return;
+      return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
     }
 
     const holding = await prisma.holding.create({
@@ -107,10 +106,10 @@ router.post('/', async (req, res) => {
       },
     });
 
-    res.status(201).json({ holding });
+    return res.status(201).json({ holding });
   } catch (error) {
     console.error('Error creating holding:', error);
-    res.status(500).json({ error: 'Failed to create holding' });
+    return res.status(500).json({ error: 'Failed to create holding' });
   }
 });
 
@@ -146,8 +145,7 @@ router.get('/:id', async (req, res) => {
     });
 
     if (!holding) {
-      res.status(404).json({ error: 'Holding not found' });
-      return;
+      return res.status(404).json({ error: 'Holding not found' });
     }
 
     // Verify access: user is owner or belongs to one of the holding's orgs
@@ -156,14 +154,13 @@ router.get('/:id', async (req, res) => {
       holding.organizations.some((org) => org.id === organizationId);
 
     if (!hasAccess) {
-      res.status(403).json({ error: 'Access denied to this holding' });
-      return;
+      return res.status(403).json({ error: 'Access denied to this holding' });
     }
 
-    res.json({ holding });
+    return res.json({ holding });
   } catch (error) {
     console.error('Error getting holding:', error);
-    res.status(500).json({ error: 'Failed to get holding' });
+    return res.status(500).json({ error: 'Failed to get holding' });
   }
 });
 
@@ -175,19 +172,16 @@ router.patch('/:id', async (req, res) => {
 
     const parsed = updateHoldingSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
-      return;
+      return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
     }
 
     // Only owner can update holding
     const holding = await prisma.holding.findUnique({ where: { id } });
     if (!holding) {
-      res.status(404).json({ error: 'Holding not found' });
-      return;
+      return res.status(404).json({ error: 'Holding not found' });
     }
     if (holding.ownerId !== userId) {
-      res.status(403).json({ error: 'Only the holding owner can update it' });
-      return;
+      return res.status(403).json({ error: 'Only the holding owner can update it' });
     }
 
     const updated = await prisma.holding.update({
@@ -200,10 +194,10 @@ router.patch('/:id', async (req, res) => {
       },
     });
 
-    res.json({ holding: updated });
+    return res.json({ holding: updated });
   } catch (error) {
     console.error('Error updating holding:', error);
-    res.status(500).json({ error: 'Failed to update holding' });
+    return res.status(500).json({ error: 'Failed to update holding' });
   }
 });
 
@@ -215,19 +209,16 @@ router.post('/:id/organizations', async (req, res) => {
 
     const parsed = addOrganizationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
-      return;
+      return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
     }
 
     // Only owner can add organizations
     const holding = await prisma.holding.findUnique({ where: { id } });
     if (!holding) {
-      res.status(404).json({ error: 'Holding not found' });
-      return;
+      return res.status(404).json({ error: 'Holding not found' });
     }
     if (holding.ownerId !== userId) {
-      res.status(403).json({ error: 'Only the holding owner can add organizations' });
-      return;
+      return res.status(403).json({ error: 'Only the holding owner can add organizations' });
     }
 
     // Generate slug from name
@@ -247,10 +238,10 @@ router.post('/:id/organizations', async (req, res) => {
       },
     });
 
-    res.status(201).json({ organization });
+    return res.status(201).json({ organization });
   } catch (error) {
     console.error('Error adding organization to holding:', error);
-    res.status(500).json({ error: 'Failed to add organization to holding' });
+    return res.status(500).json({ error: 'Failed to add organization to holding' });
   }
 });
 

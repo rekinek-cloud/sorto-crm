@@ -78,7 +78,7 @@ router.get('/', async (req, res) => {
       prisma.contact.count({ where })
     ]);
 
-    res.json({
+    return res.json({
       contacts,
       pagination: {
         page: pageNum,
@@ -89,7 +89,7 @@ router.get('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching contacts:', error);
-    res.status(500).json({ error: 'Failed to fetch contacts' });
+    return res.status(500).json({ error: 'Failed to fetch contacts' });
   }
 });
 
@@ -117,10 +117,10 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Contact not found' });
     }
 
-    res.json(contact);
+    return res.json(contact);
   } catch (error) {
     console.error('Error fetching contact:', error);
-    res.status(500).json({ error: 'Failed to fetch contact' });
+    return res.status(500).json({ error: 'Failed to fetch contact' });
   }
 });
 
@@ -134,7 +134,7 @@ router.post('/', async (req, res) => {
       data: {
         ...validatedData,
         organizationId: req.user.organizationId
-      },
+      } as any,
       include: {
         assignedCompany: {
           select: { id: true, name: true }
@@ -145,7 +145,7 @@ router.post('/', async (req, res) => {
       }
     });
 
-    res.status(201).json(contact);
+    return res.status(201).json(contact);
 
       // Auto-index to RAG
       syncContacts(req.user!.organizationId, contact.id).catch(err =>
@@ -156,7 +156,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
     console.error('Error creating contact:', error);
-    res.status(500).json({ error: 'Failed to create contact' });
+    return res.status(500).json({ error: 'Failed to create contact' });
   }
 });
 
@@ -195,7 +195,7 @@ router.put('/:id', async (req, res) => {
       }
     });
 
-    res.json(contact);
+    return res.json(contact);
 
       // Auto-index to RAG
       syncContacts(req.user!.organizationId, contact.id, true).catch(err =>
@@ -206,7 +206,7 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
     console.error('Error updating contact:', error);
-    res.status(500).json({ error: 'Failed to update contact' });
+    return res.status(500).json({ error: 'Failed to update contact' });
   }
 });
 
@@ -231,10 +231,10 @@ router.delete('/:id', async (req, res) => {
       where: { id }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error deleting contact:', error);
-    res.status(500).json({ error: 'Failed to delete contact' });
+    return res.status(500).json({ error: 'Failed to delete contact' });
   }
 });
 

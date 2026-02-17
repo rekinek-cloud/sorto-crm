@@ -34,7 +34,7 @@ router.post('/demo', async (req, res) => {
         LIMIT ${limit}
       `;
       
-      searchResults = vectorResults.map((row: any, index: number) => ({
+      searchResults = (vectorResults as any[]).map((row: any, index: number) => ({
         id: row.id,
         type: row.metadata.type || 'unknown',
         entityId: row.metadata.entityId || row.id,
@@ -69,7 +69,7 @@ router.post('/demo', async (req, res) => {
       }
     };
 
-    res.json({
+    return res.json({
       success: true,
       data: response,
       timestamp: new Date().toISOString()
@@ -77,7 +77,7 @@ router.post('/demo', async (req, res) => {
 
   } catch (error) {
     console.error('Search error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'

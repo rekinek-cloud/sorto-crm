@@ -145,7 +145,7 @@ export class AIRouter {
         ...request,
         model: model.name,
         config: {
-          ...model.config,
+          ...(model.config as any),
           ...request.config
         }
       });

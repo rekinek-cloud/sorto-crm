@@ -17,10 +17,13 @@ const router = Router();
 
 // Extended Request interface for auth
 interface AuthenticatedRequest extends Request {
-  user: {
+  user?: {
     id: string;
     email: string;
+    role: string;
     organizationId: string;
+    firstName: string;
+    lastName: string;
   };
 }
 
@@ -52,7 +55,7 @@ router.post('/process-command', authenticateUser, async (req: any, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         ...result,
@@ -71,7 +74,7 @@ router.post('/process-command', authenticateUser, async (req: any, res) => {
     }
 
     console.error('Voice command processing error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to process voice command'
     });
@@ -109,7 +112,7 @@ router.post('/process-command-enhanced', authenticateUser, async (req: any, res)
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         ...result,
@@ -128,7 +131,7 @@ router.post('/process-command-enhanced', authenticateUser, async (req: any, res)
     }
 
     console.error('Enhanced voice command processing error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to process enhanced voice command'
     });
@@ -156,14 +159,14 @@ router.post('/initialize-knowledge', authenticateUser, async (req: any, res) => 
     const pipeline = getDataIngestionPipeline(prisma, vectorStore);
     
     // Start ingestion job
-    const jobId = await pipeline.ingestUserData(
+    const jobId = await (pipeline as any).ingestUserData(
       organizationId,
       userId,
       entityTypes || ['tasks', 'projects', 'contacts', 'companies', 'deals'],
       forceRebuild
     );
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         jobId,
@@ -184,7 +187,7 @@ router.post('/initialize-knowledge', authenticateUser, async (req: any, res) => 
     }
 
     console.error('Knowledge base initialization error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to initialize knowledge base'
     });
@@ -204,7 +207,7 @@ router.get('/knowledge-status', authenticateUser, async (req: any, res) => {
     // Get vector store stats
     const stats = await vectorStore.getStats(organizationId);
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         ...stats,
@@ -216,7 +219,7 @@ router.get('/knowledge-status', authenticateUser, async (req: any, res) => {
 
   } catch (error) {
     console.error('Knowledge status check error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to check knowledge base status'
     });
@@ -237,7 +240,7 @@ router.get('/test-public', async (req, res) => {
     // Test vector store
     const stats = await vectorStore.getStats();
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         message: 'RAG system components loaded successfully',
@@ -248,7 +251,7 @@ router.get('/test-public', async (req, res) => {
 
   } catch (error) {
     console.error('RAG test error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: `RAG test failed: ${error}`
     });

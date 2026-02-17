@@ -93,7 +93,7 @@ router.get('/', async (req, res) => {
       prisma.company.count({ where })
     ]);
 
-    res.json({
+    return res.json({
       companies: companies.map(company => ({
         ...company,
         contacts: company.assignedContacts,
@@ -111,7 +111,7 @@ router.get('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching companies:', error);
-    res.status(500).json({ error: 'Failed to fetch companies' });
+    return res.status(500).json({ error: 'Failed to fetch companies' });
   }
 });
 
@@ -152,10 +152,10 @@ router.get('/lookup-nip/:nip', async (req, res) => {
       address: subject.workingAddress || subject.residenceAddress || '',
     };
 
-    res.json(companyData);
+    return res.json(companyData);
   } catch (error) {
     console.error('Error looking up NIP:', error);
-    res.status(500).json({ error: 'Błąd podczas wyszukiwania NIP' });
+    return res.status(500).json({ error: 'Błąd podczas wyszukiwania NIP' });
   }
 });
 
@@ -195,10 +195,10 @@ router.get('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Company not found' });
     }
 
-    res.json(company);
+    return res.json(company);
   } catch (error) {
     console.error('Error fetching company:', error);
-    res.status(500).json({ error: 'Failed to fetch company' });
+    return res.status(500).json({ error: 'Failed to fetch company' });
   }
 });
 
@@ -209,8 +209,8 @@ router.post('/', async (req, res) => {
 
     const company = await prisma.company.create({
       data: {
-        ...validatedData,
-        organizationId: req.user.organizationId
+        ...(validatedData as any),
+        organizationId: req.user!.organizationId
       },
       include: {
         assignedContacts: {
@@ -225,11 +225,11 @@ router.post('/', async (req, res) => {
       }
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       ...company,
-      contacts: company.assignedContacts,
-      contactsCount: company._count.assignedContacts,
-      dealsCount: company._count.deals
+      contacts: (company as any).assignedContacts,
+      contactsCount: (company as any)._count?.assignedContacts,
+      dealsCount: (company as any)._count?.deals
     });
 
       // Auto-index to RAG
@@ -241,7 +241,7 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
     console.error('Error creating company:', error);
-    res.status(500).json({ error: 'Failed to create company' });
+    return res.status(500).json({ error: 'Failed to create company' });
   }
 });
 
@@ -282,7 +282,7 @@ router.put('/:id', async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       ...company,
       contacts: company.assignedContacts,
       contactsCount: company._count.assignedContacts,
@@ -298,7 +298,7 @@ router.put('/:id', async (req, res) => {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
     console.error('Error updating company:', error);
-    res.status(500).json({ error: 'Failed to update company' });
+    return res.status(500).json({ error: 'Failed to update company' });
   }
 });
 
@@ -323,10 +323,10 @@ router.delete('/:id', async (req, res) => {
       where: { id }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error deleting company:', error);
-    res.status(500).json({ error: 'Failed to delete company' });
+    return res.status(500).json({ error: 'Failed to delete company' });
   }
 });
 
@@ -432,7 +432,7 @@ router.post('/:id/merge', async (req, res) => {
       return updatedCompany;
     });
 
-    res.json({
+    return res.json({
       ...result,
       contacts: result.assignedContacts,
       contactsCount: result._count.assignedContacts,
@@ -449,7 +449,7 @@ router.post('/:id/merge', async (req, res) => {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
     console.error('Error merging companies:', error);
-    res.status(500).json({ error: 'Failed to merge companies' });
+    return res.status(500).json({ error: 'Failed to merge companies' });
   }
 });
 

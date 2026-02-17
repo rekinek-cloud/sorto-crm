@@ -42,13 +42,24 @@ export interface Context {
   };
 }
 
+export type StreamStatus = 'ACTIVE' | 'ARCHIVED' | 'TEMPLATE' | 'FLOWING' | 'FROZEN';
+
+export type StreamPattern =
+  | 'project'
+  | 'continuous'
+  | 'reference'
+  | 'client'
+  | 'pipeline'
+  | 'workspace'
+  | 'custom';
+
 export interface Stream {
   id: string;
   name: string;
   description?: string;
   color: string;
   icon?: string;
-  status: 'ACTIVE' | 'ARCHIVED' | 'TEMPLATE';
+  status: StreamStatus;
   organizationId: string;
   createdById: string;
   createdAt: string;
@@ -537,4 +548,53 @@ export interface ClientProductStats {
   firstOrderAt?: string;
   topProducts?: any;
   seasonality?: any;
+}
+
+// =============================================
+// Goal Types (Cele Precyzyjne - RZUT)
+// =============================================
+
+export type GoalStatus = 'active' | 'achieved' | 'failed' | 'paused';
+
+export interface PreciseGoal {
+  id: string;
+  result: string;
+  measurement: string;
+  deadline: string;
+  background?: string;
+  targetValue: number;
+  currentValue: number;
+  unit: string;
+  status: GoalStatus;
+  streamId?: string;
+  organizationId: string;
+  createdById: string;
+  createdAt: string;
+  updatedAt: string;
+  stream?: Pick<Stream, 'id' | 'name' | 'color'>;
+}
+
+export interface CreateGoalRequest {
+  result: string;
+  measurement: string;
+  deadline: string;
+  background?: string;
+  targetValue: number;
+  unit: string;
+  streamId?: string;
+}
+
+export interface UpdateGoalRequest extends Partial<CreateGoalRequest> {
+  currentValue?: number;
+  status?: GoalStatus;
+}
+
+export interface GoalsResponse {
+  goals: PreciseGoal[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    pages: number;
+  };
 }

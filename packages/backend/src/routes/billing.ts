@@ -7,13 +7,13 @@ import Stripe from 'stripe';
 import { z } from 'zod';
 import { subscriptionService } from '../services/SubscriptionService';
 import { authenticateToken as authMiddleware } from '../shared/middleware/auth';
-import { logger } from '../config/logger';
+import logger from '../config/logger';
 import { PLAN_PRICING, PLAN_LIMITS } from '../config/planLimits';
 
 const router = Router();
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2023-10-16',
+  apiVersion: '2023-10-16' as Stripe.LatestApiVersion,
 });
 
 // Validation schemas
@@ -38,14 +38,14 @@ router.get('/subscription', authMiddleware, async (req: Request, res: Response) 
     // Calculate trial days remaining
     const trialDaysRemaining = subscriptionService.getTrialDaysRemaining(details.trialEndsAt);
 
-    res.json({
+    return res.json({
       ...details,
       trialDaysRemaining,
       isActive: subscriptionService.isSubscriptionActive(details),
     });
   } catch (error) {
     logger.error('Error fetching subscription:', error);
-    res.status(500).json({ error: 'Failed to fetch subscription' });
+    return res.status(500).json({ error: 'Failed to fetch subscription' });
   }
 });
 
@@ -61,10 +61,10 @@ router.get('/plans', async (req: Request, res: Response) => {
       pricing: PLAN_PRICING[name as keyof typeof PLAN_PRICING],
     }));
 
-    res.json({ plans });
+    return res.json({ plans });
   } catch (error) {
     logger.error('Error fetching plans:', error);
-    res.status(500).json({ error: 'Failed to fetch plans' });
+    return res.status(500).json({ error: 'Failed to fetch plans' });
   }
 });
 
@@ -95,10 +95,10 @@ router.post('/checkout', authMiddleware, async (req: Request, res: Response) => 
       cancelUrl
     );
 
-    res.json(session);
+    return res.json(session);
   } catch (error) {
     logger.error('Error creating checkout session:', error);
-    res.status(500).json({ error: 'Failed to create checkout session' });
+    return res.status(500).json({ error: 'Failed to create checkout session' });
   }
 });
 
@@ -113,10 +113,10 @@ router.post('/portal', authMiddleware, async (req: Request, res: Response) => {
 
     const session = await subscriptionService.createPortalSession(organizationId, returnUrl);
 
-    res.json(session);
+    return res.json(session);
   } catch (error) {
     logger.error('Error creating portal session:', error);
-    res.status(500).json({ error: 'Failed to create portal session' });
+    return res.status(500).json({ error: 'Failed to create portal session' });
   }
 });
 
@@ -135,10 +135,10 @@ router.get('/check-limit/:resource', authMiddleware, async (req: Request, res: R
     const organizationId = req.user.organizationId;
     const result = await subscriptionService.checkLimit(organizationId, resource);
 
-    res.json(result);
+    return res.json(result);
   } catch (error) {
     logger.error('Error checking limit:', error);
-    res.status(500).json({ error: 'Failed to check limit' });
+    return res.status(500).json({ error: 'Failed to check limit' });
   }
 });
 
@@ -170,10 +170,10 @@ router.get('/check-feature/:feature', authMiddleware, async (req: Request, res: 
       feature as any
     );
 
-    res.json(result);
+    return res.json(result);
   } catch (error) {
     logger.error('Error checking feature:', error);
-    res.status(500).json({ error: 'Failed to check feature' });
+    return res.status(500).json({ error: 'Failed to check feature' });
   }
 });
 
@@ -208,10 +208,10 @@ router.post(
 
     try {
       await subscriptionService.handleWebhookEvent(event);
-      res.json({ received: true });
+      return res.json({ received: true });
     } catch (error) {
       logger.error('Error handling webhook event:', error);
-      res.status(500).json({ error: 'Webhook handler failed' });
+      return res.status(500).json({ error: 'Webhook handler failed' });
     }
   }
 );
@@ -257,14 +257,14 @@ router.get('/usage', authMiddleware, async (req: Request, res: Response) => {
       },
     };
 
-    res.json({
+    return res.json({
       plan: details.plan,
       usage,
       features: details.limits.features,
     });
   } catch (error) {
     logger.error('Error fetching usage:', error);
-    res.status(500).json({ error: 'Failed to fetch usage' });
+    return res.status(500).json({ error: 'Failed to fetch usage' });
   }
 });
 

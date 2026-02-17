@@ -67,7 +67,7 @@ router.post('/search', async (req, res) => {
       useCache
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: results
     });
@@ -82,7 +82,7 @@ router.post('/search', async (req, res) => {
     }
 
     logger.error('Vector search error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Vector search failed'
     });
@@ -107,7 +107,7 @@ router.post('/documents', async (req, res) => {
       { source, language, chunkSize }
     );
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: {
         documentIds,
@@ -125,7 +125,7 @@ router.post('/documents', async (req, res) => {
     }
 
     logger.error('Create vector document error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to create vector document'
     });
@@ -143,14 +143,14 @@ router.put('/documents/:id', async (req, res) => {
 
     await vectorService.updateVectorDocument(id, title, content);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Vector document updated successfully'
     });
 
   } catch (error) {
     logger.error('Update vector document error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to update vector document'
     });
@@ -167,14 +167,14 @@ router.delete('/documents/:entityType/:entityId', async (req, res) => {
 
     await vectorService.deleteVectorDocuments(entityType, entityId);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Vector documents deleted successfully'
     });
 
   } catch (error) {
     logger.error('Delete vector documents error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to delete vector documents'
     });
@@ -217,7 +217,7 @@ router.post('/sync', async (req, res) => {
         throw new Error(`Unsupported entity type: ${entityType}`);
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         entityType,
@@ -236,7 +236,7 @@ router.post('/sync', async (req, res) => {
     }
 
     logger.error('Vector sync error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Vector sync failed'
     });
@@ -253,14 +253,14 @@ router.get('/analytics', async (req, res) => {
 
     const analytics = await vectorService.getVectorAnalytics(organizationId);
 
-    res.json({
+    return res.json({
       success: true,
       data: analytics
     });
 
   } catch (error) {
     logger.error('Vector analytics error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to get analytics'
     });
@@ -275,14 +275,14 @@ router.post('/cache/cleanup', async (req, res) => {
   try {
     await vectorService.cleanupExpiredCache();
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Cache cleanup completed'
     });
 
   } catch (error) {
     logger.error('Cache cleanup error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Cache cleanup failed'
     });
@@ -367,7 +367,7 @@ router.post('/index-all', async (req, res) => {
 
     logger.info(`RAG indexing complete: ${totalIndexed} documents indexed`);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         totalIndexed,
@@ -378,7 +378,7 @@ router.post('/index-all', async (req, res) => {
 
   } catch (error) {
     logger.error('Full RAG indexing error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Indeksowanie RAG nie powiodło się'
     });
@@ -413,7 +413,7 @@ router.get('/status', async (req, res) => {
     const hasOpenAIKey = openAIProvider?.config &&
                          (openAIProvider.config as any).apiKey?.length > 10;
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         status: hasOpenAIKey ? 'operational' : 'limited',
@@ -433,7 +433,7 @@ router.get('/status', async (req, res) => {
 
   } catch (error) {
     logger.error('RAG status error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Nie udało się pobrać statusu RAG'
     });

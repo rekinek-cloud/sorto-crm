@@ -137,7 +137,7 @@ router.post('/analyze', async (req: Request, res: Response) => {
       }
     });
 
-    res.json({
+    return res.json({
       suggestionId: savedSuggestion.id,
       suggestions: suggestion,
       confidence,
@@ -147,7 +147,7 @@ router.post('/analyze', async (req: Request, res: Response) => {
 
   } catch (error) {
     logger.error('AI analyze error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to analyze',
       code: 'ANALYSIS_ERROR'
     });
@@ -233,7 +233,7 @@ router.post('/feedback', async (req: Request, res: Response) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       status,
       message: `Suggestion ${status.toLowerCase()}`
@@ -241,7 +241,7 @@ router.post('/feedback', async (req: Request, res: Response) => {
 
   } catch (error) {
     logger.error('AI feedback error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to process feedback',
       code: 'FEEDBACK_ERROR'
     });
@@ -283,14 +283,14 @@ router.post('/analyze-source-item', async (req: Request, res: Response) => {
 
     const suggestion = await analyzeSourceItem({ content: itemContent, source }, organizationId);
 
-    res.json({
+    return res.json({
       success: true,
       suggestion
     });
 
   } catch (error) {
     logger.error('Analyze source item error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to analyze source item',
       code: 'ANALYSIS_ERROR'
     });
@@ -311,14 +311,14 @@ router.post('/optimize-day', async (req: Request, res: Response) => {
 
     const suggestion = await analyzeDayPlan({ date: targetDate }, userId, organizationId);
 
-    res.json({
+    return res.json({
       success: true,
       suggestion
     });
 
   } catch (error) {
     logger.error('Optimize day error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to optimize day',
       code: 'OPTIMIZATION_ERROR'
     });
@@ -336,14 +336,14 @@ router.post('/weekly-review', async (req: Request, res: Response) => {
 
     const suggestion = await analyzeWeeklyReview(userId, organizationId);
 
-    res.json({
+    return res.json({
       success: true,
       suggestion
     });
 
   } catch (error) {
     logger.error('Weekly review error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to generate weekly review',
       code: 'REVIEW_ERROR'
     });
@@ -373,7 +373,7 @@ router.get('/user-patterns', async (req: Request, res: Response) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         preferredStreams: patterns.preferred_streams,
@@ -389,7 +389,7 @@ router.get('/user-patterns', async (req: Request, res: Response) => {
 
   } catch (error) {
     logger.error('Get user patterns error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to get user patterns',
       code: 'PATTERNS_ERROR'
     });
@@ -427,14 +427,14 @@ router.put('/settings', async (req: Request, res: Response) => {
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: patterns
     });
 
   } catch (error) {
     logger.error('Update AI settings error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to update AI settings',
       code: 'SETTINGS_ERROR'
     });
@@ -460,7 +460,7 @@ router.get('/suggestions', async (req: Request, res: Response) => {
       take: Number(limit)
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: suggestions,
       count: suggestions.length
@@ -468,7 +468,7 @@ router.get('/suggestions', async (req: Request, res: Response) => {
 
   } catch (error) {
     logger.error('Get suggestions error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Failed to get suggestions',
       code: 'SUGGESTIONS_ERROR'
     });

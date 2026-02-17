@@ -13,6 +13,7 @@ import { PipelineConfig } from './PipelineConfigDefaults';
 
 export interface EntityData {
   from?: string;
+  fromName?: string;
   subject?: string;
   body?: string;
   bodyHtml?: string;

@@ -68,20 +68,20 @@ router.post('/send', requireAuth, validateRequest(sendEmailSchema), async (req: 
     const result = await modernEmailService.sendEmail(emailData);
 
     if (result.success) {
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         messageId: result.messageId,
         message: 'Email sent successfully'
       });
     } else {
-      res.status(400).json({
+      return res.status(400).json({
         success: false,
         error: result.error || 'Failed to send email'
       });
     }
   } catch (error) {
     console.error('Email send error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Internal server error'
     });
@@ -118,20 +118,20 @@ router.post('/send-template', requireAuth, validateRequest(sendTemplateEmailSche
     );
 
     if (result.success) {
-      res.status(200).json({
+      return res.status(200).json({
         success: true,
         messageId: result.messageId,
         message: 'Template email sent successfully'
       });
     } else {
-      res.status(400).json({
+      return res.status(400).json({
         success: false,
         error: result.error || 'Failed to send template email'
       });
     }
   } catch (error) {
     console.error('Template email send error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Internal server error'
     });
@@ -163,7 +163,7 @@ router.post('/send-bulk', requireAuth, validateRequest(bulkEmailSchema), async (
       }
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       sent: result.sent,
       failed: result.failed,
@@ -172,7 +172,7 @@ router.post('/send-bulk', requireAuth, validateRequest(bulkEmailSchema), async (
     });
   } catch (error) {
     console.error('Bulk email send error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Internal server error'
     });
@@ -187,13 +187,13 @@ router.get('/templates', requireAuth, async (req: AuthenticatedRequest, res) => 
   try {
     const templates = await modernEmailService.getAvailableTemplates();
     
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       templates
     });
   } catch (error) {
     console.error('Get templates error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch templates'
     });
@@ -217,13 +217,13 @@ router.get('/stats', requireAuth, async (req: AuthenticatedRequest, res) => {
       toDate
     );
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       stats
     });
   } catch (error) {
     console.error('Get email stats error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch email statistics'
     });
@@ -238,13 +238,13 @@ router.post('/test-config', requireAuth, async (req: AuthenticatedRequest, res) 
   try {
     const result = await modernEmailService.testConfiguration();
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       test: result
     });
   } catch (error) {
     console.error('Test config error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to test email configuration'
     });
@@ -258,13 +258,13 @@ router.post('/test-config', requireAuth, async (req: AuthenticatedRequest, res) 
 router.get('/health', async (req, res) => {
   try {
     // Basic health check - verify service is available
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: 'Modern email service is healthy',
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Email service health check failed'
     });

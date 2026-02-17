@@ -67,7 +67,7 @@ export interface VoiceContext {
  * AI-powered voice command processor
  */
 export class AIVoiceProcessor {
-  private prisma: PrismaClient;
+  protected prisma: PrismaClient;
   private aiConfigService: any;
   private systemPrompt: string;
 
@@ -205,7 +205,7 @@ Kontekst użytkownika:
   /**
    * Execute the recognized command
    */
-  private async executeCommand(
+  protected async executeCommand(
     command: CommandResult,
     context: VoiceContext
   ): Promise<Partial<CommandResult>> {
@@ -264,7 +264,7 @@ Kontekst użytkownika:
           priority: projectData.priority || 'MEDIUM',
           organizationId: context.organizationId,
           createdById: context.userId,
-          dueDate: projectData.dueDate ? new Date(projectData.dueDate) : undefined,
+          endDate: projectData.dueDate ? new Date(projectData.dueDate) : undefined,
         }
       });
 
@@ -291,10 +291,11 @@ Kontekst użytkownika:
         data: {
           title: taskData.title,
           description: taskData.description,
-          status: 'TODO',
+          status: 'NEW',
           priority: taskData.priority || 'MEDIUM',
-          context: taskData.context || '@computer',
+          contextId: taskData.context ? undefined : undefined,
           organizationId: context.organizationId,
+          createdById: context.userId,
           assignedToId: context.userId,
           dueDate: taskData.dueDate ? new Date(taskData.dueDate) : undefined,
           projectId: taskData.projectId
@@ -303,7 +304,7 @@ Kontekst użytkownika:
 
       return {
         entities: { ...entities, taskId: task.id },
-        suggestedResponse: `Utworzyłem zadanie "${task.title}" w kontekście ${task.context}.`
+        suggestedResponse: `Utworzyłem zadanie "${task.title}" w kontekście ${task.contextId || 'domyślnym'}.`
       };
     } catch (error) {
       throw new Error('Failed to create task');
@@ -321,7 +322,7 @@ Kontekst użytkownika:
       const filter: any = {
         organizationId: context.organizationId,
         assignedToId: context.userId,
-        status: { not: 'DONE' }
+        status: { not: 'COMPLETED' }
       };
 
       // Apply date filter if specified
@@ -376,9 +377,9 @@ Kontekst użytkownika:
           organizationId: context.organizationId,
           OR: [
             { createdById: context.userId },
-            { collaborators: { some: { userId: context.userId } } }
+            { assignedToId: context.userId }
           ],
-          status: { in: ['PLANNING', 'ACTIVE'] }
+          status: { in: ['PLANNING', 'IN_PROGRESS'] }
         },
         orderBy: { updatedAt: 'desc' },
         take: 5
@@ -522,21 +523,21 @@ Kontekst użytkownika:
           where: {
             organizationId: context.organizationId,
             assignedToId: context.userId,
-            status: { not: 'DONE' }
+            status: { not: 'COMPLETED' }
           }
         }),
         this.prisma.project.count({
           where: {
             organizationId: context.organizationId,
             createdById: context.userId,
-            status: { in: ['PLANNING', 'ACTIVE'] }
+            status: { in: ['PLANNING', 'IN_PROGRESS'] }
           }
         }),
         this.prisma.task.count({
           where: {
             organizationId: context.organizationId,
             assignedToId: context.userId,
-            status: { not: 'DONE' },
+            status: { not: 'COMPLETED' },
             dueDate: {
               gte: new Date(new Date().setHours(0, 0, 0, 0)),
               lt: new Date(new Date().setHours(24, 0, 0, 0))

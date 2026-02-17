@@ -215,7 +215,7 @@ export function CommunicationHistory({ history, loading, onRefresh }: Communicat
             disabled={loading}
             className="btn btn-outline btn-sm"
           >
-            <ArrowPathIcon className="w-4 h-4 mr-2" />
+            <RefreshCw className="w-4 h-4 mr-2" />
             Odśwież
           </button>
         </div>
@@ -224,7 +224,7 @@ export function CommunicationHistory({ history, loading, onRefresh }: Communicat
       {/* Search and Filters */}
       <div className="flex items-center space-x-4">
         <div className="flex-1 relative">
-          <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
             placeholder="Szukaj w komunikacji..."
@@ -245,7 +245,7 @@ export function CommunicationHistory({ history, loading, onRefresh }: Communicat
             <option value="phone">📞 Telefon</option>
             <option value="sms">💬 SMS</option>
           </select>
-          <FunnelIcon className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+          <Filter className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
         </div>
       </div>
 

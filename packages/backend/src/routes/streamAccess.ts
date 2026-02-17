@@ -87,7 +87,7 @@ router.post('/:streamId/access-check', async (req, res) => {
       bestAccess.via
     );
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         hasAccess: bestAccess.hasAccess,
@@ -119,7 +119,7 @@ router.post('/:streamId/access-check', async (req, res) => {
       ).catch(console.error);
     }
 
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to check stream access',
       message: error.message 
     });
@@ -180,7 +180,7 @@ router.get('/:streamId/accessible-streams', async (req, res) => {
       true
     );
 
-    res.json({
+    return res.json({
       success: true,
       data: accessibleStreams,
       count: accessibleStreams.length,
@@ -202,7 +202,7 @@ router.get('/:streamId/accessible-streams', async (req, res) => {
       ).catch(console.error);
     }
 
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to fetch accessible streams',
       message: error.message 
     });
@@ -238,7 +238,7 @@ router.get('/user-accessible', async (req, res) => {
       filters
     );
 
-    res.json({
+    return res.json({
       success: true,
       data: accessibleStreams,
       count: accessibleStreams.length,
@@ -247,7 +247,7 @@ router.get('/user-accessible', async (req, res) => {
 
   } catch (error: any) {
     console.error('Error fetching user accessible streams:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to fetch user accessible streams',
       message: error.message 
     });
@@ -311,21 +311,21 @@ router.get('/:streamId/audit-log', async (req, res) => {
     }
     
     if (query.dataScope) {
-      filteredLogs = filteredLogs.filter(log => log.dataScope === query.dataScope);
+      filteredLogs = filteredLogs.filter(log => log.dataScope.includes(query.dataScope as DataScope));
     }
-    
+
     if (query.granted !== undefined) {
-      filteredLogs = filteredLogs.filter(log => log.granted === query.granted);
+      filteredLogs = filteredLogs.filter(log => log.success === query.granted);
     }
-    
+
     if (query.startDate) {
       const startDate = new Date(query.startDate);
-      filteredLogs = filteredLogs.filter(log => log.createdAt >= startDate);
+      filteredLogs = filteredLogs.filter(log => log.accessedAt >= startDate);
     }
-    
+
     if (query.endDate) {
       const endDate = new Date(query.endDate);
-      filteredLogs = filteredLogs.filter(log => log.createdAt <= endDate);
+      filteredLogs = filteredLogs.filter(log => log.accessedAt <= endDate);
     }
 
     // Logowanie dostępu do audytu
@@ -337,7 +337,7 @@ router.get('/:streamId/audit-log', async (req, res) => {
       true
     );
 
-    res.json({
+    return res.json({
       success: true,
       data: filteredLogs,
       count: filteredLogs.length,
@@ -360,7 +360,7 @@ router.get('/:streamId/audit-log', async (req, res) => {
       ).catch(console.error);
     }
 
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to fetch audit logs',
       message: error.message 
     });
@@ -397,14 +397,14 @@ router.post('/access/clear-cache', async (req, res) => {
       StreamAccessControlService.clearUserCache(userId);
     }
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Access cache cleared successfully'
     });
 
   } catch (error: any) {
     console.error('Error clearing access cache:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to clear access cache',
       message: error.message 
     });
@@ -425,14 +425,14 @@ router.post('/access/clear-expired-cache', async (req, res) => {
 
     StreamAccessControlService.clearExpiredCache();
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Expired access cache cleared successfully'
     });
 
   } catch (error: any) {
     console.error('Error clearing expired cache:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to clear expired cache',
       message: error.message 
     });
@@ -462,7 +462,7 @@ router.get('/access/cache-stats', async (req, res) => {
     // Pobranie statystyk z prywatnej właściwości (hack dla demo)
     const cacheSize = (StreamAccessControlService as any).permissionCache?.size || 0;
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         cacheSize,
@@ -472,7 +472,7 @@ router.get('/access/cache-stats', async (req, res) => {
 
   } catch (error: any) {
     console.error('Error fetching cache stats:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to fetch cache statistics',
       message: error.message 
     });

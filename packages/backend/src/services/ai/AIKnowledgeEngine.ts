@@ -326,8 +326,7 @@ export class AIKnowledgeEngine {
               assignedTo: { select: { firstName: true, lastName: true } }
             }
           },
-          assignedTo: { select: { firstName: true, lastName: true } },
-          company: { select: { id: true, name: true } }
+          assignedTo: { select: { firstName: true, lastName: true } }
         },
         orderBy: { updatedAt: 'desc' }
       }),
@@ -552,7 +551,7 @@ export class AIKnowledgeEngine {
       prisma.message.findMany({
         where: {
           organizationId,
-          direction: 'OUTBOUND',
+          messageType: 'SENT',
           receivedAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) }
         },
         select: { receivedAt: true }

@@ -37,10 +37,10 @@ router.get('/', requireAuth, async (req: AuthenticatedRequest, res) => {
       }
     });
 
-    res.json(users);
+    return res.json(users);
   } catch (error) {
     console.error('Error fetching users:', error);
-    res.status(500).json({ error: 'Failed to fetch users' });
+    return res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
 
@@ -73,10 +73,10 @@ router.get('/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json(user);
+    return res.json(user);
   } catch (error) {
     console.error('Error fetching user:', error);
-    res.status(500).json({ error: 'Failed to fetch user' });
+    return res.status(500).json({ error: 'Failed to fetch user' });
   }
 });
 
@@ -140,13 +140,13 @@ router.put('/:id', requireAuth, requireRole(['ADMIN', 'OWNER']), async (req: Aut
       }
     });
 
-    res.json({
+    return res.json({
       message: 'User updated successfully',
       data: updatedUser
     });
   } catch (error) {
     console.error('Error updating user:', error);
-    res.status(500).json({ error: 'Failed to update user' });
+    return res.status(500).json({ error: 'Failed to update user' });
   }
 });
 
@@ -189,10 +189,10 @@ router.delete('/:id', requireAuth, requireRole(['ADMIN', 'OWNER']), async (req: 
       }
     });
 
-    res.json({ message: 'User deactivated successfully' });
+    return res.json({ message: 'User deactivated successfully' });
   } catch (error) {
     console.error('Error deactivating user:', error);
-    res.status(500).json({ error: 'Failed to deactivate user' });
+    return res.status(500).json({ error: 'Failed to deactivate user' });
   }
 });
 

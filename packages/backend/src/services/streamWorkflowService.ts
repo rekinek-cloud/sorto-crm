@@ -132,8 +132,8 @@ export class StreamWorkflowService {
         urgencyScore: 50, // Default for manual tasks
         actionable: true,
         processed: task.status !== TaskStatus.NEW,
-        estimatedTime: task.estimatedTime,
-        contextSuggested: task.context,
+        estimatedTime: task.estimatedHours ? `${task.estimatedHours}h` : undefined,
+        contextSuggested: task.contextId,
         organizationId: task.organizationId,
         createdAt: task.createdAt,
         receivedAt: task.createdAt
@@ -208,8 +208,6 @@ export class StreamWorkflowService {
           priority: item.priority || Priority.MEDIUM,
           status: TaskStatus.IN_PROGRESS,
           dueDate: actionData?.dueDate || this.calculateDueDate('immediate'),
-          context: actionData?.context || item.extractedContext,
-          estimatedTime: actionData?.estimatedTime || this.estimateTimeFromContent(item.content),
           organizationId: item.organizationId,
           createdById: userId,
           streamId: actionData?.streamId
@@ -233,9 +231,7 @@ export class StreamWorkflowService {
         where: { id: item.id },
         data: {
           status: TaskStatus.IN_PROGRESS,
-          dueDate: actionData?.dueDate || this.calculateDueDate('immediate'),
-          context: actionData?.context || item.context,
-          estimatedTime: actionData?.estimatedTime || item.estimatedTime
+          dueDate: actionData?.dueDate || this.calculateDueDate('immediate')
         }
       });
 
@@ -258,8 +254,6 @@ export class StreamWorkflowService {
           priority: Priority.MEDIUM,
           status: TaskStatus.WAITING,
           dueDate: actionData?.dueDate || this.calculateDueDate('deferred'),
-          context: actionData?.context || item.extractedContext,
-          estimatedTime: actionData?.estimatedTime,
           organizationId: item.organizationId,
           createdById: userId,
           streamId: actionData?.streamId
@@ -403,19 +397,15 @@ export class StreamWorkflowService {
       await prisma.info.create({
         data: {
           title: item.subject || 'Reference Information',
-          description: item.content || '',
-          category: actionData?.category || 'Email Reference',
-          tags: actionData?.tags || [],
-          source: 'email',
-          sourceId: item.id,
-          organizationId: item.organizationId,
-          createdById: userId
+          content: item.content || '',
+          topic: actionData?.category || 'Email Reference',
+          organizationId: item.organizationId
         }
       });
 
       await prisma.message.update({
         where: { id: item.id },
-        data: { 
+        data: {
           actionNeeded: false,
           isRead: true
         }
@@ -427,13 +417,9 @@ export class StreamWorkflowService {
       await prisma.info.create({
         data: {
           title: item.title,
-          description: item.description || '',
-          category: actionData?.category || 'Task Reference',
-          tags: actionData?.tags || [],
-          source: 'task',
-          sourceId: item.id,
-          organizationId: item.organizationId,
-          createdById: userId
+          content: item.description || '',
+          topic: actionData?.category || 'Task Reference',
+          organizationId: item.organizationId
         }
       });
 

@@ -110,7 +110,7 @@ export async function ssoCallbackHandler(req: Request, res: Response) {
     logger.info(`SSO: Login successful for ${user.email} via platform SSO`);
 
     // 5. Return same format as login endpoint
-    res.json({
+    return res.json({
       message: 'SSO login successful',
       data: {
         user: {
@@ -131,6 +131,6 @@ export async function ssoCallbackHandler(req: Request, res: Response) {
     });
   } catch (error: any) {
     logger.error('SSO callback error:', error);
-    res.status(500).json({ error: 'SSO login failed' });
+    return res.status(500).json({ error: 'SSO login failed' });
   }
 }

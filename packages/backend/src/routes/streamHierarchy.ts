@@ -18,7 +18,7 @@ const CreateRelationSchema = z.object({
   relationType: z.enum(['OWNS', 'MANAGES', 'BELONGS_TO', 'RELATED_TO', 'DEPENDS_ON', 'SUPPORTS']),
   description: z.string().optional(),
   isActive: z.boolean().default(true),
-  inheritanceRule: z.enum(['NO_INHERITANCE', 'INHERIT_DOWN', 'INHERIT_UP', 'INHERIT_BIDIRECTIONAL']).default('INHERIT_DOWN'),
+  inheritanceRule: z.enum(['NO_INHERITANCE', 'INHERIT_DOWN', 'INHERIT_UP', 'BIDIRECTIONAL']).default('INHERIT_DOWN'),
   permissions: z.array(z.object({
     dataScope: z.enum(['BASIC_INFO', 'TASKS', 'PROJECTS', 'FINANCIAL', 'METRICS', 'COMMUNICATION', 'PERMISSIONS', 'CONFIGURATION', 'AUDIT_LOGS']),
     action: z.enum(['read', 'CREATE', 'UPDATE', 'DELETE', 'MANAGE', 'APPROVE', 'AUDIT']),
@@ -30,7 +30,7 @@ const UpdateRelationSchema = z.object({
   relationType: z.enum(['OWNS', 'MANAGES', 'BELONGS_TO', 'RELATED_TO', 'DEPENDS_ON', 'SUPPORTS']).optional(),
   description: z.string().optional(),
   isActive: z.boolean().optional(),
-  inheritanceRule: z.enum(['NO_INHERITANCE', 'INHERIT_DOWN', 'INHERIT_UP', 'INHERIT_BIDIRECTIONAL']).optional()
+  inheritanceRule: z.enum(['NO_INHERITANCE', 'INHERIT_DOWN', 'INHERIT_UP', 'BIDIRECTIONAL']).optional()
 });
 
 const HierarchyQuerySchema = z.object({
@@ -91,11 +91,11 @@ router.post('/:streamId/relations', async (req, res) => {
     }
 
     // Utworzenie relacji
-    const relationData: CreateStreamRelationInput = {
+    const relationData = {
       ...data,
-      organizationId,
-      createdById: userId
-    };
+      organizationId: organizationId as string,
+      createdById: userId as string
+    } as CreateStreamRelationInput;
 
     const relation = await StreamHierarchyService.createRelation(relationData);
 
@@ -110,7 +110,7 @@ router.post('/:streamId/relations', async (req, res) => {
       relation.id
     );
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: relation
     });
@@ -131,7 +131,7 @@ router.post('/:streamId/relations', async (req, res) => {
       );
     }
 
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to create stream relation',
       message: error.message 
     });
@@ -199,7 +199,7 @@ router.get('/:streamId/hierarchy', async (req, res) => {
       console.warn('Failed to log access:', logError);
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: hierarchy
     });
@@ -224,7 +224,7 @@ router.get('/:streamId/hierarchy', async (req, res) => {
       }
     }
 
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to fetch stream hierarchy',
       message: error.message 
     });
@@ -286,7 +286,7 @@ router.get('/:streamId/related', async (req, res) => {
       true
     );
 
-    res.json({
+    return res.json({
       success: true,
       data: relatedStreams,
       count: relatedStreams.length
@@ -307,7 +307,7 @@ router.get('/:streamId/related', async (req, res) => {
       );
     }
 
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to fetch related streams',
       message: error.message 
     });
@@ -345,14 +345,14 @@ router.put('/relations/:relationId', async (req, res) => {
     const relationData: UpdateStreamRelationInput = data;
     const updatedRelation = await StreamHierarchyService.updateRelation(relationId, relationData);
 
-    res.json({
+    return res.json({
       success: true,
       data: updatedRelation
     });
 
   } catch (error: any) {
     console.error('Error updating stream relation:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to update stream relation',
       message: error.message 
     });
@@ -377,14 +377,14 @@ router.delete('/relations/:relationId', async (req, res) => {
     // Usunięcie relacji
     await StreamHierarchyService.deleteRelation(relationId);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Stream relation deleted successfully'
     });
 
   } catch (error: any) {
     console.error('Error deleting stream relation:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to delete stream relation',
       message: error.message 
     });
@@ -408,14 +408,14 @@ router.get('/hierarchy-stats', async (req, res) => {
 
     const stats = await StreamHierarchyService.getHierarchyStats(organizationId);
 
-    res.json({
+    return res.json({
       success: true,
       data: stats
     });
 
   } catch (error: any) {
     console.error('Error fetching hierarchy stats:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to fetch hierarchy stats',
       message: error.message 
     });
@@ -458,7 +458,7 @@ router.post('/:streamId/validate-cycle', async (req, res) => {
     // Walidacja cyklu
     const wouldCreateCycle = await StreamHierarchyService.validateNoCycles(streamId, targetStreamId);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         wouldCreateCycle,
@@ -468,7 +468,7 @@ router.post('/:streamId/validate-cycle', async (req, res) => {
 
   } catch (error: any) {
     console.error('Error validating stream cycle:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: 'Failed to validate stream cycle',
       message: error.message 
     });

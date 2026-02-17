@@ -37,13 +37,13 @@ router.get('/documents', async (req, res) => {
       orderBy: { updatedAt: 'desc' }
     });
 
-    res.json({
+    return res.json({
       message: 'Documents retrieved successfully',
       data: documents
     });
   } catch (error) {
     logger.error('Failed to fetch documents', { error });
-    res.status(500).json({ message: 'Failed to fetch documents' });
+    return res.status(500).json({ message: 'Failed to fetch documents' });
   }
 });
 
@@ -98,20 +98,20 @@ router.get('/documents/:id', async (req, res) => {
       data: { viewCount: { increment: 1 } }
     });
 
-    res.json({
+    return res.json({
       message: 'Document retrieved successfully',
       data: document
     });
   } catch (error) {
     logger.error('Failed to fetch document', { error });
-    res.status(500).json({ message: 'Failed to fetch document' });
+    return res.status(500).json({ message: 'Failed to fetch document' });
   }
 });
 
 // POST /api/v1/knowledge/documents - Create document
 router.post('/documents', async (req, res) => {
   try {
-    const userId = req.user!.userId;
+    const userId = req.user!.id;
     const organizationId = req.user!.organizationId;
     const { title, content, summary, type, folderId, tags } = req.body;
 
@@ -143,13 +143,13 @@ router.post('/documents', async (req, res) => {
       }
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'Document created successfully',
       data: document
     });
   } catch (error) {
     logger.error('Failed to create document', { error });
-    res.status(500).json({ message: 'Failed to create document' });
+    return res.status(500).json({ message: 'Failed to create document' });
   }
 });
 
@@ -187,13 +187,13 @@ router.put('/documents/:id', async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       message: 'Document updated successfully',
       data: document
     });
   } catch (error) {
     logger.error('Failed to update document', { error });
-    res.status(500).json({ message: 'Failed to update document' });
+    return res.status(500).json({ message: 'Failed to update document' });
   }
 });
 
@@ -211,13 +211,13 @@ router.get('/folders', async (req, res) => {
       orderBy: { name: 'asc' }
     });
 
-    res.json({
+    return res.json({
       message: 'Folders retrieved successfully',
       data: folders
     });
   } catch (error) {
     logger.error('Failed to fetch folders', { error });
-    res.status(500).json({ message: 'Failed to fetch folders' });
+    return res.status(500).json({ message: 'Failed to fetch folders' });
   }
 });
 
@@ -246,13 +246,13 @@ router.get('/wiki', async (req, res) => {
       orderBy: { updatedAt: 'desc' }
     });
 
-    res.json({
+    return res.json({
       message: 'Wiki pages retrieved successfully',
       data: pages
     });
   } catch (error) {
     logger.error('Failed to fetch wiki pages', { error });
-    res.status(500).json({ message: 'Failed to fetch wiki pages' });
+    return res.status(500).json({ message: 'Failed to fetch wiki pages' });
   }
 });
 
@@ -284,13 +284,13 @@ router.get('/wiki/:slug', async (req, res) => {
       return res.status(404).json({ message: 'Wiki page not found' });
     }
 
-    res.json({
+    return res.json({
       message: 'Wiki page retrieved successfully',
       data: page
     });
   } catch (error) {
     logger.error('Failed to fetch wiki page', { error });
-    res.status(500).json({ message: 'Failed to fetch wiki page' });
+    return res.status(500).json({ message: 'Failed to fetch wiki page' });
   }
 });
 
@@ -340,7 +340,7 @@ router.get('/search', async (req, res) => {
       }) : []
     ]);
 
-    res.json({
+    return res.json({
       message: 'Search completed successfully',
       data: {
         documents: foundDocuments,
@@ -350,7 +350,7 @@ router.get('/search', async (req, res) => {
     });
   } catch (error) {
     logger.error('Failed to search', { error });
-    res.status(500).json({ message: 'Failed to search' });
+    return res.status(500).json({ message: 'Failed to search' });
   }
 });
 
@@ -358,7 +358,7 @@ router.get('/search', async (req, res) => {
 router.post('/documents/:id/comments', async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user!.userId;
+    const userId = req.user!.id;
     const { content, parentId } = req.body;
 
     const comment = await prisma.documentComment.create({
@@ -378,13 +378,13 @@ router.post('/documents/:id/comments', async (req, res) => {
       }
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'Comment added successfully',
       data: comment
     });
   } catch (error) {
     logger.error('Failed to add comment', { error });
-    res.status(500).json({ message: 'Failed to add comment' });
+    return res.status(500).json({ message: 'Failed to add comment' });
   }
 });
 
@@ -392,7 +392,7 @@ router.post('/documents/:id/comments', async (req, res) => {
 router.post('/documents/:id/share', async (req, res) => {
   try {
     const { id } = req.params;
-    const userId = req.user!.userId;
+    const userId = req.user!.id;
     const { sharedWithId, permission } = req.body;
 
     const share = await prisma.documentShare.create({
@@ -407,13 +407,13 @@ router.post('/documents/:id/share', async (req, res) => {
       }
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'Document shared successfully',
       data: share
     });
   } catch (error) {
     logger.error('Failed to share document', { error });
-    res.status(500).json({ message: 'Failed to share document' });
+    return res.status(500).json({ message: 'Failed to share document' });
   }
 });
 

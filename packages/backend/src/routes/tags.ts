@@ -15,10 +15,10 @@ router.get('/', authenticateToken, async (req, res) => {
       orderBy: { name: 'asc' }
     });
 
-    res.json({ data: tags, total: tags.length });
+    return res.json({ data: tags, total: tags.length });
   } catch (error) {
     logger.error('Error fetching tags:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -40,10 +40,10 @@ router.post('/', authenticateToken, async (req, res) => {
       }
     });
 
-    res.status(201).json(tag);
+    return res.status(201).json(tag);
   } catch (error) {
     logger.error('Error creating tag:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -66,10 +66,10 @@ router.put('/:id', authenticateToken, async (req, res) => {
       data: req.body
     });
 
-    res.json(updated);
+    return res.json(updated);
   } catch (error) {
     logger.error('Error updating tag:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -80,10 +80,10 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
 
     await prisma.tag.delete({ where: { id } });
-    res.json({ message: 'Tag deleted successfully' });
+    return res.json({ message: 'Tag deleted successfully' });
   } catch (error) {
     logger.error('Error deleting tag:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 

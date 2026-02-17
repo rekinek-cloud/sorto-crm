@@ -119,16 +119,7 @@ export const bulkUserOperationSchema = z.object({
     .max(50, 'Cannot operate on more than 50 users at once'),
   
   newRole: z.enum(['MEMBER', 'MANAGER', 'ADMIN'])
-    .optional()
-    .refine((val, ctx) => {
-      if (ctx.parent.operation === 'change_role' && !val) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'New role is required for change_role operation',
-        });
-      }
-      return true;
-    }),
+    .optional(),
 });
 
 // Export invitation schema

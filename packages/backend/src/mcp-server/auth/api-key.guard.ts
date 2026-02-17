@@ -23,13 +23,13 @@ export async function apiKeyGuard(
   req: Request,
   res: Response,
   next: NextFunction
-): Promise<void> {
+): Promise<any> {
   try {
     // Pobierz klucz z headera Authorization
     const authHeader = req.headers['authorization'];
 
     if (!authHeader) {
-      res.status(401).json({
+      return res.status(401).json({
         error: 'Brak klucza API',
         code: 'MISSING_API_KEY',
       });
@@ -37,7 +37,7 @@ export async function apiKeyGuard(
     }
 
     if (!authHeader.startsWith('Bearer ')) {
-      res.status(401).json({
+      return res.status(401).json({
         error: 'Nieprawidłowy format autoryzacji. Użyj: Bearer <klucz>',
         code: 'INVALID_AUTH_FORMAT',
       });
@@ -47,7 +47,7 @@ export async function apiKeyGuard(
     const apiKey = authHeader.replace('Bearer ', '');
 
     if (!apiKey || apiKey.length < 10) {
-      res.status(401).json({
+      return res.status(401).json({
         error: 'Nieprawidłowy klucz API',
         code: 'INVALID_API_KEY',
       });
@@ -57,7 +57,7 @@ export async function apiKeyGuard(
     // Znajdź klucz w bazie (po hashu)
     const keyHash = hashApiKey(apiKey);
 
-    const keyRecord = await prisma.mcpApiKey.findUnique({
+    const keyRecord = await prisma.mcp_api_keys.findUnique({
       where: { keyHash },
       include: {
         organization: true,
@@ -66,7 +66,7 @@ export async function apiKeyGuard(
 
     if (!keyRecord) {
       logger.warn(`[ApiKeyGuard] Invalid API key attempt: ${apiKey.substring(0, 12)}...`);
-      res.status(401).json({
+      return res.status(401).json({
         error: 'Nieprawidłowy klucz API',
         code: 'INVALID_API_KEY',
       });
@@ -76,7 +76,7 @@ export async function apiKeyGuard(
     // Sprawdź czy klucz jest aktywny
     if (!keyRecord.isActive) {
       logger.warn(`[ApiKeyGuard] Inactive API key used: ${keyRecord.keyPrefix}`);
-      res.status(401).json({
+      return res.status(401).json({
         error: 'Klucz API jest nieaktywny',
         code: 'INACTIVE_API_KEY',
       });
@@ -86,7 +86,7 @@ export async function apiKeyGuard(
     // Sprawdź wygaśnięcie
     if (keyRecord.expiresAt && keyRecord.expiresAt < new Date()) {
       logger.warn(`[ApiKeyGuard] Expired API key used: ${keyRecord.keyPrefix}`);
-      res.status(401).json({
+      return res.status(401).json({
         error: 'Klucz API wygasł',
         code: 'EXPIRED_API_KEY',
       });
@@ -101,7 +101,7 @@ export async function apiKeyGuard(
     };
 
     // Aktualizuj last_used_at (async, nie blokujemy requestu)
-    prisma.mcpApiKey.update({
+    prisma.mcp_api_keys.update({
       where: { id: keyRecord.id },
       data: { lastUsedAt: new Date() },
     }).catch(err => {
@@ -113,7 +113,7 @@ export async function apiKeyGuard(
     next();
   } catch (error) {
     logger.error('[ApiKeyGuard] Error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       error: 'Błąd autoryzacji',
       code: 'AUTH_ERROR',
     });

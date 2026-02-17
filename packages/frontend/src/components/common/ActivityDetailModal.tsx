@@ -28,7 +28,7 @@ export function ActivityDetailModal({ activity, isOpen, onClose }: ActivityDetai
     switch (type) {
       case 'deal_created':
       case 'deal_updated':
-        return <CurrencyDollarIcon className="w-6 h-6 text-green-600" />;
+        return <DollarSign className="w-6 h-6 text-green-600" />;
       case 'contact_added':
       case 'contact_updated':
         return <User className="w-6 h-6 text-blue-600" />;
@@ -176,7 +176,7 @@ export function ActivityDetailModal({ activity, isOpen, onClose }: ActivityDetai
             {activity.deal && (
               <div className="bg-green-50 rounded-lg p-4">
                 <h5 className="font-medium text-gray-900 mb-3 flex items-center">
-                  <CurrencyDollarIcon className="w-4 h-4 mr-1" />
+                  <DollarSign className="w-4 h-4 mr-1" />
                   Powiązany Deal
                 </h5>
                 <div className="space-y-2 text-sm">

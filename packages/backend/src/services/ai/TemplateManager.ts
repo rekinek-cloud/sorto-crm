@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import crypto from 'crypto';
 
 interface TemplateVariable {
   name: string;
@@ -47,8 +48,9 @@ export class TemplateManager {
     // Validate template
     this.validateTemplate(template);
 
-    const created = await this.prisma.aIPromptTemplate.create({
+    const created = await this.prisma.ai_prompt_templates.create({
       data: {
+        id: `tpl-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
         name: template.name,
         description: template.description,
         category: template.category,
@@ -57,7 +59,8 @@ export class TemplateManager {
         variables: template.variables as any,
         outputSchema: template.outputSchema as any,
         organizationId: this.organizationId,
-        status: 'ACTIVE'
+        status: 'ACTIVE',
+        updatedAt: new Date()
       }
     });
 
@@ -68,7 +71,7 @@ export class TemplateManager {
    * Update an existing template
    */
   async updateTemplate(templateId: string, updates: Partial<TemplateDefinition>): Promise<void> {
-    const existing = await this.prisma.aIPromptTemplate.findUnique({
+    const existing = await this.prisma.ai_prompt_templates.findUnique({
       where: { id: templateId, organizationId: this.organizationId }
     });
 
@@ -79,8 +82,9 @@ export class TemplateManager {
     // Create new version
     const newVersion = existing.version + 1;
 
-    await this.prisma.aIPromptTemplate.create({
+    await this.prisma.ai_prompt_templates.create({
       data: {
+        id: `tpl-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
         name: existing.name,
         description: updates.description ?? existing.description,
         category: updates.category ?? existing.category,
@@ -90,12 +94,13 @@ export class TemplateManager {
         variables: (updates.variables ?? existing.variables) as any,
         outputSchema: (updates.outputSchema ?? existing.outputSchema) as any,
         organizationId: this.organizationId,
-        status: 'ACTIVE'
+        status: 'ACTIVE',
+        updatedAt: new Date()
       }
     });
 
     // Archive old version
-    await this.prisma.aIPromptTemplate.update({
+    await this.prisma.ai_prompt_templates.update({
       where: { id: templateId },
       data: { status: 'ARCHIVED' }
     });
@@ -105,7 +110,7 @@ export class TemplateManager {
    * Get template by ID
    */
   async getTemplate(templateId: string): Promise<any> {
-    return await this.prisma.aIPromptTemplate.findUnique({
+    return await this.prisma.ai_prompt_templates.findUnique({
       where: { id: templateId, organizationId: this.organizationId }
     });
   }
@@ -135,7 +140,7 @@ export class TemplateManager {
       ];
     }
 
-    return await this.prisma.aIPromptTemplate.findMany({
+    return await this.prisma.ai_prompt_templates.findMany({
       where,
       orderBy: [
         { category: 'asc' },
@@ -198,7 +203,7 @@ export class TemplateManager {
    * Get template categories
    */
   async getCategories(): Promise<string[]> {
-    const result = await this.prisma.aIPromptTemplate.findMany({
+    const result = await this.prisma.ai_prompt_templates.findMany({
       where: { organizationId: this.organizationId },
       select: { category: true },
       distinct: ['category']
@@ -216,8 +221,9 @@ export class TemplateManager {
       throw new Error(`Template ${templateId} not found`);
     }
 
-    const cloned = await this.prisma.aIPromptTemplate.create({
+    const cloned = await this.prisma.ai_prompt_templates.create({
       data: {
+        id: `tpl-${Date.now()}-${crypto.randomBytes(4).toString('hex')}`,
         name: newName,
         description: `Cloned from ${template.name}`,
         category: template.category,
@@ -226,7 +232,8 @@ export class TemplateManager {
         variables: template.variables,
         outputSchema: template.outputSchema,
         organizationId: this.organizationId,
-        status: 'DRAFT'
+        status: 'DRAFT',
+        updatedAt: new Date()
       }
     });
 
@@ -238,7 +245,7 @@ export class TemplateManager {
    */
   async deleteTemplate(templateId: string): Promise<void> {
     // Check if template is used by any rules
-    const usedByRules = await this.prisma.aIRule.count({
+    const usedByRules = await this.prisma.ai_rules.count({
       where: { templateId, organizationId: this.organizationId }
     });
 
@@ -246,7 +253,7 @@ export class TemplateManager {
       throw new Error(`Template is used by ${usedByRules} rules and cannot be deleted`);
     }
 
-    await this.prisma.aIPromptTemplate.delete({
+    await this.prisma.ai_prompt_templates.delete({
       where: { id: templateId, organizationId: this.organizationId }
     });
   }
@@ -260,7 +267,7 @@ export class TemplateManager {
     for (const template of defaultTemplates) {
       try {
         // Check if template already exists
-        const existing = await this.prisma.aIPromptTemplate.findFirst({
+        const existing = await this.prisma.ai_prompt_templates.findFirst({
           where: {
             name: template.name,
             organizationId: this.organizationId

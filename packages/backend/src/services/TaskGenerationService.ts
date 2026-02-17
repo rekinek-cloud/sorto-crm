@@ -23,12 +23,12 @@ export class TaskGenerationService {
           }
         },
         include: {
-          assignedTo: true,
-          company: true,
-          contact: true,
-          project: true,
-          stream: true,
-          deal: true
+          users: true,
+          companies: true,
+          contacts: true,
+          projects: true,
+          streams: true,
+          deals: true
         }
       });
 
@@ -232,12 +232,12 @@ export class TaskGenerationService {
     const recurringTask = await prisma.recurringTask.findUnique({
       where: { id: recurringTaskId },
       include: {
-        assignedTo: true,
-        company: true,
-        contact: true,
-        project: true,
-        stream: true,
-        deal: true
+        users: true,
+        companies: true,
+        contacts: true,
+        projects: true,
+        streams: true,
+        deals: true
       }
     });
 

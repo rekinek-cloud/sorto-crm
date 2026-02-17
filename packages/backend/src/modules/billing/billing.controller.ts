@@ -11,9 +11,9 @@ export class BillingController {
    * Check if Stripe is configured
    */
   getStripeStatus = async (req: Request, res: Response) => {
-    res.json({
+    return res.json({
       configured: stripeService.isAvailable(),
-      publicKey: config.STRIPE?.PUBLIC_KEY || null,
+      publicKey: (config.STRIPE as any)?.PUBLIC_KEY || null,
     });
   };
 
@@ -28,14 +28,13 @@ export class BillingController {
       );
 
       if (!subscription) {
-        res.status(404).json({ error: 'No subscription found' });
-        return;
+        return res.status(404).json({ error: 'No subscription found' });
       }
 
-      res.json({ message: 'Subscription retrieved', data: subscription });
+      return res.json({ message: 'Subscription retrieved', data: subscription });
     } catch (error: any) {
       logger.error('Error getting current subscription:', error);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   };
 
@@ -48,10 +47,10 @@ export class BillingController {
       const modules = await billingService.getAvailableModules(
         req.user!.organizationId
       );
-      res.json({ message: 'Available modules retrieved', data: modules });
+      return res.json({ message: 'Available modules retrieved', data: modules });
     } catch (error: any) {
       logger.error('Error getting available modules:', error);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   };
 
@@ -64,10 +63,10 @@ export class BillingController {
       const modules = await billingService.getActiveModules(
         req.user!.organizationId
       );
-      res.json({ message: 'Active modules retrieved', data: modules });
+      return res.json({ message: 'Active modules retrieved', data: modules });
     } catch (error: any) {
       logger.error('Error getting active modules:', error);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   };
 
@@ -80,8 +79,7 @@ export class BillingController {
       const { moduleId } = req.body;
 
       if (!moduleId) {
-        res.status(400).json({ error: 'moduleId is required' });
-        return;
+        return res.status(400).json({ error: 'moduleId is required' });
       }
 
       const result = await billingService.addModule(
@@ -90,10 +88,10 @@ export class BillingController {
         req.user!.id
       );
 
-      res.json({ message: 'Module added to organization', data: result });
+      return res.json({ message: 'Module added to organization', data: result });
     } catch (error: any) {
       logger.error('Error adding module:', error);
-      res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: error.message });
     }
   };
 
@@ -111,10 +109,10 @@ export class BillingController {
         req.user!.id
       );
 
-      res.json({ message: 'Module removed from organization', data: result });
+      return res.json({ message: 'Module removed from organization', data: result });
     } catch (error: any) {
       logger.error('Error removing module:', error);
-      res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: error.message });
     }
   };
 
@@ -125,22 +123,19 @@ export class BillingController {
   createCheckoutSession = async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!stripeService.isAvailable()) {
-        res.status(503).json({ error: 'Payment processing is not available' });
-        return;
+        return res.status(503).json({ error: 'Payment processing is not available' });
       }
 
       const { moduleSlug, plan, successUrl, cancelUrl } = req.body;
 
       if (!moduleSlug || !plan || !successUrl || !cancelUrl) {
-        res.status(400).json({
+        return res.status(400).json({
           error: 'moduleSlug, plan, successUrl, and cancelUrl are required',
         });
-        return;
       }
 
       if (plan !== 'monthly' && plan !== 'yearly') {
-        res.status(400).json({ error: 'plan must be "monthly" or "yearly"' });
-        return;
+        return res.status(400).json({ error: 'plan must be "monthly" or "yearly"' });
       }
 
       const session = await stripeService.createCheckoutSession(
@@ -151,10 +146,10 @@ export class BillingController {
         cancelUrl
       );
 
-      res.json({ message: 'Checkout session created', data: session });
+      return res.json({ message: 'Checkout session created', data: session });
     } catch (error: any) {
       logger.error('Error creating checkout session:', error);
-      res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: error.message });
     }
   };
 
@@ -165,15 +160,13 @@ export class BillingController {
   createPortalSession = async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!stripeService.isAvailable()) {
-        res.status(503).json({ error: 'Payment processing is not available' });
-        return;
+        return res.status(503).json({ error: 'Payment processing is not available' });
       }
 
       const { returnUrl } = req.body;
 
       if (!returnUrl) {
-        res.status(400).json({ error: 'returnUrl is required' });
-        return;
+        return res.status(400).json({ error: 'returnUrl is required' });
       }
 
       const session = await stripeService.createPortalSession(
@@ -181,10 +174,10 @@ export class BillingController {
         returnUrl
       );
 
-      res.json({ message: 'Portal session created', data: session });
+      return res.json({ message: 'Portal session created', data: session });
     } catch (error: any) {
       logger.error('Error creating portal session:', error);
-      res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: error.message });
     }
   };
 
@@ -195,23 +188,21 @@ export class BillingController {
   cancelModuleSubscription = async (req: AuthenticatedRequest, res: Response) => {
     try {
       if (!stripeService.isAvailable()) {
-        res.status(503).json({ error: 'Payment processing is not available' });
-        return;
+        return res.status(503).json({ error: 'Payment processing is not available' });
       }
 
       const { moduleId } = req.body;
 
       if (!moduleId) {
-        res.status(400).json({ error: 'moduleId is required' });
-        return;
+        return res.status(400).json({ error: 'moduleId is required' });
       }
 
       await stripeService.cancelModuleSubscription(req.user!.organizationId, moduleId);
 
-      res.json({ message: 'Module subscription will be canceled at the end of the billing period' });
+      return res.json({ message: 'Module subscription will be canceled at the end of the billing period' });
     } catch (error: any) {
       logger.error('Error canceling module subscription:', error);
-      res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: error.message });
     }
   };
 
@@ -224,16 +215,15 @@ export class BillingController {
       const signature = req.headers['stripe-signature'] as string;
 
       if (!signature) {
-        res.status(400).json({ error: 'Missing stripe-signature header' });
-        return;
+        return res.status(400).json({ error: 'Missing stripe-signature header' });
       }
 
       const result = await stripeService.handleWebhook(req.body, signature);
 
-      res.json({ received: result.received, event: result.event });
+      return res.json({ received: result.received, event: result.event });
     } catch (error: any) {
       logger.error('Webhook error:', error.message);
-      res.status(400).json({ error: error.message });
+      return res.status(400).json({ error: error.message });
     }
   };
 }

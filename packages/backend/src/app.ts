@@ -170,7 +170,7 @@ app.use((error: any, req: Request, res: Response, next: NextFunction) => {
       message: 'Please check your request body for proper JSON formatting'
     });
   }
-  next(error);
+  return next(error);
 });
 
 /**
@@ -199,7 +199,7 @@ if (!config.IS_TEST) {
  * Health Check
  */
 app.get('/health', (req, res) => {
-  res.status(200).json({
+  return res.status(200).json({
     status: 'healthy',
     timestamp: new Date().toISOString(),
     environment: config.NODE_ENV,
@@ -340,7 +340,7 @@ apiRouter.use('/smartmailboxes', smartMailboxesRoutes);    // deprecated -> use 
 
 // Temporary welcome route for development
 apiRouter.get('/', (req, res) => {
-  res.json({
+  return res.json({
     message: 'streams.work API v1',
     timestamp: new Date().toISOString(),
     environment: config.NODE_ENV,

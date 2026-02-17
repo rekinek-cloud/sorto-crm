@@ -18,7 +18,7 @@ export class AuthController {
   register = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const result = await this.authService.register(req.body);
     
-    res.status(201).json({
+    return res.status(201).json({
       message: 'Registration successful',
       data: result,
     });
@@ -30,7 +30,7 @@ export class AuthController {
   login = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const result = await this.authService.login(req.body);
     
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Login successful',
       data: result,
     });
@@ -51,7 +51,7 @@ export class AuthController {
     // Invalidate old refresh token for security
     await invalidateRefreshToken(refreshToken);
 
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Token refreshed successfully',
       data: { tokens },
     });
@@ -69,7 +69,7 @@ export class AuthController {
 
     logger.info(`User logged out: ${req.user?.email}`);
 
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Logout successful',
     });
   });
@@ -80,7 +80,7 @@ export class AuthController {
   me = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const user = await this.authService.getCurrentUser(req.user!.id);
     
-    res.status(200).json({
+    return res.status(200).json({
       message: 'User profile retrieved successfully',
       data: user,
     });
@@ -92,7 +92,7 @@ export class AuthController {
   changePassword = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const result = await this.authService.changePassword(req.user!.id, req.body);
     
-    res.status(200).json(result);
+    return res.status(200).json(result);
   });
 
   /**
@@ -105,7 +105,7 @@ export class AuthController {
       req.user!.id
     );
     
-    res.status(201).json({
+    return res.status(201).json({
       message: 'User invited successfully',
       data: result,
     });
@@ -117,7 +117,7 @@ export class AuthController {
   acceptInvitation = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const result = await this.authService.acceptInvitation(req.body);
     
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Invitation accepted successfully',
       data: result,
     });
@@ -129,7 +129,7 @@ export class AuthController {
   verifyEmail = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const result = await this.authService.verifyEmail(req.body);
 
-    res.status(200).json({
+    return res.status(200).json({
       message: result.message,
     });
   });
@@ -140,7 +140,7 @@ export class AuthController {
   resendVerification = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const result = await this.authService.resendVerificationEmail(req.user!.id);
 
-    res.status(200).json({
+    return res.status(200).json({
       message: result.message,
     });
   });
@@ -151,7 +151,7 @@ export class AuthController {
   requestPasswordReset = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const result = await this.authService.requestPasswordReset(req.body);
 
-    res.status(200).json({
+    return res.status(200).json({
       message: result.message,
     });
   });
@@ -162,7 +162,7 @@ export class AuthController {
   confirmPasswordReset = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const result = await this.authService.confirmPasswordReset(req.body);
 
-    res.status(200).json({
+    return res.status(200).json({
       message: result.message,
     });
   });

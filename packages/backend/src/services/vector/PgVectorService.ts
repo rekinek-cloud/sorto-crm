@@ -112,8 +112,9 @@ export class PgVectorService {
         }
       });
 
-      if (provider?.apiKey) {
-        this.openai = new OpenAI({ apiKey: provider.apiKey });
+      const apiKey = (provider?.config as any)?.apiKey;
+      if (apiKey) {
+        this.openai = new OpenAI({ apiKey });
         this.initialized = true;
         console.log('✅ PgVectorService: OpenAI client initialized from database');
         return true;

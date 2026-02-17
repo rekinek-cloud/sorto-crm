@@ -44,7 +44,7 @@ router.get('/', authenticateToken, async (req: any, res: any) => {
       prisma.clientIntelligence.count({ where })
     ]);
 
-    res.json({
+    return res.json({
       items,
       pagination: {
         page: pageNum,
@@ -55,7 +55,7 @@ router.get('/', authenticateToken, async (req: any, res: any) => {
     });
   } catch (error) {
     console.error('Error fetching client intelligence:', error);
-    res.status(500).json({ error: 'Failed to fetch client intelligence' });
+    return res.status(500).json({ error: 'Failed to fetch client intelligence' });
   }
 });
 
@@ -101,7 +101,7 @@ router.get('/briefing/:entityType/:entityId', authenticateToken, async (req: any
       return daysSince <= 30;
     });
 
-    res.json({
+    return res.json({
       entityType,
       entityId,
       totalItems: allIntel.length,
@@ -124,7 +124,7 @@ router.get('/briefing/:entityType/:entityId', authenticateToken, async (req: any
     });
   } catch (error) {
     console.error('Error fetching briefing:', error);
-    res.status(500).json({ error: 'Failed to fetch briefing' });
+    return res.status(500).json({ error: 'Failed to fetch briefing' });
   }
 });
 
@@ -146,10 +146,10 @@ router.get('/:id', authenticateToken, async (req: any, res: any) => {
       return res.status(404).json({ error: 'Intelligence item not found' });
     }
 
-    res.json(item);
+    return res.json(item);
   } catch (error) {
     console.error('Error fetching intelligence item:', error);
-    res.status(500).json({ error: 'Failed to fetch intelligence item' });
+    return res.status(500).json({ error: 'Failed to fetch intelligence item' });
   }
 });
 
@@ -200,10 +200,10 @@ router.post('/', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    res.status(201).json(item);
+    return res.status(201).json(item);
   } catch (error) {
     console.error('Error creating intelligence:', error);
-    res.status(500).json({ error: 'Failed to create intelligence' });
+    return res.status(500).json({ error: 'Failed to create intelligence' });
   }
 });
 
@@ -238,10 +238,10 @@ router.patch('/:id', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    res.json(item);
+    return res.json(item);
   } catch (error) {
     console.error('Error updating intelligence:', error);
-    res.status(500).json({ error: 'Failed to update intelligence' });
+    return res.status(500).json({ error: 'Failed to update intelligence' });
   }
 });
 
@@ -263,10 +263,10 @@ router.delete('/:id', authenticateToken, async (req: any, res: any) => {
       where: { id: req.params.id }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error deleting intelligence:', error);
-    res.status(500).json({ error: 'Failed to delete intelligence' });
+    return res.status(500).json({ error: 'Failed to delete intelligence' });
   }
 });
 

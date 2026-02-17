@@ -46,7 +46,7 @@ router.get('/',
         resolvedAt: s.resolved_at?.toISOString() || null,
       }));
 
-      res.json({ success: true, data: mapped });
+      return res.json({ success: true, data: mapped });
     } catch (error) {
       logger.error('Failed to list AI suggestions:', error);
       throw new AppError('Nie udało się pobrać sugestii', 500);
@@ -86,7 +86,7 @@ router.post('/:id/accept',
             source: 'AI_SUGGESTED',
             reason: data.reason || 'Zaakceptowana sugestia AI',
             confidence: (suggestion.confidence || 0) / 100,
-            createdBy: req.user!.userId,
+            createdBy: req.user!.id,
             organizationId: req.user!.organizationId,
           },
         }).catch(() => {
@@ -100,12 +100,12 @@ router.post('/:id/accept',
         data: {
           status: 'ACCEPTED',
           resolved_at: new Date(),
-          user_modifications: { acceptedBy: req.user!.userId },
+          user_modifications: { acceptedBy: req.user!.id },
         },
       });
 
       logger.info(`AI suggestion accepted: ${id} by ${req.user!.email}`);
-      res.json({ success: true, message: 'Sugestia zaakceptowana' });
+      return res.json({ success: true, message: 'Sugestia zaakceptowana' });
     } catch (error) {
       logger.error('Failed to accept suggestion:', error);
       if (error instanceof AppError) throw error;
@@ -138,12 +138,12 @@ router.post('/:id/reject',
         data: {
           status: 'REJECTED',
           resolved_at: new Date(),
-          user_modifications: { rejectedBy: req.user!.userId, note: note || null },
+          user_modifications: { rejectedBy: req.user!.id, note: note || null },
         },
       });
 
       logger.info(`AI suggestion rejected: ${id} by ${req.user!.email}`);
-      res.json({ success: true, message: 'Sugestia odrzucona' });
+      return res.json({ success: true, message: 'Sugestia odrzucona' });
     } catch (error) {
       logger.error('Failed to reject suggestion:', error);
       if (error instanceof AppError) throw error;

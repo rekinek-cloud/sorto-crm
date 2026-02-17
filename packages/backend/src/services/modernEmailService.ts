@@ -1,5 +1,10 @@
-import * as sgMail from '@sendgrid/mail';
-import { SESClient, SendEmailCommand, SendRawEmailCommand } from '@aws-sdk/client-ses';
+// @ts-ignore - optional dependency
+const sgMail: any = (() => { try { return require('@sendgrid/mail'); } catch { return null; } })();
+// @ts-ignore - optional dependency
+const awsSes: any = (() => { try { return require('@aws-sdk/client-ses'); } catch { return null; } })();
+type SESClient = any;
+type SendEmailCommand = any;
+type SendRawEmailCommand = any;
 import * as nodemailer from 'nodemailer';
 import { prisma } from '../config/database';
 import config from '../config';
@@ -91,7 +96,7 @@ export class ModernEmailService {
     const awsKey = process.env.AWS_ACCESS_KEY_ID;
     const awsSecret = process.env.AWS_SECRET_ACCESS_KEY;
     if (awsKey && awsSecret) {
-      this.sesClient = new SESClient({
+      this.sesClient = new (awsSes?.SESClient || class {})({
         region: process.env.AWS_REGION || 'us-east-1',
         credentials: {
           accessKeyId: awsKey,
@@ -159,7 +164,7 @@ export class ModernEmailService {
    */
   private async sendWithSendGrid(message: EmailMessage): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
-      const sgMessage: sgMail.MailDataRequired = {
+      const sgMessage: any = {
         to: Array.isArray(message.to) ? message.to : [message.to],
         from: process.env.FROM_EMAIL || 'noreply@crm-gtd.com',
         subject: message.subject,
@@ -214,7 +219,7 @@ export class ModernEmailService {
     try {
       const destinations = Array.isArray(message.to) ? message.to : [message.to];
 
-      const command = new SendEmailCommand({
+      const command = new (awsSes?.SendEmailCommand || class {})({
         Source: process.env.FROM_EMAIL || 'noreply@crm-gtd.com',
         Destination: {
           ToAddresses: destinations,
@@ -385,7 +390,7 @@ export class ModernEmailService {
    */
   private async getTemplate(templateId: string): Promise<EmailTemplate | null> {
     try {
-      const template = await prisma.emailTemplate.findUnique({
+      const template = await prisma.email_templates.findUnique({
         where: { id: templateId },
       });
 
@@ -424,9 +429,10 @@ export class ModernEmailService {
     result: { success: boolean; messageId?: string; error?: string }
   ): Promise<void> {
     try {
-      await prisma.emailLog.create({
+      await prisma.email_logs.create({
         data: {
-          provider: this.currentProvider,
+          id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          provider: this.currentProvider as any,
           messageId: result.messageId || '',
           toAddresses: Array.isArray(message.to) ? message.to : [message.to],
           subject: message.subject,
@@ -463,13 +469,13 @@ export class ModernEmailService {
       }
 
       const [sent, delivered, failed] = await Promise.all([
-        prisma.emailLog.count({
+        prisma.email_logs.count({
           where: { ...where, success: true },
         }),
-        prisma.emailLog.count({
+        prisma.email_logs.count({
           where: { ...where, success: true, delivered: true },
         }),
-        prisma.emailLog.count({
+        prisma.email_logs.count({
           where: { ...where, success: false },
         }),
       ]);
@@ -530,7 +536,7 @@ export class ModernEmailService {
    */
   async getAvailableTemplates(): Promise<EmailTemplate[]> {
     try {
-      const templates = await prisma.emailTemplate.findMany({
+      const templates = await prisma.email_templates.findMany({
         where: { isActive: true },
         orderBy: { name: 'asc' },
       });

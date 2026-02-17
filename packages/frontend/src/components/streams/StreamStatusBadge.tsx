@@ -19,6 +19,20 @@ const statusConfig: Record<StreamStatus, {
   color: string;
   bgColor: string;
 }> = {
+  ACTIVE: {
+    label: 'Active',
+    labelPL: 'Aktywny',
+    Icon: Waves,
+    color: 'text-green-600',
+    bgColor: 'bg-green-100 border-green-200',
+  },
+  ARCHIVED: {
+    label: 'Archived',
+    labelPL: 'Zarchiwizowany',
+    Icon: FileText,
+    color: 'text-gray-500',
+    bgColor: 'bg-gray-100 border-gray-200',
+  },
   FLOWING: {
     label: 'Flowing',
     labelPL: 'Płynie',

@@ -30,7 +30,7 @@ router.get('/test-public', async (req, res) => {
       orderBy: { level: 'asc' }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: horizons,
       count: horizons.length,
@@ -39,7 +39,7 @@ router.get('/test-public', async (req, res) => {
 
   } catch (error) {
     console.error('Error in Horizons test:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch goals (test mode)',
       details: error instanceof Error ? error.message : 'Unknown error'
@@ -64,14 +64,14 @@ router.get('/', authenticateToken, async (req, res) => {
       color: getLevelColor(horizon.level)
     }));
 
-    res.json({
+    return res.json({
       success: true,
       data: formattedHorizons
     });
 
   } catch (error) {
     logger.error('Error fetching horizons:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch goals'
     });
@@ -124,7 +124,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         ...horizon,
@@ -135,7 +135,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
   } catch (error) {
     logger.error('Error fetching horizon:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch goal'
     });
@@ -169,7 +169,7 @@ router.put('/:id/reviewed', authenticateToken, async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: updated,
       message: 'Horizon marked as reviewed'
@@ -177,7 +177,7 @@ router.put('/:id/reviewed', authenticateToken, async (req, res) => {
 
   } catch (error) {
     logger.error('Error updating horizon review:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to update goal review'
     });
@@ -239,14 +239,14 @@ router.get('/stats', authenticateToken, async (req, res) => {
     const organizationId = await getUserOrganizationId(req.user.id);
     const data = await getStatsData(organizationId);
 
-    res.json({
+    return res.json({
       success: true,
       data
     });
 
   } catch (error) {
     logger.error('Error fetching horizons stats:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch goals statistics'
     });
@@ -259,14 +259,14 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
     const organizationId = await getUserOrganizationId(req.user.id);
     const data = await getStatsData(organizationId);
 
-    res.json({
+    return res.json({
       success: true,
       data
     });
 
   } catch (error) {
     logger.error('Error fetching horizons stats:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch goals statistics'
     });

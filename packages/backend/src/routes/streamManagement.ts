@@ -82,7 +82,7 @@ router.get('/', async (req, res) => {
       ]
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: streams,
       meta: {
@@ -96,7 +96,7 @@ router.get('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching streams:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch streams'
     });
@@ -125,13 +125,23 @@ router.post('/', async (req, res) => {
   try {
     const validatedData = createStreamSchema.parse(req.body);
 
-    const { stream, config } = await streamService.createStream(
+    const { stream, config } = await streamService.createGTDStream(
       req.user.organizationId,
       req.user.id,
-      validatedData
+      {
+        name: validatedData.name,
+        description: validatedData.description,
+        color: validatedData.color,
+        icon: validatedData.icon,
+        streamRole: validatedData.streamRole as StreamRole,
+        streamType: validatedData.streamType as StreamType,
+        templateOrigin: validatedData.templateOrigin,
+        parentStreamId: validatedData.parentStreamId,
+        streamConfig: validatedData.streamConfig as any
+      }
     );
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       id: stream.id,
       data: {
@@ -147,7 +157,7 @@ router.post('/', async (req, res) => {
       });
     }
     console.error('Error creating stream:', error);
-    res.status(500).json({ error: 'Failed to create stream' });
+    return res.status(500).json({ error: 'Failed to create stream' });
   }
 });
 
@@ -164,7 +174,7 @@ router.get('/by-role/:role', async (req, res) => {
       validatedRole as StreamRole
     );
 
-    res.json({
+    return res.json({
       success: true,
       data: streams
     });
@@ -175,7 +185,7 @@ router.get('/by-role/:role', async (req, res) => {
       });
     }
     console.error('Error fetching streams by role:', error);
-    res.status(500).json({ error: 'Failed to fetch streams' });
+    return res.status(500).json({ error: 'Failed to fetch streams' });
   }
 });
 
@@ -189,7 +199,7 @@ router.put('/:id/role', async (req, res) => {
 
     const stream = await streamService.assignStreamRole(id, validatedRole as StreamRole);
 
-    res.json({
+    return res.json({
       success: true,
       data: stream
     });
@@ -200,7 +210,7 @@ router.put('/:id/role', async (req, res) => {
       });
     }
     console.error('Error assigning stream role:', error);
-    res.status(500).json({ error: 'Failed to assign role' });
+    return res.status(500).json({ error: 'Failed to assign role' });
   }
 });
 
@@ -219,7 +229,7 @@ router.post('/:id/migrate', async (req, res) => {
       validatedType as StreamType
     );
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         stream,
@@ -234,7 +244,7 @@ router.post('/:id/migrate', async (req, res) => {
       });
     }
     console.error('Error migrating stream:', error);
-    res.status(500).json({ error: 'Failed to migrate stream' });
+    return res.status(500).json({ error: 'Failed to migrate stream' });
   }
 });
 
@@ -249,13 +259,13 @@ router.post('/:id/freeze', async (req, res) => {
 
     await streamService.freezeStream(id);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Stream frozen successfully'
     });
   } catch (error) {
     console.error('Error freezing stream:', error);
-    res.status(500).json({ error: 'Failed to freeze stream' });
+    return res.status(500).json({ error: 'Failed to freeze stream' });
   }
 });
 
@@ -266,13 +276,13 @@ router.post('/:id/unfreeze', async (req, res) => {
 
     await streamService.unfreezeStream(id);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Stream unfrozen successfully'
     });
   } catch (error) {
     console.error('Error unfreezing stream:', error);
-    res.status(500).json({ error: 'Failed to unfreeze stream' });
+    return res.status(500).json({ error: 'Failed to unfreeze stream' });
   }
 });
 
@@ -291,13 +301,13 @@ router.get('/:id/config', async (req, res) => {
       return res.status(404).json({ error: 'Configuration not found' });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: config
     });
   } catch (error) {
     console.error('Error fetching stream config:', error);
-    res.status(500).json({ error: 'Failed to fetch configuration' });
+    return res.status(500).json({ error: 'Failed to fetch configuration' });
   }
 });
 
@@ -309,13 +319,13 @@ router.put('/:id/config', async (req, res) => {
 
     const updatedConfig = await streamService.updateStreamConfig(id, config, options);
 
-    res.json({
+    return res.json({
       success: true,
       data: updatedConfig
     });
   } catch (error) {
     console.error('Error updating stream config:', error);
-    res.status(500).json({ error: 'Failed to update configuration' });
+    return res.status(500).json({ error: 'Failed to update configuration' });
   }
 });
 
@@ -336,15 +346,15 @@ router.post('/:id/config/reset', async (req, res) => {
       return res.status(404).json({ error: 'Stream not found' });
     }
 
-    const config = await gtdConfigManager.resetToDefaultConfig(id, stream.streamRole);
+    const config = await gtdConfigManager.resetToDefaultConfig(id, stream.streamRole as StreamRole);
 
-    res.json({
+    return res.json({
       success: true,
       data: config
     });
   } catch (error) {
     console.error('Error resetting stream config:', error);
-    res.status(500).json({ error: 'Failed to reset configuration' });
+    return res.status(500).json({ error: 'Failed to reset configuration' });
   }
 });
 
@@ -363,13 +373,13 @@ router.get('/:id/tree', async (req, res) => {
       includeStreamAnalysis: includeStreamAnalysis === 'true'
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: tree
     });
   } catch (error) {
     console.error('Error fetching stream tree:', error);
-    res.status(500).json({ error: 'Failed to fetch stream hierarchy' });
+    return res.status(500).json({ error: 'Failed to fetch stream hierarchy' });
   }
 });
 
@@ -380,13 +390,13 @@ router.get('/:id/ancestors', async (req, res) => {
 
     const ancestors = await hierarchyManager.getStreamAncestors(id);
 
-    res.json({
+    return res.json({
       success: true,
       data: ancestors
     });
   } catch (error) {
     console.error('Error fetching stream ancestors:', error);
-    res.status(500).json({ error: 'Failed to fetch ancestors' });
+    return res.status(500).json({ error: 'Failed to fetch ancestors' });
   }
 });
 
@@ -397,13 +407,13 @@ router.get('/:id/path', async (req, res) => {
 
     const path = await hierarchyManager.getStreamPath(id);
 
-    res.json({
+    return res.json({
       success: true,
       data: path
     });
   } catch (error) {
     console.error('Error fetching stream path:', error);
-    res.status(500).json({ error: 'Failed to fetch stream path' });
+    return res.status(500).json({ error: 'Failed to fetch stream path' });
   }
 });
 
@@ -414,13 +424,13 @@ router.post('/:id/validate-hierarchy', async (req, res) => {
 
     const validation = await streamService.validateStreamHierarchy(id);
 
-    res.json({
+    return res.json({
       success: true,
       data: validation
     });
   } catch (error) {
     console.error('Error validating hierarchy:', error);
-    res.status(500).json({ error: 'Failed to validate hierarchy' });
+    return res.status(500).json({ error: 'Failed to validate hierarchy' });
   }
 });
 
@@ -440,13 +450,13 @@ router.post('/route/task', async (req, res) => {
       forceStream
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: result
     });
   } catch (error) {
     console.error('Error routing task:', error);
-    res.status(500).json({ error: 'Failed to route task' });
+    return res.status(500).json({ error: 'Failed to route task' });
   }
 });
 
@@ -461,13 +471,13 @@ router.post('/route/email', async (req, res) => {
       preferredStreamId
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: result
     });
   } catch (error) {
     console.error('Error routing email:', error);
-    res.status(500).json({ error: 'Failed to route email' });
+    return res.status(500).json({ error: 'Failed to route email' });
   }
 });
 
@@ -476,18 +486,18 @@ router.post('/route/bulk', async (req, res) => {
   try {
     const { resources } = req.body; // Array of { type, id }
 
-    const results = await resourceRouter.bulkRoute(resources, {
+    const results = await (resourceRouter as any).bulkRoute(resources, {
       organizationId: req.user.organizationId,
       userId: req.user.id
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: results
     });
   } catch (error) {
     console.error('Error bulk routing:', error);
-    res.status(500).json({ error: 'Failed to bulk route resources' });
+    return res.status(500).json({ error: 'Failed to bulk route resources' });
   }
 });
 
@@ -502,14 +512,14 @@ router.post('/route/content', async (req, res) => {
       enableAI
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: result
     });
   } catch (error) {
     console.error('Error routing content:', error);
     // Return fallback suggestion instead of error
-    res.json({
+    return res.json({
       success: true,
       data: {
         streamId: null,
@@ -539,13 +549,13 @@ router.post('/analyze', async (req, res) => {
       messageVolume
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: analysis
     });
   } catch (error) {
     console.error('Error analyzing for streams:', error);
-    res.status(500).json({ error: 'Failed to analyze content' });
+    return res.status(500).json({ error: 'Failed to analyze content' });
   }
 });
 
@@ -558,13 +568,13 @@ router.get('/stats', async (req, res) => {
   try {
     const stats = await gtdConfigManager.getStreamStats(req.user.organizationId);
 
-    res.json({
+    return res.json({
       success: true,
       data: stats
     });
   } catch (error) {
     console.error('Error fetching stream stats:', error);
-    res.status(500).json({ error: 'Failed to fetch statistics' });
+    return res.status(500).json({ error: 'Failed to fetch statistics' });
   }
 });
 
@@ -573,13 +583,13 @@ router.get('/hierarchy-stats', async (req, res) => {
   try {
     const stats = await hierarchyManager.getStreamHierarchyStats(req.user.organizationId);
 
-    res.json({
+    return res.json({
       success: true,
       data: stats
     });
   } catch (error) {
     console.error('Error fetching hierarchy stats:', error);
-    res.status(500).json({ error: 'Failed to fetch hierarchy statistics' });
+    return res.status(500).json({ error: 'Failed to fetch hierarchy statistics' });
   }
 });
 
@@ -588,13 +598,13 @@ router.get('/routing-stats', async (req, res) => {
   try {
     const stats = await resourceRouter.getRoutingStats(req.user.organizationId);
 
-    res.json({
+    return res.json({
       success: true,
       data: stats
     });
   } catch (error) {
     console.error('Error fetching routing stats:', error);
-    res.status(500).json({ error: 'Failed to fetch routing statistics' });
+    return res.status(500).json({ error: 'Failed to fetch routing statistics' });
   }
 });
 
@@ -608,19 +618,19 @@ router.post('/:id/rules', async (req, res) => {
     const { id } = req.params;
     const ruleData = req.body;
 
-    const rule = await ruleEngine.createStreamRule({
+    const rule = await (ruleEngine as any).createStreamRule({
       ...ruleData,
       streamId: id,
       organizationId: req.user.organizationId
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: rule
     });
   } catch (error) {
     console.error('Error creating Stream rule:', error);
-    res.status(500).json({ error: 'Failed to create processing rule' });
+    return res.status(500).json({ error: 'Failed to create processing rule' });
   }
 });
 
@@ -629,15 +639,15 @@ router.get('/:id/rules', async (req, res) => {
   try {
     const { id } = req.params;
 
-    const rules = await ruleEngine.getStreamRules(id);
+    const rules = await (ruleEngine as any).getStreamRules(id);
 
-    res.json({
+    return res.json({
       success: true,
       data: rules
     });
   } catch (error) {
     console.error('Error fetching Stream rules:', error);
-    res.status(500).json({ error: 'Failed to fetch processing rules' });
+    return res.status(500).json({ error: 'Failed to fetch processing rules' });
   }
 });
 
@@ -656,13 +666,13 @@ router.post('/rules/execute', async (req, res) => {
       streamId
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: results
     });
   } catch (error) {
     console.error('Error executing Stream rules:', error);
-    res.status(500).json({ error: 'Failed to execute rules' });
+    return res.status(500).json({ error: 'Failed to execute rules' });
   }
 });
 
@@ -682,7 +692,7 @@ router.post('/index-vectors', async (req, res) => {
 
     const result = await vectorService.indexStreams(organizationId);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         indexed: result.indexed,
@@ -692,7 +702,7 @@ router.post('/index-vectors', async (req, res) => {
     });
   } catch (error) {
     console.error('Error indexing streams:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to index streams for vector search'
     });
@@ -720,7 +730,7 @@ router.get('/vector-status', async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         totalStreams,
@@ -731,7 +741,7 @@ router.get('/vector-status', async (req, res) => {
     });
   } catch (error) {
     console.error('Error checking vector status:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to check vector status'
     });

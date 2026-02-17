@@ -13,8 +13,8 @@ export class McpServerController {
    * GET /mcp
    * Podstawowe info o MCP server
    */
-  async getInfo(req: Request, res: Response): Promise<void> {
-    res.json({
+  async getInfo(req: Request, res: Response): Promise<any> {
+    return res.json({
       name: 'Sorto CRM MCP Server',
       version: '1.0.0',
       description: 'Rozmawiaj ze swoim CRM przez ChatGPT, Claude lub Cursor',
@@ -29,17 +29,17 @@ export class McpServerController {
    * POST /mcp/tools/list
    * Zwraca listę dostępnych narzędzi MCP
    */
-  async listTools(req: Request, res: Response): Promise<void> {
+  async listTools(req: Request, res: Response): Promise<any> {
     try {
       const mcpReq = req as McpRequest;
       const tools = mcpServerService.getAvailableTools();
 
       logger.info(`[McpController] Tools list requested by org: ${mcpReq.mcpContext.organization.name}`);
 
-      res.json({ tools });
+      return res.json({ tools });
     } catch (error) {
       logger.error('[McpController] listTools error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         error: 'Błąd pobierania listy narzędzi',
         code: 'INTERNAL_ERROR',
       });
@@ -50,13 +50,13 @@ export class McpServerController {
    * POST /mcp/tools/call
    * Wywołuje narzędzie MCP
    */
-  async callTool(req: Request, res: Response): Promise<void> {
+  async callTool(req: Request, res: Response): Promise<any> {
     try {
       const mcpReq = req as McpRequest;
       const { name, arguments: args } = req.body;
 
       if (!name) {
-        res.status(400).json({
+        return res.status(400).json({
           error: 'Brak nazwy narzędzia',
           code: 'MISSING_TOOL_NAME',
         });
@@ -74,10 +74,10 @@ export class McpServerController {
         mcpReq.mcpContext
       );
 
-      res.json(result);
+      return res.json(result);
     } catch (error) {
       logger.error('[McpController] callTool error:', error);
-      res.status(500).json({
+      return res.status(500).json({
         content: [{
           type: 'text',
           text: 'Błąd wykonania narzędzia',

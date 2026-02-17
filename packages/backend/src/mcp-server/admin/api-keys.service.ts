@@ -27,7 +27,7 @@ export class ApiKeysService {
     // Prefix do wyświetlania (pierwsze 12 znaków)
     const keyPrefix = key.substring(0, 12);
 
-    const record = await prisma.mcpApiKey.create({
+    const record = await prisma.mcp_api_keys.create({
       data: {
         keyHash,
         keyPrefix,
@@ -50,7 +50,7 @@ export class ApiKeysService {
    * Lista kluczy organizacji
    */
   async listKeys(organizationId: string): Promise<ApiKeyInfo[]> {
-    const keys = await prisma.mcpApiKey.findMany({
+    const keys = await prisma.mcp_api_keys.findMany({
       where: { organizationId },
       select: {
         id: true,
@@ -71,7 +71,7 @@ export class ApiKeysService {
    * Pobierz pojedynczy klucz
    */
   async getKey(keyId: string): Promise<ApiKeyInfo | null> {
-    const key = await prisma.mcpApiKey.findUnique({
+    const key = await prisma.mcp_api_keys.findUnique({
       where: { id: keyId },
       select: {
         id: true,
@@ -91,7 +91,7 @@ export class ApiKeysService {
    * Dezaktywuj klucz
    */
   async revokeKey(keyId: string): Promise<void> {
-    await prisma.mcpApiKey.update({
+    await prisma.mcp_api_keys.update({
       where: { id: keyId },
       data: { isActive: false },
     });
@@ -103,7 +103,7 @@ export class ApiKeysService {
    * Usuń klucz
    */
   async deleteKey(keyId: string): Promise<void> {
-    await prisma.mcpApiKey.delete({
+    await prisma.mcp_api_keys.delete({
       where: { id: keyId },
     });
 
@@ -114,7 +114,7 @@ export class ApiKeysService {
    * Aktualizuj nazwę klucza
    */
   async updateKeyName(keyId: string, name: string): Promise<void> {
-    await prisma.mcpApiKey.update({
+    await prisma.mcp_api_keys.update({
       where: { id: keyId },
       data: { name },
     });
@@ -133,12 +133,12 @@ export class ApiKeysService {
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
     const [totalStats, lastWeekStats] = await Promise.all([
-      prisma.mcpUsageLog.aggregate({
+      prisma.mcp_usage_logs.aggregate({
         where: { apiKeyId: keyId },
         _count: true,
         _avg: { responseTimeMs: true },
       }),
-      prisma.mcpUsageLog.aggregate({
+      prisma.mcp_usage_logs.aggregate({
         where: {
           apiKeyId: keyId,
           createdAt: { gte: oneWeekAgo },
@@ -147,7 +147,7 @@ export class ApiKeysService {
       }),
     ]);
 
-    const successfulCalls = await prisma.mcpUsageLog.count({
+    const successfulCalls = await prisma.mcp_usage_logs.count({
       where: { apiKeyId: keyId, success: true },
     });
 
@@ -172,7 +172,7 @@ export class ApiKeysService {
     responseTimeMs: number | null;
     createdAt: Date;
   }>> {
-    return prisma.mcpUsageLog.findMany({
+    return prisma.mcp_usage_logs.findMany({
       where: { apiKeyId: keyId },
       select: {
         toolName: true,

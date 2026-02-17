@@ -40,13 +40,13 @@ router.get('/providers', async (req, res) => {
       orderBy: { priority: 'asc' }
     });
 
-    res.json({
+    return res.json({
       message: 'AI providers retrieved successfully',
       data: providers
     });
   } catch (error) {
     console.error('Error fetching AI providers:', error);
-    res.status(500).json({ error: 'Failed to fetch AI providers' });
+    return res.status(500).json({ error: 'Failed to fetch AI providers' });
   }
 });
 
@@ -79,13 +79,13 @@ router.post('/providers', validateRequest(createProviderSchema), async (req, res
       }
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'AI provider created successfully',
       data: provider
     });
   } catch (error) {
     console.error('Error creating AI provider:', error);
-    res.status(500).json({ error: 'Failed to create AI provider' });
+    return res.status(500).json({ error: 'Failed to create AI provider' });
   }
 });
 
@@ -100,13 +100,13 @@ router.put('/providers/:id', async (req, res) => {
       data: req.body
     });
 
-    res.json({
+    return res.json({
       message: 'AI provider updated successfully',
       data: provider
     });
   } catch (error) {
     console.error('Error updating AI provider:', error);
-    res.status(500).json({ error: 'Failed to update AI provider' });
+    return res.status(500).json({ error: 'Failed to update AI provider' });
   }
 });
 
@@ -130,13 +130,13 @@ router.post('/providers/:id/test', async (req, res) => {
     // Test provider connection here
     // Implementation depends on specific provider
 
-    res.json({
+    return res.json({
       message: 'Provider test completed',
       data: { isConnected: true, latency: 150 }
     });
   } catch (error) {
     console.error('Error testing AI provider:', error);
-    res.status(500).json({ error: 'Failed to test AI provider' });
+    return res.status(500).json({ error: 'Failed to test AI provider' });
   }
 });
 
@@ -171,13 +171,13 @@ router.get('/models', async (req, res) => {
       ]
     });
 
-    res.json({
+    return res.json({
       message: 'AI models retrieved successfully',
       data: models
     });
   } catch (error) {
     console.error('Error fetching AI models:', error);
-    res.status(500).json({ error: 'Failed to fetch AI models' });
+    return res.status(500).json({ error: 'Failed to fetch AI models' });
   }
 });
 
@@ -214,13 +214,13 @@ router.post('/models', validateRequest(createModelSchema), async (req, res) => {
       }
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'AI model created successfully',
       data: model
     });
   } catch (error) {
     console.error('Error creating AI model:', error);
-    res.status(500).json({ error: 'Failed to create AI model' });
+    return res.status(500).json({ error: 'Failed to create AI model' });
   }
 });
 
@@ -241,13 +241,13 @@ router.get('/templates', async (req, res) => {
       search: search as string
     });
 
-    res.json({
+    return res.json({
       message: 'Prompt templates retrieved successfully',
       data: templates
     });
   } catch (error) {
     console.error('Error fetching prompt templates:', error);
-    res.status(500).json({ error: 'Failed to fetch prompt templates' });
+    return res.status(500).json({ error: 'Failed to fetch prompt templates' });
   }
 });
 
@@ -276,13 +276,13 @@ router.post('/templates', validateRequest(createTemplateSchema), async (req, res
 
     const templateId = await templateManager.createTemplate(req.body);
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'Prompt template created successfully',
       data: { id: templateId }
     });
   } catch (error) {
     console.error('Error creating prompt template:', error);
-    res.status(500).json({ error: 'Failed to create prompt template' });
+    return res.status(500).json({ error: 'Failed to create prompt template' });
   }
 });
 
@@ -297,13 +297,13 @@ router.get('/templates/:id', async (req, res) => {
       return res.status(404).json({ error: 'Template not found' });
     }
 
-    res.json({
+    return res.json({
       message: 'Template retrieved successfully',
       data: template
     });
   } catch (error) {
     console.error('Error fetching template:', error);
-    res.status(500).json({ error: 'Failed to fetch template' });
+    return res.status(500).json({ error: 'Failed to fetch template' });
   }
 });
 
@@ -319,13 +319,13 @@ router.post('/templates/:id/test', validateRequest(testTemplateSchema), async (r
 
     const result = await templateManager.testTemplate(req.params.id, req.body.variables);
 
-    res.json({
+    return res.json({
       message: 'Template test completed',
       data: result
     });
   } catch (error) {
     console.error('Error testing template:', error);
-    res.status(500).json({ error: 'Failed to test template' });
+    return res.status(500).json({ error: 'Failed to test template' });
   }
 });
 
@@ -337,13 +337,13 @@ router.get('/templates-categories', async (req, res) => {
 
     const categories = await templateManager.getCategories();
 
-    res.json({
+    return res.json({
       message: 'Template categories retrieved successfully',
       data: categories
     });
   } catch (error) {
     console.error('Error fetching template categories:', error);
-    res.status(500).json({ error: 'Failed to fetch template categories' });
+    return res.status(500).json({ error: 'Failed to fetch template categories' });
   }
 });
 
@@ -376,13 +376,13 @@ router.get('/rules', async (req, res) => {
       ]
     });
 
-    res.json({
+    return res.json({
       message: 'AI rules retrieved successfully',
       data: rules
     });
   } catch (error) {
     console.error('Error fetching AI rules:', error);
-    res.status(500).json({ error: 'Failed to fetch AI rules' });
+    return res.status(500).json({ error: 'Failed to fetch AI rules' });
   }
 });
 
@@ -415,13 +415,13 @@ router.post('/rules', validateRequest(createRuleSchema), async (req, res) => {
       }
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'AI rule created successfully',
       data: rule
     });
   } catch (error) {
     console.error('Error creating AI rule:', error);
-    res.status(500).json({ error: 'Failed to create AI rule' });
+    return res.status(500).json({ error: 'Failed to create AI rule' });
   }
 });
 
@@ -435,13 +435,13 @@ router.put('/rules/:id', async (req, res) => {
       data: req.body
     });
 
-    res.json({
+    return res.json({
       message: 'AI rule updated successfully',
       data: rule
     });
   } catch (error) {
     console.error('Error updating AI rule:', error);
-    res.status(500).json({ error: 'Failed to update AI rule' });
+    return res.status(500).json({ error: 'Failed to update AI rule' });
   }
 });
 
@@ -461,16 +461,16 @@ router.post('/rules/:id/test', validateRequest(testRuleSchema), async (req, res)
       triggerType: 'MANUAL_TRIGGER',
       triggerData: req.body.testData,
       organizationId,
-      userId: req.user!.userId
+      userId: req.user!.id
     });
 
-    res.json({
+    return res.json({
       message: 'Rule test completed',
       data: result
     });
   } catch (error) {
     console.error('Error testing AI rule:', error);
-    res.status(500).json({ error: 'Failed to test AI rule' });
+    return res.status(500).json({ error: 'Failed to test AI rule' });
   }
 });
 
@@ -504,7 +504,7 @@ router.get('/executions', async (req, res) => {
 
     const total = await prisma.ai_executions.count({ where });
 
-    res.json({
+    return res.json({
       message: 'AI executions retrieved successfully',
       data: executions,
       pagination: {
@@ -516,7 +516,7 @@ router.get('/executions', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching AI executions:', error);
-    res.status(500).json({ error: 'Failed to fetch AI executions' });
+    return res.status(500).json({ error: 'Failed to fetch AI executions' });
   }
 });
 
@@ -552,7 +552,7 @@ router.get('/usage-stats', async (req, res) => {
       orderBy: { date: 'asc' }
     });
 
-    res.json({
+    return res.json({
       message: 'AI usage statistics retrieved successfully',
       data: {
         totalExecutions: stats._count,
@@ -564,7 +564,7 @@ router.get('/usage-stats', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching AI usage statistics:', error);
-    res.status(500).json({ error: 'Failed to fetch AI usage statistics' });
+    return res.status(500).json({ error: 'Failed to fetch AI usage statistics' });
   }
 });
 
@@ -598,19 +598,19 @@ router.post('/execute', validateRequest(manualExecutionSchema), async (req, res)
       },
       {
         triggerType: 'MANUAL_TRIGGER',
-        triggerData: { userId: req.user!.userId },
+        triggerData: { userId: req.user!.id },
         organizationId,
-        userId: req.user!.userId
+        userId: req.user!.id
       }
     );
 
-    res.json({
+    return res.json({
       message: 'AI execution completed successfully',
       data: result
     });
   } catch (error) {
     console.error('Error executing AI request:', error);
-    res.status(500).json({ error: 'Failed to execute AI request' });
+    return res.status(500).json({ error: 'Failed to execute AI request' });
   }
 });
 
@@ -622,12 +622,12 @@ router.post('/templates/import-defaults', async (req, res) => {
 
     await templateManager.importDefaultTemplates();
 
-    res.json({
+    return res.json({
       message: 'Default templates imported successfully'
     });
   } catch (error) {
     console.error('Error importing default templates:', error);
-    res.status(500).json({ error: 'Failed to import default templates' });
+    return res.status(500).json({ error: 'Failed to import default templates' });
   }
 });
 

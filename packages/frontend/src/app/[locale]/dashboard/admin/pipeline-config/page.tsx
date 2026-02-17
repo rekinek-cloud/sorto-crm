@@ -318,7 +318,7 @@ export default function PipelineConfigPage() {
     <PageShell>
       <PageHeader
         title="Konfiguracja Pipeline"
-        description="Zarzadzaj parametrami przetwarzania emaili, klasyfikacji AI i automatyzacji"
+        subtitle="Zarzadzaj parametrami przetwarzania emaili, klasyfikacji AI i automatyzacji"
         icon={Settings}
       />
 

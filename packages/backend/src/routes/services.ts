@@ -101,7 +101,7 @@ router.get('/', authenticateToken, async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       services,
       pagination: {
         page: pageNum,
@@ -112,7 +112,7 @@ router.get('/', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching services:', error);
-    res.status(500).json({ error: 'Failed to fetch services' });
+    return res.status(500).json({ error: 'Failed to fetch services' });
   }
 });
 
@@ -156,10 +156,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Service not found' });
     }
 
-    res.json(service);
+    return res.json(service);
   } catch (error) {
     console.error('Error fetching service:', error);
-    res.status(500).json({ error: 'Failed to fetch service' });
+    return res.status(500).json({ error: 'Failed to fetch service' });
   }
 });
 
@@ -173,16 +173,16 @@ router.post('/', authenticateToken, async (req, res) => {
       data: {
         ...serviceData,
         organizationId
-      }
+      } as any
     });
 
-    res.status(201).json(service);
+    return res.status(201).json(service);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
     console.error('Error creating service:', error);
-    res.status(500).json({ error: 'Failed to create service' });
+    return res.status(500).json({ error: 'Failed to create service' });
   }
 });
 
@@ -207,13 +207,13 @@ router.put('/:id', authenticateToken, async (req, res) => {
       data: serviceData
     });
 
-    res.json(service);
+    return res.json(service);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
     console.error('Error updating service:', error);
-    res.status(500).json({ error: 'Failed to update service' });
+    return res.status(500).json({ error: 'Failed to update service' });
   }
 });
 
@@ -251,10 +251,10 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       where: { id }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error deleting service:', error);
-    res.status(500).json({ error: 'Failed to delete service' });
+    return res.status(500).json({ error: 'Failed to delete service' });
   }
 });
 
@@ -294,10 +294,10 @@ router.get('/meta/categories', authenticateToken, async (req, res) => {
       subcategories: Array.from(subcategories)
     }));
 
-    res.json(result);
+    return res.json(result);
   } catch (error) {
     console.error('Error fetching service categories:', error);
-    res.status(500).json({ error: 'Failed to fetch categories' });
+    return res.status(500).json({ error: 'Failed to fetch categories' });
   }
 });
 
@@ -314,10 +314,10 @@ router.get('/meta/billing-types', authenticateToken, async (req, res) => {
       { value: 'PROJECT_BASED', label: 'Project Based' }
     ];
 
-    res.json(billingTypes);
+    return res.json(billingTypes);
   } catch (error) {
     console.error('Error fetching billing types:', error);
-    res.status(500).json({ error: 'Failed to fetch billing types' });
+    return res.status(500).json({ error: 'Failed to fetch billing types' });
   }
 });
 
@@ -332,10 +332,10 @@ router.get('/meta/delivery-methods', authenticateToken, async (req, res) => {
       { value: 'PHYSICAL_DELIVERY', label: 'Physical Delivery' }
     ];
 
-    res.json(deliveryMethods);
+    return res.json(deliveryMethods);
   } catch (error) {
     console.error('Error fetching delivery methods:', error);
-    res.status(500).json({ error: 'Failed to fetch delivery methods' });
+    return res.status(500).json({ error: 'Failed to fetch delivery methods' });
   }
 });
 

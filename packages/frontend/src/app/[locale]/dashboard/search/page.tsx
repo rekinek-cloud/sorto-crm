@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { realVectorSearchApi } from '@/lib/api/realVectorSearch';
+// @ts-ignore - lodash/debounce has no declaration file
 import debounce from 'lodash/debounce';
 import { PageShell } from '@/components/ui/PageShell';
 import { PageHeader } from '@/components/ui/PageHeader';

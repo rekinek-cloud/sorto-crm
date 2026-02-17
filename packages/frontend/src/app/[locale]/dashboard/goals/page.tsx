@@ -42,7 +42,7 @@ export default function GoalsPage() {
   const fetchGoals = async () => {
     try {
       const data = await goalsApi.getGoals();
-      const goalsList = data.data || data.goals || [];
+      const goalsList = (data as any).data || data.goals || [];
       setGoals(goalsList);
     } catch (error) {
       console.error('Error fetching goals:', error);

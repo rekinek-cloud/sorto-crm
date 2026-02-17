@@ -11,10 +11,10 @@ const router = Router();
 router.get('/', async (_req, res) => {
   try {
     const templates = await industryTemplateService.listTemplates();
-    res.json(templates);
+    return res.json(templates);
   } catch (error) {
     console.error('Error listing templates:', error);
-    res.status(500).json({ error: 'Failed to list templates' });
+    return res.status(500).json({ error: 'Failed to list templates' });
   }
 });
 
@@ -22,13 +22,13 @@ router.get('/', async (_req, res) => {
 router.get('/:slug', async (req, res) => {
   try {
     const template = await industryTemplateService.getTemplate(req.params.slug);
-    res.json(template);
+    return res.json(template);
   } catch (error: any) {
     if (error.message?.includes('not found')) {
       return res.status(404).json({ error: error.message });
     }
     console.error('Error getting template:', error);
-    res.status(500).json({ error: 'Failed to get template' });
+    return res.status(500).json({ error: 'Failed to get template' });
   }
 });
 
@@ -49,7 +49,7 @@ router.post('/apply', authenticateUser, async (req, res) => {
       req.user.id
     );
 
-    res.json(result);
+    return res.json(result);
   } catch (error: any) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
@@ -58,7 +58,7 @@ router.post('/apply', authenticateUser, async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
     console.error('Error applying template:', error);
-    res.status(500).json({ error: 'Failed to apply template' });
+    return res.status(500).json({ error: 'Failed to apply template' });
   }
 });
 
@@ -66,10 +66,10 @@ router.post('/apply', authenticateUser, async (req, res) => {
 router.get('/current/skin', authenticateUser, async (req, res) => {
   try {
     const skin = await industryTemplateService.getAppliedTemplate(req.user.organizationId);
-    res.json({ industrySkin: skin });
+    return res.json({ industrySkin: skin });
   } catch (error) {
     console.error('Error getting applied template:', error);
-    res.status(500).json({ error: 'Failed to get applied template' });
+    return res.status(500).json({ error: 'Failed to get applied template' });
   }
 });
 

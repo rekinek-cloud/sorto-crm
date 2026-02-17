@@ -95,7 +95,7 @@ router.get('/', auth, async (req, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: accounts,
       count: accounts.length
@@ -103,7 +103,7 @@ router.get('/', auth, async (req, res) => {
 
   } catch (error) {
     logger.error('Error fetching email accounts:', { error });
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch email accounts'
     });
@@ -179,14 +179,14 @@ router.get('/providers', auth, async (req, res) => {
       }
     ];
 
-    res.json({
+    return res.json({
       success: true,
       data: providers
     });
 
   } catch (error) {
     logger.error('Error fetching providers:', { error });
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch email providers'
     });
@@ -242,14 +242,14 @@ router.get('/:id', auth, async (req, res) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: account
     });
 
   } catch (error) {
     logger.error('Error fetching email account:', { error, accountId: req.params.id });
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch email account'
     });
@@ -313,7 +313,7 @@ router.post('/', auth, validateRequest(createEmailAccountSchema), async (req, re
       organizationId
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: account,
       message: 'Email account created successfully'
@@ -321,7 +321,7 @@ router.post('/', auth, validateRequest(createEmailAccountSchema), async (req, re
 
   } catch (error) {
     logger.error('Error creating email account:', { error, email: req.body.email });
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to create email account'
     });
@@ -385,7 +385,7 @@ router.put('/:id', auth, validateRequest(updateEmailAccountSchema), async (req, 
       organizationId
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: account,
       message: 'Email account updated successfully'
@@ -393,7 +393,7 @@ router.put('/:id', auth, validateRequest(updateEmailAccountSchema), async (req, 
 
   } catch (error) {
     logger.error('Error updating email account:', { error, accountId: req.params.id });
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to update email account'
     });
@@ -432,14 +432,14 @@ router.delete('/:id', auth, async (req, res) => {
       organizationId
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Email account deleted successfully'
     });
 
   } catch (error) {
     logger.error('Error deleting email account:', { error, accountId: req.params.id });
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to delete email account'
     });
@@ -501,7 +501,7 @@ router.post('/test-connection', auth, validateRequest(testConnectionSchema), asy
       overallSuccess
     });
 
-    res.json({
+    return res.json({
       success: overallSuccess,
       data: results,
       message: overallSuccess ? 'Connection test successful' : 'Connection test failed'
@@ -509,7 +509,7 @@ router.post('/test-connection', auth, validateRequest(testConnectionSchema), asy
 
   } catch (error) {
     logger.error('Error testing connection:', { error });
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to test connection'
     });
@@ -554,7 +554,7 @@ router.post('/:id/sync', auth, async (req, res) => {
       result
     });
 
-    res.json({
+    return res.json({
       success: result.success,
       data: result,
       message: result.success ? 'Sync completed successfully' : 'Sync failed'
@@ -562,7 +562,7 @@ router.post('/:id/sync', auth, async (req, res) => {
 
   } catch (error) {
     logger.error('Error triggering sync:', { error, accountId: req.params.id });
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to trigger sync'
     });
@@ -625,7 +625,7 @@ router.post('/sync-all', auth, async (req, res) => {
       totalNewMessages: totalNew
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: results,
       message: `Sync completed for ${successfulAccounts}/${results.length} accounts. ${totalNew} new messages.`
@@ -633,7 +633,7 @@ router.post('/sync-all', auth, async (req, res) => {
 
   } catch (error) {
     logger.error('Error triggering sync all:', { error });
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to trigger sync for all accounts'
     });

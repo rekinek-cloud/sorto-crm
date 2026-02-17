@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { BaseAIProvider, AIRequest, AIResponse, AIProviderConfig } from './BaseProvider';
+import { BaseAIProvider, AIRequest, AIResponse, AIProviderConfig, AIProviderStatus } from './BaseProvider';
 
 interface DeepSeekConfig extends AIProviderConfig {
   apiKey: string;
@@ -43,7 +43,7 @@ interface DeepSeekAPIResponse {
 
 export class DeepSeekProvider extends BaseAIProvider {
   private client: AxiosInstance;
-  private config: DeepSeekConfig;
+  protected override config: DeepSeekConfig;
   private defaultModel: string;
 
   constructor(config: DeepSeekConfig, limits?: any) {
@@ -123,11 +123,7 @@ export class DeepSeekProvider extends BaseAIProvider {
           totalTokens: usage.total_tokens
         },
         executionTime,
-        cost,
-        metadata: {
-          created: response.data.created,
-          choices: response.data.choices.length
-        }
+        cost
       };
 
     } catch (error) {
@@ -180,12 +176,13 @@ export class DeepSeekProvider extends BaseAIProvider {
     ];
   }
 
-  async checkStatus(): Promise<any> {
+  async checkStatus(): Promise<AIProviderStatus> {
+    const startTime = Date.now();
     try {
       await this.validateConnection();
-      return { status: 'healthy', timestamp: new Date().toISOString() };
+      return { isAvailable: true, lastChecked: new Date(), latency: Date.now() - startTime };
     } catch (error) {
-      return { status: 'error', error: error instanceof Error ? error.message : 'Unknown error' };
+      return { isAvailable: false, lastChecked: new Date(), errorMessage: error instanceof Error ? error.message : 'Unknown error' };
     }
   }
 
@@ -239,22 +236,12 @@ export class DeepSeekProvider extends BaseAIProvider {
     ];
   }
 
-  getProviderInfo() {
+  override getProviderInfo() {
     return {
-      name: 'DeepSeek',
-      description: 'DeepSeek AI models - high performance, cost-effective',
-      website: 'https://www.deepseek.com/',
-      supportedFeatures: [
-        'Chat completion',
-        'System prompts',
-        'Temperature control',
-        'Token limits',
-        'Streaming (when supported)'
-      ],
-      pricing: {
-        input: '$0.14 per 1K tokens',
-        output: '$0.28 per 1K tokens'
-      }
+      name: 'DeepSeek' as const,
+      baseUrl: this.baseUrl,
+      isConfigured: this.isConfigValid(),
+      limits: this.limits
     };
   }
 }

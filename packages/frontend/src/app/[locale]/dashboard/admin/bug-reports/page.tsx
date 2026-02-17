@@ -227,7 +227,7 @@ export default function AdminBugReportsPage() {
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Status</label>
                 <select
                   value={filters.status}
-                  onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
+                  onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value as BugStatus | '' }))}
                   className="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2"
                 >
                   <option value="">Wszystkie</option>
@@ -243,7 +243,7 @@ export default function AdminBugReportsPage() {
                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Priorytet</label>
                 <select
                   value={filters.priority}
-                  onChange={(e) => setFilters(prev => ({ ...prev, priority: e.target.value }))}
+                  onChange={(e) => setFilters(prev => ({ ...prev, priority: e.target.value as BugPriority | '' }))}
                   className="w-full border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-xl px-3 py-2"
                 >
                   <option value="">Wszystkie</option>

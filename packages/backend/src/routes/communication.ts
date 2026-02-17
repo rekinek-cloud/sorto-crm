@@ -1,6 +1,7 @@
 import express from 'express';
 import { prisma } from '../config/database';
 import { authenticateToken as requireAuth, AuthenticatedRequest } from '../shared/middleware/auth';
+// @ts-ignore - Two files exist: emailService.ts and EmailService.ts with different exports
 import { emailService, EmailConfig } from '../services/emailService';
 import { slackService, SlackConfig } from '../services/slackService';
 import { processMessageContent } from '../services/messageProcessor';
@@ -31,10 +32,10 @@ router.get('/channels', requireAuth, async (req: AuthenticatedRequest, res) => {
       orderBy: { createdAt: 'desc' }
     });
 
-    res.json(channels);
+    return res.json(channels);
   } catch (error) {
     console.error('Error fetching channels:', error);
-    res.status(500).json({ error: 'Failed to fetch channels' });
+    return res.status(500).json({ error: 'Failed to fetch channels' });
   }
 });
 
@@ -183,10 +184,10 @@ router.post('/channels/test-email', requireAuth, async (req: AuthenticatedReques
     const config = req.body as EmailConfig;
     const isValid = await emailService.testConnection(config);
     
-    res.json({ valid: isValid });
+    return res.json({ valid: isValid });
   } catch (error) {
     console.error('Error testing email connection:', error);
-    res.status(500).json({ error: 'Failed to test connection' });
+    return res.status(500).json({ error: 'Failed to test connection' });
   }
 });
 
@@ -196,10 +197,10 @@ router.post('/channels/test-slack', requireAuth, async (req: AuthenticatedReques
     const config = req.body as SlackConfig;
     const isValid = await slackService.testConnection(config);
     
-    res.json({ valid: isValid });
+    return res.json({ valid: isValid });
   } catch (error) {
     console.error('Error testing Slack connection:', error);
-    res.status(500).json({ error: 'Failed to test connection' });
+    return res.status(500).json({ error: 'Failed to test connection' });
   }
 });
 
@@ -378,10 +379,10 @@ router.get('/messages', requireAuth, async (req: AuthenticatedRequest, res) => {
       skip: parseInt(offset as string)
     });
 
-    res.json(messages);
+    return res.json(messages);
   } catch (error) {
     console.error('Error fetching messages:', error);
-    res.status(500).json({ error: 'Failed to fetch messages' });
+    return res.status(500).json({ error: 'Failed to fetch messages' });
   }
 });
 
@@ -415,10 +416,10 @@ router.get('/messages/:id', requireAuth, async (req: AuthenticatedRequest, res) 
       data: { isRead: true }
     });
 
-    res.json(message);
+    return res.json(message);
   } catch (error) {
     console.error('Error fetching message:', error);
-    res.status(500).json({ error: 'Failed to fetch message' });
+    return res.status(500).json({ error: 'Failed to fetch message' });
   }
 });
 
@@ -443,10 +444,10 @@ router.put('/messages/:id/read', requireAuth, async (req: AuthenticatedRequest, 
       data: { isRead: true }
     });
 
-    res.json({ message: 'Message marked as read', data: updatedMessage });
+    return res.json({ message: 'Message marked as read', data: updatedMessage });
   } catch (error) {
     console.error('Error marking message as read:', error);
-    res.status(500).json({ error: 'Failed to mark message as read' });
+    return res.status(500).json({ error: 'Failed to mark message as read' });
   }
 });
 
@@ -469,10 +470,10 @@ router.post('/messages/send', requireAuth, async (req: AuthenticatedRequest, res
 
     await emailService.sendEmail(channelId, to, subject, content, html);
 
-    res.json({ message: 'Email sent successfully' });
+    return res.json({ message: 'Email sent successfully' });
   } catch (error) {
     console.error('Error sending email:', error);
-    res.status(500).json({ error: 'Failed to send email' });
+    return res.status(500).json({ error: 'Failed to send email' });
   }
 });
 
@@ -505,13 +506,13 @@ router.post('/messages/:id/reprocess', requireAuth, async (req: AuthenticatedReq
 
     const results = await processMessageContent(id, emailMessage);
 
-    res.json({ 
+    return res.json({ 
       message: 'Message reprocessed successfully',
       results 
     });
   } catch (error) {
     console.error('Error reprocessing message:', error);
-    res.status(500).json({ error: 'Failed to reprocess message' });
+    return res.status(500).json({ error: 'Failed to reprocess message' });
   }
 });
 
@@ -531,10 +532,10 @@ router.get('/processing-rules', requireAuth, async (req: AuthenticatedRequest, r
       orderBy: { priority: 'desc' }
     });
 
-    res.json(rules);
+    return res.json(rules);
   } catch (error) {
     console.error('Error fetching processing rules:', error);
-    res.status(500).json({ error: 'Failed to fetch processing rules' });
+    return res.status(500).json({ error: 'Failed to fetch processing rules' });
   }
 });
 
@@ -564,10 +565,10 @@ router.post('/processing-rules', requireAuth, async (req: AuthenticatedRequest, 
       }
     });
 
-    res.status(201).json(rule);
+    return res.status(201).json(rule);
   } catch (error) {
     console.error('Error creating processing rule:', error);
-    res.status(500).json({ error: 'Failed to create processing rule' });
+    return res.status(500).json({ error: 'Failed to create processing rule' });
   }
 });
 
@@ -593,10 +594,10 @@ router.put('/processing-rules/:id', requireAuth, async (req: AuthenticatedReques
       data: updates
     });
 
-    res.json(updatedRule);
+    return res.json(updatedRule);
   } catch (error) {
     console.error('Error updating processing rule:', error);
-    res.status(500).json({ error: 'Failed to update processing rule' });
+    return res.status(500).json({ error: 'Failed to update processing rule' });
   }
 });
 
@@ -620,10 +621,10 @@ router.delete('/processing-rules/:id', requireAuth, async (req: AuthenticatedReq
       where: { id }
     });
 
-    res.json({ message: 'Processing rule deleted successfully' });
+    return res.json({ message: 'Processing rule deleted successfully' });
   } catch (error) {
     console.error('Error deleting processing rule:', error);
-    res.status(500).json({ error: 'Failed to delete processing rule' });
+    return res.status(500).json({ error: 'Failed to delete processing rule' });
   }
 });
 
@@ -662,10 +663,10 @@ router.post('/stream-channels', requireAuth, async (req: AuthenticatedRequest, r
       }
     });
 
-    res.status(201).json(streamChannel);
+    return res.status(201).json(streamChannel);
   } catch (error) {
     console.error('Error connecting stream to channel:', error);
-    res.status(500).json({ error: 'Failed to connect stream to channel' });
+    return res.status(500).json({ error: 'Failed to connect stream to channel' });
   }
 });
 
@@ -714,7 +715,7 @@ router.get('/statistics', requireAuth, async (req: AuthenticatedRequest, res) =>
       ? Math.round((processedToday / (processedToday + unreadMessages)) * 100)
       : 0;
 
-    res.json({
+    return res.json({
       totalChannels,
       unreadMessages,
       processedToday,
@@ -723,7 +724,7 @@ router.get('/statistics', requireAuth, async (req: AuthenticatedRequest, res) =>
     });
   } catch (error) {
     console.error('Error fetching communication statistics:', error);
-    res.status(500).json({ error: 'Failed to fetch statistics' });
+    return res.status(500).json({ error: 'Failed to fetch statistics' });
   }
 });
 
@@ -860,10 +861,10 @@ router.post('/messages/:id/analyze', requireAuth, async (req: AuthenticatedReque
       dealTitle: updatedMessage?.deal?.title
     };
 
-    res.json(response);
+    return res.json(response);
   } catch (error) {
     console.error('Error analyzing message with AI:', error);
-    res.status(500).json({ error: 'Failed to analyze message with AI' });
+    return res.status(500).json({ error: 'Failed to analyze message with AI' });
   }
 });
 

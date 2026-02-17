@@ -175,7 +175,7 @@ export default function KnowledgePage() {
       folderId: selectedFolder || undefined,
       search: searchQuery || undefined,
     });
-    setDocuments(response.data);
+    setDocuments(response.data as any);
   };
 
   const loadWikiPages = async () => {

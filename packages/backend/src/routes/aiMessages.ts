@@ -68,7 +68,7 @@ router.get('/', async (req, res) => {
       }),
     ]);
 
-    res.json({
+    return res.json({
       messages,
       unreadCount,
       pagination: {
@@ -80,7 +80,7 @@ router.get('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error listing AI messages:', error);
-    res.status(500).json({ error: 'Failed to list AI messages' });
+    return res.status(500).json({ error: 'Failed to list AI messages' });
   }
 });
 
@@ -92,8 +92,7 @@ router.post('/', async (req, res) => {
 
     const parsed = sendMessageSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
-      return;
+      return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
     }
 
     // Verify agent is assigned to current org
@@ -105,8 +104,7 @@ router.post('/', async (req, res) => {
     });
 
     if (!assignment) {
-      res.status(403).json({ error: 'Access denied to this AI agent' });
-      return;
+      return res.status(403).json({ error: 'Access denied to this AI agent' });
     }
 
     // Verify task belongs to current org if taskId provided
@@ -119,8 +117,7 @@ router.post('/', async (req, res) => {
       });
 
       if (!task) {
-        res.status(404).json({ error: 'Task not found in this organization' });
-        return;
+        return res.status(404).json({ error: 'Task not found in this organization' });
       }
     }
 
@@ -146,10 +143,10 @@ router.post('/', async (req, res) => {
       },
     });
 
-    res.status(201).json({ message });
+    return res.status(201).json({ message });
   } catch (error) {
     console.error('Error sending AI message:', error);
-    res.status(500).json({ error: 'Failed to send AI message' });
+    return res.status(500).json({ error: 'Failed to send AI message' });
   }
 });
 
@@ -165,18 +162,15 @@ router.patch('/:id/read', async (req, res) => {
     });
 
     if (!message) {
-      res.status(404).json({ error: 'Message not found' });
-      return;
+      return res.status(404).json({ error: 'Message not found' });
     }
 
     if (message.toUserId !== userId) {
-      res.status(403).json({ error: 'Access denied to this message' });
-      return;
+      return res.status(403).json({ error: 'Access denied to this message' });
     }
 
     if (message.isRead) {
-      res.json({ message, alreadyRead: true });
-      return;
+      return res.json({ message, alreadyRead: true });
     }
 
     const updated = await prisma.aIAgentManagedMessage.update({
@@ -184,10 +178,10 @@ router.patch('/:id/read', async (req, res) => {
       data: { isRead: true },
     });
 
-    res.json({ message: updated });
+    return res.json({ message: updated });
   } catch (error) {
     console.error('Error marking message as read:', error);
-    res.status(500).json({ error: 'Failed to mark message as read' });
+    return res.status(500).json({ error: 'Failed to mark message as read' });
   }
 });
 

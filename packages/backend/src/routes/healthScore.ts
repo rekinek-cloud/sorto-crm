@@ -38,7 +38,7 @@ router.get('/', authenticateToken, async (req: any, res: any) => {
       prisma.relationshipHealth.count({ where })
     ]);
 
-    res.json({
+    return res.json({
       scores,
       pagination: {
         page: pageNum,
@@ -49,7 +49,7 @@ router.get('/', authenticateToken, async (req: any, res: any) => {
     });
   } catch (error) {
     console.error('Error fetching health scores:', error);
-    res.status(500).json({ error: 'Failed to fetch health scores' });
+    return res.status(500).json({ error: 'Failed to fetch health scores' });
   }
 });
 
@@ -88,7 +88,7 @@ router.get('/alerts', authenticateToken, async (req: any, res: any) => {
       prisma.healthAlert.count({ where })
     ]);
 
-    res.json({
+    return res.json({
       alerts,
       pagination: {
         page: pageNum,
@@ -99,7 +99,7 @@ router.get('/alerts', authenticateToken, async (req: any, res: any) => {
     });
   } catch (error) {
     console.error('Error fetching health alerts:', error);
-    res.status(500).json({ error: 'Failed to fetch health alerts' });
+    return res.status(500).json({ error: 'Failed to fetch health alerts' });
   }
 });
 
@@ -130,10 +130,10 @@ router.post('/alerts/:id/action', authenticateToken, async (req: any, res: any) 
       }
     });
 
-    res.json(alert);
+    return res.json(alert);
   } catch (error) {
     console.error('Error actioning alert:', error);
-    res.status(500).json({ error: 'Failed to action alert' });
+    return res.status(500).json({ error: 'Failed to action alert' });
   }
 });
 
@@ -261,10 +261,10 @@ router.post('/calculate/:entityType/:entityId', authenticateToken, async (req: a
       });
     }
 
-    res.json(healthRecord);
+    return res.json(healthRecord);
   } catch (error) {
     console.error('Error calculating health score:', error);
-    res.status(500).json({ error: 'Failed to calculate health score' });
+    return res.status(500).json({ error: 'Failed to calculate health score' });
   }
 });
 
@@ -295,10 +295,10 @@ router.get('/:entityType/:entityId', authenticateToken, async (req: any, res: an
       return res.status(404).json({ error: 'Health record not found' });
     }
 
-    res.json(healthRecord);
+    return res.json(healthRecord);
   } catch (error) {
     console.error('Error fetching health score:', error);
-    res.status(500).json({ error: 'Failed to fetch health score' });
+    return res.status(500).json({ error: 'Failed to fetch health score' });
   }
 });
 

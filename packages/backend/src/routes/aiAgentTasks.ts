@@ -50,20 +50,18 @@ router.get('/:id', async (req, res) => {
     });
 
     if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
+      return res.status(404).json({ error: 'Task not found' });
     }
 
     // Verify task belongs to current org
     if (task.organizationId !== organizationId) {
-      res.status(403).json({ error: 'Access denied to this task' });
-      return;
+      return res.status(403).json({ error: 'Access denied to this task' });
     }
 
-    res.json({ task });
+    return res.json({ task });
   } catch (error) {
     console.error('Error getting AI agent task:', error);
-    res.status(500).json({ error: 'Failed to get AI agent task' });
+    return res.status(500).json({ error: 'Failed to get AI agent task' });
   }
 });
 
@@ -76,8 +74,7 @@ router.post('/:id/approve', async (req, res) => {
 
     const parsed = approveTaskSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
-      return;
+      return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
     }
 
     // Verify task exists and belongs to current org
@@ -86,18 +83,15 @@ router.post('/:id/approve', async (req, res) => {
     });
 
     if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
+      return res.status(404).json({ error: 'Task not found' });
     }
 
     if (task.organizationId !== organizationId) {
-      res.status(403).json({ error: 'Access denied to this task' });
-      return;
+      return res.status(403).json({ error: 'Access denied to this task' });
     }
 
     if (task.status !== 'WAITING_APPROVAL') {
-      res.status(400).json({ error: 'Task is not waiting for approval' });
-      return;
+      return res.status(400).json({ error: 'Task is not waiting for approval' });
     }
 
     const approvalStatus = parsed.data.approved
@@ -126,10 +120,10 @@ router.post('/:id/approve', async (req, res) => {
       },
     });
 
-    res.json({ task: updated });
+    return res.json({ task: updated });
   } catch (error) {
     console.error('Error approving AI agent task:', error);
-    res.status(500).json({ error: 'Failed to approve AI agent task' });
+    return res.status(500).json({ error: 'Failed to approve AI agent task' });
   }
 });
 
@@ -141,8 +135,7 @@ router.patch('/:id', async (req, res) => {
 
     const parsed = updateTaskSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
-      return;
+      return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
     }
 
     // Verify task exists and belongs to current org
@@ -151,13 +144,11 @@ router.patch('/:id', async (req, res) => {
     });
 
     if (!task) {
-      res.status(404).json({ error: 'Task not found' });
-      return;
+      return res.status(404).json({ error: 'Task not found' });
     }
 
     if (task.organizationId !== organizationId) {
-      res.status(403).json({ error: 'Access denied to this task' });
-      return;
+      return res.status(403).json({ error: 'Access denied to this task' });
     }
 
     const updateData: any = {
@@ -209,10 +200,10 @@ router.patch('/:id', async (req, res) => {
       });
     }
 
-    res.json({ task: updated });
+    return res.json({ task: updated });
   } catch (error) {
     console.error('Error updating AI agent task:', error);
-    res.status(500).json({ error: 'Failed to update AI agent task' });
+    return res.status(500).json({ error: 'Failed to update AI agent task' });
   }
 });
 

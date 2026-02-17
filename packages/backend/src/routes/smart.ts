@@ -34,7 +34,7 @@ router.post('/analyze/task/:id', async (req, res) => {
       where: { id },
       data: {
         smartScore: analysis.overallScore,
-        smartAnalysis: analysis,
+        smartAnalysis: analysis as any,
         updatedAt: new Date()
       },
       include: {
@@ -46,13 +46,13 @@ router.post('/analyze/task/:id', async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       task: updatedTask,
       analysis
     });
   } catch (error) {
     console.error('Error analyzing task:', error);
-    res.status(500).json({ error: 'Failed to analyze task' });
+    return res.status(500).json({ error: 'Failed to analyze task' });
   }
 });
 
@@ -81,7 +81,7 @@ router.post('/analyze/project/:id', async (req, res) => {
       where: { id },
       data: {
         smartScore: analysis.overallScore,
-        smartAnalysis: analysis,
+        smartAnalysis: analysis as any,
         updatedAt: new Date()
       },
       include: {
@@ -108,13 +108,13 @@ router.post('/analyze/project/:id', async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       project: updatedProject,
       analysis
     });
   } catch (error) {
     console.error('Error analyzing project:', error);
-    res.status(500).json({ error: 'Failed to analyze project' });
+    return res.status(500).json({ error: 'Failed to analyze project' });
   }
 });
 
@@ -189,7 +189,7 @@ router.get('/reports/tasks', async (req, res) => {
       poor: scoreDistribution.filter(d => d.smartScore && d.smartScore < 40).reduce((sum, d) => sum + d._count.smartScore, 0)
     };
 
-    res.json({
+    return res.json({
       tasks,
       pagination: {
         page: pageNum,
@@ -207,7 +207,7 @@ router.get('/reports/tasks', async (req, res) => {
     });
   } catch (error) {
     console.error('Error getting task SMART reports:', error);
-    res.status(500).json({ error: 'Failed to get task reports' });
+    return res.status(500).json({ error: 'Failed to get task reports' });
   }
 });
 
@@ -281,7 +281,7 @@ router.get('/reports/projects', async (req, res) => {
       poor: scoreDistribution.filter(d => d.smartScore && d.smartScore < 40).reduce((sum, d) => sum + d._count.smartScore, 0)
     };
 
-    res.json({
+    return res.json({
       projects,
       pagination: {
         page: pageNum,
@@ -299,7 +299,7 @@ router.get('/reports/projects', async (req, res) => {
     });
   } catch (error) {
     console.error('Error getting project SMART reports:', error);
-    res.status(500).json({ error: 'Failed to get project reports' });
+    return res.status(500).json({ error: 'Failed to get project reports' });
   }
 });
 
@@ -337,7 +337,7 @@ router.post('/bulk-analyze/tasks', async (req, res) => {
         where: { id: task.id },
         data: {
           smartScore: analysis.overallScore,
-          smartAnalysis: analysis,
+          smartAnalysis: analysis as any,
           updatedAt: new Date()
         }
       });
@@ -349,13 +349,13 @@ router.post('/bulk-analyze/tasks', async (req, res) => {
       });
     }
 
-    res.json({
+    return res.json({
       message: `Successfully analyzed ${results.length} tasks`,
       results
     });
   } catch (error) {
     console.error('Error bulk analyzing tasks:', error);
-    res.status(500).json({ error: 'Failed to analyze tasks' });
+    return res.status(500).json({ error: 'Failed to analyze tasks' });
   }
 });
 
@@ -393,7 +393,7 @@ router.post('/bulk-analyze/projects', async (req, res) => {
         where: { id: project.id },
         data: {
           smartScore: analysis.overallScore,
-          smartAnalysis: analysis,
+          smartAnalysis: analysis as any,
           updatedAt: new Date()
         }
       });
@@ -405,13 +405,13 @@ router.post('/bulk-analyze/projects', async (req, res) => {
       });
     }
 
-    res.json({
+    return res.json({
       message: `Successfully analyzed ${results.length} projects`,
       results
     });
   } catch (error) {
     console.error('Error bulk analyzing projects:', error);
-    res.status(500).json({ error: 'Failed to analyze projects' });
+    return res.status(500).json({ error: 'Failed to analyze projects' });
   }
 });
 

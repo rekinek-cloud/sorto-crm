@@ -16,7 +16,7 @@ export class OrganizationController {
   getOrganization = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     const organization = await this.organizationService.getOrganization(req.user!.organizationId);
     
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Organization retrieved successfully',
       data: organization,
     });
@@ -31,7 +31,7 @@ export class OrganizationController {
       req.body
     );
     
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Organization updated successfully',
       data: organization,
     });
@@ -46,7 +46,7 @@ export class OrganizationController {
       req.query as any
     );
     
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Users retrieved successfully',
       data: result,
     });
@@ -61,7 +61,7 @@ export class OrganizationController {
       req.params.userId
     );
     
-    res.status(200).json({
+    return res.status(200).json({
       message: 'User retrieved successfully',
       data: user,
     });
@@ -78,7 +78,7 @@ export class OrganizationController {
       req.user!.id
     );
     
-    res.status(200).json({
+    return res.status(200).json({
       message: 'User updated successfully',
       data: user,
     });
@@ -94,7 +94,7 @@ export class OrganizationController {
       req.user!.id
     );
     
-    res.status(200).json({
+    return res.status(200).json({
       message: 'User deactivated successfully',
       data: user,
     });
@@ -109,7 +109,7 @@ export class OrganizationController {
       req.query as any
     );
     
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Statistics retrieved successfully',
       data: stats,
     });
@@ -124,7 +124,7 @@ export class OrganizationController {
       req.body
     );
     
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Subscription updated successfully',
       data: result,
     });
@@ -140,7 +140,7 @@ export class OrganizationController {
       req.user!.id
     );
     
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Bulk operation completed successfully',
       data: result,
     });
@@ -151,7 +151,7 @@ export class OrganizationController {
    */
   exportData = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     // TODO: Implement data export functionality
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Data export not implemented yet',
     });
   });
@@ -161,7 +161,7 @@ export class OrganizationController {
    */
   getActivityLog = asyncHandler(async (req: AuthenticatedRequest, res: Response) => {
     // TODO: Implement activity logging
-    res.status(200).json({
+    return res.status(200).json({
       message: 'Activity log not implemented yet',
     });
   });

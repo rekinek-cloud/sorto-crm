@@ -35,14 +35,14 @@ router.get('/health', async (req, res) => {
   try {
     const health = performanceMonitor.getSystemHealth();
 
-    res.json({
+    return res.json({
       success: true,
       data: health
     });
 
   } catch (error) {
     logger.error('Failed to get system health:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to get system health'
     });
@@ -59,7 +59,7 @@ router.get('/dashboard', async (req, res) => {
 
     const metrics = performanceMonitor.getMetricsForDashboard(hours);
 
-    res.json({
+    return res.json({
       success: true,
       data: metrics
     });
@@ -74,7 +74,7 @@ router.get('/dashboard', async (req, res) => {
     }
 
     logger.error('Failed to get dashboard metrics:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to get dashboard metrics'
     });
@@ -91,7 +91,7 @@ router.post('/report', async (req, res) => {
 
     const report = await performanceMonitor.generateReport(period);
 
-    res.json({
+    return res.json({
       success: true,
       data: report
     });
@@ -106,7 +106,7 @@ router.post('/report', async (req, res) => {
     }
 
     logger.error('Failed to generate performance report:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to generate performance report'
     });
@@ -123,7 +123,7 @@ router.post('/metrics', async (req, res) => {
 
     performanceMonitor.recordMetric(name, value, unit, context);
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'Metric recorded successfully'
     });
@@ -138,7 +138,7 @@ router.post('/metrics', async (req, res) => {
     }
 
     logger.error('Failed to record metric:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to record metric'
     });
@@ -153,7 +153,7 @@ router.get('/alerts', async (req, res) => {
   try {
     const health = performanceMonitor.getSystemHealth();
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         alerts: health.alerts,
@@ -168,7 +168,7 @@ router.get('/alerts', async (req, res) => {
 
   } catch (error) {
     logger.error('Failed to get alerts:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to get alerts'
     });
@@ -184,7 +184,7 @@ router.get('/stats', async (req, res) => {
     const health = performanceMonitor.getSystemHealth();
     const dashboardMetrics = performanceMonitor.getMetricsForDashboard(1);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         status: health.status,
@@ -198,7 +198,7 @@ router.get('/stats', async (req, res) => {
 
   } catch (error) {
     logger.error('Failed to get performance stats:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to get performance stats'
     });
@@ -267,7 +267,7 @@ router.post('/test-load', async (req, res) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         message: 'Load test completed',
@@ -278,7 +278,7 @@ router.post('/test-load', async (req, res) => {
 
   } catch (error) {
     logger.error('Load test failed:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Load test failed'
     });

@@ -51,7 +51,7 @@ router.get('/', authenticateToken, async (req: any, res: any) => {
       prisma.event.count({ where })
     ]);
 
-    res.json({
+    return res.json({
       events,
       pagination: {
         page: pageNum,
@@ -62,7 +62,7 @@ router.get('/', authenticateToken, async (req: any, res: any) => {
     });
   } catch (error) {
     console.error('Error fetching events:', error);
-    res.status(500).json({ error: 'Failed to fetch events' });
+    return res.status(500).json({ error: 'Failed to fetch events' });
   }
 });
 
@@ -107,10 +107,10 @@ router.get('/:id', authenticateToken, async (req: any, res: any) => {
       return res.status(404).json({ error: 'Event not found' });
     }
 
-    res.json(event);
+    return res.json(event);
   } catch (error) {
     console.error('Error fetching event:', error);
-    res.status(500).json({ error: 'Failed to fetch event' });
+    return res.status(500).json({ error: 'Failed to fetch event' });
   }
 });
 
@@ -164,10 +164,10 @@ router.post('/', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    res.status(201).json(event);
+    return res.status(201).json(event);
   } catch (error) {
     console.error('Error creating event:', error);
-    res.status(500).json({ error: 'Failed to create event' });
+    return res.status(500).json({ error: 'Failed to create event' });
   }
 });
 
@@ -212,10 +212,10 @@ router.patch('/:id', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    res.json(event);
+    return res.json(event);
   } catch (error) {
     console.error('Error updating event:', error);
-    res.status(500).json({ error: 'Failed to update event' });
+    return res.status(500).json({ error: 'Failed to update event' });
   }
 });
 
@@ -237,10 +237,10 @@ router.delete('/:id', authenticateToken, async (req: any, res: any) => {
       where: { id: req.params.id }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error deleting event:', error);
-    res.status(500).json({ error: 'Failed to delete event' });
+    return res.status(500).json({ error: 'Failed to delete event' });
   }
 });
 
@@ -261,15 +261,15 @@ router.get('/:id/companies', authenticateToken, async (req: any, res: any) => {
       where: { eventId: req.params.id },
       include: {
         company: { select: { id: true, name: true } },
-        deal: { select: { id: true, name: true, value: true } }
+        deal: { select: { id: true, title: true, value: true } }
       },
       orderBy: { company: { name: 'asc' } }
     });
 
-    res.json(companies);
+    return res.json(companies);
   } catch (error) {
     console.error('Error fetching event companies:', error);
-    res.status(500).json({ error: 'Failed to fetch event companies' });
+    return res.status(500).json({ error: 'Failed to fetch event companies' });
   }
 });
 
@@ -308,10 +308,10 @@ router.post('/:id/companies', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    res.status(201).json(eventCompany);
+    return res.status(201).json(eventCompany);
   } catch (error) {
     console.error('Error adding company to event:', error);
-    res.status(500).json({ error: 'Failed to add company to event' });
+    return res.status(500).json({ error: 'Failed to add company to event' });
   }
 });
 
@@ -343,10 +343,10 @@ router.delete('/:id/companies/:companyId', authenticateToken, async (req: any, r
       where: { id: existing.id }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error removing company from event:', error);
-    res.status(500).json({ error: 'Failed to remove company from event' });
+    return res.status(500).json({ error: 'Failed to remove company from event' });
   }
 });
 
@@ -370,10 +370,10 @@ router.get('/:id/team', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    res.json(team);
+    return res.json(team);
   } catch (error) {
     console.error('Error fetching event team:', error);
-    res.status(500).json({ error: 'Failed to fetch event team' });
+    return res.status(500).json({ error: 'Failed to fetch event team' });
   }
 });
 
@@ -426,10 +426,10 @@ router.post('/:id/team', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    res.status(201).json(member);
+    return res.status(201).json(member);
   } catch (error) {
     console.error('Error adding team member:', error);
-    res.status(500).json({ error: 'Failed to add team member' });
+    return res.status(500).json({ error: 'Failed to add team member' });
   }
 });
 
@@ -461,10 +461,10 @@ router.delete('/:id/team/:userId', authenticateToken, async (req: any, res: any)
       where: { id: existing.id }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error removing team member:', error);
-    res.status(500).json({ error: 'Failed to remove team member' });
+    return res.status(500).json({ error: 'Failed to remove team member' });
   }
 });
 
@@ -491,10 +491,10 @@ router.get('/:id/expenses', authenticateToken, async (req: any, res: any) => {
 
     const totalAmount = expenses.reduce((sum, e) => sum + e.amount, 0);
 
-    res.json({ expenses, totalAmount });
+    return res.json({ expenses, totalAmount });
   } catch (error) {
     console.error('Error fetching event expenses:', error);
-    res.status(500).json({ error: 'Failed to fetch event expenses' });
+    return res.status(500).json({ error: 'Failed to fetch event expenses' });
   }
 });
 
@@ -533,10 +533,10 @@ router.post('/:id/expenses', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    res.status(201).json(expense);
+    return res.status(201).json(expense);
   } catch (error) {
     console.error('Error adding expense:', error);
-    res.status(500).json({ error: 'Failed to add expense' });
+    return res.status(500).json({ error: 'Failed to add expense' });
   }
 });
 
@@ -566,10 +566,10 @@ router.delete('/:id/expenses/:expenseId', authenticateToken, async (req: any, re
       where: { id: req.params.expenseId }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error deleting expense:', error);
-    res.status(500).json({ error: 'Failed to delete expense' });
+    return res.status(500).json({ error: 'Failed to delete expense' });
   }
 });
 

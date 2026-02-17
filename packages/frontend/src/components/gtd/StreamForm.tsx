@@ -61,7 +61,7 @@ export default function StreamForm({ stream, onSubmit, onCancel }: StreamFormPro
         description: stream.description || '',
         color: stream.color,
         icon: stream.icon || '',
-        status: stream.status,
+        status: stream.status as 'ACTIVE' | 'ARCHIVED' | 'TEMPLATE',
       });
     }
   }, [stream]);

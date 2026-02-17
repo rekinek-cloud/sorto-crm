@@ -1,6 +1,6 @@
 import { prisma } from '../../config/database';
 import logger from '../../config/logger';
-import { AIModel, AIProvider } from '@prisma/client';
+import { ai_models, ai_providers } from '@prisma/client';
 
 export interface AIInsight {
   id: string;
@@ -82,18 +82,7 @@ export class AIInsightsEngine {
               assignedTo: true
             }
           },
-          channels: {
-            include: {
-              channel: {
-                include: {
-                  messages: {
-                    orderBy: { receivedAt: 'desc' },
-                    take: 50
-                  }
-                }
-              }
-            }
-          }
+          // Note: channels relation not available on Stream; messages fetched separately if needed
         }
       });
 
@@ -416,7 +405,7 @@ export class AIInsightsEngine {
               data: { project, urgency: 'medium' }
             }
           ] : [],
-          context: { streamId: stream.id, projectId: project.id },
+          context: { streamId: stream.id },
           createdAt: new Date(),
           expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
         });
@@ -505,7 +494,7 @@ export class AIInsightsEngine {
       const content = (msg.content || '').toLowerCase();
       const words = content.split(/\s+/);
       
-      words.forEach(word => {
+      words.forEach((word: any) => {
         if (positiveWords.includes(word)) sentimentScore += 1;
         if (negativeWords.includes(word)) sentimentScore -= 1;
         wordCount++;
@@ -579,7 +568,7 @@ export class AIInsightsEngine {
     
     // Simple rule-based cross-sell detection
     const existingServices = await prisma.deal.findMany({
-      where: { companyId: company.id, status: 'WON' },
+      where: { companyId: company.id, stage: 'CLOSED_WON' },
       select: { title: true, value: true }
     });
     

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { emailDomainRulesApi, EmailDomainRule, DomainRulesStats } from '@/lib/api/emailDomainRulesApi';
+import { emailDomainRulesApi, type EmailDomainRule, type DomainRulesStats, type CreateDomainRuleRequest, type BulkDomainRuleRequest } from '@/lib/api/emailDomainRulesApi';
 
 export function useDomainRules(listType: string = 'BLACKLIST') {
   const [rules, setRules] = useState<EmailDomainRule[]>([]);
@@ -27,7 +27,7 @@ export function useDomainRules(listType: string = 'BLACKLIST') {
 
   useEffect(() => { loadRules(); }, [loadRules]);
 
-  const addRule = useCallback(async (data: { pattern: string; listType: string; classification?: string; reason?: string }) => {
+  const addRule = useCallback(async (data: CreateDomainRuleRequest) => {
     const rule = await emailDomainRulesApi.createRule(data);
     await loadRules();
     return rule;
@@ -38,7 +38,7 @@ export function useDomainRules(listType: string = 'BLACKLIST') {
     setRules(prev => prev.filter(r => r.id !== id));
   }, []);
 
-  const bulkAction = useCallback(async (action: 'ADD' | 'REMOVE', patterns: string[], lt: string) => {
+  const bulkAction = useCallback(async (action: 'ADD' | 'REMOVE', patterns: string[], lt: BulkDomainRuleRequest['listType']) => {
     await emailDomainRulesApi.bulkOperation({ action, patterns, listType: lt });
     await loadRules();
   }, [loadRules]);

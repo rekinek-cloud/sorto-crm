@@ -89,7 +89,7 @@ class EventBusService {
         userId: event.userId,
         organizationId: event.organizationId,
         moduleId: 'moduleId' in event ? event.moduleId : undefined,
-      },
+      } as any,
     });
 
     // 2. Build full event object matching spec

@@ -32,7 +32,7 @@ router.get('/',
         orderBy: [{ matchCount: 'desc' }, { createdAt: 'desc' }],
       });
 
-      res.json({ success: true, data: rules });
+      return res.json({ success: true, data: rules });
     } catch (error) {
       logger.error('Failed to list email domain rules:', error);
       throw new AppError('Nie udało się pobrać reguł domen', 500);
@@ -56,7 +56,7 @@ router.get('/stats',
         prisma.email_domain_rules.count({ where: { organizationId: orgId, listType: 'VIP', status: 'ACTIVE' } }),
       ]);
 
-      res.json({
+      return res.json({
         success: true,
         data: { blacklist, whitelist, vip, total: blacklist + whitelist + vip },
       });
@@ -101,13 +101,13 @@ router.post('/',
           classification: classification || null,
           source: 'MANUAL',
           reason: reason || null,
-          createdBy: req.user!.userId,
+          createdBy: req.user!.id,
           organizationId: req.user!.organizationId,
         },
       });
 
       logger.info(`Domain rule created: ${pattern} -> ${listType} by ${req.user!.email}`);
-      res.status(201).json({ success: true, data: rule });
+      return res.status(201).json({ success: true, data: rule });
     } catch (error: any) {
       if (error.code === 'P2002') {
         throw new AppError('Ten wzorzec jest już na liście', 409);
@@ -134,7 +134,7 @@ router.delete('/:id',
         },
       });
 
-      res.json({ success: true, message: 'Reguła usunięta' });
+      return res.json({ success: true, message: 'Reguła usunięta' });
     } catch (error) {
       logger.error('Failed to delete domain rule:', error);
       throw new AppError('Nie udało się usunąć reguły', 500);
@@ -166,7 +166,7 @@ router.post('/bulk',
           listType,
           classification: classification || null,
           source: 'MANUAL',
-          createdBy: req.user!.userId,
+          createdBy: req.user!.id,
           organizationId: orgId,
         }));
 
@@ -176,7 +176,7 @@ router.post('/bulk',
           skipDuplicates: true,
         });
 
-        res.json({ success: true, data: { created: result.count } });
+        return res.json({ success: true, data: { created: result.count } });
       } else if (action === 'REMOVE') {
         const result = await prisma.email_domain_rules.deleteMany({
           where: {
@@ -186,7 +186,7 @@ router.post('/bulk',
           },
         });
 
-        res.json({ success: true, data: { deleted: result.count } });
+        return res.json({ success: true, data: { deleted: result.count } });
       } else {
         throw new AppError('action musi być ADD lub REMOVE', 400);
       }

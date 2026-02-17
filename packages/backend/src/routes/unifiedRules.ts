@@ -171,14 +171,14 @@ router.get('/stats/overview', async (req: any, res) => {
       avgExecutionTime: 189
     };
 
-    res.json({
+    return res.json({
       success: true,
       data: mockStats,
       message: 'TEMP: Using mock data for frontend testing'
     });
   } catch (error) {
     console.error('Error fetching unified rules stats:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch unified rules stats'
     });
@@ -203,14 +203,14 @@ router.get('/stats/overview-test', async (req, res) => {
       avgExecutionTime: 234
     };
 
-    res.json({
+    return res.json({
       success: true,
       data: mockStats,
       message: 'TEST ENDPOINT - Mock data for development'
     });
   } catch (error) {
     console.error('Error in test stats endpoint:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch test stats'
     });
@@ -242,7 +242,7 @@ router.get('/mock', async (req: any, res) => {
         lastExecuted: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        fallbackModelIds: []
+        fallbackModelIds: [] as any[] as any[]
       },
       {
         id: 'rule-2',
@@ -262,7 +262,7 @@ router.get('/mock', async (req: any, res) => {
         lastExecuted: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        fallbackModelIds: []
+        fallbackModelIds: [] as any[] as any[]
       },
       {
         id: 'rule-3',
@@ -282,7 +282,7 @@ router.get('/mock', async (req: any, res) => {
         lastExecuted: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        fallbackModelIds: []
+        fallbackModelIds: [] as any[]
       },
       {
         id: 'rule-4',
@@ -302,7 +302,7 @@ router.get('/mock', async (req: any, res) => {
         lastExecuted: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        fallbackModelIds: []
+        fallbackModelIds: [] as any[]
       },
       {
         id: 'rule-5',
@@ -319,10 +319,10 @@ router.get('/mock', async (req: any, res) => {
         executionCount: 0,
         successCount: 0,
         errorCount: 0,
-        lastExecuted: null,
+        lastExecuted: null as any,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        fallbackModelIds: []
+        fallbackModelIds: [] as any[]
       }
     ];
 
@@ -351,7 +351,7 @@ router.get('/mock', async (req: any, res) => {
     const skip = (pageNum - 1) * limitNum;
     const paginatedRules = filteredRules.slice(skip, skip + limitNum);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         rules: paginatedRules,
@@ -365,7 +365,7 @@ router.get('/mock', async (req: any, res) => {
     });
   } catch (error) {
     console.error('Error fetching unified rules:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch unified rules'
     });
@@ -439,13 +439,13 @@ router.get('/templates', authenticateToken, async (req: AuthenticatedRequest, re
       }
     ];
 
-    res.json({
+    return res.json({
       success: true,
       data: templates
     });
   } catch (error) {
     console.error('Error fetching rule templates:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch rule templates'
     });
@@ -501,7 +501,7 @@ router.get('/', async (req: any, res) => {
       prisma.unified_rules.count({ where })
     ]);
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         rules,
@@ -515,7 +515,7 @@ router.get('/', async (req: any, res) => {
     });
   } catch (error) {
     console.error('Error fetching unified rules:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch unified rules'
     });
@@ -547,7 +547,7 @@ router.get('/mock', async (req: any, res) => {
         lastExecuted: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        fallbackModelIds: []
+        fallbackModelIds: [] as any[] as any[]
       },
       {
         id: 'rule-2',
@@ -567,7 +567,7 @@ router.get('/mock', async (req: any, res) => {
         lastExecuted: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        fallbackModelIds: []
+        fallbackModelIds: [] as any[] as any[]
       },
       {
         id: 'rule-3',
@@ -587,7 +587,7 @@ router.get('/mock', async (req: any, res) => {
         lastExecuted: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        fallbackModelIds: []
+        fallbackModelIds: [] as any[]
       },
       {
         id: 'rule-4',
@@ -607,7 +607,7 @@ router.get('/mock', async (req: any, res) => {
         lastExecuted: new Date().toISOString(),
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        fallbackModelIds: []
+        fallbackModelIds: [] as any[]
       },
       {
         id: 'rule-5',
@@ -624,10 +624,10 @@ router.get('/mock', async (req: any, res) => {
         executionCount: 0,
         successCount: 0,
         errorCount: 0,
-        lastExecuted: null,
+        lastExecuted: null as any,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        fallbackModelIds: []
+        fallbackModelIds: [] as any[]
       }
     ];
 
@@ -656,7 +656,7 @@ router.get('/mock', async (req: any, res) => {
     const skip = (pageNum - 1) * limitNum;
     const paginatedRules = filteredRules.slice(skip, skip + limitNum);
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         rules: paginatedRules,
@@ -670,7 +670,7 @@ router.get('/mock', async (req: any, res) => {
     });
   } catch (error) {
     console.error('Error fetching unified rules:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch unified rules'
     });
@@ -682,7 +682,7 @@ router.post('/', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
     const validatedData = UnifiedRuleCreateSchema.parse(req.body);
     
-    const rule = await prisma.unifiedRule.create({
+    const rule = await (prisma.unified_rules.create as any)({
       data: {
         ...validatedData,
         organizationId: req.user!.organizationId,
@@ -691,12 +691,12 @@ router.post('/', authenticateToken, async (req: AuthenticatedRequest, res) => {
         createdBy: req.user!.id
       },
       include: {
-        channel: true,
-        aiModel: true
+        communication_channels: true,
+        ai_models: true
       }
     });
     
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: rule
     });
@@ -716,7 +716,7 @@ router.post('/', authenticateToken, async (req: AuthenticatedRequest, res) => {
       code: error.code,
       meta: error.meta
     });
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to create unified rule',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
@@ -727,20 +727,20 @@ router.post('/', authenticateToken, async (req: AuthenticatedRequest, res) => {
 // GET /api/v1/unified-rules/:id - Szczegóły reguły
 router.get('/:id', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
-    const rule = await prisma.unifiedRule.findFirst({
+    const rule = await prisma.unified_rules.findFirst({
       where: {
         id: req.params.id,
         organizationId: req.user!.organizationId
       },
       include: {
-        channel: true,
-        aiModel: true,
-        executions: {
+        communication_channels: true,
+        ai_models: true,
+        unified_rule_executions: {
           take: 10,
           orderBy: { createdAt: 'desc' }
         },
         _count: {
-          select: { executions: true }
+          select: { unified_rule_executions: true }
         }
       }
     });
@@ -752,13 +752,13 @@ router.get('/:id', authenticateToken, async (req: AuthenticatedRequest, res) => 
       });
     }
     
-    res.json({
+    return res.json({
       success: true,
       data: rule
     });
   } catch (error) {
     console.error('Error fetching unified rule:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch unified rule'
     });
@@ -770,7 +770,7 @@ router.put('/:id', authenticateToken, async (req: AuthenticatedRequest, res) => 
   try {
     const validatedData = UnifiedRuleUpdateSchema.parse(req.body);
     
-    const rule = await prisma.unifiedRule.findFirst({
+    const rule = await prisma.unified_rules.findFirst({
       where: {
         id: req.params.id,
         organizationId: req.user!.organizationId
@@ -784,7 +784,7 @@ router.put('/:id', authenticateToken, async (req: AuthenticatedRequest, res) => 
       });
     }
     
-    const updatedRule = await prisma.unifiedRule.update({
+    const updatedRule = await prisma.unified_rules.update({
       where: { id: req.params.id },
       data: {
         ...validatedData,
@@ -792,12 +792,12 @@ router.put('/:id', authenticateToken, async (req: AuthenticatedRequest, res) => 
         activeTo: validatedData.activeTo ? new Date(validatedData.activeTo) : undefined
       },
       include: {
-        channel: true,
-        aiModel: true
+        communication_channels: true,
+        ai_models: true
       }
     });
-    
-    res.json({
+
+    return res.json({
       success: true,
       data: updatedRule
     });
@@ -811,7 +811,7 @@ router.put('/:id', authenticateToken, async (req: AuthenticatedRequest, res) => 
     }
     
     console.error('Error updating unified rule:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to update unified rule'
     });
@@ -821,7 +821,7 @@ router.put('/:id', authenticateToken, async (req: AuthenticatedRequest, res) => 
 // DELETE /api/v1/unified-rules/:id - Usunięcie reguły
 router.delete('/:id', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
-    const rule = await prisma.unifiedRule.findFirst({
+    const rule = await prisma.unified_rules.findFirst({
       where: {
         id: req.params.id,
         organizationId: req.user!.organizationId
@@ -835,17 +835,17 @@ router.delete('/:id', authenticateToken, async (req: AuthenticatedRequest, res) 
       });
     }
     
-    await prisma.unifiedRule.delete({
+    await prisma.unified_rules.delete({
       where: { id: req.params.id }
     });
     
-    res.json({
+    return res.json({
       success: true,
       message: 'Rule deleted successfully'
     });
   } catch (error) {
     console.error('Error deleting unified rule:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to delete unified rule'
     });
@@ -855,7 +855,7 @@ router.delete('/:id', authenticateToken, async (req: AuthenticatedRequest, res) 
 // POST /api/v1/unified-rules/:id/toggle - Włącz/wyłącz regułę
 router.post('/:id/toggle', authenticateToken, async (req: AuthenticatedRequest, res) => {
   try {
-    const rule = await prisma.unifiedRule.findFirst({
+    const rule = await prisma.unified_rules.findFirst({
       where: {
         id: req.params.id,
         organizationId: req.user!.organizationId
@@ -871,23 +871,23 @@ router.post('/:id/toggle', authenticateToken, async (req: AuthenticatedRequest, 
     
     const newStatus = rule.status === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
     
-    const updatedRule = await prisma.unifiedRule.update({
+    const updatedRule = await prisma.unified_rules.update({
       where: { id: req.params.id },
       data: { status: newStatus },
       include: {
-        channel: true,
-        aiModel: true
+        communication_channels: true,
+        ai_models: true
       }
     });
-    
-    res.json({
+
+    return res.json({
       success: true,
       data: updatedRule,
       message: `Rule ${newStatus === 'ACTIVE' ? 'activated' : 'deactivated'} successfully`
     });
   } catch (error) {
     console.error('Error toggling unified rule:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to toggle unified rule'
     });
@@ -899,18 +899,18 @@ router.post('/:id/execute', authenticateToken, async (req: AuthenticatedRequest,
   try {
     const { entityType, entityId, triggerData } = req.body;
     
-    const rule = await prisma.unifiedRule.findFirst({
+    const rule = await prisma.unified_rules.findFirst({
       where: {
         id: req.params.id,
         organizationId: req.user!.organizationId,
         status: 'ACTIVE'
       },
       include: {
-        aiModel: true,
-        channel: true
+        ai_models: true,
+        communication_channels: true
       }
     });
-    
+
     if (!rule) {
       return res.status(404).json({
         success: false,
@@ -930,7 +930,7 @@ router.post('/:id/execute', authenticateToken, async (req: AuthenticatedRequest,
         organizationId: req.user!.organizationId
       });
       
-      res.json({
+      return res.json({
         success: true,
         data: executionResult,
         message: 'Rule executed successfully'
@@ -941,7 +941,7 @@ router.post('/:id/execute', authenticateToken, async (req: AuthenticatedRequest,
     }
   } catch (error) {
     console.error('Error executing unified rule:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to execute unified rule'
     });
@@ -953,7 +953,7 @@ router.get('/:id/executions', authenticateToken, async (req: AuthenticatedReques
   try {
     const { page = '1', limit = '20' } = req.query;
     
-    const rule = await prisma.unifiedRule.findFirst({
+    const rule = await prisma.unified_rules.findFirst({
       where: {
         id: req.params.id,
         organizationId: req.user!.organizationId
@@ -971,18 +971,18 @@ router.get('/:id/executions', authenticateToken, async (req: AuthenticatedReques
     const take = parseInt(limit as string);
     
     const [executions, total] = await Promise.all([
-      prisma.unifiedRuleExecution.findMany({
+      prisma.unified_rule_executions.findMany({
         where: { ruleId: req.params.id },
         skip,
         take,
         orderBy: { createdAt: 'desc' }
       }),
-      prisma.unifiedRuleExecution.count({
+      prisma.unified_rule_executions.count({
         where: { ruleId: req.params.id }
       })
     ]);
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         executions,
@@ -996,7 +996,7 @@ router.get('/:id/executions', authenticateToken, async (req: AuthenticatedReques
     });
   } catch (error) {
     console.error('Error fetching rule executions:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch rule executions'
     });
@@ -1020,7 +1020,7 @@ router.post('/process-message', authenticateToken, async (req: AuthenticatedRequ
       req.user!.organizationId
     );
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         messageId: messageData.id,
@@ -1030,7 +1030,7 @@ router.post('/process-message', authenticateToken, async (req: AuthenticatedRequ
     });
   } catch (error) {
     logger.error('Error processing message through unified rules:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to process message through unified rules'
     });
@@ -1054,7 +1054,7 @@ router.post('/process-project', authenticateToken, async (req: AuthenticatedRequ
       req.user!.organizationId
     );
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         projectId: projectData.id,
@@ -1064,7 +1064,7 @@ router.post('/process-project', authenticateToken, async (req: AuthenticatedRequ
     });
   } catch (error) {
     logger.error('Error processing project through unified rules:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to process project through unified rules'
     });
@@ -1088,7 +1088,7 @@ router.post('/process-task', authenticateToken, async (req: AuthenticatedRequest
       req.user!.organizationId
     );
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         taskId: taskData.id,
@@ -1098,7 +1098,7 @@ router.post('/process-task', authenticateToken, async (req: AuthenticatedRequest
     });
   } catch (error) {
     logger.error('Error processing task through unified rules:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to process task through unified rules'
     });

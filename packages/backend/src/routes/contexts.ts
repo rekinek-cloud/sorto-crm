@@ -45,10 +45,10 @@ router.get('/', authenticateToken, async (req, res) => {
       orderBy: { name: 'asc' }
     });
 
-    res.json(contexts);
+    return res.json(contexts);
   } catch (error) {
     console.error('Error fetching contexts:', error);
-    res.status(500).json({ error: 'Failed to fetch contexts' });
+    return res.status(500).json({ error: 'Failed to fetch contexts' });
   }
 });
 
@@ -83,10 +83,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Context not found' });
     }
 
-    res.json(context);
+    return res.json(context);
   } catch (error) {
     console.error('Error fetching context:', error);
-    res.status(500).json({ error: 'Failed to fetch context' });
+    return res.status(500).json({ error: 'Failed to fetch context' });
   }
 });
 
@@ -114,10 +114,10 @@ router.post('/', authenticateToken, validateRequest({ body: createContextSchema 
       }
     });
 
-    res.status(201).json(context);
+    return res.status(201).json(context);
   } catch (error) {
     console.error('Error creating context:', error);
-    res.status(500).json({ error: 'Failed to create context' });
+    return res.status(500).json({ error: 'Failed to create context' });
   }
 });
 
@@ -156,10 +156,10 @@ router.put('/:id', authenticateToken, validateRequest({ body: updateContextSchem
       data: updates
     });
 
-    res.json(context);
+    return res.json(context);
   } catch (error) {
     console.error('Error updating context:', error);
-    res.status(500).json({ error: 'Failed to update context' });
+    return res.status(500).json({ error: 'Failed to update context' });
   }
 });
 
@@ -191,10 +191,10 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       where: { id: contextId }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error deleting context:', error);
-    res.status(500).json({ error: 'Failed to delete context' });
+    return res.status(500).json({ error: 'Failed to delete context' });
   }
 });
 
@@ -233,13 +233,13 @@ router.post('/default', authenticateToken, async (req, res) => {
       }
     }
 
-    res.json({
+    return res.json({
       message: `Created ${createdContexts.length} default contexts`,
       contexts: createdContexts
     });
   } catch (error) {
     console.error('Error creating default contexts:', error);
-    res.status(500).json({ error: 'Failed to create default contexts' });
+    return res.status(500).json({ error: 'Failed to create default contexts' });
   }
 });
 

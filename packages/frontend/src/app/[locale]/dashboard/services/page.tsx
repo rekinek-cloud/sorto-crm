@@ -433,7 +433,7 @@ const ServicesPage: React.FC = () => {
       {showForm && (
         <ServiceForm
           service={editingService}
-          onSubmit={editingService ? handleUpdateService : handleCreateService}
+          onSubmit={(editingService ? handleUpdateService : handleCreateService) as any}
           onCancel={() => {
             setShowForm(false);
             setEditingService(undefined);

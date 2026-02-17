@@ -104,7 +104,7 @@ export function EnrichedIcon({
         iconSizes[size],
         className
       )}
-      title="Dane wzbogacone przez AI"
+      {...{ title: "Dane wzbogacone przez AI" } as any}
     />
   );
 }

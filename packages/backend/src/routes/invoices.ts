@@ -211,7 +211,7 @@ router.get('/', authenticateToken, validateRequest({ query: querySchema }), asyn
       }
     }
 
-    res.json({
+    return res.json({
       invoices: syncedInvoices,
       pagination: {
         page,
@@ -222,7 +222,7 @@ router.get('/', authenticateToken, validateRequest({ query: querySchema }), asyn
     });
   } catch (error: any) {
     logger.error('Failed to fetch invoices:', error);
-    res.status(500).json({ error: 'Failed to fetch invoices' });
+    return res.status(500).json({ error: 'Failed to fetch invoices' });
   }
 });
 
@@ -248,10 +248,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Invoice not found' });
     }
 
-    res.json(invoice);
+    return res.json(invoice);
   } catch (error: any) {
     logger.error('Failed to fetch invoice:', error);
-    res.status(500).json({ error: 'Failed to fetch invoice' });
+    return res.status(500).json({ error: 'Failed to fetch invoice' });
   }
 });
 
@@ -281,7 +281,7 @@ router.post('/', authenticateToken, validateRequest({ body: createInvoiceSchema 
         organizationId,
         dueDate: data.dueDate ? new Date(data.dueDate) : undefined,
         items: data.items ? {
-          create: data.items.map(item => ({
+          create: data.items.map((item: any) => ({
             ...item,
             totalPrice: item.quantity * item.unitPrice - (item.discount || 0) + (item.tax || 0)
           }))
@@ -348,10 +348,10 @@ router.post('/', authenticateToken, validateRequest({ body: createInvoiceSchema 
       }
     }
 
-    res.status(201).json(invoice);
+    return res.status(201).json(invoice);
   } catch (error: any) {
     logger.error('Failed to create invoice:', error);
-    res.status(500).json({ error: 'Failed to create invoice' });
+    return res.status(500).json({ error: 'Failed to create invoice' });
   }
 });
 
@@ -386,7 +386,7 @@ router.put('/:id', authenticateToken, validateRequest({ body: updateInvoiceSchem
     if (data.items) {
       updateData.items = {
         deleteMany: {},
-        create: data.items.map(item => ({
+        create: data.items.map((item: any) => ({
           ...item,
           totalPrice: item.quantity * item.unitPrice - (item.discount || 0) + (item.tax || 0)
         }))
@@ -457,10 +457,10 @@ router.put('/:id', authenticateToken, validateRequest({ body: updateInvoiceSchem
       }
     }
 
-    res.json(invoice);
+    return res.json(invoice);
   } catch (error: any) {
     logger.error('Failed to update invoice:', error);
-    res.status(500).json({ error: 'Failed to update invoice' });
+    return res.status(500).json({ error: 'Failed to update invoice' });
   }
 });
 
@@ -504,10 +504,10 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       where: { id }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error: any) {
     logger.error('Failed to delete invoice:', error);
-    res.status(500).json({ error: 'Failed to delete invoice' });
+    return res.status(500).json({ error: 'Failed to delete invoice' });
   }
 });
 
@@ -551,17 +551,17 @@ router.post('/:id/send', authenticateToken, async (req, res) => {
         }
       });
 
-      res.json({ success: true, message: 'Invoice sent successfully' });
+      return res.json({ success: true, message: 'Invoice sent successfully' });
     } catch (error: any) {
       logger.error('Failed to send invoice via Fakturownia', {
         invoiceId: invoice.id,
         error: error.message
       });
-      res.status(500).json({ error: 'Failed to send invoice' });
+      return res.status(500).json({ error: 'Failed to send invoice' });
     }
   } catch (error: any) {
     logger.error('Failed to send invoice:', error);
-    res.status(500).json({ error: 'Failed to send invoice' });
+    return res.status(500).json({ error: 'Failed to send invoice' });
   }
 });
 
@@ -619,7 +619,7 @@ router.post('/:id/sync', authenticateToken, async (req, res) => {
           }
         });
 
-        res.json(updatedInvoice);
+        return res.json(updatedInvoice);
       } else {
         // Create new invoice in Fakturownia
         logger.info('Creating new invoice in Fakturownia', { invoiceId: invoice.id });
@@ -646,7 +646,7 @@ router.post('/:id/sync', authenticateToken, async (req, res) => {
           }
         });
 
-        res.json(updatedInvoice);
+        return res.json(updatedInvoice);
       }
     } catch (error: any) {
       logger.error('Failed to sync invoice with Fakturownia', {
@@ -660,11 +660,11 @@ router.post('/:id/sync', authenticateToken, async (req, res) => {
         data: { syncError: error.message }
       });
 
-      res.status(500).json({ error: 'Failed to sync invoice' });
+      return res.status(500).json({ error: 'Failed to sync invoice' });
     }
   } catch (error: any) {
     logger.error('Failed to sync invoice:', error);
-    res.status(500).json({ error: 'Failed to sync invoice' });
+    return res.status(500).json({ error: 'Failed to sync invoice' });
   }
 });
 
@@ -784,10 +784,10 @@ router.post('/sync-all', authenticateToken, async (req, res) => {
     }
 
     logger.info('Bulk sync completed', results);
-    res.json(results);
+    return res.json(results);
   } catch (error: any) {
     logger.error('Failed to perform bulk sync:', error);
-    res.status(500).json({ error: 'Failed to perform bulk sync' });
+    return res.status(500).json({ error: 'Failed to perform bulk sync' });
   }
 });
 
@@ -798,10 +798,10 @@ router.get('/sync-status', authenticateToken, async (req, res) => {
     
     const status = await invoiceService.getSyncStatus(organizationId);
     
-    res.json(status);
+    return res.json(status);
   } catch (error: any) {
     logger.error('Failed to get sync status:', error);
-    res.status(500).json({ error: 'Failed to get sync status' });
+    return res.status(500).json({ error: 'Failed to get sync status' });
   }
 });
 
@@ -821,10 +821,10 @@ router.post('/import-from-fakturownia', authenticateToken, async (req, res) => {
       period
     });
 
-    res.json(result);
+    return res.json(result);
   } catch (error: any) {
     logger.error('Failed to import from Fakturownia:', error);
-    res.status(500).json({ error: 'Failed to import from Fakturownia' });
+    return res.status(500).json({ error: 'Failed to import from Fakturownia' });
   }
 });
 
@@ -840,10 +840,10 @@ router.post('/trigger-sync', authenticateToken, async (req, res) => {
 
     await scheduledTasksService.triggerInvoiceSync(organizationId);
     
-    res.json({ success: true, message: 'Invoice sync triggered successfully' });
+    return res.json({ success: true, message: 'Invoice sync triggered successfully' });
   } catch (error: any) {
     logger.error('Failed to trigger invoice sync:', error);
-    res.status(500).json({ error: 'Failed to trigger invoice sync' });
+    return res.status(500).json({ error: 'Failed to trigger invoice sync' });
   }
 });
 

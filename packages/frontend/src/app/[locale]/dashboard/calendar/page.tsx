@@ -420,7 +420,7 @@ const CalendarPage: React.FC = () => {
               <StatCard
                 label={info.label}
                 value={count}
-                icon={info.icon}
+                icon={info.icon as any}
                 iconColor={`bg-opacity-10 dark:bg-opacity-20`}
               />
             </motion.div>

@@ -46,7 +46,7 @@ router.get('/time-blocks', authMiddleware, async (req, res) => {
     // EnergyTimeBlock model does not exist yet - return empty array
     const blocks: any[] = [];
 
-    res.json({
+    return res.json({
       success: true,
       data: blocks,
       meta: {
@@ -57,7 +57,7 @@ router.get('/time-blocks', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching time blocks:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch time blocks'
     });
@@ -71,13 +71,13 @@ router.get('/time-blocks', authMiddleware, async (req, res) => {
 router.post('/time-blocks', authMiddleware, async (req, res) => {
   try {
     // EnergyTimeBlock model does not exist yet - return error
-    res.status(501).json({
+    return res.status(501).json({
       success: false,
       error: 'Time blocks feature is not yet available'
     });
   } catch (error) {
     console.error('Error creating time block:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to create time block'
     });
@@ -91,13 +91,13 @@ router.post('/time-blocks', authMiddleware, async (req, res) => {
 router.put('/time-blocks/:id', authMiddleware, async (req, res) => {
   try {
     // EnergyTimeBlock model does not exist yet - return error
-    res.status(501).json({
+    return res.status(501).json({
       success: false,
       error: 'Time blocks feature is not yet available'
     });
   } catch (error) {
     console.error('Error updating time block:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to update time block'
     });
@@ -173,13 +173,13 @@ router.post('/schedule-tasks', authMiddleware, async (req, res) => {
           status: 'PLANNED',
           userId,
           organizationId
-        }
+        } as any
       });
 
       scheduledTasks.push(scheduledTask);
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         scheduledTasks,
@@ -197,7 +197,7 @@ router.post('/schedule-tasks', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error scheduling tasks:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to schedule tasks'
     });
@@ -247,10 +247,10 @@ router.post('/scheduled-tasks', authMiddleware, async (req, res) => {
         wasRescheduled: false,
         userId,
         organizationId
-      }
+      } as any
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: scheduledTask,
       message: `Event "${title}" created successfully`
@@ -258,7 +258,7 @@ router.post('/scheduled-tasks', authMiddleware, async (req, res) => {
 
   } catch (error) {
     console.error('Error creating scheduled task:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to create scheduled task'
     });
@@ -278,7 +278,7 @@ router.get('/daily-schedule/:date', authMiddleware, async (req, res) => {
     // EnergyTimeBlock model does not exist yet - return empty schedule
     const timeBlocks: any[] = [];
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         date: schedulingDate,
@@ -298,7 +298,7 @@ router.get('/daily-schedule/:date', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching daily schedule:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch daily schedule'
     });
@@ -373,7 +373,7 @@ router.get('/weekly-schedule/:date', authMiddleware, async (req, res) => {
       averageTasksPerDay: Math.round(weekData.reduce((sum, d) => sum + d.statistics.totalTasks, 0) / 7 * 10) / 10
     };
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         startDate: startOfWeek,
@@ -384,7 +384,7 @@ router.get('/weekly-schedule/:date', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching weekly schedule:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch weekly schedule'
     });
@@ -459,7 +459,7 @@ router.get('/monthly-schedule/:year/:month', authMiddleware, async (req, res) =>
         : 0
     };
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         year: targetYear,
@@ -473,7 +473,7 @@ router.get('/monthly-schedule/:year/:month', authMiddleware, async (req, res) =>
     });
   } catch (error) {
     console.error('Error fetching monthly schedule:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch monthly schedule'
     });
@@ -515,7 +515,7 @@ router.get('/focus-modes', authMiddleware, async (req, res) => {
       ]
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: focusModes,
       meta: {
@@ -525,7 +525,7 @@ router.get('/focus-modes', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching focus modes:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch focus modes'
     });
@@ -564,14 +564,14 @@ router.post('/focus-modes', authMiddleware, async (req, res) => {
       }
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: focusMode,
       message: 'Focus mode created successfully'
     });
   } catch (error) {
     console.error('Error creating focus mode:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to create focus mode'
     });
@@ -610,14 +610,14 @@ router.put('/focus-modes/:id', authMiddleware, async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: updatedFocusMode,
       message: 'Focus mode updated successfully'
     });
   } catch (error) {
     console.error('Error updating focus mode:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to update focus mode'
     });
@@ -651,13 +651,13 @@ router.delete('/focus-modes/:id', authMiddleware, async (req, res) => {
       where: { id }
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Focus mode deleted successfully'
     });
   } catch (error) {
     console.error('Error deleting focus mode:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to delete focus mode'
     });
@@ -671,13 +671,13 @@ router.delete('/focus-modes/:id', authMiddleware, async (req, res) => {
 router.post('/time-blocks/:id/focus-mode', authMiddleware, async (req, res) => {
   try {
     // EnergyTimeBlock model does not exist yet - return error
-    res.status(501).json({
+    return res.status(501).json({
       success: false,
       error: 'Time blocks feature is not yet available'
     });
   } catch (error) {
     console.error('Error assigning focus mode:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to assign focus mode'
     });
@@ -740,7 +740,7 @@ router.get('/performance-analytics', authMiddleware, async (req, res) => {
       burnoutRiskTrend: metrics.slice(0, 7).map(m => m.burnoutRisk || 0)
     } : null;
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         metrics,
@@ -754,7 +754,7 @@ router.get('/performance-analytics', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching performance analytics:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch performance analytics'
     });
@@ -818,20 +818,20 @@ router.post('/performance-analytics/generate', authMiddleware, async (req, res) 
         suggestions: ['Energy time blocks feature is not yet available for detailed analytics'],
         organizationId,
         userId
-      },
+      } as any,
       include: {
         focus_modes: true
       }
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: performanceMetrics,
       message: 'Performance metrics generated successfully'
     });
   } catch (error) {
     console.error('Error generating performance analytics:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to generate performance analytics'
     });
@@ -891,7 +891,7 @@ router.get('/performance-insights', authMiddleware, async (req, res) => {
     // Generuj rekomendacje
     const recommendations = generateRecommendations(recentMetrics, trends);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         insights,
@@ -904,7 +904,7 @@ router.get('/performance-insights', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching performance insights:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch performance insights'
     });
@@ -922,13 +922,13 @@ router.get('/performance-insights', authMiddleware, async (req, res) => {
 router.post('/energy-feedback', authMiddleware, async (req, res) => {
   try {
     // EnergyTimeBlock model does not exist yet - return error
-    res.status(501).json({
+    return res.status(501).json({
       success: false,
       error: 'Energy feedback feature is not yet available'
     });
   } catch (error) {
     console.error('Error recording energy feedback:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to record energy feedback'
     });
@@ -955,13 +955,13 @@ router.get('/energy-patterns', authMiddleware, async (req, res) => {
       ]
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: patterns
     });
   } catch (error) {
     console.error('Error fetching energy patterns:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch energy patterns'
     });
@@ -990,6 +990,38 @@ function calculateDuration(startTime: string, endTime: string): number {
 function getDayOfWeek(date: Date): string {
   const days = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
   return days[date.getDay()];
+}
+
+function getStartOfWeekDate(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay();
+  d.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+function getEndOfWeekDate(date: Date): Date {
+  const d = getStartOfWeekDate(date);
+  d.setDate(d.getDate() + 6);
+  d.setHours(23, 59, 59, 999);
+  return d;
+}
+
+function addMinutesToTime(time: string, minutes: number): string {
+  const d = parseTime(time);
+  d.setMinutes(d.getMinutes() + minutes);
+  return formatTime(d);
+}
+
+function findNextAvailableTimeBlock(userId: string): Promise<any> {
+  return prisma.energy_time_blocks.findFirst({
+    where: {
+      userId,
+      isActive: true,
+      isBreak: false
+    },
+    orderBy: { startTime: 'asc' }
+  });
 }
 
 async function updateEnergyPatterns(userId: string, timeBlock: any, analytics: any) {
@@ -1036,7 +1068,7 @@ async function updateEnergyPatterns(userId: string, timeBlock: any, analytics: a
         lastAnalyzed: new Date(),
         userId,
         organizationId: timeBlock.organizationId
-      }
+      } as any
     });
   }
 }
@@ -1416,7 +1448,7 @@ router.get('/user-patterns', authMiddleware, async (req, res) => {
       patternType as string
     );
 
-    res.json({
+    return res.json({
       success: true,
       data: patterns,
       meta: {
@@ -1429,7 +1461,7 @@ router.get('/user-patterns', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching user patterns:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch user patterns'
     });
@@ -1455,7 +1487,7 @@ router.post('/detect-patterns', authMiddleware, async (req, res) => {
       }
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         patterns,
@@ -1465,7 +1497,7 @@ router.post('/detect-patterns', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error detecting patterns:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to detect patterns'
     });
@@ -1482,7 +1514,7 @@ router.get('/ai-recommendations', authMiddleware, async (req, res) => {
 
     const recommendations = await enhancedAIService.generatePersonalizedRecommendations(userId);
 
-    res.json({
+    return res.json({
       success: true,
       data: recommendations,
       meta: {
@@ -1493,7 +1525,7 @@ router.get('/ai-recommendations', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching AI recommendations:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch AI recommendations'
     });
@@ -1516,13 +1548,13 @@ router.post('/pattern-feedback', authMiddleware, async (req, res) => {
       implemented
     );
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Feedback recorded successfully'
     });
   } catch (error) {
     console.error('Error recording pattern feedback:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to record pattern feedback'
     });
@@ -1539,13 +1571,13 @@ router.get('/learning-insights', authMiddleware, async (req, res) => {
 
     const insights = await enhancedAIService.getPatternLearningInsights(userId);
 
-    res.json({
+    return res.json({
       success: true,
       data: insights
     });
   } catch (error) {
     console.error('Error fetching learning insights:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch learning insights'
     });
@@ -1562,13 +1594,13 @@ router.post('/adapt-patterns', authMiddleware, async (req, res) => {
 
     await enhancedAIService.adaptPatternsBasedOnPerformance(userId);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Patterns adapted successfully'
     });
   } catch (error) {
     console.error('Error adapting patterns:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to adapt patterns'
     });
@@ -1590,7 +1622,7 @@ router.get('/user-profile', authMiddleware, async (req, res) => {
     let userProfile = await prisma.user_profiles.findUnique({
       where: { userId },
       include: {
-        dayTemplates: {
+        day_templates: {
           orderBy: { lastUsed: 'desc' }
         }
       }
@@ -1603,20 +1635,20 @@ router.get('/user-profile', authMiddleware, async (req, res) => {
           userId,
           organizationId: req.user.organizationId,
           // Domyślne ustawienia są już w schema
-        },
+        } as any,
         include: {
-          dayTemplates: true
+          day_templates: true
         }
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: userProfile
     });
   } catch (error) {
     console.error('Error fetching user profile:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch user profile'
     });
@@ -1641,19 +1673,19 @@ router.put('/user-profile', authMiddleware, async (req, res) => {
         ...updateData
       },
       include: {
-        dayTemplates: {
+        day_templates: {
           orderBy: { lastUsed: 'desc' }
         }
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: userProfile
     });
   } catch (error) {
     console.error('Error updating user profile:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to update user profile'
     });
@@ -1698,7 +1730,7 @@ router.post('/generate-template', authMiddleware, async (req, res) => {
             userId,
             organizationId,
             // Default values are in schema
-          }
+          } as any
         });
         console.log('✅ Default user profile created:', userProfile.id);
       } catch (createError) {
@@ -1731,19 +1763,19 @@ router.post('/generate-template', authMiddleware, async (req, res) => {
         organizationId,
         userProfileId: userProfile.id,
         generatedBy: 'AI'
-      }
+      } as any
     });
     
     console.log('✅ Template saved with ID:', dayTemplate.id);
 
-    res.json({
+    return res.json({
       success: true,
       data: dayTemplate
     });
   } catch (error) {
     console.error('❌ Error generating template:', error);
     console.error('📋 Error stack:', error.stack);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: `Failed to generate template: ${error.message}`
     });
@@ -1777,13 +1809,13 @@ router.get('/templates', authMiddleware, async (req, res) => {
     const templates = await prisma.day_templates.findMany({
       where: whereClause,
       include: {
-        user: {
+        users: {
           select: {
             firstName: true,
             lastName: true
           }
         },
-        templateApplications: {
+        template_applications: {
           where: { userId },
           select: {
             userRating: true,
@@ -1801,7 +1833,7 @@ router.get('/templates', authMiddleware, async (req, res) => {
       ]
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: templates,
       meta: {
@@ -1812,7 +1844,7 @@ router.get('/templates', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching templates:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch templates'
     });
@@ -1860,7 +1892,7 @@ router.post('/templates/:id/apply', authMiddleware, async (req, res) => {
           dayOfWeek: null, // Konkretny dzień, nie szablon tygodniowy
           // Możliwość aplikacji modyfikacji
           ...modifications.find((mod: any) => mod.blockIndex === timeBlocks.indexOf(block))?.changes
-        }
+        } as any
       });
       appliedBlocks.push(appliedBlock);
     }
@@ -1875,7 +1907,7 @@ router.post('/templates/:id/apply', authMiddleware, async (req, res) => {
         templateSnapshot: template.timeBlocks,
         modifications,
         totalTasksPlanned: appliedBlocks.filter(b => !b.isBreak).length
-      }
+      } as any
     });
 
     // Zaktualizuj statystyki szablonu
@@ -1887,7 +1919,7 @@ router.post('/templates/:id/apply', authMiddleware, async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         templateApplication,
@@ -1897,7 +1929,7 @@ router.post('/templates/:id/apply', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error applying template:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to apply template'
     });
@@ -1933,13 +1965,13 @@ router.put('/templates/:id', authMiddleware, async (req, res) => {
       data: updateData
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: updatedTemplate
     });
   } catch (error) {
     console.error('Error updating template:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to update template'
     });
@@ -1973,13 +2005,13 @@ router.delete('/templates/:id', authMiddleware, async (req, res) => {
       where: { id: templateId }
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Template deleted successfully'
     });
   } catch (error) {
     console.error('Error deleting template:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to delete template'
     });
@@ -2036,14 +2068,14 @@ async function generateDayTemplate(userProfile: any, options: any) {
       endTime: formatTime(blockEndTime),
       energyLevel: determineEnergyLevel(currentTime, energyPeaks),
       primaryContext: selectOptimalContext(currentTime, preferredContexts, contextTimeSlots),
-      alternativeContexts: [],
+      alternativeContexts: [] as any[],
       isBreak: false,
       order: blockOrder++,
       isActive: true,
       workdays: true,
       weekends: false,
       holidays: false,
-      specificDays: []
+      specificDays: [] as any[]
     };
 
     timeBlocks.push(workBlock);
@@ -2052,14 +2084,14 @@ async function generateDayTemplate(userProfile: any, options: any) {
     currentTime = blockEndTime;
     if (currentTime.getTime() + (breakDuration * 60 * 1000) < endTime.getTime()) {
       const breakEndTime = new Date(currentTime.getTime() + (breakDuration * 60 * 1000));
-      
+
       const breakBlock = {
         name: "Break",
         startTime: formatTime(currentTime),
         endTime: formatTime(breakEndTime),
         energyLevel: 'MEDIUM',
         primaryContext: '@free',
-        alternativeContexts: [],
+        alternativeContexts: [] as any[],
         isBreak: true,
         breakType: 'COFFEE',
         order: blockOrder++,
@@ -2067,7 +2099,7 @@ async function generateDayTemplate(userProfile: any, options: any) {
         workdays: true,
         weekends: false,
         holidays: false,
-        specificDays: []
+        specificDays: [] as any[]
       };
 
       timeBlocks.push(breakBlock);
@@ -2258,17 +2290,17 @@ router.post('/weekly-templates/create', authMiddleware, async (req, res) => {
         userId,
         // Mark as weekly template
         weeklyTemplate: true
-      }
+      } as any
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: weeklyTemplate,
       message: 'Weekly template created successfully'
     });
   } catch (error) {
     console.error('Error creating weekly template:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to create weekly template'
     });
@@ -2370,7 +2402,7 @@ router.post('/weekly-templates/:id/apply', authMiddleware, async (req, res) => {
             createdAt: dayDate, // Set to specific day
             // Apply day-specific modifications
             ...(dayMod?.changes || {})
-          }
+          } as any
         });
         appliedBlocks.push(appliedBlock);
       }
@@ -2385,7 +2417,7 @@ router.post('/weekly-templates/:id/apply', authMiddleware, async (req, res) => {
           templateSnapshot: template.timeBlocks,
           modifications: dayModifications,
           totalTasksPlanned: timeBlocks.filter((b: any) => !b.isBreak).length
-        }
+        } as any
       });
       templateApplications.push(templateApp);
     }
@@ -2399,11 +2431,11 @@ router.post('/weekly-templates/:id/apply', authMiddleware, async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
-        appliedDays: workdays.filter(day => !holidays.includes(getDateForDayOfWeek(day).toISOString().split('T')[0])),
-        skippedDays: workdays.filter(day => holidays.includes(getDateForDayOfWeek(day).toISOString().split('T')[0])),
+        appliedDays: workdays.filter((day: any) => !holidays.includes(getDateForDayOfWeek(day).toISOString().split('T')[0])),
+        skippedDays: workdays.filter((day: any) => holidays.includes(getDateForDayOfWeek(day).toISOString().split('T')[0])),
         totalBlocks: appliedBlocks.length,
         templateApplications,
         weekStartDate,
@@ -2413,7 +2445,7 @@ router.post('/weekly-templates/:id/apply', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error applying weekly template:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to apply weekly template'
     });
@@ -2448,7 +2480,7 @@ router.get('/weekly-templates/current', authMiddleware, async (req, res) => {
         }
       },
       include: {
-        template: true
+        day_templates: true
       },
       orderBy: { appliedDate: 'asc' }
     });
@@ -2468,11 +2500,11 @@ router.get('/weekly-templates/current', authMiddleware, async (req, res) => {
       return acc;
     }, {});
 
-    const mostUsedTemplateId = Object.keys(templateUsage).reduce((a, b) => 
+    const mostUsedTemplateId = Object.keys(templateUsage).reduce((a, b) =>
       templateUsage[a] > templateUsage[b] ? a : b
     );
 
-    const currentTemplate = templateApplications.find(app => app.templateId === mostUsedTemplateId)?.template;
+    const currentTemplate = templateApplications.find(app => app.templateId === mostUsedTemplateId)?.day_templates;
 
     // Get all blocks for this week
     const weekBlocks = await prisma.energy_time_blocks.findMany({
@@ -2508,7 +2540,7 @@ router.get('/weekly-templates/current', authMiddleware, async (req, res) => {
       return acc;
     }, {});
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         template: currentTemplate,
@@ -2525,7 +2557,7 @@ router.get('/weekly-templates/current', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching current weekly template:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch current weekly template'
     });
@@ -2578,16 +2610,16 @@ router.post('/weekly-templates/quick-setup', authMiddleware, async (req, res) =>
         isDefault: false,
         isPublic: false,
         generatedBy: 'AI',
-        basedOnPatterns: JSON.stringify({ 
-          quickSetup: true, 
-          workHours, 
-          lunchBreak, 
-          shortBreaks 
+        basedOnPatterns: JSON.stringify({
+          quickSetup: true,
+          workHours,
+          lunchBreak,
+          shortBreaks
         }),
         organizationId,
         userId,
         weeklyTemplate: true
-      }
+      } as any
     });
 
     // Apply to this week immediately
@@ -2609,7 +2641,7 @@ router.post('/weekly-templates/quick-setup', authMiddleware, async (req, res) =>
             organizationId,
             dayOfWeek: null,
             createdAt: dayDate
-          }
+          } as any
         });
         appliedBlocks++;
       }
@@ -2624,11 +2656,11 @@ router.post('/weekly-templates/quick-setup', authMiddleware, async (req, res) =>
           templateSnapshot: JSON.stringify(timeBlocks),
           modifications: [],
           totalTasksPlanned: timeBlocks.filter(b => !b.isBreak).length
-        }
+        } as any
       });
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: {
         template: weeklyTemplate,
@@ -2641,7 +2673,7 @@ router.post('/weekly-templates/quick-setup', authMiddleware, async (req, res) =>
     });
   } catch (error) {
     console.error('Error in quick weekly setup:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to create weekly template'
     });
@@ -2941,7 +2973,7 @@ router.get('/task-queue', authMiddleware, async (req, res) => {
       return scoreB - scoreA;
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         tasks: sortedQueue,
@@ -2972,7 +3004,7 @@ router.get('/task-queue', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching task queue:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch task queue'
     });
@@ -3052,7 +3084,7 @@ router.post('/task-queue/analyze', authMiddleware, async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         analysis,
@@ -3079,7 +3111,7 @@ router.post('/task-queue/analyze', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error analyzing task queue:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to analyze task queue'
     });
@@ -3129,7 +3161,7 @@ router.post('/task-queue/prioritize', authMiddleware, async (req, res) => {
       task.quickWinScore = task.estimatedMinutes <= 30 && task.priority !== 'LOW' ? 'HIGH' : 'MEDIUM';
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         tasks: prioritizedTasks,
@@ -3147,7 +3179,7 @@ router.post('/task-queue/prioritize', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error prioritizing tasks:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to prioritize tasks'
     });
@@ -3455,13 +3487,13 @@ router.post('/smart-assignment', authMiddleware, async (req, res) => {
             userId,
             taskId: assignment.task.source === 'PROJECTS' ? assignment.task.id : null,
             wasRescheduled: false
-          }
+          } as any
         });
         scheduledTasks.push(scheduledTask);
       }
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         assignments: assignmentResult.assignments,
@@ -3485,7 +3517,7 @@ router.post('/smart-assignment', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error in smart assignment:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to perform smart assignment'
     });
@@ -3541,7 +3573,7 @@ router.post('/optimize-assignments', authMiddleware, async (req, res) => {
 
     const optimization = optimizationStrategies[optimizationGoal as keyof typeof optimizationStrategies](currentAssignments);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         currentScore: optimization.currentScore,
@@ -3562,7 +3594,7 @@ router.post('/optimize-assignments', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error optimizing assignments:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to optimize assignments'
     });
@@ -3630,7 +3662,7 @@ router.post('/emergency-reschedule', authMiddleware, async (req, res) => {
       }
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         canceledDate,
@@ -3654,7 +3686,7 @@ router.post('/emergency-reschedule', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error in emergency reschedule:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to perform emergency reschedule'
     });
@@ -3675,8 +3707,8 @@ function energyMatchAssignment(tasks: any[], blocks: any[]) {
     const priorityWeight = { HIGH: 3, MEDIUM: 2, LOW: 1, URGENT: 4 };
     const energyWeight = { HIGH: 4, CREATIVE: 3, MEDIUM: 2, ADMINISTRATIVE: 1, LOW: 1 };
     
-    const scoreA = (priorityWeight[a.priority] || 2) + (energyWeight[a.energyRequired] || 2);
-    const scoreB = (priorityWeight[b.priority] || 2) + (energyWeight[b.energyRequired] || 2);
+    const scoreA = (priorityWeight[a.priority as keyof typeof priorityWeight] || 2) + (energyWeight[a.energyRequired as keyof typeof energyWeight] || 2);
+    const scoreB = (priorityWeight[b.priority as keyof typeof priorityWeight] || 2) + (energyWeight[b.energyRequired as keyof typeof energyWeight] || 2);
     
     return scoreB - scoreA;
   });
@@ -3717,8 +3749,8 @@ function energyMatchAssignment(tasks: any[], blocks: any[]) {
 }
 
 function contextBatchAssignment(tasks: any[], blocks: any[]) {
-  const assignments = [];
-  const unassigned = [];
+  const assignments: any[] = [];
+  const unassigned: any[] = [];
   
   // Grupuj zadania według kontekstu
   const tasksByContext = tasks.reduce((acc, task) => {
@@ -3766,12 +3798,12 @@ function contextBatchAssignment(tasks: any[], blocks: any[]) {
 }
 
 function priorityFirstAssignment(tasks: any[], blocks: any[]) {
-  const assignments = [];
-  const unassigned = [];
+  const assignments: any[] = [];
+  const unassigned: any[] = [];
   
   // Sortuj zadania według priorytetu
   const sortedTasks = tasks.sort((a, b) => {
-    const priorityOrder = { URGENT: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+    const priorityOrder: Record<string, number> = { URGENT: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
     return (priorityOrder[b.priority] || 2) - (priorityOrder[a.priority] || 2);
   });
 
@@ -3810,8 +3842,8 @@ function priorityFirstAssignment(tasks: any[], blocks: any[]) {
 }
 
 function timeOptimalAssignment(tasks: any[], blocks: any[]) {
-  const assignments = [];
-  const unassigned = [];
+  const assignments: any[] = [];
+  const unassigned: any[] = [];
   
   // Sortuj zadania według czasu (krótkie pierwsze dla lepszego packowania)
   const sortedTasks = tasks.sort((a, b) => a.estimatedMinutes - b.estimatedMinutes);
@@ -3855,8 +3887,8 @@ function timeOptimalAssignment(tasks: any[], blocks: any[]) {
 }
 
 function balancedAssignment(tasks: any[], blocks: any[]) {
-  const assignments = [];
-  const unassigned = [];
+  const assignments: any[] = [];
+  const unassigned: any[] = [];
   
   // Multi-criteria scoring
   for (const task of tasks) {
@@ -3906,7 +3938,7 @@ function balancedAssignment(tasks: any[], blocks: any[]) {
 // =============================================================================
 
 function calculateEnergyMatchScore(task: any, block: any): number {
-  const energyMatrix = {
+  const energyMatrix: Record<string, Record<string, number>> = {
     HIGH: { HIGH: 1.0, CREATIVE: 0.7, MEDIUM: 0.5, ADMINISTRATIVE: 0.2, LOW: 0.1 },
     CREATIVE: { CREATIVE: 1.0, HIGH: 0.8, MEDIUM: 0.6, ADMINISTRATIVE: 0.3, LOW: 0.2 },
     MEDIUM: { MEDIUM: 1.0, HIGH: 0.7, CREATIVE: 0.7, ADMINISTRATIVE: 0.6, LOW: 0.4 },
@@ -4007,7 +4039,7 @@ function optimizeEnergyBalance(assignments: any[]) {
     optimizedScore: 0.85,
     improvement: 15,
     recommendations: ['Przenieś zadania wysokoenergetyczne na rano'],
-    suggestedMoves: []
+    suggestedMoves: [] as any[]
   };
 }
 
@@ -4017,7 +4049,7 @@ function optimizeContextGrouping(assignments: any[]) {
     optimizedScore: 0.8,
     improvement: 20,
     recommendations: ['Grupuj zadania @computer w bloki'],
-    suggestedMoves: []
+    suggestedMoves: [] as any[]
   };
 }
 
@@ -4027,7 +4059,7 @@ function optimizeTimeEfficiency(assignments: any[]) {
     optimizedScore: 0.9,
     improvement: 15,
     recommendations: ['Używaj mniejszych bloków dla krótkich zadań'],
-    suggestedMoves: []
+    suggestedMoves: [] as any[]
   };
 }
 
@@ -4037,7 +4069,7 @@ function optimizePriorityAlignment(assignments: any[]) {
     optimizedScore: 0.9,
     improvement: 10,
     recommendations: ['Przenieś pilne zadania na wcześniejsze godziny'],
-    suggestedMoves: []
+    suggestedMoves: [] as any[]
   };
 }
 
@@ -4047,7 +4079,7 @@ function optimizeBalanced(assignments: any[]) {
     optimizedScore: 0.85,
     improvement: 15,
     recommendations: ['Balansuj energię, kontekst i priorytet'],
-    suggestedMoves: []
+    suggestedMoves: [] as any[]
   };
 }
 
@@ -4094,7 +4126,7 @@ function createRedistributionPlan(categories: any, slots: any[], options: any) {
       newBlockId: slots[i]?.blockId,
       reason: 'URGENT_PRIORITY'
     })),
-    failed: []
+    failed: [] as any[]
   };
 }
 
@@ -4164,7 +4196,7 @@ router.post('/auto-populate', authMiddleware, async (req, res) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         date,
@@ -4193,7 +4225,7 @@ router.post('/auto-populate', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error in auto-populate:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to auto-populate day plan'
     });
@@ -4224,7 +4256,7 @@ router.post('/sync-with-workflow', authMiddleware, async (req, res) => {
     // Analiza konfliktów i duplikatów
     const conflicts = await detectWorkflowConflicts(userId, date);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         syncDirection,
@@ -4247,7 +4279,7 @@ router.post('/sync-with-workflow', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error in Workflow sync:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to sync with Workflow'
     });
@@ -4275,7 +4307,7 @@ router.post('/sync-with-projects', authMiddleware, async (req, res) => {
     }, {});
 
     // Automatyczne przypisanie jeśli requested
-    let assignmentResults = {};
+    let assignmentResults: Record<string, any> = {};
     if (autoAssign) {
       for (const [projectId, tasks] of Object.entries(tasksByProject)) {
         assignmentResults[projectId] = await suggestProjectTaskAssignments(tasks as any[], userId);
@@ -4285,7 +4317,7 @@ router.post('/sync-with-projects', authMiddleware, async (req, res) => {
     // Analiza dependencies i critical path
     const dependencies = await analyzeProjectDependencies(projectTasks);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         projects: Object.keys(tasksByProject).length,
@@ -4300,7 +4332,7 @@ router.post('/sync-with-projects', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error in project sync:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to sync with projects'
     });
@@ -4345,7 +4377,7 @@ router.post('/communication-to-tasks', authMiddleware, async (req, res) => {
       }
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         messagesAnalyzed: messages.length,
@@ -4363,7 +4395,7 @@ router.post('/communication-to-tasks', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('Error in communication to tasks:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to convert communications to tasks'
     });
@@ -4393,7 +4425,7 @@ async function fetchSourceInboxTasks(userId: string) {
     priority: calculatePriorityFromUrgency(item.urgencyScore),
     context: getContextFromInboxType(item.sourceType),
     energyRequired: getEnergyFromInboxType(item.sourceType),
-    deadline: null,
+    deadline: null as any,
     sourceData: item
   }));
 }
@@ -4401,9 +4433,9 @@ async function fetchSourceInboxTasks(userId: string) {
 async function fetchActiveNextActions(userId: string) {
   const nextActions = await prisma.next_actions.findMany({
     where: {
-      userId,
-      status: 'ACTIVE',
-      isCompleted: false
+      createdById: userId,
+      status: 'IN_PROGRESS',
+      completedAt: null
     },
     orderBy: { priority: 'desc' },
     take: 15
@@ -4414,10 +4446,10 @@ async function fetchActiveNextActions(userId: string) {
     source: 'ACTIVE_TASKS',
     title: action.title,
     description: action.description,
-    estimatedMinutes: action.estimatedTime || 30,
+    estimatedMinutes: parseInt(action.estimatedTime || '30') || 30,
     priority: action.priority || 'MEDIUM',
     context: action.context || '@computer',
-    energyRequired: action.energyLevel || 'MEDIUM',
+    energyRequired: action.energy || 'MEDIUM',
     deadline: action.dueDate,
     sourceData: action
   }));
@@ -4477,25 +4509,25 @@ async function fetchRecurringTasks(userId: string, date: string) {
     priority: task.priority || 'MEDIUM',
     context: task.context || '@routine',
     energyRequired: 'MEDIUM',
-    deadline: null,
+    deadline: null as any,
     sourceData: task
   }));
 }
 
-async function fetchCommunicationTasks(userId: string, date: string) {
+async function fetchCommunicationTasks(userId: string, date: string): Promise<any[]> {
   // Simplified - return empty for now
   return [];
 }
 
-async function fetchStreamTasks(userId: string) {
-  // Simplified - return empty for now  
+async function fetchStreamTasks(userId: string): Promise<any[]> {
+  // Simplified - return empty for now
   return [];
 }
 
 async function prioritizeTasksForDay(tasks: any[], preferences: any, date: string) {
   // Sort by priority and deadline proximity
   return tasks.sort((a, b) => {
-    const priorityWeights = { URGENT: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+    const priorityWeights: Record<string, number> = { URGENT: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
     let scoreA = (priorityWeights[a.priority] || 2);
     let scoreB = (priorityWeights[b.priority] || 2);
     
@@ -4615,15 +4647,15 @@ function generateIntegrationRecommendations(result: any, allTasks: any[], source
 }
 
 // Simplified Workflow integration functions
-async function pullFromWorkflow(userId: string, date: string) {
+async function pullFromWorkflow(userId: string, date: string): Promise<any[]> {
   return []; // Simplified
 }
 
-async function pushToWorkflow(userId: string, date: string) {
-  return []; // Simplified  
+async function pushToWorkflow(userId: string, date: string): Promise<any[]> {
+  return []; // Simplified
 }
 
-async function detectWorkflowConflicts(userId: string, date: string) {
+async function detectWorkflowConflicts(userId: string, date: string): Promise<any[]> {
   return []; // Simplified
 }
 
@@ -4642,19 +4674,19 @@ function generateSyncRecommendations(pulled: any[], pushed: any[], conflicts: an
 }
 
 // Simplified project integration functions
-async function fetchProjectTasksForPlanning(userId: string, projectIds: string[], respectDeadlines: boolean) {
+async function fetchProjectTasksForPlanning(userId: string, projectIds: string[], respectDeadlines: boolean): Promise<any[]> {
   return []; // Simplified
 }
 
 async function suggestProjectTaskAssignments(tasks: any[], userId: string) {
-  return { assignments: [], suggestions: [] }; // Simplified
+  return { assignments: [] as any[], suggestions: [] as any[] }; // Simplified
 }
 
-async function analyzeProjectDependencies(tasks: any[]) {
+async function analyzeProjectDependencies(tasks: any[]): Promise<any[]> {
   return []; // Simplified
 }
 
-function identifyCriticalPath(dependencies: any[]) {
+function identifyCriticalPath(dependencies: any[]): any[] {
   return []; // Simplified
 }
 
@@ -4662,13 +4694,27 @@ function generateProjectIntegrationRecommendations(tasksByProject: any, dependen
   return ['🎯 Rozważ grupowanie zadań według projektów dla lepszej koncentracji'];
 }
 
+function generateWeeklyOverviewRecommendations(dailyStats: any[], productivity: any, bestTimeSlots: any[]): string[] {
+  const recommendations: string[] = [];
+  if (productivity.tasksCompleted > 0 && productivity.totalTasks > 0) {
+    const rate = (productivity.tasksCompleted / productivity.totalTasks) * 100;
+    if (rate >= 80) recommendations.push('Excellent weekly completion rate!');
+    else if (rate >= 50) recommendations.push('Good progress this week. Try to maintain momentum.');
+    else recommendations.push('Consider reducing daily task count for better completion rates.');
+  }
+  if (productivity.overdueTasks > 0) {
+    recommendations.push(`${productivity.overdueTasks} overdue tasks need attention.`);
+  }
+  return recommendations;
+}
+
 // Simplified communication integration functions
 async function analyzeMessageForTasks(message: any, options: any) {
   return {
     messageId: message.id,
     confidence: 0.5,
-    suggestedTasks: [],
-    extractedDeadlines: [],
+    suggestedTasks: [] as any[],
+    extractedDeadlines: [] as any[],
     suggestedContext: '@computer'
   };
 }
@@ -4701,13 +4747,13 @@ router.get('/dashboard/daily-widget', authMiddleware, async (req, res) => {
     const todayDateString = today.toISOString().split('T')[0];
 
     // 1. Pobierz dzisiejsze bloki czasowe
-    const timeBlocks = await prisma.energy_time_blocks.findMany({
+    const timeBlocks: any[] = await prisma.energy_time_blocks.findMany({
       where: {
         userId,
         isActive: true,
         OR: [
           { dayOfWeek: null }, // Universal blocks
-          { dayOfWeek: getDayOfWeek(today) }
+          { dayOfWeek: getDayOfWeek(today) as any }
         ]
       },
       include: {
@@ -4819,14 +4865,14 @@ router.get('/dashboard/daily-widget', authMiddleware, async (req, res) => {
       isActive: currentBlock?.id === block.id,
       isNext: nextBlock?.id === block.id,
       tasksCount: block.scheduled_tasks?.length || 0,
-      completedTasksCount: block.scheduled_tasks?.filter(t => t.status === 'COMPLETED').length || 0,
+      completedTasksCount: block.scheduled_tasks?.filter((t: any) => t.status === 'COMPLETED').length || 0,
       focusMode: block.focus_modes ? {
         name: block.focus_modes.name,
         category: block.focus_modes.category
       } : null
     }));
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         date: todayDateString,
@@ -4849,14 +4895,14 @@ router.get('/dashboard/daily-widget', authMiddleware, async (req, res) => {
             endTime: currentBlock.endTime,
             energyLevel: currentBlock.energyLevel,
             isBreak: currentBlock.isBreak,
-            activeTasks: currentBlock.scheduled_tasks?.filter(t => t.status === 'IN_PROGRESS') || []
+            activeTasks: currentBlock.scheduled_tasks?.filter((t: any) => t.status === 'IN_PROGRESS') || []
           } : null,
           nextBlock: nextBlock ? {
             id: nextBlock.id,
             name: nextBlock.name,
             startTime: nextBlock.startTime,
             energyLevel: nextBlock.energyLevel,
-            upcomingTasks: nextBlock.scheduled_tasks?.filter(t => t.status === 'PLANNED') || []
+            upcomingTasks: nextBlock.scheduled_tasks?.filter((t: any) => t.status === 'PLANNED') || []
           } : null
         },
         insights: {
@@ -4876,7 +4922,7 @@ router.get('/dashboard/daily-widget', authMiddleware, async (req, res) => {
 
   } catch (error) {
     console.error('Error fetching daily widget:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch daily widget data'
     });
@@ -4891,8 +4937,8 @@ router.get('/dashboard/week-overview', authMiddleware, async (req, res) => {
   try {
     const userId = req.user.id;
     const today = new Date();
-    const startOfWeek = getStartOfWeek(today);
-    const endOfWeek = getEndOfWeek(today);
+    const startOfWeek = getStartOfWeekDate(today);
+    const endOfWeek = getEndOfWeekDate(today);
 
     // 1. Statystyki tygodnia
     const weeklyAnalytics = await prisma.energy_analytics.findMany({
@@ -4961,7 +5007,7 @@ router.get('/dashboard/week-overview', authMiddleware, async (req, res) => {
       .sort((a, b) => (b.productivity || 0) - (a.productivity || 0))
       .slice(0, 3);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         weekPeriod: {
@@ -4971,13 +5017,13 @@ router.get('/dashboard/week-overview', authMiddleware, async (req, res) => {
         productivity,
         dailyStats,
         bestTimeSlots,
-        recommendations: generateWeeklyRecommendations(dailyStats, productivity, bestTimeSlots)
+        recommendations: generateWeeklyOverviewRecommendations(dailyStats, productivity, bestTimeSlots)
       }
     });
 
   } catch (error) {
     console.error('Error fetching week overview:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch week overview'
     });
@@ -5043,7 +5089,7 @@ router.post('/dashboard/quick-action', authMiddleware, async (req, res) => {
 
         // Znajdź następny dostępny blok czasowy
         const nextAvailableBlock = await findNextAvailableTimeBlock(userId);
-        
+
         result = await prisma.scheduled_tasks.create({
           data: {
             title,
@@ -5056,7 +5102,7 @@ router.post('/dashboard/quick-action', authMiddleware, async (req, res) => {
             energyTimeBlockId: nextAvailableBlock?.id || '',
             userId,
             organizationId: req.user.organizationId
-          }
+          } as any
         });
         break;
 
@@ -5078,7 +5124,7 @@ router.post('/dashboard/quick-action', authMiddleware, async (req, res) => {
             scheduledDate: tomorrow,
             wasRescheduled: true,
             rescheduledFrom: new Date().toISOString().split('T')[0],
-            rescheduledReason: 'Manual reschedule from dashboard'
+            rescheduledReason: 'USER_PREFERENCE' as any
           }
         });
         break;
@@ -5090,7 +5136,7 @@ router.post('/dashboard/quick-action', authMiddleware, async (req, res) => {
         });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: result,
       message: `Action ${actionType} completed successfully`
@@ -5098,7 +5144,7 @@ router.post('/dashboard/quick-action', authMiddleware, async (req, res) => {
 
   } catch (error) {
     console.error('Error executing quick action:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to execute quick action'
     });
@@ -5146,16 +5192,15 @@ router.post('/next-suggestions', authMiddleware, async (req, res) => {
     // 3. Quick wins z projektów
     const quickWins = await prisma.task.findMany({
       where: {
-        userId,
+        createdById: userId,
         status: 'NEW',
-        priority: { in: ['HIGH', 'MEDIUM'] },
-        estimatedMinutes: { lte: availableMinutes / 2 } // Quick wins są krótsze
+        priority: { in: ['HIGH', 'MEDIUM'] }
       },
       take: 2
     });
 
     // 4. Tworzenie sugestii z scoring
-    const suggestions = [];
+    const suggestions: any[] = [];
 
     // Zadania zaplanowane na później
     laterTasks.forEach(task => {
@@ -5183,36 +5228,38 @@ router.post('/next-suggestions', authMiddleware, async (req, res) => {
 
     // Zadania z inbox
     inboxTasks.forEach(item => {
+      const estMinutes = parseInt(item.estimatedTime || '30') || 30;
       suggestions.push({
         id: `inbox-${item.id}`,
-        title: item.title,
-        description: item.description,
-        estimatedMinutes: item.estimatedMinutes || 30,
-        priority: item.priority || 'MEDIUM',
+        title: item.content.substring(0, 100),
+        description: item.content,
+        estimatedMinutes: estMinutes,
+        priority: calculatePriorityFromUrgency(item.urgencyScore || 0),
         context: item.context || '@computer',
-        energyRequired: item.energyRequired || 'MEDIUM',
+        energyRequired: 'MEDIUM',
         source: 'SOURCE_INBOX',
         score: 40, // Inbox ma wysoką wartość
         reason: 'Warto przetworzyć z Workflow Inbox podczas wolnego czasu.',
-        canFitInTime: (item.estimatedMinutes || 30) <= availableMinutes
+        canFitInTime: estMinutes <= availableMinutes
       });
     });
 
     // Quick wins z projektów
     quickWins.forEach(task => {
+      const taskMinutes = (task.estimatedHours || 0.25) * 60;
       suggestions.push({
         id: `quick-${task.id}`,
         taskId: task.id,
         title: task.title,
         description: task.description,
-        estimatedMinutes: task.estimatedMinutes || 15,
+        estimatedMinutes: taskMinutes,
         priority: task.priority,
-        context: task.context || '@computer',
-        energyRequired: task.energyLevel || 'MEDIUM',
+        context: '@computer',
+        energyRequired: task.energy || 'MEDIUM',
         source: 'QUICK_WIN',
         score: 35,
         reason: 'Quick win z projektu. Szybkie zadanie do realizacji.',
-        canFitInTime: (task.estimatedMinutes || 15) <= availableMinutes
+        canFitInTime: taskMinutes <= availableMinutes
       });
     });
 
@@ -5221,14 +5268,14 @@ router.post('/next-suggestions', authMiddleware, async (req, res) => {
       .sort((a, b) => b.score - a.score)
       .slice(0, 5); // Top 5 sugestii
 
-    res.json({
+    return res.json({
       success: true,
       data: sortedSuggestions
     });
 
   } catch (error) {
     console.error('Error getting next task suggestions:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to get task suggestions'
     });
@@ -5312,7 +5359,7 @@ router.post('/partial-day', authMiddleware, async (req, res) => {
             data: {
               scheduledDate: tomorrow,
               wasRescheduled: true,
-              rescheduledReason: `Partial day ending at ${endTime}`
+              rescheduledReason: 'USER_PREFERENCE' as any
             }
           });
 
@@ -5336,7 +5383,7 @@ router.post('/partial-day', authMiddleware, async (req, res) => {
       return sum + calculateBlockDuration(endTime, block.endTime);
     }, 0);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         strategy,
@@ -5354,7 +5401,7 @@ router.post('/partial-day', authMiddleware, async (req, res) => {
 
   } catch (error) {
     console.error('Error handling partial day:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to handle partial day'
     });
@@ -5371,7 +5418,7 @@ router.get('/debug-weekly/:date', async (req, res) => {
       select: { id: true, name: true, startTime: true, userId: true }
     });
     
-    res.json({
+    return res.json({
       success: true,
       debug: {
         date,
@@ -5381,7 +5428,7 @@ router.get('/debug-weekly/:date', async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    return res.status(500).json({ success: false, error: error.message });
   }
 });
 

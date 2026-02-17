@@ -25,15 +25,15 @@ router.post('/query', async (req, res) => {
       });
     }
 
-    console.log(`[RAG Agent] Query from user ${user.userId}: ${question.substring(0, 50)}...`);
+    console.log(`[RAG Agent] Query from user ${user!.id}: ${question.substring(0, 50)}...`);
 
     // Transform request do RAG service format
     const ragRequest = {
       query: question,
-      userId: user.userId,
-      organizationId: user.organizationId,
-      userRole: user.role || 'USER',
-      userStreamIds: user.streamIds || [],
+      userId: user!.id,
+      organizationId: user!.organizationId,
+      userRole: user!.role || 'USER',
+      userStreamIds: (user as any)?.streamIds || [],
       context: {
         contextType: context || 'general',
         providerId: providerId
@@ -47,8 +47,8 @@ router.post('/query', async (req, res) => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(ragRequest),
-      timeout: 30000 // 30s timeout
-    });
+      signal: AbortSignal.timeout(30000), // 30s timeout
+    } as any);
 
     if (!ragResponse.ok) {
       const errorText = await ragResponse.text();
@@ -68,19 +68,19 @@ router.post('/query', async (req, res) => {
         data: ragData.sources || [],
         insights: extractInsights(ragData),
         actions: extractActions(ragData),
-        visualizations: [],
+        visualizations: [] as any[],
         executionTime: ragData.searchTime,
         confidence: ragData.confidence,
         intent: ragData.intent
       }
     };
 
-    res.json(response);
+    return res.json(response);
 
   } catch (error) {
     console.error('[RAG Agent] Error:', error);
 
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error occurred',
       fallback: true
@@ -94,12 +94,12 @@ router.post('/query', async (req, res) => {
 router.get('/health', async (req, res) => {
   try {
     const ragResponse = await fetch(`${RAG_SERVICE_URL}/health`, {
-      timeout: 5000
-    });
+      signal: AbortSignal.timeout(5000),
+    } as any);
 
     const isHealthy = ragResponse.ok;
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         ragServiceUrl: RAG_SERVICE_URL,
@@ -108,7 +108,7 @@ router.get('/health', async (req, res) => {
       }
     });
   } catch (error) {
-    res.json({
+    return res.json({
       success: false,
       data: {
         ragServiceUrl: RAG_SERVICE_URL,

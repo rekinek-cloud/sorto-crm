@@ -3,7 +3,8 @@
  * Rozszerza istniejący StreamHierarchyService o funkcjonalność Streams i optymalizacje wydajności
  */
 
-import { PrismaClient, Stream, StreamRelation, StreamRole, StreamType } from '@prisma/client';
+import { PrismaClient, Stream, stream_relations, StreamRole, StreamType } from '@prisma/client';
+import { v4 as uuidv4 } from 'uuid';
 import { StreamHierarchyService } from './StreamHierarchyService';
 
 /**
@@ -287,20 +288,22 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
 
       return await this.prisma.$transaction(async (tx) => {
         // Usuń istniejące relacje rodzic-dziecko
-        await tx.streamRelation.updateMany({
+        await tx.stream_relations.updateMany({
           where: { childId: streamId },
           data: { isActive: false }
         });
 
         // Dodaj nową relację jeśli ma nowego rodzica
         if (newParentId) {
-          await tx.streamRelation.create({
+          await tx.stream_relations.create({
             data: {
+              id: uuidv4(),
               parentId: newParentId,
               childId: streamId,
               relationType: 'OWNS',
               organizationId,
-              createdById: userId
+              createdById: userId,
+              updatedAt: new Date()
             }
           });
         }
@@ -492,8 +495,8 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
       const streams = await this.prisma.stream.findMany({
         where: { organizationId },
         include: {
-          parentRelations: { include: { parent: true } },
-          childRelations: { include: { child: true } }
+          stream_relations_stream_relations_childIdTostreams: { include: { streams_stream_relations_parentIdTostreams: true } },
+          stream_relations_stream_relations_parentIdTostreams: { include: { streams_stream_relations_childIdTostreams: true } }
         }
       });
 
@@ -740,7 +743,7 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
     return await this.prisma.stream.findMany({
       where: {
         organizationId,
-        parentRelations: { none: {} },
+        stream_relations_stream_relations_childIdTostreams: { none: {} },
         streamRole: { not: null } // Only streams that should have parents
       }
     });
@@ -760,7 +763,7 @@ export class EnhancedStreamHierarchyManager extends StreamHierarchyService {
   /**
    * Waliduje czy tworzenie relacji nie utworzy cyklu
    */
-  async validateNoCycles(parentId: string, childId: string): Promise<boolean> {
+  override async validateNoCycles(parentId: string, childId: string): Promise<boolean> {
     try {
       const ancestors = await this.getStreamAncestors(childId);
       return ancestors.some(ancestor => ancestor.id === parentId);

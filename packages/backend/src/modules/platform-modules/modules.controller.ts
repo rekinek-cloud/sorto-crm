@@ -11,13 +11,13 @@ export class PlatformModulesController {
     try {
       const modules = await platformModulesService.getAllModules();
 
-      res.json({
+      return res.json({
         message: 'Modules retrieved successfully',
         data: modules,
       });
     } catch (error: any) {
       logger.error('Failed to get modules:', error);
-      res.status(500).json({
+      return res.status(500).json({
         message: 'Failed to get modules',
         error: error.message,
       });
@@ -41,13 +41,13 @@ export class PlatformModulesController {
         hostname
       );
 
-      res.json({
+      return res.json({
         message: 'Available modules retrieved successfully',
         data: modules,
       });
     } catch (error: any) {
       logger.error('Failed to get available modules:', error);
-      res.status(500).json({
+      return res.status(500).json({
         message: 'Failed to get available modules',
         error: error.message,
       });
@@ -69,13 +69,13 @@ export class PlatformModulesController {
         user.organizationId
       );
 
-      res.json({
+      return res.json({
         message: 'Purchased modules retrieved successfully',
         data: modules,
       });
     } catch (error: any) {
       logger.error('Failed to get purchased modules:', error);
-      res.status(500).json({
+      return res.status(500).json({
         message: 'Failed to get purchased modules',
         error: error.message,
       });
@@ -106,13 +106,13 @@ export class PlatformModulesController {
         return res.status(404).json({ message: `Module '${slug}' not found` });
       }
 
-      res.json({
+      return res.json({
         message: 'Module status retrieved successfully',
         data: status,
       });
     } catch (error: any) {
       logger.error('Failed to get module status:', error);
-      res.status(500).json({
+      return res.status(500).json({
         message: 'Failed to get module status',
         error: error.message,
       });
@@ -152,14 +152,14 @@ export class PlatformModulesController {
         });
       }
 
-      res.json({
+      return res.json({
         message: result.message,
         data: result.module,
         stripeCheckoutUrl: result.stripeCheckoutUrl,
       });
     } catch (error: any) {
       logger.error('Failed to purchase module:', error);
-      res.status(500).json({
+      return res.status(500).json({
         message: 'Failed to purchase module',
         error: error.message,
       });
@@ -197,12 +197,12 @@ export class PlatformModulesController {
         });
       }
 
-      res.json({
+      return res.json({
         message: result.message,
       });
     } catch (error: any) {
       logger.error('Failed to cancel module:', error);
-      res.status(500).json({
+      return res.status(500).json({
         message: 'Failed to cancel module',
         error: error.message,
       });

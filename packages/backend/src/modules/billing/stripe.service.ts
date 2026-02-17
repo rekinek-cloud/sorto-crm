@@ -276,7 +276,7 @@ export class StripeService {
         isActive: true,
         activatedAt: new Date(),
         stripeSubscriptionItemId: session.subscription as string,
-      },
+      } as any,
       update: {
         isActive: true,
         activatedAt: new Date(),

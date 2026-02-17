@@ -55,10 +55,10 @@ export default function UniversalRulesPage() {
       setLoading(true);
       const [analysesRes, historyRes, templatesRes] = await Promise.all([
         universalRulesApi.getAvailableAnalyses(),
-        universalRulesApi.getExecutionHistory(20),
+        universalRulesApi.getExecutionHistory({ limit: 20 }),
         getUnifiedRuleTemplates().catch(() => []),
       ]);
-      setAvailableAnalyses(analysesRes.data || {});
+      setAvailableAnalyses((analysesRes.data || {}) as any);
       setExecutionHistory(historyRes.data || []);
       setRuleTemplates(templatesRes || []);
     } catch (error) {
@@ -80,7 +80,11 @@ export default function UniversalRulesPage() {
 
     try {
       setAnalyzing(true);
-      const result = await universalRulesApi.analyze(selectedModule as any, testItemId, selectedAnalysisType);
+      const result = await universalRulesApi.analyze({
+        module: selectedModule as any,
+        itemId: testItemId,
+        analysisType: selectedAnalysisType as any,
+      });
 
       if (result.success) {
         toast.success(`Analiza zakonczona. Wykonano ${result.executedRules} regul.`);
@@ -104,9 +108,10 @@ export default function UniversalRulesPage() {
         description: template.description,
         ruleType: template.ruleType,
         category: template.category,
+        triggerType: template.triggerType || 'MANUAL',
         conditions: template.conditions,
         actions: template.actions,
-        isActive: false,
+        status: 'INACTIVE',
         priority: 50,
       });
       toast.success(`Regula "${template.name}" utworzona z szablonu`);

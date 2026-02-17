@@ -163,10 +163,10 @@ export default function AutoRepliesPage() {
       bodyContains: rule.conditions.bodyContains?.join(', ') || '',
       template: rule.replyConfig.template,
       replySubject: rule.replyConfig.subject || '',
-      delay: rule.replyConfig.delay,
-      onlyBusinessHours: rule.replyConfig.onlyBusinessHours,
-      maxRepliesPerSender: rule.replyConfig.maxRepliesPerSender,
-      cooldownPeriod: rule.replyConfig.cooldownPeriod,
+      delay: rule.replyConfig.delay ?? 0,
+      onlyBusinessHours: rule.replyConfig.onlyBusinessHours ?? false,
+      maxRepliesPerSender: rule.replyConfig.maxRepliesPerSender ?? 0,
+      cooldownPeriod: rule.replyConfig.cooldownPeriod ?? 3600,
       markAsRead: rule.actions?.markAsRead || false,
       addLabel: rule.actions?.addLabel || '',
       createTask: rule.actions?.createTask || false,
@@ -479,10 +479,10 @@ export default function AutoRepliesPage() {
                         <Clock className="h-4 w-4" />
                         Wykonan: {rule._count?.executions || 0}
                       </span>
-                      {rule.replyConfig.delay > 0 && (
+                      {(rule.replyConfig.delay ?? 0) > 0 && (
                         <span>Opoznienie: {rule.replyConfig.delay}s</span>
                       )}
-                      {rule.replyConfig.onlyBusinessHours && (
+                      {rule.replyConfig.onlyBusinessHours === true && (
                         <span>Tylko w godzinach pracy</span>
                       )}
                     </div>

@@ -35,7 +35,7 @@ router.use(authenticateUser);
  * Import conversations from JSON file
  * Uses existing vector_documents table via VectorService
  */
-router.post('/import', async (req: Request, res: Response): Promise<void> => {
+router.post('/import', async (req: Request, res: Response) => {
   try {
     const { source, jsonContent } = syncSchema.parse(req.body);
     const organizationId = req.user.organizationId;
@@ -46,13 +46,13 @@ router.post('/import', async (req: Request, res: Response): Promise<void> => {
       jsonContent
     );
 
-    res.json({
+    return res.json({
       success: result.success,
       data: result,
     });
   } catch (error) {
     console.error('AI Sync import error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Import failed',
     });
@@ -63,7 +63,7 @@ router.post('/import', async (req: Request, res: Response): Promise<void> => {
  * POST /api/v1/ai-sync/search
  * Search conversations using VectorService
  */
-router.post('/search', async (req: Request, res: Response): Promise<void> => {
+router.post('/search', async (req: Request, res: Response) => {
   try {
     const { query, limit, appName, source } = searchSchema.parse(req.body);
     const organizationId = req.user.organizationId;
@@ -74,13 +74,13 @@ router.post('/search', async (req: Request, res: Response): Promise<void> => {
       source: source as AiSourceType | undefined,
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: results,
     });
   } catch (error) {
     console.error('AI Sync search error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Search failed',
     });
@@ -91,7 +91,7 @@ router.post('/search', async (req: Request, res: Response): Promise<void> => {
  * GET /api/v1/ai-sync/conversations
  * List conversations from vector_documents
  */
-router.get('/conversations', async (req: Request, res: Response): Promise<void> => {
+router.get('/conversations', async (req: Request, res: Response) => {
   try {
     const organizationId = req.user.organizationId;
     const source = req.query.source as AiSourceType | undefined;
@@ -106,13 +106,13 @@ router.get('/conversations', async (req: Request, res: Response): Promise<void> 
       take,
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: conversations,
     });
   } catch (error) {
     console.error('AI Sync list error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'List failed',
     });
@@ -123,7 +123,7 @@ router.get('/conversations', async (req: Request, res: Response): Promise<void> 
  * GET /api/v1/ai-sync/conversations/:id
  * Get single conversation
  */
-router.get('/conversations/:id', async (req: Request, res: Response): Promise<void> => {
+router.get('/conversations/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const organizationId = req.user.organizationId;
@@ -131,20 +131,19 @@ router.get('/conversations/:id', async (req: Request, res: Response): Promise<vo
     const conversation = await conversationsService.getConversation(organizationId, id);
 
     if (!conversation) {
-      res.status(404).json({
+      return res.status(404).json({
         success: false,
         error: 'Conversation not found',
       });
-      return;
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: conversation,
     });
   } catch (error) {
     console.error('AI Sync get conversation error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Get failed',
     });
@@ -155,20 +154,20 @@ router.get('/conversations/:id', async (req: Request, res: Response): Promise<vo
  * DELETE /api/v1/ai-sync/conversations/:id
  * Delete conversation
  */
-router.delete('/conversations/:id', async (req: Request, res: Response): Promise<void> => {
+router.delete('/conversations/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
     const organizationId = req.user.organizationId;
 
     await conversationsService.deleteConversation(organizationId, id);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Conversation deleted',
     });
   } catch (error) {
     console.error('AI Sync delete error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Delete failed',
     });
@@ -179,19 +178,19 @@ router.delete('/conversations/:id', async (req: Request, res: Response): Promise
  * GET /api/v1/ai-sync/summary
  * Get sync summary statistics
  */
-router.get('/summary', async (req: Request, res: Response): Promise<void> => {
+router.get('/summary', async (req: Request, res: Response) => {
   try {
     const organizationId = req.user.organizationId;
 
     const summary = await syncOrchestrator.getSyncSummary(organizationId);
 
-    res.json({
+    return res.json({
       success: true,
       data: summary,
     });
   } catch (error) {
     console.error('AI Sync summary error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Summary failed',
     });
@@ -202,22 +201,21 @@ router.get('/summary', async (req: Request, res: Response): Promise<void> => {
  * DELETE /api/v1/ai-sync/source/:source
  * Delete all conversations from a source
  */
-router.delete('/source/:source', async (req: Request, res: Response): Promise<void> => {
+router.delete('/source/:source', async (req: Request, res: Response) => {
   try {
     const source = req.params.source as AiSourceType;
     const organizationId = req.user.organizationId;
 
     if (!['CHATGPT', 'CLAUDE', 'DEEPSEEK'].includes(source)) {
-      res.status(400).json({
+      return res.status(400).json({
         success: false,
         error: 'Invalid source',
       });
-      return;
     }
 
     const count = await syncOrchestrator.deleteBySource(organizationId, source);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         deletedCount: count,
@@ -225,7 +223,7 @@ router.delete('/source/:source', async (req: Request, res: Response): Promise<vo
     });
   } catch (error) {
     console.error('AI Sync delete source error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Delete source failed',
     });

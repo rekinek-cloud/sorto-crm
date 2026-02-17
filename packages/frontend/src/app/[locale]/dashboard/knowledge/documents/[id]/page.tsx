@@ -147,7 +147,7 @@ export default function DocumentPage() {
     try {
       setLoading(true);
       const response = await knowledgeApi.getDocument(params.id as string);
-      setDocument(response.data);
+      setDocument(response.data as any);
     } catch (error: any) {
       console.error('Failed to load document:', error);
       router.push('/dashboard/knowledge');

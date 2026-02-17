@@ -4,6 +4,7 @@
  */
 
 import { PrismaClient, Stream, StreamStatus, StreamRole, StreamType } from '@prisma/client';
+import { v4 as uuidv4 } from 'uuid';
 import { StreamsConfigManager } from './StreamsConfigManager';
 import {
   CreateStreamOptions as CreateGTDStreamOptions,
@@ -136,11 +137,11 @@ export class StreamService {
       return await this.prisma.stream.findUnique({
         where: { id: streamId },
         include: includeRelations ? {
-          parentRelations: {
-            include: { parent: true }
+          stream_relations_stream_relations_childIdTostreams: {
+            include: { streams_stream_relations_parentIdTostreams: true }
           },
-          childRelations: {
-            include: { child: true }
+          stream_relations_stream_relations_parentIdTostreams: {
+            include: { streams_stream_relations_childIdTostreams: true }
           },
           createdBy: {
             select: { id: true, firstName: true, lastName: true, email: true }
@@ -174,7 +175,7 @@ export class StreamService {
   async deleteStream(streamId: string): Promise<void> {
     try {
       // Sprawdź czy ma dzieci
-      const children = await this.prisma.streamRelation.findMany({
+      const children = await this.prisma.stream_relations.findMany({
         where: { parentId: streamId }
       });
 
@@ -183,7 +184,7 @@ export class StreamService {
       }
 
       // Usuń relacje rodzica
-      await this.prisma.streamRelation.deleteMany({
+      await this.prisma.stream_relations.deleteMany({
         where: { childId: streamId }
       });
 
@@ -258,7 +259,7 @@ export class StreamService {
       }
 
       if (parentStreamId) {
-        where.parentRelations = {
+        where.stream_relations_stream_relations_childIdTostreams = {
           some: { parentId: parentStreamId }
         };
       }
@@ -273,11 +274,11 @@ export class StreamService {
         take: limit,
         orderBy: { [sortBy]: sortOrder },
         include: {
-          parentRelations: {
-            include: { parent: { select: { id: true, name: true } } }
+          stream_relations_stream_relations_childIdTostreams: {
+            include: { streams_stream_relations_parentIdTostreams: { select: { id: true, name: true } } }
           },
-          childRelations: {
-            include: { child: { select: { id: true, name: true } } }
+          stream_relations_stream_relations_parentIdTostreams: {
+            include: { streams_stream_relations_childIdTostreams: { select: { id: true, name: true } } }
           },
           createdBy: {
             select: { id: true, firstName: true, lastName: true }
@@ -306,7 +307,7 @@ export class StreamService {
   /**
    * Tworzy nowy stream z funkcjonalnością GTD
    */
-  async createStream(
+  async createGTDStream(
     organizationId: string,
     createdById: string,
     options: CreateGTDStreamOptions
@@ -515,7 +516,7 @@ export class StreamService {
       });
 
       // 2. Find all children
-      const children = await this.prisma.streamRelation.findMany({
+      const children = await this.prisma.stream_relations.findMany({
         where: { parentId: streamId },
         select: { childId: true }
       });
@@ -544,7 +545,7 @@ export class StreamService {
       });
 
       // 2. Find parents to ensure they are active (path to root)
-      const parents = await this.prisma.streamRelation.findMany({
+      const parents = await this.prisma.stream_relations.findMany({
         where: { childId: streamId },
         select: { parentId: true }
       });
@@ -582,13 +583,15 @@ export class StreamService {
     organizationId: string,
     createdById: string
   ): Promise<void> {
-    await this.prisma.streamRelation.create({
+    await this.prisma.stream_relations.create({
       data: {
+        id: uuidv4(),
         parentId,
         childId,
         relationType: 'OWNS',
         organizationId,
-        createdById
+        createdById,
+        updatedAt: new Date()
       }
     });
   }
@@ -659,11 +662,11 @@ export class StreamService {
       const streams = await this.prisma.stream.findMany({
         where: { organizationId },
         include: {
-          parentRelations: {
-            include: { parent: { select: { id: true, name: true } } }
+          stream_relations_stream_relations_childIdTostreams: {
+            include: { streams_stream_relations_parentIdTostreams: { select: { id: true, name: true } } }
           },
-          childRelations: {
-            include: { child: { select: { id: true, name: true } } }
+          stream_relations_stream_relations_parentIdTostreams: {
+            include: { streams_stream_relations_childIdTostreams: { select: { id: true, name: true } } }
           }
         }
       });

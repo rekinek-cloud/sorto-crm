@@ -238,7 +238,7 @@ async function indexContacts(): Promise<IndexStats> {
 
   const contacts = await prisma.contact.findMany({
     where: { organizationId: ORG_ID },
-    include: { company: { select: { name: true } } }
+    include: { assignedCompany: { select: { name: true } } }
   });
 
   stat.total = contacts.length;
@@ -250,7 +250,7 @@ async function indexContacts(): Promise<IndexStats> {
       contact.email ? `Email: ${contact.email}` : '',
       contact.phone ? `Telefon: ${contact.phone}` : '',
       contact.position ? `Stanowisko: ${contact.position}` : '',
-      contact.company?.name ? `Firma: ${contact.company.name}` : '',
+      contact.assignedCompany?.name ? `Firma: ${contact.assignedCompany.name}` : '',
       contact.notes ? `Notatki: ${contact.notes}` : ''
     ].filter(Boolean).join('. ');
 
@@ -283,8 +283,7 @@ async function indexCompanies(): Promise<IndexStats> {
       company.website ? `Strona: ${company.website}` : '',
       company.phone ? `Telefon: ${company.phone}` : '',
       company.address ? `Adres: ${company.address}` : '',
-      company.city ? `Miasto: ${company.city}` : '',
-      company.notes ? `Notatki: ${company.notes}` : ''
+      company.description ? `Opis: ${company.description}` : ''
     ].filter(Boolean).join('. ');
 
     const success = await createVectorDoc(company.name, content, 'COMPANY', company.id, 'company-index');
@@ -306,26 +305,22 @@ async function indexDeals(): Promise<IndexStats> {
   const deals = await prisma.deal.findMany({
     where: { organizationId: ORG_ID },
     include: {
-      company: { select: { name: true } },
-      contact: { select: { firstName: true, lastName: true } }
+      company: { select: { name: true } }
     }
   });
 
   stat.total = deals.length;
 
   for (const deal of deals) {
-    const contactName = deal.contact ? `${deal.contact.firstName || ''} ${deal.contact.lastName || ''}`.trim() : '';
     const content = [
-      `Deal: ${deal.name}`,
+      `Deal: ${deal.title}`,
       deal.company?.name ? `Firma: ${deal.company.name}` : '',
-      contactName ? `Kontakt: ${contactName}` : '',
       deal.value ? `Wartość: ${deal.value} PLN` : '',
       deal.stage ? `Etap: ${deal.stage}` : '',
-      deal.status ? `Status: ${deal.status}` : '',
       deal.description ? `Opis: ${deal.description}` : ''
     ].filter(Boolean).join('. ');
 
-    const success = await createVectorDoc(deal.name, content, 'DEAL', deal.id, 'deal-index');
+    const success = await createVectorDoc(deal.title, content, 'DEAL', deal.id, 'deal-index');
     if (success) stat.indexed++;
     else stat.errors++;
   }
@@ -385,7 +380,7 @@ async function indexMeetings(): Promise<IndexStats> {
       meeting.description || '',
       meeting.location ? `Lokalizacja: ${meeting.location}` : '',
       meeting.startTime ? `Data: ${meeting.startTime.toISOString().split('T')[0]}` : '',
-      meeting.meetingType ? `Typ: ${meeting.meetingType}` : '',
+      meeting.status ? `Status: ${meeting.status}` : '',
       meeting.notes ? `Notatki: ${meeting.notes}` : ''
     ].filter(Boolean).join('. ');
 
@@ -413,16 +408,15 @@ async function indexLeads(): Promise<IndexStats> {
 
   for (const lead of leads) {
     const content = [
-      `Lead: ${lead.name}`,
-      lead.email ? `Email: ${lead.email}` : '',
-      lead.phone ? `Telefon: ${lead.phone}` : '',
+      `Lead: ${lead.title}`,
+      lead.contactPerson ? `Osoba kontaktowa: ${lead.contactPerson}` : '',
       lead.company ? `Firma: ${lead.company}` : '',
       lead.source ? `Źródło: ${lead.source}` : '',
       lead.status ? `Status: ${lead.status}` : '',
-      lead.notes ? `Notatki: ${lead.notes}` : ''
+      lead.description ? `Opis: ${lead.description}` : ''
     ].filter(Boolean).join('. ');
 
-    const success = await createVectorDoc(lead.name, content, 'LEAD', lead.id, 'lead-index');
+    const success = await createVectorDoc(lead.title, content, 'LEAD', lead.id, 'lead-index');
     if (success) stat.indexed++;
     else stat.errors++;
   }
@@ -451,17 +445,17 @@ async function indexOffers(): Promise<IndexStats> {
   for (const offer of offers) {
     const contactName = offer.contact ? `${offer.contact.firstName || ''} ${offer.contact.lastName || ''}`.trim() : '';
     const content = [
-      `Oferta: ${offer.number || offer.id}`,
+      `Oferta: ${offer.offerNumber || offer.id}`,
       offer.company?.name ? `Firma: ${offer.company.name}` : '',
       contactName ? `Kontakt: ${contactName}` : '',
-      offer.totalNet ? `Wartość netto: ${offer.totalNet} PLN` : '',
+      offer.totalAmount ? `Wartość: ${offer.totalAmount} PLN` : '',
       offer.status ? `Status: ${offer.status}` : '',
       offer.validUntil ? `Ważna do: ${offer.validUntil.toISOString().split('T')[0]}` : '',
       offer.notes ? `Notatki: ${offer.notes}` : ''
     ].filter(Boolean).join('. ');
 
     const success = await createVectorDoc(
-      `Oferta ${offer.number || offer.id}`,
+      `Oferta ${offer.offerNumber || offer.id}`,
       content,
       'OFFER',
       offer.id,
@@ -483,26 +477,23 @@ async function indexOrders(): Promise<IndexStats> {
   const stat: IndexStats = { type: 'ORDER', total: 0, indexed: 0, errors: 0 };
 
   const orders = await prisma.order.findMany({
-    where: { organizationId: ORG_ID },
-    include: {
-      company: { select: { name: true } }
-    }
+    where: { organizationId: ORG_ID }
   });
 
   stat.total = orders.length;
 
   for (const order of orders) {
     const content = [
-      `Zamówienie: ${order.number || order.id}`,
-      order.company?.name ? `Firma: ${order.company.name}` : '',
-      order.totalNet ? `Wartość netto: ${order.totalNet} PLN` : '',
+      `Zamówienie: ${order.orderNumber || order.id}`,
+      order.customer ? `Klient: ${order.customer}` : '',
+      order.totalAmount ? `Wartość: ${order.totalAmount} PLN` : '',
       order.status ? `Status: ${order.status}` : '',
-      order.orderDate ? `Data: ${order.orderDate.toISOString().split('T')[0]}` : '',
-      order.notes ? `Notatki: ${order.notes}` : ''
+      order.deliveryDate ? `Data dostawy: ${order.deliveryDate.toISOString().split('T')[0]}` : '',
+      order.description ? `Opis: ${order.description}` : ''
     ].filter(Boolean).join('. ');
 
     const success = await createVectorDoc(
-      `Zamówienie ${order.number || order.id}`,
+      `Zamówienie ${order.orderNumber || order.id}`,
       content,
       'ORDER',
       order.id,
@@ -524,28 +515,24 @@ async function indexInvoices(): Promise<IndexStats> {
   const stat: IndexStats = { type: 'INVOICE', total: 0, indexed: 0, errors: 0 };
 
   const invoices = await prisma.invoice.findMany({
-    where: { organizationId: ORG_ID },
-    include: {
-      company: { select: { name: true } }
-    }
+    where: { organizationId: ORG_ID }
   });
 
   stat.total = invoices.length;
 
   for (const invoice of invoices) {
     const content = [
-      `Faktura: ${invoice.number || invoice.id}`,
-      invoice.company?.name ? `Firma: ${invoice.company.name}` : '',
-      invoice.totalNet ? `Wartość netto: ${invoice.totalNet} PLN` : '',
-      invoice.totalGross ? `Wartość brutto: ${invoice.totalGross} PLN` : '',
+      `Faktura: ${invoice.invoiceNumber || invoice.id}`,
+      invoice.amount ? `Kwota: ${invoice.amount} PLN` : '',
+      invoice.totalAmount ? `Wartość całkowita: ${invoice.totalAmount} PLN` : '',
       invoice.status ? `Status: ${invoice.status}` : '',
-      invoice.issueDate ? `Data wystawienia: ${invoice.issueDate.toISOString().split('T')[0]}` : '',
+      invoice.createdAt ? `Data wystawienia: ${invoice.createdAt.toISOString().split('T')[0]}` : '',
       invoice.dueDate ? `Termin płatności: ${invoice.dueDate.toISOString().split('T')[0]}` : '',
-      invoice.notes ? `Notatki: ${invoice.notes}` : ''
+      invoice.description ? `Opis: ${invoice.description}` : ''
     ].filter(Boolean).join('. ');
 
     const success = await createVectorDoc(
-      `Faktura ${invoice.number || invoice.id}`,
+      `Faktura ${invoice.invoiceNumber || invoice.id}`,
       content,
       'INVOICE',
       invoice.id,
@@ -567,46 +554,48 @@ async function indexGTDItems(): Promise<IndexStats> {
   const stat: IndexStats = { type: 'GTD', total: 0, indexed: 0, errors: 0 };
 
   // Inbox Items
-  const inboxItems = await prisma.inbox_items.findMany({
+  const inboxItems = await prisma.inboxItem.findMany({
     where: { organizationId: ORG_ID }
   });
 
   for (const item of inboxItems) {
     stat.total++;
+    const itemTitle = item.content?.substring(0, 100) || 'Inbox item';
     const content = [
-      `Inbox: ${item.title}`,
+      `Inbox: ${itemTitle}`,
       item.content || '',
       item.sourceType ? `Źródło: ${item.sourceType}` : '',
-      item.status ? `Status: ${item.status}` : ''
+      item.processed ? `Status: przetworzony` : `Status: nieprzetworzony`
     ].filter(Boolean).join('. ');
 
-    const success = await createVectorDoc(item.title, content, 'INBOX_ITEM', item.id, 'gtd-index');
+    const success = await createVectorDoc(itemTitle, content, 'INBOX_ITEM', item.id, 'gtd-index');
     if (success) stat.indexed++;
     else stat.errors++;
   }
 
   // Precise Goals
   const goals = await prisma.precise_goals.findMany({
-    where: { organizationId: ORG_ID }
+    where: { organization_id: ORG_ID }
   });
 
   for (const goal of goals) {
     stat.total++;
+    const goalTitle = goal.result || 'Cel RZUT';
     const content = [
-      `Cel RZUT: ${goal.title}`,
-      goal.description || '',
-      goal.category ? `Kategoria: ${goal.category}` : '',
-      goal.targetDate ? `Termin: ${goal.targetDate.toISOString().split('T')[0]}` : '',
+      `Cel RZUT: ${goalTitle}`,
+      goal.background || '',
+      goal.measurement ? `Miara: ${goal.measurement}` : '',
+      goal.deadline ? `Termin: ${goal.deadline.toISOString().split('T')[0]}` : '',
       goal.status ? `Status: ${goal.status}` : ''
     ].filter(Boolean).join('. ');
 
-    const success = await createVectorDoc(goal.title, content, 'PRECISE_GOAL', goal.id, 'gtd-index');
+    const success = await createVectorDoc(goalTitle, content, 'PRECISE_GOAL', goal.id, 'gtd-index');
     if (success) stat.indexed++;
     else stat.errors++;
   }
 
   // Areas of Responsibility
-  const areas = await prisma.areas_of_responsibility.findMany({
+  const areas = await prisma.areaOfResponsibility.findMany({
     where: { organizationId: ORG_ID }
   });
 
@@ -615,7 +604,7 @@ async function indexGTDItems(): Promise<IndexStats> {
     const content = [
       `Obszar odpowiedzialności: ${area.name}`,
       area.description || '',
-      area.category ? `Kategoria: ${area.category}` : ''
+      area.purpose ? `Cel: ${area.purpose}` : ''
     ].filter(Boolean).join('. ');
 
     const success = await createVectorDoc(area.name, content, 'AREA_OF_RESPONSIBILITY', area.id, 'gtd-index');
@@ -624,7 +613,7 @@ async function indexGTDItems(): Promise<IndexStats> {
   }
 
   // Someday Maybe
-  const somedayItems = await prisma.someday_maybe.findMany({
+  const somedayItems = await prisma.somedayMaybe.findMany({
     where: { organizationId: ORG_ID }
   });
 
@@ -642,20 +631,21 @@ async function indexGTDItems(): Promise<IndexStats> {
   }
 
   // Waiting For
-  const waitingItems = await prisma.waiting_for.findMany({
+  const waitingItems = await prisma.waitingFor.findMany({
     where: { organizationId: ORG_ID }
   });
 
   for (const item of waitingItems) {
     stat.total++;
+    const waitingTitle = item.description?.substring(0, 100) || 'Oczekuję na';
     const content = [
-      `Oczekuję na: ${item.title}`,
+      `Oczekuję na: ${waitingTitle}`,
       item.description || '',
-      item.waitingFor ? `Od: ${item.waitingFor}` : '',
-      item.dueDate ? `Termin: ${item.dueDate.toISOString().split('T')[0]}` : ''
+      item.waitingForWho ? `Od: ${item.waitingForWho}` : '',
+      item.expectedResponseDate ? `Termin: ${item.expectedResponseDate.toISOString().split('T')[0]}` : ''
     ].filter(Boolean).join('. ');
 
-    const success = await createVectorDoc(item.title, content, 'WAITING_FOR', item.id, 'gtd-index');
+    const success = await createVectorDoc(waitingTitle, content, 'WAITING_FOR', item.id, 'gtd-index');
     if (success) stat.indexed++;
     else stat.errors++;
   }
@@ -672,7 +662,7 @@ async function indexGTDItems(): Promise<IndexStats> {
       action.description || '',
       action.context ? `Kontekst: ${action.context}` : '',
       action.energy ? `Energia: ${action.energy}` : '',
-      action.timeRequired ? `Czas: ${action.timeRequired} min` : ''
+      action.estimatedTime ? `Czas: ${action.estimatedTime}` : ''
     ].filter(Boolean).join('. ');
 
     const success = await createVectorDoc(action.title, content, 'NEXT_ACTION', action.id, 'gtd-index');

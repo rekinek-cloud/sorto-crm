@@ -46,7 +46,7 @@ router.get('/deal/:dealId', authenticateToken, async (req: any, res: any) => {
       ? Math.round(stakeholders.reduce((sum, s) => sum + s.influence, 0) / stakeholders.length)
       : 0;
 
-    res.json({
+    return res.json({
       stakeholders,
       summary: {
         total: stakeholders.length,
@@ -59,7 +59,7 @@ router.get('/deal/:dealId', authenticateToken, async (req: any, res: any) => {
     });
   } catch (error) {
     console.error('Error fetching deal stakeholders:', error);
-    res.status(500).json({ error: 'Failed to fetch deal stakeholders' });
+    return res.status(500).json({ error: 'Failed to fetch deal stakeholders' });
   }
 });
 
@@ -70,7 +70,7 @@ router.get('/:id', authenticateToken, async (req: any, res: any) => {
       where: { id: req.params.id },
       include: {
         deal: {
-          select: { id: true, name: true, organizationId: true }
+          select: { id: true, title: true, organizationId: true }
         },
         contact: {
           select: {
@@ -86,14 +86,14 @@ router.get('/:id', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    if (!stakeholder || stakeholder.deal.organizationId !== req.user.organizationId) {
+    if (!stakeholder || (stakeholder as any).deal.organizationId !== req.user.organizationId) {
       return res.status(404).json({ error: 'Stakeholder not found' });
     }
 
-    res.json(stakeholder);
+    return res.json(stakeholder);
   } catch (error) {
     console.error('Error fetching stakeholder:', error);
-    res.status(500).json({ error: 'Failed to fetch stakeholder' });
+    return res.status(500).json({ error: 'Failed to fetch stakeholder' });
   }
 });
 
@@ -152,10 +152,10 @@ router.post('/', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    res.status(201).json(stakeholder);
+    return res.status(201).json(stakeholder);
   } catch (error) {
     console.error('Error creating stakeholder:', error);
-    res.status(500).json({ error: 'Failed to create stakeholder' });
+    return res.status(500).json({ error: 'Failed to create stakeholder' });
   }
 });
 
@@ -207,10 +207,10 @@ router.patch('/:id', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    res.json(updated);
+    return res.json(updated);
   } catch (error) {
     console.error('Error updating stakeholder:', error);
-    res.status(500).json({ error: 'Failed to update stakeholder' });
+    return res.status(500).json({ error: 'Failed to update stakeholder' });
   }
 });
 
@@ -232,10 +232,10 @@ router.delete('/:id', authenticateToken, async (req: any, res: any) => {
       where: { id: req.params.id }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error deleting stakeholder:', error);
-    res.status(500).json({ error: 'Failed to delete stakeholder' });
+    return res.status(500).json({ error: 'Failed to delete stakeholder' });
   }
 });
 

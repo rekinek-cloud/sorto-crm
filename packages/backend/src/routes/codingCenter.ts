@@ -39,12 +39,12 @@ function saveProjects(projects: Project[]): void {
  * GET /api/v1/coding-center/projects
  * List all coding projects
  */
-router.get('/projects', async (_req: Request, res: Response): Promise<void> => {
+router.get('/projects', async (_req: Request, res: Response) => {
   try {
     const projects = loadProjects();
-    res.json({ success: true, data: projects });
+    return res.json({ success: true, data: projects });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to load projects' });
+    return res.status(500).json({ success: false, error: 'Failed to load projects' });
   }
 });
 
@@ -52,25 +52,22 @@ router.get('/projects', async (_req: Request, res: Response): Promise<void> => {
  * POST /api/v1/coding-center/projects
  * Add a new project
  */
-router.post('/projects', async (req: Request, res: Response): Promise<void> => {
+router.post('/projects', async (req: Request, res: Response) => {
   try {
     const { name, path: projectPath, description } = req.body;
 
     if (!name || !projectPath) {
-      res.status(400).json({ success: false, error: 'Name and path are required' });
-      return;
+      return res.status(400).json({ success: false, error: 'Name and path are required' });
     }
 
     const projects = loadProjects();
 
     if (projects.find(p => p.name.toLowerCase() === name.toLowerCase())) {
-      res.status(400).json({ success: false, error: 'Project already exists' });
-      return;
+      return res.status(400).json({ success: false, error: 'Project already exists' });
     }
 
     if (!fs.existsSync(projectPath)) {
-      res.status(400).json({ success: false, error: 'Path does not exist' });
-      return;
+      return res.status(400).json({ success: false, error: 'Path does not exist' });
     }
 
     projects.push({
@@ -82,9 +79,9 @@ router.post('/projects', async (req: Request, res: Response): Promise<void> => {
     });
 
     saveProjects(projects);
-    res.json({ success: true, data: { name, path: projectPath } });
+    return res.json({ success: true, data: { name, path: projectPath } });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to add project' });
+    return res.status(500).json({ success: false, error: 'Failed to add project' });
   }
 });
 
@@ -92,7 +89,7 @@ router.post('/projects', async (req: Request, res: Response): Promise<void> => {
  * DELETE /api/v1/coding-center/projects/:name
  * Remove a project
  */
-router.delete('/projects/:name', async (req: Request, res: Response): Promise<void> => {
+router.delete('/projects/:name', async (req: Request, res: Response) => {
   try {
     const { name } = req.params;
     let projects = loadProjects();
@@ -101,14 +98,13 @@ router.delete('/projects/:name', async (req: Request, res: Response): Promise<vo
     projects = projects.filter(p => p.name.toLowerCase() !== name.toLowerCase());
 
     if (projects.length === initialLength) {
-      res.status(404).json({ success: false, error: 'Project not found' });
-      return;
+      return res.status(404).json({ success: false, error: 'Project not found' });
     }
 
     saveProjects(projects);
-    res.json({ success: true, message: 'Project removed' });
+    return res.json({ success: true, message: 'Project removed' });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to remove project' });
+    return res.status(500).json({ success: false, error: 'Failed to remove project' });
   }
 });
 
@@ -116,22 +112,21 @@ router.delete('/projects/:name', async (req: Request, res: Response): Promise<vo
  * GET /api/v1/coding-center/projects/:name/status
  * Get git status for a project
  */
-router.get('/projects/:name/status', async (req: Request, res: Response): Promise<void> => {
+router.get('/projects/:name/status', async (req: Request, res: Response) => {
   try {
     const { name } = req.params;
     const projects = loadProjects();
     const project = projects.find(p => p.name.toLowerCase() === name.toLowerCase());
 
     if (!project) {
-      res.status(404).json({ success: false, error: 'Project not found' });
-      return;
+      return res.status(404).json({ success: false, error: 'Project not found' });
     }
 
     const gitStatus = await execAsync(`cd ${project.path} && git status --short 2>/dev/null || echo "Not a git repo"`);
     const gitBranch = await execAsync(`cd ${project.path} && git branch --show-current 2>/dev/null || echo "N/A"`);
     const gitLog = await execAsync(`cd ${project.path} && git log --oneline -5 2>/dev/null || echo "No commits"`);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         name: project.name,
@@ -142,7 +137,7 @@ router.get('/projects/:name/status', async (req: Request, res: Response): Promis
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to get project status' });
+    return res.status(500).json({ success: false, error: 'Failed to get project status' });
   }
 });
 
@@ -150,13 +145,12 @@ router.get('/projects/:name/status', async (req: Request, res: Response): Promis
  * POST /api/v1/coding-center/execute
  * Execute a command in a project directory (limited commands)
  */
-router.post('/execute', async (req: Request, res: Response): Promise<void> => {
+router.post('/execute', async (req: Request, res: Response) => {
   try {
     const { projectName, command } = req.body;
 
     if (!projectName || !command) {
-      res.status(400).json({ success: false, error: 'Project name and command required' });
-      return;
+      return res.status(400).json({ success: false, error: 'Project name and command required' });
     }
 
     // Whitelist of allowed commands
@@ -175,21 +169,19 @@ router.post('/execute', async (req: Request, res: Response): Promise<void> => {
 
     const isAllowed = allowedCommands.some(cmd => command.startsWith(cmd));
     if (!isAllowed) {
-      res.status(403).json({ success: false, error: 'Command not allowed' });
-      return;
+      return res.status(403).json({ success: false, error: 'Command not allowed' });
     }
 
     const projects = loadProjects();
     const project = projects.find(p => p.name.toLowerCase() === projectName.toLowerCase());
 
     if (!project) {
-      res.status(404).json({ success: false, error: 'Project not found' });
-      return;
+      return res.status(404).json({ success: false, error: 'Project not found' });
     }
 
     const result = await execAsync(`cd ${project.path} && ${command}`, { timeout: 30000 });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         stdout: result.stdout,
@@ -197,7 +189,7 @@ router.post('/execute', async (req: Request, res: Response): Promise<void> => {
       }
     });
   } catch (error: any) {
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error.message,
       stdout: error.stdout,
@@ -210,18 +202,17 @@ router.post('/execute', async (req: Request, res: Response): Promise<void> => {
  * GET /api/v1/coding-center/commands/:projectName
  * Get command snippets for a project
  */
-router.get('/commands/:projectName', async (req: Request, res: Response): Promise<void> => {
+router.get('/commands/:projectName', async (req: Request, res: Response) => {
   try {
     const { projectName } = req.params;
     const projects = loadProjects();
     const project = projects.find(p => p.name.toLowerCase() === projectName.toLowerCase());
 
     if (!project) {
-      res.status(404).json({ success: false, error: 'Project not found' });
-      return;
+      return res.status(404).json({ success: false, error: 'Project not found' });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         aider: `cd ${project.path} && aider`,
@@ -235,7 +226,7 @@ router.get('/commands/:projectName', async (req: Request, res: Response): Promis
       }
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: 'Failed to generate commands' });
+    return res.status(500).json({ success: false, error: 'Failed to generate commands' });
   }
 });
 

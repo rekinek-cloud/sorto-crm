@@ -18,20 +18,20 @@ router.use(authenticateToken);
  */
 router.post('/relations', async (req, res) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ success: false, error: 'User not authenticated' });
     }
 
     const relation = await UserHierarchyService.createRelation(req.body as CreateUserRelationInput, userId);
     
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: relation
     });
   } catch (error: any) {
     console.error('Error creating user relation:', error);
-    res.status(400).json({
+    return res.status(400).json({
       success: false,
       error: error.message || 'Failed to create user relation'
     });
@@ -54,13 +54,13 @@ router.get('/:userId/hierarchy', async (req, res) => {
 
     const hierarchy = await UserHierarchyService.getUserHierarchy(userId, query);
     
-    res.json({
+    return res.json({
       success: true,
       data: hierarchy
     });
   } catch (error: any) {
     console.error('Error getting user hierarchy:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error.message || 'Failed to get user hierarchy'
     });
@@ -83,13 +83,13 @@ router.get('/:userId/managed-users', async (req, res) => {
 
     const managedUsers = await UserHierarchyService.getManagedUsers(userId, query);
     
-    res.json({
+    return res.json({
       success: true,
       data: managedUsers
     });
   } catch (error: any) {
     console.error('Error getting managed users:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error.message || 'Failed to get managed users'
     });
@@ -112,13 +112,13 @@ router.get('/:userId/managers', async (req, res) => {
 
     const managers = await UserHierarchyService.getUserManagers(userId, query);
     
-    res.json({
+    return res.json({
       success: true,
       data: managers
     });
   } catch (error: any) {
     console.error('Error getting user managers:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error.message || 'Failed to get user managers'
     });
@@ -132,7 +132,7 @@ router.get('/:userId/managers', async (req, res) => {
 router.delete('/relations/:relationId', async (req, res) => {
   try {
     const { relationId } = req.params;
-    const userId = req.user?.userId;
+    const userId = req.user?.id;
     
     if (!userId) {
       return res.status(401).json({ success: false, error: 'User not authenticated' });
@@ -140,13 +140,13 @@ router.delete('/relations/:relationId', async (req, res) => {
 
     await UserHierarchyService.deleteRelation(relationId, userId);
     
-    res.json({
+    return res.json({
       success: true,
       message: 'Relation deleted successfully'
     });
   } catch (error: any) {
     console.error('Error deleting user relation:', error);
-    res.status(400).json({
+    return res.status(400).json({
       success: false,
       error: error.message || 'Failed to delete user relation'
     });
@@ -166,13 +166,13 @@ router.get('/stats', async (req, res) => {
 
     const stats = await UserHierarchyService.getHierarchyStats(organizationId);
     
-    res.json({
+    return res.json({
       success: true,
       data: stats
     });
   } catch (error: any) {
     console.error('Error getting hierarchy stats:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error.message || 'Failed to get hierarchy stats'
     });
@@ -187,7 +187,7 @@ router.get('/stats', async (req, res) => {
  */
 router.post('/access-check', async (req, res) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ success: false, error: 'User not authenticated' });
     }
@@ -213,13 +213,13 @@ router.post('/access-check', async (req, res) => {
       req.originalUrl
     );
     
-    res.json({
+    return res.json({
       success: true,
       data: accessResult
     });
   } catch (error: any) {
     console.error('Error checking user access:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error.message || 'Failed to check user access'
     });
@@ -320,7 +320,7 @@ router.get('/users', async (req, res) => {
       prisma.user.count({ where })
     ]);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         users,
@@ -334,7 +334,7 @@ router.get('/users', async (req, res) => {
     });
   } catch (error: any) {
     console.error('Error getting users:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error.message || 'Failed to get users'
     });
@@ -348,7 +348,7 @@ router.get('/users', async (req, res) => {
 router.get('/users/:userId', async (req, res) => {
   try {
     const { userId } = req.params;
-    const requestingUserId = req.user?.userId;
+    const requestingUserId = req.user?.id;
     const organizationId = req.user?.organizationId;
 
     if (!requestingUserId || !organizationId) {
@@ -443,13 +443,13 @@ router.get('/users/:userId', async (req, res) => {
       req.originalUrl
     );
 
-    res.json({
+    return res.json({
       success: true,
       data: user
     });
   } catch (error: any) {
     console.error('Error getting user details:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error.message || 'Failed to get user details'
     });
@@ -464,7 +464,7 @@ router.get('/users/:userId', async (req, res) => {
  */
 router.post('/delegate', async (req, res) => {
   try {
-    const userId = req.user?.userId;
+    const userId = req.user?.id;
     if (!userId) {
       return res.status(401).json({ success: false, error: 'User not authenticated' });
     }
@@ -490,7 +490,7 @@ router.post('/delegate', async (req, res) => {
     // TODO: Implement actual delegation logic
     // This would involve creating delegation records, updating task assignments, etc.
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Delegation successful',
       data: {
@@ -501,7 +501,7 @@ router.post('/delegate', async (req, res) => {
     });
   } catch (error: any) {
     console.error('Error delegating:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: error.message || 'Failed to delegate'
     });
@@ -527,7 +527,7 @@ router.use('/relations', (req, res, next) => {
   if (req.method === 'POST') {
     try {
       CreateRelationSchema.parse(req.body);
-      next();
+      return next();
     } catch (error: any) {
       return res.status(400).json({
         success: false,
@@ -536,7 +536,7 @@ router.use('/relations', (req, res, next) => {
       });
     }
   } else {
-    next();
+    return next();
   }
 });
 

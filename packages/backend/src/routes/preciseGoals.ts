@@ -79,7 +79,7 @@ router.get('/', authenticateToken, async (req, res) => {
       achievedAt: goal.achieved_at
     }));
 
-    res.json({
+    return res.json({
       success: true,
       goals: formattedGoals,
       data: formattedGoals,  // dla kompatybilności
@@ -94,7 +94,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
   } catch (error) {
     logger.error('Error fetching precise goals:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch precise goals'
     });
@@ -132,7 +132,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
       averageProgress = totalProgress / goals.length;
     }
 
-    res.json({
+    return res.json({
       total,
       active,
       achieved,
@@ -143,7 +143,7 @@ router.get('/stats', authenticateToken, async (req, res) => {
 
   } catch (error) {
     logger.error('Error fetching goals stats:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch goals statistics'
     });
@@ -176,7 +176,7 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         total,
@@ -190,7 +190,7 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
 
   } catch (error) {
     logger.error('Error fetching precise goals stats:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch precise goals statistics'
     });
@@ -229,7 +229,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
       });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         id: goal.id,
@@ -254,7 +254,7 @@ router.get('/:id', authenticateToken, async (req, res) => {
 
   } catch (error) {
     logger.error('Error fetching precise goal:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to fetch precise goal'
     });
@@ -313,7 +313,7 @@ router.post('/', authenticateToken, async (req, res) => {
       }
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       data: {
         id: goal.id,
@@ -337,7 +337,7 @@ router.post('/', authenticateToken, async (req, res) => {
 
   } catch (error) {
     logger.error('Error creating precise goal:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to create precise goal'
     });
@@ -415,7 +415,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         id: goal.id,
@@ -440,7 +440,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
 
   } catch (error) {
     logger.error('Error updating precise goal:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to update precise goal'
     });
@@ -487,7 +487,7 @@ router.patch('/:id/progress', authenticateToken, async (req, res) => {
       data: updateData
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         id: goal.id,
@@ -502,7 +502,7 @@ router.patch('/:id/progress', authenticateToken, async (req, res) => {
 
   } catch (error) {
     logger.error('Error updating progress:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to update progress'
     });
@@ -545,7 +545,7 @@ router.put('/:id/progress', authenticateToken, async (req, res) => {
       data: updateData
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         id: goal.id,
@@ -560,7 +560,7 @@ router.put('/:id/progress', authenticateToken, async (req, res) => {
 
   } catch (error) {
     logger.error('Error updating progress:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to update progress'
     });
@@ -594,14 +594,14 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       where: { id }
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Precise goal deleted successfully'
     });
 
   } catch (error) {
     logger.error('Error deleting precise goal:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to delete precise goal'
     });
@@ -650,7 +650,7 @@ router.post('/:id/achieve', authenticateToken, async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         id: goal.id,
@@ -666,7 +666,7 @@ router.post('/:id/achieve', authenticateToken, async (req, res) => {
 
   } catch (error) {
     logger.error('Error achieving goal:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to mark goal as achieved'
     });

@@ -31,7 +31,7 @@ router.get('/health', async (req, res) => {
     // Test basic TTS service
     const ttsHealth = await coquiTTSService.healthCheck();
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         tts: ttsHealth,
@@ -42,7 +42,7 @@ router.get('/health', async (req, res) => {
     });
   } catch (error) {
     console.error('Voice health check error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Health check failed',
     });
@@ -63,7 +63,7 @@ router.post('/test-synthesis-public', async (req, res) => {
 
     const result = await coquiTTSService.synthesizeText(text, 'pl');
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         audioSize: result.audioBuffer.length,
@@ -75,7 +75,7 @@ router.post('/test-synthesis-public', async (req, res) => {
 
   } catch (error) {
     console.error('Public TTS test error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'TTS synthesis failed'
     });
@@ -90,7 +90,7 @@ router.get('/models', async (req, res) => {
   try {
     const models = await coquiTTSService.getAvailableModels();
     
-    res.json({
+    return res.json({
       success: true,
       data: {
         models,
@@ -99,7 +99,7 @@ router.get('/models', async (req, res) => {
     });
   } catch (error) {
     console.error('Failed to get TTS models:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to retrieve TTS models',
     });
@@ -129,7 +129,7 @@ router.post('/synthesize', async (req, res) => {
       'Content-Disposition': 'attachment; filename="synthesis.wav"'
     });
 
-    res.send(result.audioBuffer);
+    return res.send(result.audioBuffer);
 
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -141,7 +141,7 @@ router.post('/synthesize', async (req, res) => {
     }
 
     console.error('TTS synthesis error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'TTS synthesis failed',
     });
@@ -153,7 +153,7 @@ router.post('/synthesize', async (req, res) => {
  * Voice cloning synthesis (auth required) - TEMPORARILY DISABLED
  */
 router.post('/synthesize-clone', async (req, res) => {
-  res.status(503).json({
+  return res.status(503).json({
     success: false,
     error: 'Voice cloning temporarily disabled - requires audio file upload'
   });
@@ -183,7 +183,7 @@ router.post('/synthesize-stream', async (req, res) => {
     // For now, just use regular synthesis
     // In future, implement actual streaming
     const result = await coquiTTSService.synthesizeText(text, language);
-    res.send(result.audioBuffer);
+    return res.send(result.audioBuffer);
 
   } catch (error) {
     if (error instanceof z.ZodError) {
@@ -195,7 +195,7 @@ router.post('/synthesize-stream', async (req, res) => {
     }
 
     console.error('Streaming TTS error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Streaming TTS failed',
     });

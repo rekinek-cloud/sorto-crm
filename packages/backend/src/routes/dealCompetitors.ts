@@ -29,10 +29,10 @@ router.get('/deal/:dealId', authenticateToken, async (req: any, res: any) => {
       ]
     });
 
-    res.json(competitors);
+    return res.json(competitors);
   } catch (error) {
     console.error('Error fetching deal competitors:', error);
-    res.status(500).json({ error: 'Failed to fetch deal competitors' });
+    return res.status(500).json({ error: 'Failed to fetch deal competitors' });
   }
 });
 
@@ -54,7 +54,7 @@ router.get('/lost-analysis/:dealId', authenticateToken, async (req: any, res: an
       where: { dealId },
       include: {
         analyzedBy: { select: { id: true, firstName: true, lastName: true } },
-        deal: { select: { id: true, name: true, value: true } }
+        deal: { select: { id: true, title: true, value: true } }
       }
     });
 
@@ -62,10 +62,10 @@ router.get('/lost-analysis/:dealId', authenticateToken, async (req: any, res: an
       return res.status(404).json({ error: 'Lost analysis not found for this deal' });
     }
 
-    res.json(analysis);
+    return res.json(analysis);
   } catch (error) {
     console.error('Error fetching lost analysis:', error);
-    res.status(500).json({ error: 'Failed to fetch lost analysis' });
+    return res.status(500).json({ error: 'Failed to fetch lost analysis' });
   }
 });
 
@@ -76,20 +76,20 @@ router.get('/:id', authenticateToken, async (req: any, res: any) => {
       where: { id: req.params.id },
       include: {
         deal: {
-          select: { id: true, name: true, organizationId: true }
+          select: { id: true, title: true, organizationId: true }
         },
         createdBy: { select: { id: true, firstName: true, lastName: true } },
       }
     });
 
-    if (!competitor || competitor.deal.organizationId !== req.user.organizationId) {
+    if (!competitor || (competitor as any).deal?.organizationId !== req.user.organizationId) {
       return res.status(404).json({ error: 'Competitor not found' });
     }
 
-    res.json(competitor);
+    return res.json(competitor);
   } catch (error) {
     console.error('Error fetching competitor:', error);
-    res.status(500).json({ error: 'Failed to fetch competitor' });
+    return res.status(500).json({ error: 'Failed to fetch competitor' });
   }
 });
 
@@ -147,10 +147,10 @@ router.post('/', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    res.status(201).json(competitor);
+    return res.status(201).json(competitor);
   } catch (error) {
     console.error('Error creating competitor:', error);
-    res.status(500).json({ error: 'Failed to create competitor' });
+    return res.status(500).json({ error: 'Failed to create competitor' });
   }
 });
 
@@ -164,7 +164,7 @@ router.patch('/:id', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    if (!competitor || competitor.deal.organizationId !== req.user.organizationId) {
+    if (!competitor || (competitor as any).deal?.organizationId !== req.user.organizationId) {
       return res.status(404).json({ error: 'Competitor not found' });
     }
 
@@ -183,10 +183,10 @@ router.patch('/:id', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    res.json(updated);
+    return res.json(updated);
   } catch (error) {
     console.error('Error updating competitor:', error);
-    res.status(500).json({ error: 'Failed to update competitor' });
+    return res.status(500).json({ error: 'Failed to update competitor' });
   }
 });
 
@@ -200,7 +200,7 @@ router.delete('/:id', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    if (!competitor || competitor.deal.organizationId !== req.user.organizationId) {
+    if (!competitor || (competitor as any).deal?.organizationId !== req.user.organizationId) {
       return res.status(404).json({ error: 'Competitor not found' });
     }
 
@@ -208,10 +208,10 @@ router.delete('/:id', authenticateToken, async (req: any, res: any) => {
       where: { id: req.params.id }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error deleting competitor:', error);
-    res.status(500).json({ error: 'Failed to delete competitor' });
+    return res.status(500).json({ error: 'Failed to delete competitor' });
   }
 });
 
@@ -265,14 +265,14 @@ router.post('/lost-analysis', authenticateToken, async (req: any, res: any) => {
       },
       include: {
         analyzedBy: { select: { id: true, firstName: true, lastName: true } },
-        deal: { select: { id: true, name: true, value: true } }
+        deal: { select: { id: true, title: true, value: true } }
       }
     });
 
-    res.status(201).json(analysis);
+    return res.status(201).json(analysis);
   } catch (error) {
     console.error('Error creating lost analysis:', error);
-    res.status(500).json({ error: 'Failed to create lost analysis' });
+    return res.status(500).json({ error: 'Failed to create lost analysis' });
   }
 });
 

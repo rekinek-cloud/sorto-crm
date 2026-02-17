@@ -264,7 +264,7 @@ export function CommunicationPanel({ companyId, contactId, contacts, onCommunica
             }`}
           >
             <div className="flex items-center space-x-2">
-              <ClockIcon className="w-4 h-4" />
+              <Clock className="w-4 h-4" />
               <span>Historia komunikacji</span>
             </div>
           </button>

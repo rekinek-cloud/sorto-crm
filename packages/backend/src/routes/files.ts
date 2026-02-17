@@ -166,7 +166,7 @@ router.get('/', requireAuth, async (req: AuthenticatedRequest, res) => {
       _count: { id: true }
     });
 
-    res.json({
+    return res.json({
       folders,
       files,
       pagination: {
@@ -183,7 +183,7 @@ router.get('/', requireAuth, async (req: AuthenticatedRequest, res) => {
     });
   } catch (error) {
     console.error('Error fetching files:', error);
-    res.status(500).json({ error: 'Failed to fetch files' });
+    return res.status(500).json({ error: 'Failed to fetch files' });
   }
 });
 
@@ -225,7 +225,7 @@ router.post('/upload', requireAuth, upload.array('files', 10), async (req: Authe
       fileRecords.push(fileRecord);
     }
 
-    res.status(201).json({
+    return res.status(201).json({
       message: `${fileRecords.length} file(s) uploaded successfully`,
       files: fileRecords
     });
@@ -240,7 +240,7 @@ router.post('/upload', requireAuth, upload.array('files', 10), async (req: Authe
       }
     }
     
-    res.status(500).json({ error: 'Failed to upload files' });
+    return res.status(500).json({ error: 'Failed to upload files' });
   }
 });
 
@@ -263,10 +263,10 @@ router.get('/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
       return res.status(404).json({ error: 'File not found' });
     }
 
-    res.json(file);
+    return res.json(file);
   } catch (error) {
     console.error('Error fetching file:', error);
-    res.status(500).json({ error: 'Failed to fetch file' });
+    return res.status(500).json({ error: 'Failed to fetch file' });
   }
 });
 
@@ -296,7 +296,7 @@ router.get('/:id/download', requireAuth, async (req: AuthenticatedRequest, res) 
     res.setHeader('Content-Type', 'application/octet-stream');
     
     // Stream the file
-    res.sendFile(path.resolve(file.urlPath));
+    return res.sendFile(path.resolve(file.urlPath));
     
     // Update last access time (optional)
     prisma.file.update({
@@ -307,7 +307,7 @@ router.get('/:id/download', requireAuth, async (req: AuthenticatedRequest, res) 
     }).catch(console.error);
   } catch (error) {
     console.error('Error downloading file:', error);
-    res.status(500).json({ error: 'Failed to download file' });
+    return res.status(500).json({ error: 'Failed to download file' });
   }
 });
 
@@ -342,10 +342,10 @@ router.put('/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
       }
     });
 
-    res.json(updatedFile);
+    return res.json(updatedFile);
   } catch (error) {
     console.error('Error updating file:', error);
-    res.status(500).json({ error: 'Failed to update file' });
+    return res.status(500).json({ error: 'Failed to update file' });
   }
 });
 
@@ -375,10 +375,10 @@ router.delete('/:id', requireAuth, async (req: AuthenticatedRequest, res) => {
       where: { id: req.params.id }
     });
 
-    res.json({ message: 'File deleted successfully' });
+    return res.json({ message: 'File deleted successfully' });
   } catch (error) {
     console.error('Error deleting file:', error);
-    res.status(500).json({ error: 'Failed to delete file' });
+    return res.status(500).json({ error: 'Failed to delete file' });
   }
 });
 
@@ -430,10 +430,10 @@ router.post('/folders', requireAuth, async (req: AuthenticatedRequest, res) => {
       }
     });
 
-    res.status(201).json(folder);
+    return res.status(201).json(folder);
   } catch (error) {
     console.error('Error creating folder:', error);
-    res.status(500).json({ error: 'Failed to create folder' });
+    return res.status(500).json({ error: 'Failed to create folder' });
   }
 });
 
@@ -470,10 +470,10 @@ router.put('/folders/:id', requireAuth, async (req: AuthenticatedRequest, res) =
       }
     });
 
-    res.json(updatedFolder);
+    return res.json(updatedFolder);
   } catch (error) {
     console.error('Error updating folder:', error);
-    res.status(500).json({ error: 'Failed to update folder' });
+    return res.status(500).json({ error: 'Failed to update folder' });
   }
 });
 
@@ -505,10 +505,10 @@ router.delete('/folders/:id', requireAuth, async (req: AuthenticatedRequest, res
       where: { id: req.params.id }
     });
 
-    res.json({ message: 'Folder deleted successfully' });
+    return res.json({ message: 'Folder deleted successfully' });
   } catch (error) {
     console.error('Error deleting folder:', error);
-    res.status(500).json({ error: 'Failed to delete folder' });
+    return res.status(500).json({ error: 'Failed to delete folder' });
   }
 });
 
@@ -560,7 +560,7 @@ router.get('/statistics', requireAuth, async (req: AuthenticatedRequest, res) =>
       })
     ]);
 
-    res.json({
+    return res.json({
       totalFiles,
       totalFolders,
       totalStorage: storageStats._sum.size || 0,
@@ -569,7 +569,7 @@ router.get('/statistics', requireAuth, async (req: AuthenticatedRequest, res) =>
     });
   } catch (error) {
     console.error('Error fetching file statistics:', error);
-    res.status(500).json({ error: 'Failed to fetch statistics' });
+    return res.status(500).json({ error: 'Failed to fetch statistics' });
   }
 });
 

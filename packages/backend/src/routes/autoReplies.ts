@@ -82,7 +82,7 @@ router.get('/', authenticateToken, async (req, res) => {
       prisma.autoReply.count({ where })
     ]);
 
-    res.json({
+    return res.json({
       autoReplies,
       pagination: {
         page: pageNum,
@@ -93,7 +93,7 @@ router.get('/', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching auto-replies:', error);
-    res.status(500).json({ error: 'Failed to fetch auto-replies' });
+    return res.status(500).json({ error: 'Failed to fetch auto-replies' });
   }
 });
 
@@ -116,10 +116,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Auto-reply not found' });
     }
     
-    res.json(autoReply);
+    return res.json(autoReply);
   } catch (error) {
     console.error('Error fetching auto-reply:', error);
-    res.status(500).json({ error: 'Failed to fetch auto-reply' });
+    return res.status(500).json({ error: 'Failed to fetch auto-reply' });
   }
 });
 
@@ -140,10 +140,10 @@ router.post('/', authenticateToken, validateRequest(AutoReplyCreateSchema), asyn
       }
     });
     
-    res.status(201).json(autoReply);
+    return res.status(201).json(autoReply);
   } catch (error) {
     console.error('Error creating auto-reply:', error);
-    res.status(500).json({ error: 'Failed to create auto-reply' });
+    return res.status(500).json({ error: 'Failed to create auto-reply' });
   }
 });
 
@@ -179,10 +179,10 @@ router.put('/:id', authenticateToken, validateRequest(AutoReplyUpdateSchema), as
       data: updateData
     });
     
-    res.json(autoReply);
+    return res.json(autoReply);
   } catch (error) {
     console.error('Error updating auto-reply:', error);
-    res.status(500).json({ error: 'Failed to update auto-reply' });
+    return res.status(500).json({ error: 'Failed to update auto-reply' });
   }
 });
 
@@ -205,10 +205,10 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       where: { id }
     });
     
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error deleting auto-reply:', error);
-    res.status(500).json({ error: 'Failed to delete auto-reply' });
+    return res.status(500).json({ error: 'Failed to delete auto-reply' });
   }
 });
 
@@ -232,10 +232,10 @@ router.post('/:id/toggle', authenticateToken, async (req, res) => {
       data: { status: newStatus }
     });
     
-    res.json(updatedAutoReply);
+    return res.json(updatedAutoReply);
   } catch (error) {
     console.error('Error toggling auto-reply:', error);
-    res.status(500).json({ error: 'Failed to toggle auto-reply' });
+    return res.status(500).json({ error: 'Failed to toggle auto-reply' });
   }
 });
 
@@ -283,7 +283,7 @@ router.post('/:id/test', authenticateToken, async (req, res) => {
       }
     }
 
-    res.json({
+    return res.json({
       matches,
       matchResults,
       wouldReply: matches && autoReply.status === 'ACTIVE',
@@ -292,7 +292,7 @@ router.post('/:id/test', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error testing auto-reply:', error);
-    res.status(500).json({ error: 'Failed to test auto-reply' });
+    return res.status(500).json({ error: 'Failed to test auto-reply' });
   }
 });
 
@@ -306,7 +306,7 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
       prisma.autoReply.count({ where: { organizationId, status: 'ACTIVE' } }),
     ]);
 
-    res.json({
+    return res.json({
       totalRules,
       activeRules,
       totalSent: 0,
@@ -314,7 +314,7 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching auto-reply stats:', error);
-    res.status(500).json({ error: 'Failed to fetch stats' });
+    return res.status(500).json({ error: 'Failed to fetch stats' });
   }
 });
 

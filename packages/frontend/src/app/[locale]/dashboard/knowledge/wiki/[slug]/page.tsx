@@ -76,7 +76,7 @@ export default function WikiPageView() {
     try {
       setLoading(true);
       const response = await knowledgeApi.getWikiPage(params.slug as string);
-      setPage(response.data);
+      setPage(response.data as any);
     } catch (error: any) {
       console.error('Failed to load wiki page:', error);
       router.push('/dashboard/knowledge');

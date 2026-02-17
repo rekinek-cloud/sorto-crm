@@ -215,7 +215,7 @@ router.get('/', authenticateToken, async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       offers,
       pagination: {
         page: pageNum,
@@ -226,7 +226,7 @@ router.get('/', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching offers:', error);
-    res.status(500).json({ error: 'Failed to fetch offers' });
+    return res.status(500).json({ error: 'Failed to fetch offers' });
   }
 });
 
@@ -263,10 +263,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Offer not found' });
     }
 
-    res.json(offer);
+    return res.json(offer);
   } catch (error) {
     console.error('Error fetching offer:', error);
-    res.status(500).json({ error: 'Failed to fetch offer' });
+    return res.status(500).json({ error: 'Failed to fetch offer' });
   }
 });
 
@@ -388,13 +388,13 @@ router.post('/', authenticateToken, async (req, res) => {
       }
     });
 
-    res.status(201).json(offer);
+    return res.status(201).json(offer);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
     console.error('Error creating offer:', error);
-    res.status(500).json({ error: 'Failed to create offer' });
+    return res.status(500).json({ error: 'Failed to create offer' });
   }
 });
 
@@ -496,7 +496,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     // Update status-specific dates
     if (offerData.status === 'SENT' && existingOffer.status !== 'SENT') {
       updateData.sentDate = new Date();
-    } else if (offerData.status === 'ACCEPTED' && existingOffer.status !== 'ACCEPTED') {
+    } else if ((offerData.status as string) === 'ACCEPTED' && (existingOffer.status as string) !== 'ACCEPTED') {
       updateData.acceptedDate = new Date();
     } else if (offerData.status === 'REJECTED' && existingOffer.status !== 'REJECTED') {
       updateData.rejectedDate = new Date();
@@ -525,13 +525,13 @@ router.put('/:id', authenticateToken, async (req, res) => {
       }
     });
 
-    res.json(offer);
+    return res.json(offer);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
     console.error('Error updating offer:', error);
-    res.status(500).json({ error: 'Failed to update offer' });
+    return res.status(500).json({ error: 'Failed to update offer' });
   }
 });
 
@@ -588,13 +588,13 @@ router.patch('/:id/status', authenticateToken, async (req, res) => {
       }
     });
 
-    res.json(offer);
+    return res.json(offer);
   } catch (error) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ error: 'Validation failed', details: error.errors });
     }
     console.error('Error updating offer status:', error);
-    res.status(500).json({ error: 'Failed to update offer status' });
+    return res.status(500).json({ error: 'Failed to update offer status' });
   }
 });
 
@@ -624,10 +624,10 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       where: { id }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error deleting offer:', error);
-    res.status(500).json({ error: 'Failed to delete offer' });
+    return res.status(500).json({ error: 'Failed to delete offer' });
   }
 });
 
@@ -658,7 +658,7 @@ router.get('/meta/stats', authenticateToken, async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       totalOffers,
       totalValue: totalValue._sum.totalAmount || 0,
       byStatus: stats.reduce((acc, stat) => {
@@ -671,7 +671,7 @@ router.get('/meta/stats', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching offer stats:', error);
-    res.status(500).json({ error: 'Failed to fetch offer statistics' });
+    return res.status(500).json({ error: 'Failed to fetch offer statistics' });
   }
 });
 

@@ -16,13 +16,13 @@ export class BugReportsController {
         req.user!.organizationId
       );
 
-      res.status(201).json({
+      return res.status(201).json({
         message: 'Bug report created successfully',
         data: bugReport,
       });
     } catch (error: any) {
       logger.error('Error creating bug report:', error);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   };
 
@@ -36,13 +36,13 @@ export class BugReportsController {
       // In production, you might want to filter by organization
       const bugReports = await bugReportsService.findAll();
 
-      res.json({
+      return res.json({
         message: 'Bug reports retrieved',
         data: bugReports,
       });
     } catch (error: any) {
       logger.error('Error listing bug reports:', error);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   };
 
@@ -56,17 +56,16 @@ export class BugReportsController {
       const bugReport = await bugReportsService.findById(id);
 
       if (!bugReport) {
-        res.status(404).json({ error: 'Bug report not found' });
-        return;
+        return res.status(404).json({ error: 'Bug report not found' });
       }
 
-      res.json({
+      return res.json({
         message: 'Bug report retrieved',
         data: bugReport,
       });
     } catch (error: any) {
       logger.error('Error getting bug report:', error);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   };
 
@@ -85,13 +84,13 @@ export class BugReportsController {
         req.user!.id
       );
 
-      res.json({
+      return res.json({
         message: 'Bug report status updated',
         data: bugReport,
       });
     } catch (error: any) {
       logger.error('Error updating bug report status:', error);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   };
 
@@ -104,12 +103,12 @@ export class BugReportsController {
       const { id } = req.params;
       await bugReportsService.delete(id);
 
-      res.json({
+      return res.json({
         message: 'Bug report deleted',
       });
     } catch (error: any) {
       logger.error('Error deleting bug report:', error);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   };
 
@@ -122,13 +121,13 @@ export class BugReportsController {
       // Show all stats (for admin review)
       const stats = await bugReportsService.getStats();
 
-      res.json({
+      return res.json({
         message: 'Bug report stats retrieved',
         data: stats,
       });
     } catch (error: any) {
       logger.error('Error getting bug report stats:', error);
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     }
   };
 }

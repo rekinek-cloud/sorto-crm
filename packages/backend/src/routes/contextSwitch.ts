@@ -24,8 +24,7 @@ router.post('/switch', async (req, res) => {
 
     const parsed = switchOrganizationSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
-      return;
+      return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
     }
 
     const targetOrgId = parsed.data.organizationId;
@@ -43,8 +42,7 @@ router.post('/switch', async (req, res) => {
     });
 
     if (!targetOrg) {
-      res.status(404).json({ error: 'Organization not found' });
-      return;
+      return res.status(404).json({ error: 'Organization not found' });
     }
 
     // Check access via Employee model
@@ -93,8 +91,7 @@ router.post('/switch', async (req, res) => {
     }
 
     if (!hasAccess) {
-      res.status(403).json({ error: 'You do not have access to this organization' });
-      return;
+      return res.status(403).json({ error: 'You do not have access to this organization' });
     }
 
     // Generate new JWT tokens with updated organizationId
@@ -129,7 +126,7 @@ router.post('/switch', async (req, res) => {
       },
     });
 
-    res.json({
+    return res.json({
       accessToken,
       refreshToken,
       organization: {
@@ -141,7 +138,7 @@ router.post('/switch', async (req, res) => {
     });
   } catch (error) {
     console.error('Error switching organization:', error);
-    res.status(500).json({ error: 'Failed to switch organization' });
+    return res.status(500).json({ error: 'Failed to switch organization' });
   }
 });
 
@@ -168,8 +165,7 @@ router.get('/current', async (req, res) => {
     });
 
     if (!organization) {
-      res.status(404).json({ error: 'Organization not found' });
-      return;
+      return res.status(404).json({ error: 'Organization not found' });
     }
 
     // Get employee record if exists
@@ -204,7 +200,7 @@ router.get('/current', async (req, res) => {
       });
     }
 
-    res.json({
+    return res.json({
       organization,
       employee,
       holding,
@@ -212,7 +208,7 @@ router.get('/current', async (req, res) => {
     });
   } catch (error) {
     console.error('Error getting current context:', error);
-    res.status(500).json({ error: 'Failed to get current context' });
+    return res.status(500).json({ error: 'Failed to get current context' });
   }
 });
 

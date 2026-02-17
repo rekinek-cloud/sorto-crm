@@ -57,7 +57,7 @@ export class SsoService {
         organizationId,
         moduleId: module.id,
         expiresAt,
-      },
+      } as any,
     });
 
     // 5. Build redirect URL

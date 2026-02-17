@@ -147,7 +147,7 @@ export class UnifiedRuleEngine {
   private async getActiveRulesForEntity(entityType: string, organizationId: string) {
     const triggerEvents = this.getTriggersForEntityType(entityType);
     
-    return await prisma.unifiedRule.findMany({
+    return await prisma.unified_rules.findMany({
       where: {
         organizationId,
         status: 'ACTIVE',
@@ -217,18 +217,18 @@ export class UnifiedRuleEngine {
         ? conditions.subjectContains 
         : [conditions.subjectContains];
       
-      const hasKeyword = keywords.some(keyword => 
+      const hasKeyword = keywords.some((keyword: any) =>
         entityData.subject.toLowerCase().includes(keyword.toLowerCase())
       );
       if (!hasKeyword) return false;
     }
-    
+
     if (conditions.bodyContains && entityData.content) {
-      const keywords = Array.isArray(conditions.bodyContains) 
-        ? conditions.bodyContains 
+      const keywords = Array.isArray(conditions.bodyContains)
+        ? conditions.bodyContains
         : [conditions.bodyContains];
-      
-      const hasKeyword = keywords.some(keyword => 
+
+      const hasKeyword = keywords.some((keyword: any) =>
         entityData.content.toLowerCase().includes(keyword.toLowerCase())
       );
       if (!hasKeyword) return false;
@@ -483,7 +483,7 @@ export class UnifiedRuleEngine {
     organizationId: string;
   }): Promise<void> {
     try {
-      await prisma.unifiedRuleExecution.create({
+      await prisma.unified_rule_executions.create({
         data: {
           ruleId: data.ruleId,
           triggeredBy: data.triggeredBy,
@@ -495,7 +495,7 @@ export class UnifiedRuleEngine {
           entityId: data.entityId,
           triggerData: data.triggerData,
           organizationId: data.organizationId
-        }
+        } as any
       });
     } catch (error) {
       logger.error('Failed to log rule execution:', error);
@@ -519,7 +519,7 @@ export class UnifiedRuleEngine {
       }
       
       // Aktualizuj średni czas wykonania
-      const rule = await prisma.unifiedRule.findUnique({
+      const rule = await prisma.unified_rules.findUnique({
         where: { id: ruleId },
         select: { avgExecutionTime: true, executionCount: true }
       });
@@ -532,7 +532,7 @@ export class UnifiedRuleEngine {
         updateData.avgExecutionTime = newAvgTime;
       }
       
-      await prisma.unifiedRule.update({
+      await prisma.unified_rules.update({
         where: { id: ruleId },
         data: updateData
       });

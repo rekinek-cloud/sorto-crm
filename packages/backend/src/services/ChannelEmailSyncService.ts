@@ -93,7 +93,7 @@ export class ChannelEmailSyncService {
       };
 
       // Create IMAP service
-      const imapService = new IMAPService(imapConfig);
+      const imapService = new IMAPService(imapConfig, this.prisma);
 
       // Connect to IMAP
       await imapService.connect();
@@ -113,10 +113,10 @@ export class ChannelEmailSyncService {
       
       for (const folder of syncFolders) {
         try {
+          await imapService.openFolder(folder);
           const folderEmails = await imapService.fetchEmails(
             ['UNSEEN'], // Only unread emails
-            config.maxMessages || 100,
-            folder
+            config.maxMessages || 100
           );
           allEmails = allEmails.concat(folderEmails);
         } catch (error) {
@@ -143,7 +143,7 @@ export class ChannelEmailSyncService {
                 { 
                   AND: [
                     { subject: email.subject },
-                    { from: email.from },
+                    { fromAddress: email.from },
                     { sentAt: email.date }
                   ]
                 }
@@ -158,35 +158,28 @@ export class ChannelEmailSyncService {
             // Create new message
             await this.prisma.message.create({
               data: {
-                channelId: channel.id,
-                organizationId: channel.organizationId,
-                type: 'INCOMING',
-                status: 'PENDING',
-                from: email.from,
-                to: email.to.join(', '),
-                cc: email.cc?.join(', ') || null,
-                bcc: email.bcc?.join(', ') || null,
+                channel: { connect: { id: channel.id } },
+                organization: { connect: { id: channel.organizationId } },
+                messageType: 'INBOX',
+                fromAddress: email.from,
+                fromName: email.from,
+                toAddress: email.to.join(', '),
+                ccAddress: email.cc || [],
+                bccAddress: email.bcc || [],
                 subject: email.subject,
-                body: email.text || '',
-                htmlBody: email.html || null,
+                content: email.textContent || '',
+                htmlContent: email.htmlContent || null,
                 messageId: email.messageId || `imap-${channel.id}-${email.uid}`,
-                threadId: email.threadId || null,
                 sentAt: email.date,
                 receivedAt: new Date(),
                 isRead: false,
                 isStarred: email.flags.includes('\\Flagged'),
-                metadata: {
-                  imapUid: email.uid,
-                  imapFolder: email.folder || 'INBOX',
+                imapUid: email.uid,
+                imapFolder: 'INBOX',
+                emailHeaders: {
                   flags: email.flags,
                   headers: email.headers || {},
-                  attachments: email.attachments?.map(a => ({
-                    filename: a.filename,
-                    contentType: a.contentType,
-                    size: a.size
-                  }))
                 },
-                channel: channel.type,
                 urgencyScore
               }
             });
@@ -240,7 +233,7 @@ export class ChannelEmailSyncService {
 
     // Keywords that increase urgency
     const urgentKeywords = ['urgent', 'asap', 'immediately', 'critical', 'important', 'deadline'];
-    const content = `${email.subject} ${email.text}`.toLowerCase();
+    const content = `${email.subject} ${email.textContent}`.toLowerCase();
     
     for (const keyword of urgentKeywords) {
       if (content.includes(keyword)) {

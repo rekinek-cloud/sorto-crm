@@ -120,16 +120,13 @@ export class McpServerService {
     errorMessage?: string
   ): Promise<void> {
     try {
-      await prisma.mcpUsageLog.create({
+      await prisma.mcp_usage_logs.create({
         data: {
           apiKeyId: context.apiKeyId,
-          organizationId: context.organization.id,
           toolName,
           query: args.query || null,
-          arguments: args,
           success,
           responseTimeMs,
-          errorMessage: errorMessage || null,
         },
       });
     } catch (error) {

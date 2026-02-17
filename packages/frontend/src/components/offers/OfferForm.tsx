@@ -34,11 +34,25 @@ const emptyItem: OfferItemForm = {
 };
 
 const OfferForm: React.FC<OfferFormProps> = ({ offer, onSubmit, onCancel, isOpen }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    description: string;
+    status: string;
+    priority: string;
+    currency: string;
+    validUntil: string;
+    customerName: string;
+    customerEmail: string;
+    customerPhone: string;
+    customerAddress: string;
+    paymentTerms: string;
+    deliveryTerms: string;
+    notes: string;
+  }>({
     title: '',
     description: '',
-    status: 'DRAFT' as const,
-    priority: 'MEDIUM' as const,
+    status: 'DRAFT',
+    priority: 'MEDIUM',
     currency: 'USD',
     validUntil: '',
     customerName: '',
@@ -163,8 +177,8 @@ const OfferForm: React.FC<OfferFormProps> = ({ offer, onSubmit, onCancel, isOpen
       const submitData: CreateOfferData = {
         title: formData.title.trim(),
         description: formData.description.trim() || undefined,
-        status: formData.status,
-        priority: formData.priority,
+        status: formData.status as CreateOfferData['status'],
+        priority: formData.priority as CreateOfferData['priority'],
         currency: formData.currency,
         validUntil: formData.validUntil ? new Date(formData.validUntil).toISOString() : undefined,
         customerName: formData.customerName.trim(),

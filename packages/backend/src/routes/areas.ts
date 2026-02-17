@@ -72,7 +72,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
     const totalPages = Math.ceil(total / limitNum);
 
-    res.json({
+    return res.json({
       areas,
       pagination: {
         page: pageNum,
@@ -85,7 +85,7 @@ router.get('/', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching areas:', error);
-    res.status(500).json({ error: 'Failed to fetch areas' });
+    return res.status(500).json({ error: 'Failed to fetch areas' });
   }
 });
 
@@ -125,15 +125,15 @@ router.get('/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Area not found' });
     }
 
-    res.json(area);
+    return res.json(area);
   } catch (error) {
     console.error('Error fetching area:', error);
-    res.status(500).json({ error: 'Failed to fetch area' });
+    return res.status(500).json({ error: 'Failed to fetch area' });
   }
 });
 
 // POST /api/v1/areas - Create new area
-router.post('/', authenticateToken, validateRequest(createAreaSchema), async (req, res) => {
+router.post('/', authenticateToken, validateRequest({ body: createAreaSchema }), async (req, res) => {
   try {
     const data = req.body;
 
@@ -147,7 +147,7 @@ router.post('/', authenticateToken, validateRequest(createAreaSchema), async (re
       data: {
         ...data,
         organizationId: req.user.organizationId,
-        createdById: req.user.userId
+        createdById: req.user!.id
       },
       include: {
         _count: {
@@ -158,15 +158,15 @@ router.post('/', authenticateToken, validateRequest(createAreaSchema), async (re
       }
     });
 
-    res.status(201).json(area);
+    return res.status(201).json(area);
   } catch (error) {
     console.error('Error creating area:', error);
-    res.status(500).json({ error: 'Failed to create area' });
+    return res.status(500).json({ error: 'Failed to create area' });
   }
 });
 
 // PUT /api/v1/areas/:id - Update area
-router.put('/:id', authenticateToken, validateRequest(updateAreaSchema), async (req, res) => {
+router.put('/:id', authenticateToken, validateRequest({ body: updateAreaSchema }), async (req, res) => {
   try {
     const { id } = req.params;
     const data = req.body;
@@ -195,10 +195,10 @@ router.put('/:id', authenticateToken, validateRequest(updateAreaSchema), async (
       }
     });
 
-    res.json(area);
+    return res.json(area);
   } catch (error) {
     console.error('Error updating area:', error);
-    res.status(500).json({ error: 'Failed to update area' });
+    return res.status(500).json({ error: 'Failed to update area' });
   }
 });
 
@@ -238,10 +238,10 @@ router.delete('/:id', authenticateToken, async (req, res) => {
       where: { id }
     });
 
-    res.json({ message: 'Area deleted successfully' });
+    return res.json({ message: 'Area deleted successfully' });
   } catch (error) {
     console.error('Error deleting area:', error);
-    res.status(500).json({ error: 'Failed to delete area' });
+    return res.status(500).json({ error: 'Failed to delete area' });
   }
 });
 
@@ -282,7 +282,7 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
       })
     ]);
 
-    res.json({
+    return res.json({
       totalAreas,
       activeAreas,
       inactiveAreas: totalAreas - activeAreas,
@@ -292,7 +292,7 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching areas stats:', error);
-    res.status(500).json({ error: 'Failed to fetch areas statistics' });
+    return res.status(500).json({ error: 'Failed to fetch areas statistics' });
   }
 });
 

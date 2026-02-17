@@ -39,7 +39,7 @@ router.get('/',
 
       const config = await PipelineConfigLoader.loadConfig(prisma as any, organizationId);
 
-      res.json({
+      return res.json({
         success: true,
         data: config,
       });
@@ -101,7 +101,7 @@ router.put('/',
         }
 
         updatedRecord = await prisma.pipeline_config.create({
-          data: createData,
+          data: createData as any,
         });
       }
 
@@ -113,7 +113,7 @@ router.put('/',
 
       logger.info(`Pipeline config section '${section}' updated by ${req.user!.email} for org ${organizationId}`);
 
-      res.json({
+      return res.json({
         success: true,
         data: mergedConfig,
       });
@@ -171,7 +171,7 @@ router.post('/reset-section',
 
       logger.info(`Pipeline config section '${section}' reset to defaults by ${req.user!.email} for org ${organizationId}`);
 
-      res.json({
+      return res.json({
         success: true,
         data: mergedConfig,
       });
@@ -193,7 +193,7 @@ router.get('/defaults',
     try {
       const defaults = PipelineConfigLoader.getDefaults();
 
-      res.json({
+      return res.json({
         success: true,
         data: defaults,
       });

@@ -11,14 +11,14 @@ import { prisma } from '../config/database';
 
 const router = Router();
 
-// Extended Request interface for auth
-interface AuthenticatedRequest extends Request {
+// Extended Request type for auth
+type AuthenticatedRequest = Request & {
   user: {
     id: string;
     email: string;
     organizationId: string;
   };
-}
+};
 
 /**
  * POST /api/v1/search/demo
@@ -70,7 +70,7 @@ router.post('/demo', async (req, res) => {
         },
         relevanceScore: 0.88
       }
-    ].filter(item => !types || types.includes(item.type)).slice(0, limit);
+    ].filter(item => !types || types.includes(item.type as any)).slice(0, limit);
 
     const response = {
       query,
@@ -98,7 +98,7 @@ router.post('/demo', async (req, res) => {
       }
     };
 
-    res.json({
+    return res.json({
       success: true,
       data: response,
       timestamp: new Date().toISOString()
@@ -106,7 +106,7 @@ router.post('/demo', async (req, res) => {
 
   } catch (error) {
     console.error('Demo search error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Internal server error',
       message: error instanceof Error ? error.message : 'Unknown error'
@@ -171,7 +171,7 @@ router.post('/universal', authenticateUser, async (req: any, res) => {
     `;
     params.push(limit);
 
-    const results = await prisma.$queryRawUnsafe(searchQuery, ...params);
+    const results = await prisma.$queryRawUnsafe(searchQuery, ...params) as any[];
 
     // Process results
     const searchResults = results.map((row: any) => ({
@@ -193,12 +193,12 @@ router.post('/universal', authenticateUser, async (req: any, res) => {
     }));
 
     // Sort by relevance
-    searchResults.sort((a, b) => b.relevanceScore - a.relevanceScore);
+    searchResults.sort((a: any, b: any) => b.relevanceScore - a.relevanceScore);
 
     // Group by type for better UX
     const groupedResults = groupResultsByType(searchResults);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         query,
@@ -223,7 +223,7 @@ router.post('/universal', authenticateUser, async (req: any, res) => {
     }
 
     console.error('Universal search error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Search failed'
     });
@@ -245,8 +245,8 @@ router.get('/suggestions/:query', authenticateUser, async (req: any, res) => {
 
     // Get suggestions from vector content
     const suggestions = await prisma.$queryRawUnsafe(`
-      SELECT DISTINCT 
-        CASE 
+      SELECT DISTINCT
+        CASE
           WHEN metadata->>'type' = 'company' THEN regexp_replace(content, '^Firma: ([^\\n]+).*', '\\1')
           WHEN metadata->>'type' = 'contact' THEN regexp_replace(content, '^Kontakt: ([^\\n]+).*', '\\1')
           WHEN metadata->>'type' = 'task' THEN regexp_replace(content, '^Zadanie: ([^\\n]+).*', '\\1')
@@ -255,13 +255,13 @@ router.get('/suggestions/:query', authenticateUser, async (req: any, res) => {
           ELSE 'Nieznany typ'
         END as suggestion,
         metadata->>'type' as type
-      FROM vectors 
+      FROM vectors
       WHERE metadata->>'organizationId' = $1
       AND content ILIKE $2
       LIMIT 10
-    `, organizationId, `%${query}%`);
+    `, organizationId, `%${query}%`) as any[];
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         suggestions: suggestions.map((s: any) => ({
@@ -273,7 +273,7 @@ router.get('/suggestions/:query', authenticateUser, async (req: any, res) => {
 
   } catch (error) {
     console.error('Search suggestions error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to get suggestions'
     });
@@ -289,22 +289,22 @@ router.get('/stats', authenticateUser, async (req: any, res) => {
     const organizationId = req.user?.organizationId || 'test-org';
 
     const stats = await prisma.$queryRawUnsafe(`
-      SELECT 
+      SELECT
         metadata->>'type' as type,
         COUNT(*) as count,
         AVG((metadata->>'importance')::int) as avg_importance
-      FROM vectors 
+      FROM vectors
       WHERE metadata->>'organizationId' = $1
       GROUP BY metadata->>'type'
       ORDER BY count DESC
-    `, organizationId);
+    `, organizationId) as any[];
 
     const totalVectors = await prisma.$queryRawUnsafe(`
-      SELECT COUNT(*) as total FROM vectors 
+      SELECT COUNT(*) as total FROM vectors
       WHERE metadata->>'organizationId' = $1
-    `, organizationId);
+    `, organizationId) as any[];
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         totalVectors: Number(totalVectors[0]?.total || 0),
@@ -319,7 +319,7 @@ router.get('/stats', authenticateUser, async (req: any, res) => {
 
   } catch (error) {
     console.error('Search stats error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to get search statistics'
     });

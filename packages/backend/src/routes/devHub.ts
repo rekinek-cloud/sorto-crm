@@ -46,13 +46,13 @@ router.get('/containers', async (req: Request, res: Response) => {
       containers[app].sort((a, b) => a.name.localeCompare(b.name));
     }
 
-    res.json({
+    return res.json({
       total: lines.length,
       containers,
     });
   } catch (error: any) {
     console.error('Failed to list containers:', error);
-    res.status(500).json({ error: 'Failed to list containers', details: error.message });
+    return res.status(500).json({ error: 'Failed to list containers', details: error.message });
   }
 });
 
@@ -88,7 +88,7 @@ router.get('/system-resources', async (req: Request, res: Response) => {
       // Ignore disk errors
     }
 
-    res.json({
+    return res.json({
       cpu: {
         usage: cpuUsage,
         cores: cpus.length,
@@ -105,7 +105,7 @@ router.get('/system-resources', async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Failed to get system resources:', error);
-    res.status(500).json({ error: 'Failed to get system resources', details: error.message });
+    return res.status(500).json({ error: 'Failed to get system resources', details: error.message });
   }
 });
 
@@ -116,10 +116,10 @@ router.post('/containers/:name/start', async (req: Request, res: Response) => {
   try {
     const { name } = req.params;
     await execAsync(`docker start ${name}`);
-    res.json({ success: true, message: `Container ${name} started` });
+    return res.json({ success: true, message: `Container ${name} started` });
   } catch (error: any) {
     console.error('Failed to start container:', error);
-    res.status(500).json({ error: 'Failed to start container', details: error.message });
+    return res.status(500).json({ error: 'Failed to start container', details: error.message });
   }
 });
 
@@ -130,10 +130,10 @@ router.post('/containers/:name/stop', async (req: Request, res: Response) => {
   try {
     const { name } = req.params;
     await execAsync(`docker stop ${name}`);
-    res.json({ success: true, message: `Container ${name} stopped` });
+    return res.json({ success: true, message: `Container ${name} stopped` });
   } catch (error: any) {
     console.error('Failed to stop container:', error);
-    res.status(500).json({ error: 'Failed to stop container', details: error.message });
+    return res.status(500).json({ error: 'Failed to stop container', details: error.message });
   }
 });
 
@@ -144,10 +144,10 @@ router.post('/containers/:name/restart', async (req: Request, res: Response) => 
   try {
     const { name } = req.params;
     await execAsync(`docker restart ${name}`);
-    res.json({ success: true, message: `Container ${name} restarted` });
+    return res.json({ success: true, message: `Container ${name} restarted` });
   } catch (error: any) {
     console.error('Failed to restart container:', error);
-    res.status(500).json({ error: 'Failed to restart container', details: error.message });
+    return res.status(500).json({ error: 'Failed to restart container', details: error.message });
   }
 });
 
@@ -159,10 +159,10 @@ router.get('/containers/:name/logs', async (req: Request, res: Response) => {
     const { name } = req.params;
     const lines = parseInt(req.query.lines as string) || 100;
     const { stdout } = await execAsync(`docker logs --tail ${lines} ${name} 2>&1`);
-    res.json({ logs: stdout });
+    return res.json({ logs: stdout });
   } catch (error: any) {
     console.error('Failed to get container logs:', error);
-    res.status(500).json({ error: 'Failed to get container logs', details: error.message });
+    return res.status(500).json({ error: 'Failed to get container logs', details: error.message });
   }
 });
 
@@ -176,7 +176,7 @@ router.get('/containers/:name/stats', async (req: Request, res: Response) => {
       `docker stats ${name} --no-stream --format "{{.CPUPerc}}|{{.MemUsage}}|{{.MemPerc}}|{{.NetIO}}|{{.BlockIO}}"`
     );
     const [cpu, memUsage, memPerc, netIO, blockIO] = stdout.trim().split('|');
-    res.json({
+    return res.json({
       cpu: cpu,
       memory: {
         usage: memUsage,
@@ -187,7 +187,7 @@ router.get('/containers/:name/stats', async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     console.error('Failed to get container stats:', error);
-    res.status(500).json({ error: 'Failed to get container stats', details: error.message });
+    return res.status(500).json({ error: 'Failed to get container stats', details: error.message });
   }
 });
 
@@ -216,10 +216,10 @@ router.post('/applications/:app/deploy', async (req: Request, res: Response) => 
     // Docker compose up
     await execAsync(`cd ${appPath} && docker compose up -d --build`);
 
-    res.json({ success: true, message: `Application ${app} deployed` });
+    return res.json({ success: true, message: `Application ${app} deployed` });
   } catch (error: any) {
     console.error('Failed to deploy application:', error);
-    res.status(500).json({ error: 'Failed to deploy application', details: error.message });
+    return res.status(500).json({ error: 'Failed to deploy application', details: error.message });
   }
 });
 
@@ -239,14 +239,14 @@ router.get('/applications/:app/status', async (req: Request, res: Response) => {
       return { id, name, image, status, state };
     });
 
-    res.json({
+    return res.json({
       app,
       containers,
       healthy: containers.every(c => c.state === 'running'),
     });
   } catch (error: any) {
     console.error('Failed to get application status:', error);
-    res.status(500).json({ error: 'Failed to get application status', details: error.message });
+    return res.status(500).json({ error: 'Failed to get application status', details: error.message });
   }
 });
 

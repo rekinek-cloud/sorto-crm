@@ -51,7 +51,7 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
         actualBehavior: bugData.actualBehavior,
         reporterId: userId,
         organizationId: organizationId,
-      },
+      } as any,
       include: {
         users: {
           select: { email: true, firstName: true, lastName: true }
@@ -59,10 +59,10 @@ router.post('/', requireAuth, async (req: AuthenticatedRequest, res) => {
       }
     });
 
-    res.status(201).json(formatBugReport(bugReport));
+    return res.status(201).json(formatBugReport(bugReport));
   } catch (error) {
     console.error('Failed to create bug report:', error);
-    res.status(500).json({ error: 'Failed to create bug report' });
+    return res.status(500).json({ error: 'Failed to create bug report' });
   }
 });
 
@@ -100,14 +100,14 @@ router.get('/', requireAuth, async (req, res) => {
 
     const total = await prisma.bug_reports.count({ where });
 
-    res.json({
+    return res.json({
       bugReports: bugReports.map(formatBugReport),
       total,
       hasMore: total > parseInt(offset as string) + bugReports.length
     });
   } catch (error) {
     console.error('Failed to fetch bug reports:', error);
-    res.status(500).json({ error: 'Failed to fetch bug reports' });
+    return res.status(500).json({ error: 'Failed to fetch bug reports' });
   }
 });
 
@@ -152,14 +152,14 @@ router.get('/my', requireAuth, async (req, res) => {
 
     const total = await prisma.bug_reports.count({ where });
 
-    res.json({
+    return res.json({
       bugReports,
       total,
       hasMore: total > parseInt(offset as string) + bugReports.length
     });
   } catch (error) {
     console.error('Failed to fetch my bug reports:', error);
-    res.status(500).json({ error: 'Failed to fetch my bug reports' });
+    return res.status(500).json({ error: 'Failed to fetch my bug reports' });
   }
 });
 
@@ -207,7 +207,7 @@ router.get('/stats/overview', requireAuth, async (req, res) => {
       })
     ]);
 
-    res.json({
+    return res.json({
       totalBugs,
       openBugs,
       resolvedBugs,
@@ -218,7 +218,7 @@ router.get('/stats/overview', requireAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Failed to fetch bug report stats:', error);
-    res.status(500).json({ error: 'Failed to fetch bug report stats' });
+    return res.status(500).json({ error: 'Failed to fetch bug report stats' });
   }
 });
 
@@ -244,10 +244,10 @@ router.get('/:id', requireAuth, async (req, res) => {
       return res.status(404).json({ error: 'Bug report not found' });
     }
 
-    res.json(formatBugReport(bugReport));
+    return res.json(formatBugReport(bugReport));
   } catch (error) {
     console.error('Failed to fetch bug report:', error);
-    res.status(500).json({ error: 'Failed to fetch bug report' });
+    return res.status(500).json({ error: 'Failed to fetch bug report' });
   }
 });
 
@@ -279,13 +279,13 @@ router.patch('/:id/status', requireAuth, async (req, res) => {
       }
     });
 
-    res.json(formatBugReport(bugReport));
+    return res.json(formatBugReport(bugReport));
   } catch (error) {
     console.error('Failed to update bug report:', error);
     if ((error as any).code === 'P2025') {
       return res.status(404).json({ error: 'Bug report not found' });
     }
-    res.status(500).json({ error: 'Failed to update bug report' });
+    return res.status(500).json({ error: 'Failed to update bug report' });
   }
 });
 
@@ -302,13 +302,13 @@ router.delete('/:id', requireAuth, async (req, res) => {
       }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Failed to delete bug report:', error);
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Bug report not found' });
     }
-    res.status(500).json({ error: 'Failed to delete bug report' });
+    return res.status(500).json({ error: 'Failed to delete bug report' });
   }
 });
 

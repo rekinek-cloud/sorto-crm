@@ -1,5 +1,6 @@
-import { DataScope, StreamRelationType, InheritanceRule, Stream, StreamRelation, StreamPermission } from '@prisma/client';
+import { DataScope, StreamRelationType, InheritanceRule, Stream, stream_relations, stream_permissions } from '@prisma/client';
 import { z } from 'zod';
+import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../config/database';
 
 // DTOs for access control
@@ -241,10 +242,10 @@ export class StreamAccessControlService {
         ...(validatedFilters.relationType && { relationType: validatedFilters.relationType })
       },
       include: {
-        parent: true,
-        child: true,
-        permissions: validatedFilters.dataScope ? {
-          where: { dataScope: validatedFilters.dataScope }
+        streams_stream_relations_parentIdTostreams: true,
+        streams_stream_relations_childIdTostreams: true,
+        stream_permissions: validatedFilters.dataScope ? {
+          where: { dataScope: { has: validatedFilters.dataScope } }
         } : true
       }
     });
@@ -253,13 +254,19 @@ export class StreamAccessControlService {
 
     for (const relation of relations) {
       // Określ który strumień jest powiązany (nie base stream)
-      const relatedStream = relation.parentId === streamId ? relation.child : relation.parent;
+      const relatedStream = relation.parentId === streamId
+        ? (relation as any).streams_stream_relations_childIdTostreams
+        : (relation as any).streams_stream_relations_parentIdTostreams;
       const isParentRelation = relation.parentId === streamId;
 
       // Sprawdź dostęp do powiązanego strumienia
+      const relationWithPermissions = {
+        ...relation,
+        permissions: ((relation as any).stream_permissions || []) as stream_permissions[]
+      };
       const accessResult = await this.evaluateRelationAccess(
-        relation, 
-        isParentRelation, 
+        relationWithPermissions,
+        isParentRelation,
         validatedFilters.dataScope || DataScope.BASIC_INFO,
         'read'
       );
@@ -336,6 +343,7 @@ export class StreamAccessControlService {
 
     await prisma.stream_access_logs.create({
       data: {
+        id: uuidv4(),
         userId,
         streamId,
         action,
@@ -362,7 +370,7 @@ export class StreamAccessControlService {
     return await prisma.stream_access_logs.findMany({
       where: { streamId },
       include: {
-        user: {
+        users: {
           select: {
             id: true,
             firstName: true,
@@ -484,12 +492,13 @@ export class StreamAccessControlService {
         ],
         isActive: true
       },
-      include: { permissions: true }
+      include: { stream_permissions: true }
     });
 
     if (directRelation) {
       const isParentRelation = directRelation.parentId === fromStreamId;
-      const accessResult = await this.evaluateRelationAccess(directRelation, isParentRelation, dataScope, action);
+      const relationWithPermissions = { ...directRelation, permissions: directRelation.stream_permissions };
+      const accessResult = await this.evaluateRelationAccess(relationWithPermissions, isParentRelation, dataScope, action);
       
       if (accessResult.hasAccess) {
         return {
@@ -510,10 +519,10 @@ export class StreamAccessControlService {
         ],
         isActive: true
       },
-      include: { permissions: true }
+      include: { stream_permissions: true }
     });
 
-    for (const relation of intermediateRelations) {
+    for (const relation of intermediateRelations.map(r => ({ ...r, permissions: r.stream_permissions }))) {
       const nextStreamId = relation.parentId === fromStreamId ? relation.childId : relation.parentId;
       
       if (nextStreamId === toStreamId) continue; // Unikaj bezpośrednich połączeń (już sprawdzone)
@@ -558,7 +567,7 @@ export class StreamAccessControlService {
    * Ocenia dostęp przez konkretną relację
    */
   private async evaluateRelationAccess(
-    relation: StreamRelation & { permissions: StreamPermission[] },
+    relation: stream_relations & { permissions: stream_permissions[] },
     isParentRelation: boolean,
     dataScope: DataScope,
     action: string
@@ -566,7 +575,7 @@ export class StreamAccessControlService {
     // Sprawdź czy relacja daje dostęp w danym kierunku
     const inheritanceRule = relation.inheritanceRule;
     const canInherit = this.canInheritAccess(inheritanceRule, isParentRelation);
-    
+
     if (!canInherit) {
       return {
         hasAccess: false,
@@ -581,8 +590,9 @@ export class StreamAccessControlService {
     }
 
     // Sprawdź konkretne uprawnienia
+    // stream_permissions.dataScope is DataScope[] - check if it includes the requested scope
     const relevantPermissions = relation.permissions.filter(
-      p => p.dataScope === dataScope || p.dataScope === DataScope.ALL
+      p => p.dataScope.includes(dataScope)
     );
 
     if (relevantPermissions.length === 0) {
@@ -595,9 +605,10 @@ export class StreamAccessControlService {
       };
     }
 
-    // Sprawdź konkretne uprawnienia
-    const grantedPermissions = relevantPermissions.filter(p => p.granted && p.action === action);
-    const deniedPermissions = relevantPermissions.filter(p => !p.granted && p.action === action);
+    // Sprawdź konkretne uprawnienia based on accessLevel and isActive
+    const activePermissions = relevantPermissions.filter(p => p.isActive);
+    const grantedPermissions = activePermissions.filter(p => p.accessLevel !== 'NO_ACCESS');
+    const deniedPermissions = activePermissions.filter(p => p.accessLevel === 'NO_ACCESS');
 
     // Denied ma pierwszeństwo
     if (deniedPermissions.length > 0) {
@@ -650,7 +661,7 @@ export class StreamAccessControlService {
         return isParentRelation; // Od rodzica do dziecka
       case InheritanceRule.INHERIT_UP:
         return !isParentRelation; // Od dziecka do rodzica
-      case InheritanceRule.INHERIT_BIDIRECTIONAL:
+      case InheritanceRule.BIDIRECTIONAL:
         return true; // W obie strony
       default:
         return false;
@@ -666,7 +677,7 @@ export class StreamAccessControlService {
     action: string
   ): Omit<AccessResult, 'via' | 'reason'> {
     const baseResult = {
-      inheritanceChain: [],
+      inheritanceChain: [] as any[],
       directAccess: false
     };
 
@@ -681,7 +692,7 @@ export class StreamAccessControlService {
         };
       
       case StreamRelationType.MANAGES:
-        const managerScopes = [DataScope.BASIC_INFO, DataScope.TASKS, DataScope.PROJECTS, DataScope.COMMUNICATION];
+        const managerScopes: DataScope[] = [DataScope.BASIC_INFO, DataScope.TASKS, DataScope.PROJECTS, DataScope.COMMUNICATION];
         return {
           hasAccess: managerScopes.includes(dataScope),
           accessLevel: 'MANAGER',
@@ -689,9 +700,9 @@ export class StreamAccessControlService {
           deniedScopes: [DataScope.FINANCIAL, DataScope.PERMISSIONS],
           ...baseResult
         };
-      
+
       case StreamRelationType.BELONGS_TO:
-        const memberScopes = [DataScope.BASIC_INFO, DataScope.TASKS];
+        const memberScopes: DataScope[] = [DataScope.BASIC_INFO, DataScope.TASKS];
         return {
           hasAccess: memberScopes.includes(dataScope) && ['read', 'CREATE'].includes(action),
           accessLevel: 'CONTRIBUTOR',
@@ -699,7 +710,7 @@ export class StreamAccessControlService {
           deniedScopes: [DataScope.FINANCIAL, DataScope.PERMISSIONS, DataScope.CONFIGURATION],
           ...baseResult
         };
-      
+
       case StreamRelationType.RELATED_TO:
         return {
           hasAccess: dataScope === DataScope.BASIC_INFO && action === 'read',
@@ -708,9 +719,9 @@ export class StreamAccessControlService {
           deniedScopes: Object.values(DataScope).filter(s => s !== DataScope.BASIC_INFO),
           ...baseResult
         };
-      
+
       case StreamRelationType.DEPENDS_ON:
-        const dependencyScopes = [DataScope.BASIC_INFO, DataScope.TASKS, DataScope.PROJECTS];
+        const dependencyScopes: DataScope[] = [DataScope.BASIC_INFO, DataScope.TASKS, DataScope.PROJECTS];
         return {
           hasAccess: dependencyScopes.includes(dataScope) && action === 'read',
           accessLevel: 'READ_ONLY',
@@ -718,9 +729,9 @@ export class StreamAccessControlService {
           deniedScopes: [DataScope.FINANCIAL, DataScope.PERMISSIONS, DataScope.CONFIGURATION],
           ...baseResult
         };
-      
+
       case StreamRelationType.SUPPORTS:
-        const supportScopes = [DataScope.BASIC_INFO, DataScope.COMMUNICATION];
+        const supportScopes: DataScope[] = [DataScope.BASIC_INFO, DataScope.COMMUNICATION];
         return {
           hasAccess: supportScopes.includes(dataScope),
           accessLevel: 'LIMITED',

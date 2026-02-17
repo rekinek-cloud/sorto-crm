@@ -250,7 +250,7 @@ async function seed() {
           ...taskData,
           organizationId: demoOrg.id,
           createdById: ownerUser.id,
-        },
+        } as any,
       });
     }
 
@@ -301,7 +301,7 @@ async function seed() {
         data: {
           ...contactData,
           organizationId: demoOrg.id,
-        },
+        } as any,
       });
     }
 

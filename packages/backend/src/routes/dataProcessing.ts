@@ -59,7 +59,7 @@ router.get('/stats',
         where: { ...where, addedToFlow: true },
       });
 
-      res.json({
+      return res.json({
         success: true,
         data: {
           period,
@@ -99,7 +99,7 @@ router.get('/:entityType/:entityId',
 
       if (!record) throw new AppError('Rekord przetwarzania nie znaleziony', 404);
 
-      res.json({ success: true, data: record });
+      return res.json({ success: true, data: record });
     } catch (error) {
       if (error instanceof AppError) throw error;
       logger.error('Failed to get processing record:', error);
@@ -131,7 +131,7 @@ router.post('/process',
         entityData || {}
       );
 
-      res.json({ success: true, data: result });
+      return res.json({ success: true, data: result });
     } catch (error) {
       if (error instanceof AppError) throw error;
       logger.error('Failed to process entity:', error);
@@ -180,7 +180,7 @@ router.post('/batch',
         }
       }
 
-      res.json({
+      return res.json({
         success: true,
         data: {
           requested: batchLimit,
@@ -223,7 +223,7 @@ router.post('/correct',
         entityType,
         entityId,
         correctClass,
-        req.user!.userId
+        req.user!.id
       );
 
       if (!result.updated) {
@@ -231,7 +231,7 @@ router.post('/correct',
       }
 
       logger.info(`Classification corrected: ${entityType}/${entityId} -> ${correctClass} by ${req.user!.email}`);
-      res.json({ success: true, data: result });
+      return res.json({ success: true, data: result });
     } catch (error) {
       if (error instanceof AppError) throw error;
       logger.error('Failed to correct classification:', error);
@@ -291,7 +291,7 @@ router.post('/reprocess',
         }
       }
 
-      res.json({
+      return res.json({
         success: true,
         data: {
           reset: updated.count,

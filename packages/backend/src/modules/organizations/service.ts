@@ -237,7 +237,7 @@ export class OrganizationService {
       }
 
       // Prevent changing OWNER role (additional security)
-      if (existingUser.role === 'OWNER' && data.role && data.role !== 'OWNER') {
+      if (existingUser.role === 'OWNER' && data.role && (data.role as string) !== 'OWNER') {
         throw new ForbiddenError('Cannot change owner role');
       }
 

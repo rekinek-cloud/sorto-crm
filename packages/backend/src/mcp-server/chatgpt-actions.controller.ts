@@ -41,14 +41,14 @@ router.post('/search', async (req: Request, res: Response) => {
     // Parse response from MCP format
     const text = result.content?.[0]?.text || '';
 
-    res.json({
+    return res.json({
       success: !result.isError,
       results: text,
       raw: result
     });
   } catch (error) {
     logger.error('[ChatGPT Actions] Search error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Błąd wyszukiwania'
     });
@@ -86,14 +86,14 @@ router.post('/details', async (req: Request, res: Response) => {
 
     const text = result.content?.[0]?.text || '';
 
-    res.json({
+    return res.json({
       success: !result.isError,
       data: text,
       raw: result
     });
   } catch (error) {
     logger.error('[ChatGPT Actions] Details error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Błąd pobierania szczegółów'
     });
@@ -131,14 +131,14 @@ router.post('/notes', async (req: Request, res: Response) => {
 
     const text = result.content?.[0]?.text || '';
 
-    res.status(result.isError ? 400 : 201).json({
+    return res.status(result.isError ? 400 : 201).json({
       success: !result.isError,
       message: text,
       raw: result
     });
   } catch (error) {
     logger.error('[ChatGPT Actions] Create note error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Błąd tworzenia notatki'
     });
@@ -169,14 +169,14 @@ router.post('/tasks', async (req: Request, res: Response) => {
 
     const text = result.content?.[0]?.text || '';
 
-    res.json({
+    return res.json({
       success: !result.isError,
       tasks: text,
       raw: result
     });
   } catch (error) {
     logger.error('[ChatGPT Actions] List tasks error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Błąd pobierania zadań'
     });
@@ -197,14 +197,14 @@ router.get('/pipeline-stats', async (req: Request, res: Response) => {
 
     const text = result.content?.[0]?.text || '';
 
-    res.json({
+    return res.json({
       success: !result.isError,
       stats: text,
       raw: result
     });
   } catch (error) {
     logger.error('[ChatGPT Actions] Pipeline stats error:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Błąd pobierania statystyk'
     });
@@ -216,7 +216,7 @@ router.get('/pipeline-stats', async (req: Request, res: Response) => {
  * Zwraca OpenAPI schema dla ChatGPT
  */
 router.get('/openapi.yaml', (req: Request, res: Response) => {
-  res.redirect('/api/v1/mcp/openapi.yaml');
+  return res.redirect('/api/v1/mcp/openapi.yaml');
 });
 
 export default router;

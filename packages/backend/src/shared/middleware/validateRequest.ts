@@ -19,7 +19,7 @@ export const validateRequest = (schema: ZodSchema) => {
         });
         return;
       }
-      next(error);
+      return next(error);
     }
   };
 };

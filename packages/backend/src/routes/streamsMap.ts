@@ -405,13 +405,13 @@ router.get('/views', authenticateToken, async (req, res) => {
       }
     ];
 
-    res.json({
+    return res.json({
       success: true,
       data: viewTypes
     });
   } catch (error) {
     logger.error('Error getting bucket view types:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: 'Failed to get bucket view types'
     });
@@ -522,11 +522,11 @@ router.get('/views/:viewType', authenticateToken, async (req, res) => {
       }
     };
 
-    res.json(response);
+    return res.json(response);
 
   } catch (error) {
     logger.error(`Error getting bucket view ${req.params.viewType}:`, error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: `Failed to get bucket view: ${req.params.viewType}`
     });
@@ -568,7 +568,7 @@ router.get('/views/:viewType/3d', authenticateToken, async (req, res) => {
       }
     }));
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         ...standardData.data,
@@ -593,7 +593,7 @@ router.get('/views/:viewType/3d', authenticateToken, async (req, res) => {
 
   } catch (error) {
     logger.error(`Error getting 3D bucket view ${req.params.viewType}:`, error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       error: `Failed to get 3D bucket view: ${req.params.viewType}`
     });

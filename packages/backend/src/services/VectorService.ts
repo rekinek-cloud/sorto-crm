@@ -359,7 +359,7 @@ export class VectorService {
         }),
         
         // Search statistics
-        this.prisma.vectorSearchResult.groupBy({
+        this.prisma.vector_search_results.groupBy({
           by: ['searchContext'],
           where: { organizationId },
           _count: { id: true },
@@ -891,7 +891,7 @@ export class VectorService {
           }
         });
 
-        return cached.results as VectorSearchResponse;
+        return cached.results as unknown as VectorSearchResponse;
       }
 
       return null;

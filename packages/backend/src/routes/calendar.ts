@@ -325,7 +325,7 @@ router.get('/events', authenticateToken, async (req, res) => {
 
     logger.info(`Found ${events.length} calendar events`);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         events,
@@ -345,7 +345,7 @@ router.get('/events', authenticateToken, async (req, res) => {
 
   } catch (error) {
     logger.error('Error fetching calendar events:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to fetch calendar events',
       error: error instanceof Error ? error.message : 'Unknown error'
@@ -394,7 +394,7 @@ router.get('/summary', authenticateToken, async (req, res) => {
       })
     ]);
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         thisWeek: {
@@ -413,7 +413,7 @@ router.get('/summary', authenticateToken, async (req, res) => {
 
   } catch (error) {
     logger.error('Error fetching calendar summary:', error);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
       message: 'Failed to fetch calendar summary',
       error: error instanceof Error ? error.message : 'Unknown error'

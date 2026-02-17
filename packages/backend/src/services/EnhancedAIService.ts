@@ -40,20 +40,20 @@ export class EnhancedAIService {
     const startDate = new Date();
     startDate.setDate(endDate.getDate() - days);
     
-    const energyAnalytics = await prisma.energyAnalytics.findMany({
+    const energyAnalytics = await prisma.energy_analytics.findMany({
       where: {
         userId,
         date: { gte: startDate, lte: endDate }
       },
       include: {
-        energyTimeBlock: {
-          include: { focusMode: true }
+        energy_time_blocks: {
+          include: { focus_modes: true }
         }
       },
       orderBy: { date: 'asc' }
     });
     
-    const scheduledTasks = await prisma.scheduledTask.findMany({
+    const scheduledTasks = await prisma.scheduled_tasks.findMany({
       where: {
         userId,
         scheduledDate: { gte: startDate, lte: endDate }
@@ -90,8 +90,8 @@ export class EnhancedAIService {
     const hourlyPerformance: { [hour: number]: { total: number; count: number; scores: number[] } } = {};
     
     analytics.forEach(item => {
-      if (item.energyTimeBlock && item.productivityScore) {
-        const hour = parseInt(item.energyTimeBlock.startTime.split(':')[0]);
+      if (item.energy_time_blocks && item.productivityScore) {
+        const hour = parseInt(item.energy_time_blocks.startTime.split(':')[0]);
         if (!hourlyPerformance[hour]) {
           hourlyPerformance[hour] = { total: 0, count: 0, scores: [] };
         }
@@ -295,8 +295,8 @@ export class EnhancedAIService {
       const current = analytics[i];
       const next = analytics[i + 1];
       
-      if (current.energyTimeBlock?.isBreak && next.productivityScore) {
-        const breakType = current.energyTimeBlock.breakType || 'UNKNOWN';
+      if (current.energy_time_blocks?.isBreak && next.productivityScore) {
+        const breakType = current.energy_time_blocks.breakType || 'UNKNOWN';
         
         if (!breakAnalysis[breakType]) {
           breakAnalysis[breakType] = { before: [], after: [] };
@@ -356,7 +356,7 @@ export class EnhancedAIService {
   // -------------------------------------------------------------------------
   
   async storePattern(userId: string, organizationId: string, pattern: PatternDetectionResult): Promise<void> {
-    const existingPattern = await prisma.userPattern.findFirst({
+    const existingPattern = await prisma.user_patterns.findFirst({
       where: {
         userId,
         patternType: pattern.type,
@@ -366,7 +366,7 @@ export class EnhancedAIService {
     
     if (existingPattern) {
       // Update existing pattern with new data
-      await prisma.userPattern.update({
+      await prisma.user_patterns.update({
         where: { id: existingPattern.id },
         data: {
           confidence: (existingPattern.confidence + pattern.confidence) / 2, // Average with existing
@@ -382,8 +382,9 @@ export class EnhancedAIService {
       });
     } else {
       // Create new pattern
-      await prisma.userPattern.create({
+      await prisma.user_patterns.create({
         data: {
+          id: `pattern-${Date.now()}-${Math.random().toString(36).substr(2, 8)}`,
           patternType: pattern.type,
           patternKey: pattern.key,
           confidence: pattern.confidence,
@@ -395,7 +396,8 @@ export class EnhancedAIService {
           outcomes: [],
           learningSource: pattern.source,
           organizationId,
-          userId
+          userId,
+          updatedAt: new Date()
         }
       });
     }
@@ -407,7 +409,7 @@ export class EnhancedAIService {
       where.patternType = patternType;
     }
     
-    return await prisma.userPattern.findMany({
+    return await prisma.user_patterns.findMany({
       where,
       orderBy: [
         { confidence: 'desc' },
@@ -417,7 +419,7 @@ export class EnhancedAIService {
   }
   
   async invalidatePattern(patternId: string, reason: string): Promise<void> {
-    await prisma.userPattern.update({
+    await prisma.user_patterns.update({
       where: { id: patternId },
       data: {
         validUntil: new Date(),
@@ -538,7 +540,7 @@ export class EnhancedAIService {
     accepted: boolean, 
     implemented?: boolean
   ): Promise<void> {
-    const pattern = await prisma.userPattern.findFirst({
+    const pattern = await prisma.user_patterns.findFirst({
       where: { id: patternId, userId }
     });
     
@@ -552,7 +554,7 @@ export class EnhancedAIService {
       ? (pattern.implementationRate || 0.5) * 0.8 + (implemented ? 1 : 0) * 0.2
       : pattern.implementationRate;
     
-    await prisma.userPattern.update({
+    await prisma.user_patterns.update({
       where: { id: patternId },
       data: {
         userAcceptance: newAcceptance,
@@ -565,7 +567,7 @@ export class EnhancedAIService {
   
   async adaptPatternsBasedOnPerformance(userId: string): Promise<void> {
     // Pobierz ostatnie metryki wydajności
-    const recentMetrics = await prisma.performanceMetrics.findMany({
+    const recentMetrics = await prisma.performance_metrics.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
       take: 7 // Last week

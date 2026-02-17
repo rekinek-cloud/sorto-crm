@@ -48,15 +48,15 @@ router.post('/analyze',
         itemData,
         'manual',
         {
-          id: req.user!.userId,
+          id: req.user!.id,
           role: req.user!.role,
-          permissions: req.user!.permissions || []
+          permissions: (req.user as any)?.permissions || []
         }
       );
 
       logger.info(`Manual analysis triggered for ${module}:${itemId} by ${req.user!.email}`);
 
-      res.json({
+      return res.json({
         success: true,
         module,
         itemId,
@@ -98,13 +98,13 @@ router.post('/auto-trigger',
         data,
         'automatic',
         {
-          id: req.user!.userId,
+          id: req.user!.id,
           role: req.user!.role,
-          permissions: req.user!.permissions || []
+          permissions: (req.user as any)?.permissions || []
         }
       );
 
-      res.json({
+      return res.json({
         success: true,
         module,
         action,
@@ -210,7 +210,7 @@ router.get('/available',
         ]
       };
 
-      res.json({
+      return res.json({
         success: true,
         data: availableAnalyses
       });
@@ -248,7 +248,7 @@ router.get('/execution-history',
         actionsExecuted: Math.floor(Math.random() * 5)
       }));
 
-      res.json({
+      return res.json({
         success: true,
         data: history,
         pagination: {

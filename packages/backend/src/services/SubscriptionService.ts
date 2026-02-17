@@ -6,10 +6,10 @@ import Stripe from 'stripe';
 import { SubscriptionPlan, SubscriptionStatus } from '@prisma/client';
 import { prisma } from '../config/database';
 import { PLAN_LIMITS, STRIPE_PRICE_IDS, TRIAL_DAYS, getPlanLimits, isWithinLimit, hasFeature, PlanLimits } from '../config/planLimits';
-import { logger } from '../config/logger';
+import logger from '../config/logger';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2023-10-16',
+  apiVersion: '2023-08-16',
 });
 
 export interface CheckoutSessionResult {
@@ -47,21 +47,27 @@ export class SubscriptionService {
     const trialEndsAt = new Date();
     trialEndsAt.setDate(trialEndsAt.getDate() + TRIAL_DAYS);
 
-    await prisma.subscription.upsert({
+    const existing = await prisma.subscription.findFirst({
       where: { organizationId },
-      update: {
-        status: 'TRIAL',
-        trialEndsAt,
-        plan: 'STARTER',
-      },
-      create: {
-        organizationId,
-        status: 'TRIAL',
-        plan: 'STARTER',
-        trialEndsAt,
-        trialDays: TRIAL_DAYS,
-      },
     });
+
+    if (existing) {
+      await prisma.subscription.update({
+        where: { id: existing.id },
+        data: {
+          status: 'TRIAL',
+          plan: 'STARTER',
+        },
+      });
+    } else {
+      await prisma.subscription.create({
+        data: {
+          organizationId,
+          status: 'TRIAL',
+          plan: 'STARTER',
+        },
+      });
+    }
 
     logger.info(`Initialized trial subscription for organization ${organizationId}`);
   }
@@ -70,7 +76,7 @@ export class SubscriptionService {
    * Get subscription details with current usage
    */
   async getSubscriptionDetails(organizationId: string): Promise<SubscriptionDetails | null> {
-    const subscription = await prisma.subscription.findUnique({
+    const subscription = await prisma.subscription.findFirst({
       where: { organizationId },
       include: {
         organization: {
@@ -100,7 +106,7 @@ export class SubscriptionService {
       organizationId: subscription.organizationId,
       plan: subscription.plan,
       status: subscription.status,
-      trialEndsAt: subscription.trialEndsAt,
+      trialEndsAt: subscription.currentPeriodStart || null,
       currentPeriodEnd: subscription.currentPeriodEnd,
       cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
       limits: getPlanLimits(subscription.plan),
@@ -153,7 +159,7 @@ export class SubscriptionService {
     organizationId: string,
     feature: keyof PlanLimits['features']
   ): Promise<{ allowed: boolean; message?: string }> {
-    const subscription = await prisma.subscription.findUnique({
+    const subscription = await prisma.subscription.findFirst({
       where: { organizationId },
     });
 
@@ -192,7 +198,7 @@ export class SubscriptionService {
     successUrl: string,
     cancelUrl: string
   ): Promise<CheckoutSessionResult> {
-    const subscription = await prisma.subscription.findUnique({
+    const subscription = await prisma.subscription.findFirst({
       where: { organizationId },
       include: { organization: true },
     });
@@ -214,7 +220,7 @@ export class SubscriptionService {
       customerId = customer.id;
 
       await prisma.subscription.update({
-        where: { organizationId },
+        where: { id: subscription.id },
         data: { stripeCustomerId: customerId },
       });
     }
@@ -264,7 +270,7 @@ export class SubscriptionService {
    * Create Stripe billing portal session
    */
   async createPortalSession(organizationId: string, returnUrl: string): Promise<PortalSessionResult> {
-    const subscription = await prisma.subscription.findUnique({
+    const subscription = await prisma.subscription.findFirst({
       where: { organizationId },
     });
 
@@ -330,15 +336,17 @@ export class SubscriptionService {
       return;
     }
 
-    await prisma.subscription.update({
-      where: { organizationId },
-      data: {
-        stripeSubscriptionId: session.subscription as string,
-        plan,
-        status: 'ACTIVE',
-        trialEndsAt: null,
-      },
-    });
+    const sub = await prisma.subscription.findFirst({ where: { organizationId } });
+    if (sub) {
+      await prisma.subscription.update({
+        where: { id: sub.id },
+        data: {
+          stripeSubscriptionId: session.subscription as string,
+          plan,
+          status: 'ACTIVE',
+        },
+      });
+    }
 
     logger.info(`Checkout completed for organization ${organizationId}, plan: ${plan}`);
   }
@@ -354,18 +362,21 @@ export class SubscriptionService {
     const plan = subscription.metadata?.plan as SubscriptionPlan || 'STARTER';
     const status = this.mapStripeStatus(subscription.status);
 
-    await prisma.subscription.update({
-      where: { organizationId },
-      data: {
-        stripeSubscriptionId: subscription.id,
-        stripePriceId: subscription.items.data[0]?.price.id,
-        plan,
-        status,
-        currentPeriodStart: new Date(subscription.current_period_start * 1000),
-        currentPeriodEnd: new Date(subscription.current_period_end * 1000),
-        cancelAtPeriodEnd: subscription.cancel_at_period_end,
-      },
-    });
+    const sub = await prisma.subscription.findFirst({ where: { organizationId } });
+    if (sub) {
+      await prisma.subscription.update({
+        where: { id: sub.id },
+        data: {
+          stripeSubscriptionId: subscription.id,
+          stripePriceId: subscription.items.data[0]?.price.id,
+          plan,
+          status,
+          currentPeriodStart: new Date(subscription.current_period_start * 1000),
+          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          cancelAtPeriodEnd: subscription.cancel_at_period_end,
+        },
+      });
+    }
 
     logger.info(`Subscription updated for organization ${organizationId}`, { status, plan });
   }
@@ -375,13 +386,16 @@ export class SubscriptionService {
 
     if (!organizationId) return;
 
-    await prisma.subscription.update({
-      where: { organizationId },
-      data: {
-        status: 'CANCELED',
-        cancelAtPeriodEnd: false,
-      },
-    });
+    const sub = await prisma.subscription.findFirst({ where: { organizationId } });
+    if (sub) {
+      await prisma.subscription.update({
+        where: { id: sub.id },
+        data: {
+          status: 'CANCELED',
+          cancelAtPeriodEnd: false,
+        },
+      });
+    }
 
     logger.info(`Subscription canceled for organization ${organizationId}`);
   }
@@ -445,7 +459,7 @@ export class SubscriptionService {
     const expiredTrials = await prisma.subscription.updateMany({
       where: {
         status: 'TRIAL',
-        trialEndsAt: { lt: new Date() },
+        currentPeriodEnd: { lt: new Date() },
       },
       data: {
         status: 'CANCELED',

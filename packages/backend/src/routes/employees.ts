@@ -77,7 +77,7 @@ router.get('/', async (req, res) => {
       prisma.employee.count({ where }),
     ]);
 
-    res.json({
+    return res.json({
       employees,
       pagination: {
         page: pageNum,
@@ -88,7 +88,7 @@ router.get('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error listing employees:', error);
-    res.status(500).json({ error: 'Failed to list employees' });
+    return res.status(500).json({ error: 'Failed to list employees' });
   }
 });
 
@@ -99,8 +99,7 @@ router.post('/', async (req, res) => {
     const parsed = createEmployeeSchema.safeParse(req.body);
 
     if (!parsed.success) {
-      res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
-      return;
+      return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
     }
 
     // Check if user exists
@@ -109,8 +108,7 @@ router.post('/', async (req, res) => {
     });
 
     if (!user) {
-      res.status(404).json({ error: 'User not found' });
-      return;
+      return res.status(404).json({ error: 'User not found' });
     }
 
     // Check if employee already exists for this org
@@ -124,8 +122,7 @@ router.post('/', async (req, res) => {
     });
 
     if (existing) {
-      res.status(409).json({ error: 'Employee already exists in this organization' });
-      return;
+      return res.status(409).json({ error: 'Employee already exists in this organization' });
     }
 
     const employee = await prisma.employee.create({
@@ -149,10 +146,10 @@ router.post('/', async (req, res) => {
       },
     });
 
-    res.status(201).json({ employee });
+    return res.status(201).json({ employee });
   } catch (error) {
     console.error('Error creating employee:', error);
-    res.status(500).json({ error: 'Failed to create employee' });
+    return res.status(500).json({ error: 'Failed to create employee' });
   }
 });
 
@@ -164,8 +161,7 @@ router.patch('/:id', async (req, res) => {
 
     const parsed = updateEmployeeSchema.safeParse(req.body);
     if (!parsed.success) {
-      res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
-      return;
+      return res.status(400).json({ error: 'Validation failed', details: parsed.error.flatten() });
     }
 
     // Verify employee belongs to current org
@@ -174,8 +170,7 @@ router.patch('/:id', async (req, res) => {
     });
 
     if (!employee) {
-      res.status(404).json({ error: 'Employee not found in this organization' });
-      return;
+      return res.status(404).json({ error: 'Employee not found in this organization' });
     }
 
     const updated = await prisma.employee.update({
@@ -194,10 +189,10 @@ router.patch('/:id', async (req, res) => {
       },
     });
 
-    res.json({ employee: updated });
+    return res.json({ employee: updated });
   } catch (error) {
     console.error('Error updating employee:', error);
-    res.status(500).json({ error: 'Failed to update employee' });
+    return res.status(500).json({ error: 'Failed to update employee' });
   }
 });
 
@@ -213,13 +208,11 @@ router.delete('/:id', async (req, res) => {
     });
 
     if (!employee) {
-      res.status(404).json({ error: 'Employee not found in this organization' });
-      return;
+      return res.status(404).json({ error: 'Employee not found in this organization' });
     }
 
     if (!employee.isActive) {
-      res.status(400).json({ error: 'Employee is already deactivated' });
-      return;
+      return res.status(400).json({ error: 'Employee is already deactivated' });
     }
 
     const deactivated = await prisma.employee.update({
@@ -227,10 +220,10 @@ router.delete('/:id', async (req, res) => {
       data: { isActive: false },
     });
 
-    res.json({ employee: deactivated, message: 'Employee deactivated successfully' });
+    return res.json({ employee: deactivated, message: 'Employee deactivated successfully' });
   } catch (error) {
     console.error('Error deactivating employee:', error);
-    res.status(500).json({ error: 'Failed to deactivate employee' });
+    return res.status(500).json({ error: 'Failed to deactivate employee' });
   }
 });
 

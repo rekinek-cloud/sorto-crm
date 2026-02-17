@@ -7,10 +7,16 @@ export interface CommunicationChannel {
   active: boolean;
   config: any;
   emailAddress?: string;
+  displayName?: string;
+  autoProcess?: boolean;
+  createTasks?: boolean;
   unreadCount: number;
   lastMessage?: string;
   lastMessageAt?: string;
   lastSyncAt?: string;
+  createdAt?: string;
+  updatedAt?: string;
+  _count?: Record<string, number>;
 }
 
 export interface Message {

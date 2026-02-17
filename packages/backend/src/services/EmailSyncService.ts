@@ -3,7 +3,8 @@
  * Handles background sync, deduplication, and message processing
  */
 
-import { PrismaClient, EmailAccount, EmailAccountStatus } from '@prisma/client';
+import { PrismaClient, email_accounts as EmailAccount } from '@prisma/client';
+type EmailAccountStatus = string;
 import IMAPService, { IMAPConfig, EmailMessage } from './IMAPService';
 import logger from '../config/logger';
 import crypto from 'crypto';
@@ -42,10 +43,10 @@ export class EmailSyncService {
       options
     });
 
-    const accounts = await this.prisma.emailAccount.findMany({
+    const accounts = await this.prisma.email_accounts.findMany({
       where: {
         isActive: true,
-        status: EmailAccountStatus.ACTIVE
+        status: 'ACTIVE' as any
       }
     });
 
@@ -102,7 +103,7 @@ export class EmailSyncService {
 
     try {
       // Get account details
-      const account = await this.prisma.emailAccount.findUnique({
+      const account = await this.prisma.email_accounts.findUnique({
         where: { id: accountId }
       });
 
@@ -110,7 +111,7 @@ export class EmailSyncService {
         throw new Error(`Email account ${accountId} not found`);
       }
 
-      if (!account.isActive || account.status !== EmailAccountStatus.ACTIVE) {
+      if (!account.isActive || account.status !== ('ACTIVE' as EmailAccountStatus)) {
         throw new Error(`Email account ${account.email} is not active`);
       }
 
@@ -199,7 +200,7 @@ export class EmailSyncService {
       await imapService.disconnect();
 
       // Update account sync status
-      await this.prisma.emailAccount.update({
+      await this.prisma.email_accounts.update({
         where: { id: accountId },
         data: {
           lastSyncAt: new Date(),
@@ -235,10 +236,10 @@ export class EmailSyncService {
       const errorMsg = error instanceof Error ? error.message : String(error);
       
       // Update account with error status
-      await this.prisma.emailAccount.update({
+      await this.prisma.email_accounts.update({
         where: { id: accountId },
         data: {
-          status: EmailAccountStatus.ERROR,
+          status: 'ERROR' as any,
           errorMessage: errorMsg,
           lastErrorAt: new Date()
         }
@@ -382,10 +383,10 @@ export class EmailSyncService {
         data: {
           name: channelName,
           type: 'EMAIL',
-          isActive: true,
+          active: true,
           organizationId: account.organizationId,
           userId: account.userId
-        }
+        } as any
       });
     }
 
@@ -419,7 +420,7 @@ export class EmailSyncService {
   /**
    * Determine message type based on folder and addresses
    */
-  private determineMessageType(folder: string, fromAddress: string, accountEmail: string): string {
+  private determineMessageType(folder: string, fromAddress: string, accountEmail: string): 'INBOX' | 'SENT' | 'DRAFT' {
     if (folder.toLowerCase().includes('sent')) {
       return 'SENT';
     }
@@ -485,12 +486,12 @@ export class EmailSyncService {
         await this.prisma.messageAttachment.create({
           data: {
             messageId,
-            filename: attachment.filename || 'attachment',
+            fileName: attachment.filename || 'attachment',
             contentType: attachment.contentType || 'application/octet-stream',
             size: attachment.size || 0,
             contentId: attachment.cid,
             content: attachment.content ? Buffer.from(attachment.content) : Buffer.alloc(0)
-          }
+          } as any
         });
       } catch (error) {
         logger.error(`❌ Error saving attachment: ${error}`, {

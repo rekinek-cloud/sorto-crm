@@ -101,6 +101,13 @@ interface AIAnalysisResult {
     };
     confidence: number;
   }>;
+
+  // V3 specific fields
+  thinking?: any;
+  assistantMessage?: string;
+  firstSteps?: any;
+  priority?: string;
+  dueDate?: string;
 }
 
 // Helper function to analyze item content with AI - FULL SPEC from master.md

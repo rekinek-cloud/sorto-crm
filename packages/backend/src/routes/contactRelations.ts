@@ -41,7 +41,7 @@ router.get('/', authenticateToken, async (req: any, res: any) => {
       prisma.contactRelation.count({ where })
     ]);
 
-    res.json({
+    return res.json({
       relations,
       pagination: {
         page: pageNum,
@@ -52,7 +52,7 @@ router.get('/', authenticateToken, async (req: any, res: any) => {
     });
   } catch (error) {
     console.error('Error fetching contact relations:', error);
-    res.status(500).json({ error: 'Failed to fetch contact relations' });
+    return res.status(500).json({ error: 'Failed to fetch contact relations' });
   }
 });
 
@@ -90,7 +90,7 @@ router.get('/network/:contactId', authenticateToken, async (req: any, res: any) 
       }
     }
 
-    res.json({
+    return res.json({
       contactId,
       relations,
       connectedContacts: Array.from(contactMap.values()),
@@ -98,7 +98,7 @@ router.get('/network/:contactId', authenticateToken, async (req: any, res: any) 
     });
   } catch (error) {
     console.error('Error fetching contact network:', error);
-    res.status(500).json({ error: 'Failed to fetch contact network' });
+    return res.status(500).json({ error: 'Failed to fetch contact network' });
   }
 });
 
@@ -123,10 +123,10 @@ router.get('/:id', authenticateToken, async (req: any, res: any) => {
       return res.status(404).json({ error: 'Contact relation not found' });
     }
 
-    res.json(relation);
+    return res.json(relation);
   } catch (error) {
     console.error('Error fetching contact relation:', error);
-    res.status(500).json({ error: 'Failed to fetch contact relation' });
+    return res.status(500).json({ error: 'Failed to fetch contact relation' });
   }
 });
 
@@ -174,10 +174,10 @@ router.post('/', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    res.status(201).json(relation);
+    return res.status(201).json(relation);
   } catch (error) {
     console.error('Error creating contact relation:', error);
-    res.status(500).json({ error: 'Failed to create contact relation' });
+    return res.status(500).json({ error: 'Failed to create contact relation' });
   }
 });
 
@@ -212,10 +212,10 @@ router.patch('/:id', authenticateToken, async (req: any, res: any) => {
       }
     });
 
-    res.json(updated);
+    return res.json(updated);
   } catch (error) {
     console.error('Error updating contact relation:', error);
-    res.status(500).json({ error: 'Failed to update contact relation' });
+    return res.status(500).json({ error: 'Failed to update contact relation' });
   }
 });
 
@@ -237,10 +237,10 @@ router.delete('/:id', authenticateToken, async (req: any, res: any) => {
       where: { id: req.params.id }
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     console.error('Error deleting contact relation:', error);
-    res.status(500).json({ error: 'Failed to delete contact relation' });
+    return res.status(500).json({ error: 'Failed to delete contact relation' });
   }
 });
 

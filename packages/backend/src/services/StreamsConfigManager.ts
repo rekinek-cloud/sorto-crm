@@ -5,6 +5,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { z } from 'zod';
+import { v4 as uuidv4 } from 'uuid';
 import {
   StreamConfig,
   StreamConfigSchema,
@@ -328,10 +329,10 @@ export class StreamsConfigManager {
         where: { id: streamId },
         include: {
           stream_relations_stream_relations_parentIdTostreams: {
-            include: { parent: true }
+            include: { streams_stream_relations_childIdTostreams: true }
           },
           stream_relations_stream_relations_childIdTostreams: {
-            include: { child: true }
+            include: { streams_stream_relations_parentIdTostreams: true }
           }
         }
       });
@@ -342,9 +343,10 @@ export class StreamsConfigManager {
       }
 
       // Sprawdź czy INBOX nie ma dzieci typu INBOX
+      // parentIdTostreams = relations where this stream is parent, so children
       if (stream.streamRole === StreamRole.INBOX) {
-        const inboxChildren = stream.stream_relations_stream_relations_childIdTostreams.filter(
-          rel => rel.child.streamRole === StreamRole.INBOX
+        const inboxChildren = stream.stream_relations_stream_relations_parentIdTostreams.filter(
+          (rel: any) => rel.streams_stream_relations_childIdTostreams?.streamRole === StreamRole.INBOX
         );
         if (inboxChildren.length > 0) {
           errors.push('INBOX stream cannot have INBOX children');
@@ -353,8 +355,8 @@ export class StreamsConfigManager {
 
       // Sprawdź czy CONTEXTS ma odpowiednie dzieci
       if (stream.streamRole === StreamRole.CONTEXTS) {
-        const invalidChildren = stream.stream_relations_stream_relations_childIdTostreams.filter(
-          rel => rel.child.streamType !== StreamType.CONTEXT
+        const invalidChildren = stream.stream_relations_stream_relations_parentIdTostreams.filter(
+          (rel: any) => rel.streams_stream_relations_childIdTostreams?.streamType !== StreamType.CONTEXT
         );
         if (invalidChildren.length > 0) {
           errors.push('CONTEXTS stream should only have CONTEXT type children');
@@ -364,7 +366,7 @@ export class StreamsConfigManager {
       // Sprawdź czy PROJECT ma odpowiednią hierarchię
       if (stream.streamType === StreamType.PROJECT) {
         const projectParents = stream.stream_relations_stream_relations_childIdTostreams?.filter(
-          rel => {
+          (rel: any) => {
             const parent = rel.streams_stream_relations_parentIdTostreams;
             return parent?.streamRole === StreamRole.PROJECTS ||
                    parent?.streamType === StreamType.AREA;
@@ -484,13 +486,15 @@ export class StreamsConfigManager {
     organizationId: string,
     createdById: string
   ): Promise<void> {
-    await this.prisma.streamRelation.create({
+    await this.prisma.stream_relations.create({
       data: {
+        id: uuidv4(),
         parentId,
         childId,
         relationType: 'OWNS', // Default relation type
         organizationId,
-        createdById
+        createdById,
+        updatedAt: new Date()
       }
     });
   }
@@ -510,10 +514,10 @@ export class StreamsConfigManager {
       },
       include: {
         stream_relations_stream_relations_parentIdTostreams: {
-          include: { parent: true }
+          include: { streams_stream_relations_childIdTostreams: true }
         },
         stream_relations_stream_relations_childIdTostreams: {
-          include: { child: true }
+          include: { streams_stream_relations_parentIdTostreams: true }
         }
       }
     });

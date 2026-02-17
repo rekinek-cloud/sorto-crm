@@ -409,7 +409,7 @@ export default function ContactDetailsPage() {
                     const title = prompt('Task title:');
                     if (!title?.trim()) return;
                     try {
-                      await tasksApi.createTask({ title: title.trim(), contactId });
+                      await tasksApi.createTask({ title: title.trim(), contactId } as any);
                       toast.success('Task created');
                       await loadContact();
                     } catch (err: any) {

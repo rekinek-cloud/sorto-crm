@@ -76,7 +76,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
     const pages = Math.ceil(total / limitNum);
 
-    res.json({
+    return res.json({
       habits,
       pagination: {
         page: pageNum,
@@ -89,7 +89,7 @@ router.get('/', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     logger.error('Error fetching habits:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -160,7 +160,7 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
       ? Math.round((weeklyCompletionRate._count.id / totalPossibleEntries) * 100)
       : 0;
 
-    res.json({
+    return res.json({
       totalHabits,
       activeHabits,
       inactiveHabits: totalHabits - activeHabits,
@@ -171,7 +171,7 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     logger.error('Error fetching habits stats:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -205,10 +205,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Habit not found' });
     }
 
-    res.json(habit);
+    return res.json(habit);
   } catch (error) {
     logger.error('Error fetching habit:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -239,10 +239,10 @@ router.post('/', authenticateToken, async (req, res) => {
     });
 
     logger.info(`Created habit: ${habit.id} for organization: ${organizationId}`);
-    res.status(201).json(habit);
+    return res.status(201).json(habit);
   } catch (error) {
     logger.error('Error creating habit:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -280,10 +280,10 @@ router.put('/:id', authenticateToken, async (req, res) => {
     });
 
     logger.info(`Updated habit: ${id} for organization: ${organizationId}`);
-    res.json(habit);
+    return res.json(habit);
   } catch (error) {
     logger.error('Error updating habit:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -321,10 +321,10 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     });
 
     logger.info(`Deleted habit: ${id} for organization: ${organizationId}`);
-    res.json({ message: 'Habit deleted successfully' });
+    return res.json({ message: 'Habit deleted successfully' });
   } catch (error) {
     logger.error('Error deleting habit:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -371,10 +371,10 @@ router.post('/:id/entries', authenticateToken, async (req, res) => {
     }
 
     logger.info(`Created/updated habit entry for habit: ${id}, date: ${date}`);
-    res.json(entry);
+    return res.json(entry);
   } catch (error) {
     logger.error('Error creating habit entry:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -413,7 +413,7 @@ router.get('/:id/calendar', authenticateToken, async (req, res) => {
       }
     });
 
-    res.json({
+    return res.json({
       habit,
       entries,
       year: currentYear,
@@ -421,7 +421,7 @@ router.get('/:id/calendar', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     logger.error('Error fetching habit calendar:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 

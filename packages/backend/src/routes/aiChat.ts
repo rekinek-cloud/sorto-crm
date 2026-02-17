@@ -64,13 +64,13 @@ router.get('/conversations', authenticateToken, async (req: Request, res: Respon
       streamId: streamId as string | undefined,
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: conversations,
     });
   } catch (error: any) {
     logger.error('AI Chat list conversations error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -97,13 +97,13 @@ router.post('/conversations', authenticateToken, async (req: Request, res: Respo
       streamId,
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: conversation,
     });
   } catch (error: any) {
     logger.error('AI Chat create conversation error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -128,13 +128,13 @@ router.get('/conversations/:id', authenticateToken, async (req: Request, res: Re
       return res.status(404).json({ error: 'Conversation not found' });
     }
 
-    res.json({
+    return res.json({
       success: true,
       data: conversation,
     });
   } catch (error: any) {
     logger.error('AI Chat get conversation error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -162,13 +162,13 @@ router.patch('/conversations/:id', authenticateToken, async (req: Request, res: 
       streamId,
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Conversation updated',
     });
   } catch (error: any) {
     logger.error('AI Chat update conversation error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -189,13 +189,13 @@ router.delete('/conversations/:id', authenticateToken, async (req: Request, res:
     const service = getService();
     await service.deleteConversation(id, organizationId);
 
-    res.json({
+    return res.json({
       success: true,
       message: 'Conversation deleted',
     });
   } catch (error: any) {
     logger.error('AI Chat delete conversation error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -251,18 +251,18 @@ router.post('/conversations/:id/messages', authenticateToken, async (req: Reques
       }
 
       res.write('data: [DONE]\n\n');
-      res.end();
+      return res.end();
     } catch (streamError: any) {
       res.write(`data: ${JSON.stringify({ error: streamError.message })}\n\n`);
-      res.end();
+      return res.end();
     }
   } catch (error: any) {
     logger.error('AI Chat send message error:', error);
     if (!res.headersSent) {
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     } else {
       res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
-      res.end();
+      return res.end();
     }
   }
 });
@@ -296,13 +296,13 @@ router.post('/chat', authenticateToken, async (req: Request, res: Response) => {
       maxTokens,
     });
 
-    res.json({
+    return res.json({
       success: true,
       data: response,
     });
   } catch (error: any) {
     logger.error('AI Chat simple chat error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -340,18 +340,18 @@ router.post('/chat/stream', authenticateToken, async (req: Request, res: Respons
       }
 
       res.write('data: [DONE]\n\n');
-      res.end();
+      return res.end();
     } catch (streamError: any) {
       res.write(`data: ${JSON.stringify({ error: streamError.message })}\n\n`);
-      res.end();
+      return res.end();
     }
   } catch (error: any) {
     logger.error('AI Chat stream error:', error);
     if (!res.headersSent) {
-      res.status(500).json({ error: error.message });
+      return res.status(500).json({ error: error.message });
     } else {
       res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
-      res.end();
+      return res.end();
     }
   }
 });
@@ -378,13 +378,13 @@ router.get('/models', authenticateToken, async (req: Request, res: Response) => 
     const service = getService();
     const models = service.getAvailableModels();
 
-    res.json({
+    return res.json({
       success: true,
       data: models,
     });
   } catch (error: any) {
     logger.error('AI Chat get models error:', error);
-    res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message });
   }
 });
 
@@ -409,7 +409,7 @@ router.get('/status', authenticateToken, async (req: Request, res: Response) => 
     const service = getService();
     const status = await service.checkStatus();
 
-    res.json({
+    return res.json({
       success: true,
       data: {
         configured: true,
@@ -418,7 +418,7 @@ router.get('/status', authenticateToken, async (req: Request, res: Response) => 
       },
     });
   } catch (error: any) {
-    res.json({
+    return res.json({
       success: true,
       data: {
         configured: true,

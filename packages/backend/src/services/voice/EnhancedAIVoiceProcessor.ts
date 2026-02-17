@@ -28,13 +28,13 @@ interface EnhancedVoiceContext extends VoiceContext {
 export class EnhancedAIVoiceProcessor extends AIVoiceProcessor {
   private vectorStore: VectorStore;
   private ingestionPipeline: DataIngestionPipeline;
-  private aiConfigService: any;
+  private enhancedAiConfigService: any;
 
   constructor(prisma: PrismaClient, vectorStore: VectorStore) {
     super(prisma);
     this.vectorStore = vectorStore;
     this.ingestionPipeline = new DataIngestionPipeline(prisma, vectorStore);
-    this.aiConfigService = getAIConfigService(prisma);
+    this.enhancedAiConfigService = getAIConfigService(prisma);
 
     console.log('🧠 EnhancedAIVoiceProcessor initialized with RAG capabilities');
   }
@@ -78,7 +78,7 @@ export class EnhancedAIVoiceProcessor extends AIVoiceProcessor {
 
       return {
         ...result,
-        response: enhancedResponse,
+        suggestedResponse: enhancedResponse,
         entities: {
           ...result.entities,
           contextDocuments: searchResults.length,
@@ -109,8 +109,8 @@ export class EnhancedAIVoiceProcessor extends AIVoiceProcessor {
       const contextInfo = this.formatContextForAI(context);
 
       // Get OpenAI client and config from AI config service
-      const openaiClient = await this.aiConfigService.getOpenAIClient(context.organizationId);
-      const config = await this.aiConfigService.getOpenAIConfig(context.organizationId);
+      const openaiClient = await this.enhancedAiConfigService.getOpenAIClient(context.organizationId);
+      const config = await this.enhancedAiConfigService.getOpenAIConfig(context.organizationId);
       
       const completion = await openaiClient.chat.completions.create({
         model: config.model,
@@ -285,35 +285,36 @@ Kontekst użytkownika:
         .filter(r => r.document.metadata.type === 'company')
         .map(r => r.document.metadata.entityId);
 
-      // Load related entities in parallel
+      // Load related entities in parallel using protected prisma from base class
+      const prismaClient = this.prisma;
       const [projects, tasks, contacts, companies, communications] = await Promise.all([
-        projectIds.length > 0 ? this.prisma.project.findMany({
+        projectIds.length > 0 ? prismaClient.project.findMany({
           where: { id: { in: projectIds } },
           include: { tasks: true, createdBy: true }
         }) : [],
-        
-        taskIds.length > 0 ? this.prisma.task.findMany({
+
+        taskIds.length > 0 ? prismaClient.task.findMany({
           where: { id: { in: taskIds } },
           include: { project: true, assignedTo: true }
         }) : [],
-        
-        contactIds.length > 0 ? this.prisma.contact.findMany({
+
+        contactIds.length > 0 ? prismaClient.contact.findMany({
           where: { id: { in: contactIds } },
-          include: { company: true }
+          include: { assignedCompany: true }
         }) : [],
-        
-        companyIds.length > 0 ? this.prisma.company.findMany({
+
+        companyIds.length > 0 ? prismaClient.company.findMany({
           where: { id: { in: companyIds } },
-          include: { contacts: true }
+          include: { assignedContacts: true }
         }) : [],
-        
-        // Load recent communications related to found entities
-        this.prisma.communication.findMany({
+
+        // Load recent messages related to found entities
+        prismaClient.message.findMany({
           where: {
             organizationId: context.organizationId,
             OR: [
-              { contactId: { in: contactIds } },
-              { companyId: { in: companyIds } }
+              ...(contactIds.length > 0 ? [{ contactId: { in: contactIds } }] : []),
+              ...(companyIds.length > 0 ? [{ companyId: { in: companyIds } }] : [])
             ]
           },
           take: 5,
@@ -378,7 +379,7 @@ Kontekst użytkownika:
         this.summarizeSearchResults(context.searchResults) : '';
 
       // Get OpenAI client from config service
-      const openaiClient = await this.aiConfigService.getOpenAIClient(context.organizationId);
+      const openaiClient = await this.enhancedAiConfigService.getOpenAIClient(context.organizationId);
       
       const completion = await openaiClient.chat.completions.create({
         model: 'gpt-3.5-turbo',

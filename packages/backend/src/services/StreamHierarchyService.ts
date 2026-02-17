@@ -1,5 +1,6 @@
-import { StreamRelationType, AccessLevel, DataScope, InheritanceRule, Stream, StreamRelation, StreamPermission } from '@prisma/client';
+import { StreamRelationType, AccessLevel, DataScope, InheritanceRule, Stream, stream_relations, stream_permissions } from '@prisma/client';
 import { z } from 'zod';
+import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '../config/database';
 
 // DTOs for type safety
@@ -9,7 +10,7 @@ export const CreateStreamRelationDto = z.object({
   relationType: z.enum(['OWNS', 'MANAGES', 'BELONGS_TO', 'RELATED_TO', 'DEPENDS_ON', 'SUPPORTS']),
   description: z.string().optional(),
   isActive: z.boolean().default(true),
-  inheritanceRule: z.enum(['NO_INHERITANCE', 'INHERIT_DOWN', 'INHERIT_UP', 'INHERIT_BIDIRECTIONAL']).default('INHERIT_DOWN'),
+  inheritanceRule: z.enum(['NO_INHERITANCE', 'INHERIT_DOWN', 'INHERIT_UP', 'BIDIRECTIONAL']).default('INHERIT_DOWN'),
   permissions: z.array(z.object({
     dataScope: z.enum(['BASIC_INFO', 'TASKS', 'PROJECTS', 'FINANCIAL', 'METRICS', 'COMMUNICATION', 'PERMISSIONS', 'CONFIGURATION', 'AUDIT_LOGS']),
     action: z.enum(['READ', 'CREATE', 'UPDATE', 'DELETE', 'MANAGE', 'APPROVE', 'AUDIT']),
@@ -23,7 +24,7 @@ export const UpdateStreamRelationDto = z.object({
   relationType: z.enum(['OWNS', 'MANAGES', 'BELONGS_TO', 'RELATED_TO', 'DEPENDS_ON', 'SUPPORTS']).optional(),
   description: z.string().optional(),
   isActive: z.boolean().optional(),
-  inheritanceRule: z.enum(['NO_INHERITANCE', 'INHERIT_DOWN', 'INHERIT_UP', 'INHERIT_BIDIRECTIONAL']).optional()
+  inheritanceRule: z.enum(['NO_INHERITANCE', 'INHERIT_DOWN', 'INHERIT_UP', 'BIDIRECTIONAL']).optional()
 });
 
 export const StreamHierarchyQueryDto = z.object({
@@ -39,13 +40,13 @@ export type StreamHierarchyQuery = z.infer<typeof StreamHierarchyQueryDto>;
 
 // Extended types for responses
 export interface StreamWithRelations extends Stream {
-  parentRelations: (StreamRelation & { 
+  parentRelations: (stream_relations & { 
     parent: Stream;
-    permissions: StreamPermission[];
+    permissions: stream_permissions[];
   })[];
-  childRelations: (StreamRelation & { 
+  childRelations: (stream_relations & { 
     child: Stream;
-    permissions: StreamPermission[];
+    permissions: stream_permissions[];
   })[];
 }
 
@@ -72,7 +73,7 @@ export class StreamHierarchyService {
   /**
    * Tworzy nową relację między strumieniami
    */
-  async createRelation(data: CreateStreamRelationInput): Promise<StreamRelation> {
+  async createRelation(data: CreateStreamRelationInput): Promise<stream_relations> {
     // Walidacja danych wejściowych
     const validatedData = CreateStreamRelationDto.parse(data);
     
@@ -116,8 +117,9 @@ export class StreamHierarchyService {
     // Utworzenie relacji w transakcji
     return await prisma.$transaction(async (tx) => {
       // Utworzenie relacji
-      const relation = await tx.streamRelation.create({
+      const relation = await tx.stream_relations.create({
         data: {
+          id: uuidv4(),
           parentId: validatedData.parentId,
           childId: validatedData.childId,
           relationType: validatedData.relationType as StreamRelationType,
@@ -125,18 +127,23 @@ export class StreamHierarchyService {
           isActive: validatedData.isActive,
           inheritanceRule: validatedData.inheritanceRule as InheritanceRule,
           organizationId: validatedData.organizationId,
-          createdById: validatedData.createdById
+          createdById: validatedData.createdById,
+          updatedAt: new Date()
         }
       });
 
       // Dodanie uprawnień jeśli zostały podane
       if (validatedData.permissions && validatedData.permissions.length > 0) {
-        await tx.streamPermission.createMany({
+        await tx.stream_permissions.createMany({
           data: validatedData.permissions.map(perm => ({
+            id: uuidv4(),
             relationId: relation.id,
-            dataScope: perm.dataScope as DataScope,
-            action: perm.action as any, // TODO: Fix PermissionAction enum
-            granted: perm.granted
+            userId: validatedData.createdById,
+            accessLevel: 'CONTRIBUTOR' as const,
+            dataScope: [perm.dataScope as DataScope],
+            grantedById: validatedData.createdById,
+            organizationId: validatedData.organizationId,
+            updatedAt: new Date()
           }))
         });
       }
@@ -189,7 +196,7 @@ export class StreamHierarchyService {
   /**
    * Aktualizuje relację między strumieniami
    */
-  async updateRelation(relationId: string, data: UpdateStreamRelationInput): Promise<StreamRelation> {
+  async updateRelation(relationId: string, data: UpdateStreamRelationInput): Promise<stream_relations> {
     const validatedData = UpdateStreamRelationDto.parse(data);
     
     const existingRelation = await prisma.stream_relations.findUnique({
@@ -225,12 +232,12 @@ export class StreamHierarchyService {
 
     await prisma.$transaction(async (tx) => {
       // Usunięcie uprawnień
-      await tx.streamPermission.deleteMany({
+      await tx.stream_permissions.deleteMany({
         where: { relationId }
       });
       
       // Usunięcie relacji
-      await tx.streamRelation.delete({
+      await tx.stream_relations.delete({
         where: { id: relationId }
       });
     });
@@ -263,18 +270,18 @@ export class StreamHierarchyService {
     const relations = await prisma.stream_relations.findMany({
       where,
       include: {
-        parent: true,
-        child: true
+        streams_stream_relations_parentIdTostreams: true,
+        streams_stream_relations_childIdTostreams: true
       }
     });
 
     // Zwróć strumienie które NIE są tym podanym
     const relatedStreams: Stream[] = [];
     relations.forEach(relation => {
-      if (relation.parentId === streamId && relation.child) {
-        relatedStreams.push(relation.child);
-      } else if (relation.childId === streamId && relation.parent) {
-        relatedStreams.push(relation.parent);
+      if (relation.parentId === streamId && relation.streams_stream_relations_childIdTostreams) {
+        relatedStreams.push(relation.streams_stream_relations_childIdTostreams);
+      } else if (relation.childId === streamId && relation.streams_stream_relations_parentIdTostreams) {
+        relatedStreams.push(relation.streams_stream_relations_parentIdTostreams);
       }
     });
 
@@ -403,32 +410,34 @@ export class StreamHierarchyService {
         isActive: true
       },
       include: {
-        parent: true,
-        permissions: includePermissions
+        streams_stream_relations_parentIdTostreams: true,
+        stream_permissions: includePermissions
       }
     });
 
     const parents: StreamWithRelations[] = [];
-    
+
     for (const relation of parentRelations) {
+      const parentStream = relation.streams_stream_relations_parentIdTostreams;
+      const permissions = (relation.stream_permissions || []) as stream_permissions[];
       const parentWithRelations: StreamWithRelations = {
-        ...relation.parent,
+        ...parentStream,
         parentRelations: [],
         childRelations: [{
           ...relation,
-          child: relation.parent, // Uwaga: to może być mylące, ale zachowujemy strukturę
-          permissions: relation.permissions || []
-        }]
+          child: parentStream, // Uwaga: to może być mylące, ale zachowujemy strukturę
+          permissions
+        } as any]
       };
 
       // Rekurencyjnie pobierz rodziców rodziców
       const grandParents = await this.getStreamParents(
-        relation.parent.id, 
-        maxDepth, 
-        includePermissions, 
+        parentStream.id,
+        maxDepth,
+        includePermissions,
         currentDepth + 1
       );
-      
+
       parentWithRelations.parentRelations = grandParents.map(gp => ({
         ...gp.childRelations[0], // Pierwsza relacja z grandparent
         parent: gp,
@@ -460,32 +469,34 @@ export class StreamHierarchyService {
         isActive: true
       },
       include: {
-        child: true,
-        permissions: includePermissions
+        streams_stream_relations_childIdTostreams: true,
+        stream_permissions: includePermissions
       }
     });
 
     const children: StreamWithRelations[] = [];
-    
+
     for (const relation of childRelations) {
+      const childStream = relation.streams_stream_relations_childIdTostreams;
+      const permissions = (relation.stream_permissions || []) as stream_permissions[];
       const childWithRelations: StreamWithRelations = {
-        ...relation.child,
+        ...childStream,
         parentRelations: [{
           ...relation,
-          parent: relation.child, // Uwaga: struktura może być myląca
-          permissions: relation.permissions || []
-        }],
+          parent: childStream, // Uwaga: struktura może być myląca
+          permissions
+        } as any],
         childRelations: []
       };
 
       // Rekurencyjnie pobierz dzieci dzieci
       const grandChildren = await this.getStreamChildren(
-        relation.child.id, 
-        maxDepth, 
-        includePermissions, 
+        childStream.id,
+        maxDepth,
+        includePermissions,
         currentDepth + 1
       );
-      
+
       childWithRelations.childRelations = grandChildren.map(gc => ({
         ...gc.parentRelations[0], // Pierwsza relacja z grandchild
         child: gc,

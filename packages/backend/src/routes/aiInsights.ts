@@ -44,8 +44,8 @@ router.use(authenticateUser);
  * GET /api/ai-insights/streams/:streamId
  * Get AI insights for specific stream
  */
-router.get('/streams/:streamId', 
-  validateRequest(streamInsightsSchema), 
+router.get('/streams/:streamId',
+  validateRequest(streamInsightsSchema.shape),
   async (req: any, res) => {
     try {
       const { streamId } = req.params;
@@ -85,22 +85,22 @@ router.get('/streams/:streamId',
       insights = insights.slice(0, limit);
 
       // Store insights for tracking
-      await Promise.all(insights.map(insight => 
-        prisma.ai_executions.create({
+      await Promise.all(insights.map(insight =>
+        (prisma.ai_executions.create as any)({
           data: {
             organizationId,
             type: 'INSIGHT_GENERATION',
             input: { streamId, filters: { types, priority } },
             output: { insight },
-            status: 'COMPLETED',
+            status: 'SUCCESS',
             confidence: insight.confidence
           }
-        }).catch(error => {
+        }).catch((error: any) => {
           logger.error('Failed to store AI insight:', error);
         })
       ));
 
-      res.json({
+      return res.json({
         success: true,
         data: {
           insights,
@@ -120,7 +120,7 @@ router.get('/streams/:streamId',
 
     } catch (error) {
       logger.error('Error generating stream insights:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Failed to generate insights'
       });
@@ -133,7 +133,7 @@ router.get('/streams/:streamId',
  * Get organization-wide AI insights
  */
 router.get('/global',
-  validateRequest(globalInsightsSchema),
+  validateRequest(globalInsightsSchema.shape),
   async (req: any, res) => {
     try {
       const { types, priority, limit, timeframe } = req.query;
@@ -155,7 +155,7 @@ router.get('/global',
             ...insight,
             streamName: stream.name
           })))
-          .catch(error => {
+          .catch((error): any[] => {
             logger.error(`Failed to generate insights for stream ${stream.id}:`, error);
             return [];
           })
@@ -191,7 +191,7 @@ router.get('/global',
       // Limit results
       allInsights = allInsights.slice(0, limit);
 
-      res.json({
+      return res.json({
         success: true,
         data: {
           insights: allInsights,
@@ -209,7 +209,7 @@ router.get('/global',
 
     } catch (error) {
       logger.error('Error generating global insights:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Failed to generate global insights'
       });
@@ -222,7 +222,7 @@ router.get('/global',
  * Execute AI-suggested action
  */
 router.post('/actions',
-  validateRequest(actionSchema),
+  validateRequest(actionSchema.shape),
   async (req: any, res) => {
     try {
       const { actionType, actionData, insightId } = req.body;
@@ -240,10 +240,10 @@ router.post('/actions',
               title: actionData.title,
               description: actionData.description || '',
               priority: actionData.priority || 'MEDIUM',
-              status: 'TODO',
+              status: 'NEW',
               organizationId,
-              creatorId: userId,
-              assigneeId: actionData.assigneeId || userId,
+              createdById: userId,
+              assignedToId: actionData.assigneeId || userId,
               streamId: actionData.streamId,
               projectId: actionData.projectId,
               dueDate: actionData.dueDate ? new Date(actionData.dueDate) : undefined
@@ -257,10 +257,9 @@ router.post('/actions',
               title: actionData.title || 'AI Suggested Meeting',
               description: actionData.description || '',
               organizationId,
-              organizerId: userId,
+              organizedById: userId,
               startTime: actionData.startTime ? new Date(actionData.startTime) : new Date(Date.now() + 24 * 60 * 60 * 1000),
-              endTime: actionData.endTime ? new Date(actionData.endTime) : new Date(Date.now() + 25 * 60 * 60 * 1000),
-              type: actionData.type || 'INTERNAL'
+              endTime: actionData.endTime ? new Date(actionData.endTime) : new Date(Date.now() + 25 * 60 * 60 * 1000)
             }
           });
           break;
@@ -272,9 +271,7 @@ router.post('/actions',
               data: {
                 stage: actionData.stage,
                 value: actionData.value,
-                notes: actionData.notes,
-                nextAction: actionData.nextAction,
-                nextActionDate: actionData.nextActionDate ? new Date(actionData.nextActionDate) : undefined
+                notes: actionData.notes
               }
             });
           }
@@ -282,16 +279,16 @@ router.post('/actions',
 
         case 'notify':
           // Create notification/alert
-          result = await prisma.errorLog.create({
+          result = await (prisma.errorLog.create as any)({
             data: {
               organizationId,
               level: 'INFO',
               message: actionData.message || 'AI Notification',
-              context: { 
+              context: JSON.stringify({
                 type: 'ai_notification',
                 insightId,
-                data: actionData 
-              }
+                data: actionData
+              })
             }
           });
           break;
@@ -304,18 +301,18 @@ router.post('/actions',
       }
 
       // Log action execution
-      await prisma.ai_executions.create({
+      await (prisma.ai_executions.create as any)({
         data: {
           organizationId,
           type: 'ACTION_EXECUTION',
           input: { actionType, actionData, insightId },
           output: { result },
-          status: 'COMPLETED',
+          status: 'SUCCESS',
           confidence: 100
         }
       });
 
-      res.json({
+      return res.json({
         success: true,
         data: {
           action: actionType,
@@ -326,7 +323,7 @@ router.post('/actions',
 
     } catch (error) {
       logger.error('Error executing AI action:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Failed to execute action'
       });
@@ -368,7 +365,7 @@ router.get('/communication/:channelId',
 
       const insights = await generateCommunicationInsights(channel);
 
-      res.json({
+      return res.json({
         success: true,
         data: {
           channel: {
@@ -388,7 +385,7 @@ router.get('/communication/:channelId',
 
     } catch (error) {
       logger.error('Error generating communication insights:', error);
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
         error: 'Failed to generate communication insights'
       });
@@ -542,7 +539,7 @@ function calculateSimpleSentiment(messages: any[]): number {
     const content = (msg.content || '').toLowerCase();
     const words = content.split(/\s+/);
     
-    words.forEach(word => {
+    words.forEach((word: any) => {
       if (positiveWords.includes(word)) score += 1;
       if (negativeWords.includes(word)) score -= 1;
       wordCount++;

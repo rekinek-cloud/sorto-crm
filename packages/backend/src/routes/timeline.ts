@@ -24,10 +24,10 @@ router.get('/', authenticateToken, async (req, res) => {
       orderBy: { startDate: 'asc' }
     });
 
-    res.json({ events });
+    return res.json({ events });
   } catch (error) {
     logger.error('Error fetching timeline:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -48,10 +48,10 @@ router.post('/', authenticateToken, async (req, res) => {
       }
     });
 
-    res.status(201).json(event);
+    return res.status(201).json(event);
   } catch (error) {
     logger.error('Error creating timeline event:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 

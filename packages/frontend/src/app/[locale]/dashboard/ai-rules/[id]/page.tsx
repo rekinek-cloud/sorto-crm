@@ -56,16 +56,16 @@ export default function RuleEditorPage() {
       setRule(data);
       setName(data.name || '');
       setDescription(data.description || '');
-      setCategory(data.category || 'CLASSIFICATION');
-      setDataType(data.dataType || 'EMAIL');
+      setCategory((data as any).category || 'CLASSIFICATION');
+      setDataType((data as any).dataType || 'EMAIL');
       setPriority(data.priority || 100);
-      setStatus(data.status || 'ACTIVE');
-      setConditions(data.conditions?.conditions || []);
-      setMainOperator(data.conditions?.operator || 'AND');
-      setActions(data.actions || {});
+      setStatus((data as any).status || 'ACTIVE');
+      setConditions((data.conditions as any)?.conditions || data.conditions || []);
+      setMainOperator((data.conditions as any)?.operator || 'AND');
+      setActions(data.actions || {} as any);
       setAiPrompt(data.aiPrompt || '');
-      setAiSystemPrompt(data.aiSystemPrompt || '');
-      setAiModel(data.aiModelName || data.aiModel || '');
+      setAiSystemPrompt((data as any).aiSystemPrompt || '');
+      setAiModel((data as any).aiModelName || data.aiModel || '');
     } catch {
       // handled by UI
     } finally {
@@ -76,8 +76,8 @@ export default function RuleEditorPage() {
   const loadExecutions = useCallback(async () => {
     setExecutionsLoading(true);
     try {
-      const data = await aiRulesApi.getExecutionHistory(ruleId, { limit: 50 });
-      setExecutions(data || []);
+      const result = await aiRulesApi.getExecutionHistory(ruleId, { limit: 50 });
+      setExecutions((result as any)?.history || (Array.isArray(result) ? result : []));
     } catch {
       // optional
     } finally {
@@ -105,8 +105,8 @@ export default function RuleEditorPage() {
         dataType,
         priority,
         status,
-        conditions: { operator: mainOperator, conditions },
-        actions,
+        conditions: { operator: mainOperator, conditions } as any,
+        actions: actions as any,
         aiPrompt,
         aiSystemPrompt,
         modelId: aiModel || undefined,
@@ -165,7 +165,7 @@ export default function RuleEditorPage() {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100">{name || 'Edytuj regule'}</h1>
-              {rule.isSystem && <ShieldAlert className="w-5 h-5 text-amber-500" title="Regula systemowa" />}
+              {rule.isSystem && <ShieldAlert className="w-5 h-5 text-amber-500" {...{ title: "Regula systemowa" } as any} />}
             </div>
             <p className="text-sm text-slate-500 dark:text-slate-400">ID: {ruleId}</p>
           </div>

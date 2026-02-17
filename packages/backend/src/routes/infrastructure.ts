@@ -27,10 +27,10 @@ router.use(requireRole(['ADMIN', 'OWNER']));
 router.get('/overview', async (req: Request, res: Response) => {
   try {
     const overview = await infrastructureService.getOverview();
-    res.json(overview);
+    return res.json(overview);
   } catch (error) {
     logger.error('Error getting infrastructure overview:', error);
-    res.status(500).json({ error: 'Failed to get infrastructure overview' });
+    return res.status(500).json({ error: 'Failed to get infrastructure overview' });
   }
 });
 
@@ -45,10 +45,10 @@ router.get('/overview', async (req: Request, res: Response) => {
 router.get('/server', async (req: Request, res: Response) => {
   try {
     const metrics = await infrastructureService.getServerMetrics();
-    res.json(metrics);
+    return res.json(metrics);
   } catch (error) {
     logger.error('Error getting server metrics:', error);
-    res.status(500).json({ error: 'Failed to get server metrics' });
+    return res.status(500).json({ error: 'Failed to get server metrics' });
   }
 });
 
@@ -59,10 +59,10 @@ router.get('/server', async (req: Request, res: Response) => {
 router.get('/disk', async (req: Request, res: Response) => {
   try {
     const diskUsage = await infrastructureService.getDiskUsage();
-    res.json(diskUsage);
+    return res.json(diskUsage);
   } catch (error) {
     logger.error('Error getting disk usage:', error);
-    res.status(500).json({ error: 'Failed to get disk usage' });
+    return res.status(500).json({ error: 'Failed to get disk usage' });
   }
 });
 
@@ -78,10 +78,10 @@ router.get('/containers', async (req: Request, res: Response) => {
   try {
     const showAll = req.query.all === 'true';
     const containers = await infrastructureService.getContainers(showAll);
-    res.json(containers);
+    return res.json(containers);
   } catch (error) {
     logger.error('Error listing containers:', error);
-    res.status(500).json({ error: 'Failed to list containers' });
+    return res.status(500).json({ error: 'Failed to list containers' });
   }
 });
 
@@ -95,10 +95,10 @@ router.get('/containers/:name/stats', async (req: Request, res: Response) => {
     if (!stats) {
       return res.status(404).json({ error: 'Container not found' });
     }
-    res.json(stats);
+    return res.json(stats);
   } catch (error) {
     logger.error('Error getting container stats:', error);
-    res.status(500).json({ error: 'Failed to get container stats' });
+    return res.status(500).json({ error: 'Failed to get container stats' });
   }
 });
 
@@ -112,10 +112,10 @@ router.post('/containers/:name/restart', async (req: Request, res: Response) => 
     if (!result.success) {
       return res.status(500).json({ error: result.message });
     }
-    res.json(result);
+    return res.json(result);
   } catch (error) {
     logger.error('Error restarting container:', error);
-    res.status(500).json({ error: 'Failed to restart container' });
+    return res.status(500).json({ error: 'Failed to restart container' });
   }
 });
 
@@ -129,10 +129,10 @@ router.post('/containers/:name/stop', async (req: Request, res: Response) => {
     if (!result.success) {
       return res.status(500).json({ error: result.message });
     }
-    res.json(result);
+    return res.json(result);
   } catch (error) {
     logger.error('Error stopping container:', error);
-    res.status(500).json({ error: 'Failed to stop container' });
+    return res.status(500).json({ error: 'Failed to stop container' });
   }
 });
 
@@ -146,10 +146,10 @@ router.post('/containers/:name/start', async (req: Request, res: Response) => {
     if (!result.success) {
       return res.status(500).json({ error: result.message });
     }
-    res.json(result);
+    return res.json(result);
   } catch (error) {
     logger.error('Error starting container:', error);
-    res.status(500).json({ error: 'Failed to start container' });
+    return res.status(500).json({ error: 'Failed to start container' });
   }
 });
 
@@ -165,10 +165,10 @@ router.get('/containers/:name/logs', async (req: Request, res: Response) => {
   try {
     const lines = parseInt(req.query.lines as string) || 100;
     const logs = await infrastructureService.getContainerLogs(req.params.name, lines);
-    res.json({ logs });
+    return res.json({ logs });
   } catch (error) {
     logger.error('Error getting container logs:', error);
-    res.status(500).json({ error: 'Failed to get container logs' });
+    return res.status(500).json({ error: 'Failed to get container logs' });
   }
 });
 
@@ -184,10 +184,10 @@ router.get('/containers/:name/logs/search', async (req: Request, res: Response) 
     }
     const lines = parseInt(req.query.lines as string) || 500;
     const results = await infrastructureService.searchContainerLogs(req.params.name, query, lines);
-    res.json({ results, count: results.length });
+    return res.json({ results, count: results.length });
   } catch (error) {
     logger.error('Error searching logs:', error);
-    res.status(500).json({ error: 'Failed to search logs' });
+    return res.status(500).json({ error: 'Failed to search logs' });
   }
 });
 
@@ -199,10 +199,10 @@ router.get('/containers/:name/logs/errors', async (req: Request, res: Response) 
   try {
     const lines = parseInt(req.query.lines as string) || 500;
     const errors = await infrastructureService.getErrorLogs(req.params.name, lines);
-    res.json({ errors, count: errors.length });
+    return res.json({ errors, count: errors.length });
   } catch (error) {
     logger.error('Error getting error logs:', error);
-    res.status(500).json({ error: 'Failed to get error logs' });
+    return res.status(500).json({ error: 'Failed to get error logs' });
   }
 });
 
@@ -215,10 +215,10 @@ router.get('/system/logs', async (req: Request, res: Response) => {
     const service = req.query.service as string;
     const lines = parseInt(req.query.lines as string) || 50;
     const logs = await infrastructureService.getSystemLogs(service, lines);
-    res.json({ logs });
+    return res.json({ logs });
   } catch (error) {
     logger.error('Error getting system logs:', error);
-    res.status(500).json({ error: 'Failed to get system logs' });
+    return res.status(500).json({ error: 'Failed to get system logs' });
   }
 });
 
@@ -241,10 +241,10 @@ router.get('/health', async (req: Request, res: Response) => {
       error: health.filter(h => h.status === 'error').length
     };
 
-    res.json({ summary, apps: health });
+    return res.json({ summary, apps: health });
   } catch (error) {
     logger.error('Error getting health status:', error);
-    res.status(500).json({ error: 'Failed to get health status' });
+    return res.status(500).json({ error: 'Failed to get health status' });
   }
 });
 
@@ -259,10 +259,10 @@ router.get('/health', async (req: Request, res: Response) => {
 router.get('/databases', async (req: Request, res: Response) => {
   try {
     const databases = await infrastructureService.getDatabasesStatus();
-    res.json(databases);
+    return res.json(databases);
   } catch (error) {
     logger.error('Error getting database status:', error);
-    res.status(500).json({ error: 'Failed to get database status' });
+    return res.status(500).json({ error: 'Failed to get database status' });
   }
 });
 
@@ -277,10 +277,10 @@ router.get('/databases', async (req: Request, res: Response) => {
 router.get('/github/repos', async (req: Request, res: Response) => {
   try {
     const repos = await infrastructureService.getGitHubRepos();
-    res.json(repos);
+    return res.json(repos);
   } catch (error) {
     logger.error('Error getting GitHub repos:', error);
-    res.status(500).json({ error: 'Failed to get GitHub repositories' });
+    return res.status(500).json({ error: 'Failed to get GitHub repositories' });
   }
 });
 
@@ -291,10 +291,10 @@ router.get('/github/repos', async (req: Request, res: Response) => {
 router.get('/github/repos/new', async (req: Request, res: Response) => {
   try {
     const repos = await infrastructureService.getNewGitHubRepos();
-    res.json(repos);
+    return res.json(repos);
   } catch (error) {
     logger.error('Error getting new repos:', error);
-    res.status(500).json({ error: 'Failed to get new repositories' });
+    return res.status(500).json({ error: 'Failed to get new repositories' });
   }
 });
 
@@ -309,10 +309,10 @@ router.post('/github/repos/:name/clone', async (req: Request, res: Response) => 
     if (!result.success) {
       return res.status(400).json({ error: result.message });
     }
-    res.json(result);
+    return res.json(result);
   } catch (error) {
     logger.error('Error cloning repo:', error);
-    res.status(500).json({ error: 'Failed to clone repository' });
+    return res.status(500).json({ error: 'Failed to clone repository' });
   }
 });
 
@@ -323,10 +323,10 @@ router.post('/github/repos/:name/clone', async (req: Request, res: Response) => 
 router.get('/github/sync-status', async (req: Request, res: Response) => {
   try {
     const status = await infrastructureService.getReposSyncStatus();
-    res.json(status);
+    return res.json(status);
   } catch (error) {
     logger.error('Error getting sync status:', error);
-    res.status(500).json({ error: 'Failed to get sync status' });
+    return res.status(500).json({ error: 'Failed to get sync status' });
   }
 });
 
@@ -337,10 +337,10 @@ router.get('/github/sync-status', async (req: Request, res: Response) => {
 router.post('/github/repos/:name/pull', async (req: Request, res: Response) => {
   try {
     const result = await infrastructureService.pullGitHubRepo(req.params.name);
-    res.json(result);
+    return res.json(result);
   } catch (error) {
     logger.error('Error pulling repo:', error);
-    res.status(500).json({ error: 'Failed to pull repository' });
+    return res.status(500).json({ error: 'Failed to pull repository' });
   }
 });
 

@@ -27,10 +27,10 @@ router.get('/inbox', requireAuth, async (req: AuthenticatedRequest, res) => {
 
     const items = await streamWorkflowService.getInboxItems(req.user!.organizationId, filters);
     
-    res.json(items);
+    return res.json(items);
   } catch (error) {
     console.error('Error fetching inbox items:', error);
-    res.status(500).json({ error: 'Failed to fetch inbox items' });
+    return res.status(500).json({ error: 'Failed to fetch inbox items' });
   }
 });
 
@@ -38,10 +38,10 @@ router.get('/inbox', requireAuth, async (req: AuthenticatedRequest, res) => {
 router.get('/inbox/stats', requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const stats = await streamWorkflowService.getInboxStats(req.user!.organizationId);
-    res.json(stats);
+    return res.json(stats);
   } catch (error) {
     console.error('Error fetching inbox stats:', error);
-    res.status(500).json({ error: 'Failed to fetch inbox statistics' });
+    return res.status(500).json({ error: 'Failed to fetch inbox statistics' });
   }
 });
 
@@ -82,7 +82,7 @@ router.post('/inbox', requireAuth, async (req: AuthenticatedRequest, res) => {
       }
     });
 
-    res.status(201).json({
+    return res.status(201).json({
       message: 'Inbox item created successfully',
       item: {
         id: task.id,
@@ -104,7 +104,7 @@ router.post('/inbox', requireAuth, async (req: AuthenticatedRequest, res) => {
     });
   } catch (error) {
     console.error('Error creating inbox item:', error);
-    res.status(500).json({ error: 'Failed to create inbox item' });
+    return res.status(500).json({ error: 'Failed to create inbox item' });
   }
 });
 
@@ -118,13 +118,13 @@ router.post('/inbox/:id/process', requireAuth, async (req: AuthenticatedRequest,
     
     const result = await streamWorkflowService.processInboxItem(id, decision, req.user!.id);
     
-    res.json({
+    return res.json({
       message: 'Item processed successfully',
       result
     });
   } catch (error) {
     console.error('Error processing inbox item:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       error: error instanceof Error ? error.message : 'Failed to process item' 
     });
   }
@@ -142,13 +142,13 @@ router.post('/inbox/:id/quick-action', requireAuth, async (req: AuthenticatedReq
     
     const result = await streamWorkflowService.quickAction(id, action, req.user!.id);
     
-    res.json({
+    return res.json({
       message: 'Quick action completed',
       result
     });
   } catch (error) {
     console.error('Error performing quick action:', error);
-    res.status(500).json({ error: 'Failed to perform quick action' });
+    return res.status(500).json({ error: 'Failed to perform quick action' });
   }
 });
 
@@ -211,10 +211,10 @@ router.get('/next-actions', requireAuth, async (req: AuthenticatedRequest, res) 
       skip: parseInt(offset as string)
     });
 
-    res.json(tasks);
+    return res.json(tasks);
   } catch (error) {
     console.error('Error fetching next actions:', error);
-    res.status(500).json({ error: 'Failed to fetch next actions' });
+    return res.status(500).json({ error: 'Failed to fetch next actions' });
   }
 });
 
@@ -263,7 +263,7 @@ router.get('/next-actions/stats', requireAuth, async (req: AuthenticatedRequest,
       })
     ]);
 
-    res.json({
+    return res.json({
       totalActions,
       overdue,
       dueToday,
@@ -277,7 +277,7 @@ router.get('/next-actions/stats', requireAuth, async (req: AuthenticatedRequest,
     });
   } catch (error) {
     console.error('Error fetching next actions stats:', error);
-    res.status(500).json({ error: 'Failed to fetch next actions statistics' });
+    return res.status(500).json({ error: 'Failed to fetch next actions statistics' });
   }
 });
 
@@ -303,10 +303,10 @@ router.put('/tasks/:id/context', requireAuth, async (req: AuthenticatedRequest, 
       data: { contextId: context }
     });
 
-    res.json(updatedTask);
+    return res.json(updatedTask);
   } catch (error) {
     console.error('Error updating task context:', error);
-    res.status(500).json({ error: 'Failed to update task context' });
+    return res.status(500).json({ error: 'Failed to update task context' });
   }
 });
 
@@ -348,13 +348,13 @@ router.post('/tasks/:id/complete', requireAuth, async (req: AuthenticatedRequest
       });
     }
 
-    res.json({
+    return res.json({
       message: 'Task completed successfully',
       task: updatedTask
     });
   } catch (error) {
     console.error('Error completing task:', error);
-    res.status(500).json({ error: 'Failed to complete task' });
+    return res.status(500).json({ error: 'Failed to complete task' });
   }
 });
 
@@ -394,10 +394,10 @@ router.get('/waiting-for', requireAuth, async (req: AuthenticatedRequest, res) =
       skip: parseInt(offset as string)
     });
 
-    res.json(waitingForItems);
+    return res.json(waitingForItems);
   } catch (error) {
     console.error('Error fetching waiting for items:', error);
-    res.status(500).json({ error: 'Failed to fetch waiting for items' });
+    return res.status(500).json({ error: 'Failed to fetch waiting for items' });
   }
 });
 
@@ -428,13 +428,13 @@ router.post('/waiting-for/:id/follow-up', requireAuth, async (req: Authenticated
       }
     });
 
-    res.json({
+    return res.json({
       message: 'Follow-up recorded successfully',
       item: updatedItem
     });
   } catch (error) {
     console.error('Error recording follow-up:', error);
-    res.status(500).json({ error: 'Failed to record follow-up' });
+    return res.status(500).json({ error: 'Failed to record follow-up' });
   }
 });
 
@@ -471,10 +471,10 @@ router.get('/someday-maybe', requireAuth, async (req: AuthenticatedRequest, res)
       skip: parseInt(offset as string)
     });
 
-    res.json(somedayItems);
+    return res.json(somedayItems);
   } catch (error) {
     console.error('Error fetching someday/maybe items:', error);
-    res.status(500).json({ error: 'Failed to fetch someday/maybe items' });
+    return res.status(500).json({ error: 'Failed to fetch someday/maybe items' });
   }
 });
 
@@ -503,10 +503,10 @@ router.post('/someday-maybe', requireAuth, async (req: AuthenticatedRequest, res
       }
     });
 
-    res.status(201).json(item);
+    return res.status(201).json(item);
   } catch (error) {
     console.error('Error creating someday/maybe item:', error);
-    res.status(500).json({ error: 'Failed to create someday/maybe item' });
+    return res.status(500).json({ error: 'Failed to create someday/maybe item' });
   }
 });
 
@@ -551,14 +551,14 @@ router.post('/someday-maybe/:id/activate', requireAuth, async (req: Authenticate
       }
     });
 
-    res.json({
+    return res.json({
       message: 'Someday/maybe item activated as task',
       task,
       somedayItem
     });
   } catch (error) {
     console.error('Error activating someday/maybe item:', error);
-    res.status(500).json({ error: 'Failed to activate someday/maybe item' });
+    return res.status(500).json({ error: 'Failed to activate someday/maybe item' });
   }
 });
 
@@ -574,10 +574,10 @@ router.get('/contexts', requireAuth, async (req: AuthenticatedRequest, res) => {
       orderBy: { name: 'asc' }
     });
 
-    res.json(contexts);
+    return res.json(contexts);
   } catch (error) {
     console.error('Error fetching contexts:', error);
-    res.status(500).json({ error: 'Failed to fetch contexts' });
+    return res.status(500).json({ error: 'Failed to fetch contexts' });
   }
 });
 

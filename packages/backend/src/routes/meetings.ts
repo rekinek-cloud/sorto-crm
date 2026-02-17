@@ -103,7 +103,7 @@ router.get('/', authenticateToken, async (req, res) => {
 
     const pages = Math.ceil(total / limitNum);
 
-    res.json({
+    return res.json({
       meetings,
       pagination: {
         page: pageNum,
@@ -116,7 +116,7 @@ router.get('/', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     logger.error('Error fetching meetings:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -192,7 +192,7 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
       })
     ]);
 
-    res.json({
+    return res.json({
       totalMeetings,
       todayMeetings,
       weekMeetings,
@@ -204,7 +204,7 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     logger.error('Error fetching meetings stats:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -255,10 +255,10 @@ router.get('/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ message: 'Meeting not found' });
     }
 
-    res.json(meeting);
+    return res.json(meeting);
   } catch (error) {
     logger.error('Error fetching meeting:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -397,10 +397,10 @@ router.post('/', authenticateToken, async (req, res) => {
     });
 
     logger.info(`Created meeting: ${meeting.id} for organization: ${organizationId}`);
-    res.status(201).json(meeting);
+    return res.status(201).json(meeting);
   } catch (error) {
     logger.error('Error creating meeting:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -537,10 +537,10 @@ router.put('/:id', authenticateToken, async (req, res) => {
     });
 
     logger.info(`Updated meeting: ${id} for organization: ${organizationId}`);
-    res.json(meeting);
+    return res.json(meeting);
   } catch (error) {
     logger.error('Error updating meeting:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -563,10 +563,10 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     });
 
     logger.info(`Deleted meeting: ${id} for organization: ${organizationId}`);
-    res.json({ message: 'Meeting deleted successfully' });
+    return res.json({ message: 'Meeting deleted successfully' });
   } catch (error) {
     logger.error('Error deleting meeting:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 
@@ -621,7 +621,7 @@ router.get('/calendar/:year/:month', authenticateToken, async (req, res) => {
       groupedMeetings[dateKey].push(meeting);
     });
 
-    res.json({
+    return res.json({
       year: parseInt(year),
       month: parseInt(month),
       meetings: groupedMeetings,
@@ -629,7 +629,7 @@ router.get('/calendar/:year/:month', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     logger.error('Error fetching calendar meetings:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    return res.status(500).json({ message: 'Internal server error' });
   }
 });
 

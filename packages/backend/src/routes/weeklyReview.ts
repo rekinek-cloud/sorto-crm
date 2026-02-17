@@ -46,7 +46,7 @@ const querySchema = z.object({
 });
 
 // Get weekly reviews with pagination and filtering
-router.get('/', authenticateToken, validateRequest(querySchema, 'query'), async (req, res) => {
+router.get('/', authenticateToken, validateRequest(querySchema), async (req, res) => {
   try {
     const { limit = 10, offset = 0, startDate, endDate } = req.query as any;
     const { organizationId } = req.user as any;
@@ -72,7 +72,7 @@ router.get('/', authenticateToken, validateRequest(querySchema, 'query'), async 
       prisma.weeklyReview.count({ where }),
     ]);
 
-    res.json({
+    return res.json({
       reviews,
       pagination: {
         total,
@@ -83,7 +83,7 @@ router.get('/', authenticateToken, validateRequest(querySchema, 'query'), async 
     });
   } catch (error) {
     console.error('Error fetching weekly reviews:', error);
-    res.status(500).json({ error: 'Failed to fetch weekly reviews' });
+    return res.status(500).json({ error: 'Failed to fetch weekly reviews' });
   }
 });
 
@@ -200,7 +200,7 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
       reviewProgress = Math.round((completedItems / checklistItems.length) * 100);
     }
 
-    res.json({
+    return res.json({
       currentWeek: {
         inboxItems,
         waitingForItems,
@@ -220,7 +220,7 @@ router.get('/stats/overview', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching weekly review stats:', error);
-    res.status(500).json({ error: 'Failed to fetch weekly review statistics' });
+    return res.status(500).json({ error: 'Failed to fetch weekly review statistics' });
   }
 });
 
@@ -322,7 +322,7 @@ router.get('/stats/burndown', authenticateToken, async (req, res) => {
       });
     }
 
-    res.json({
+    return res.json({
       burndownData,
       summary: {
         totalWeeks: weeksBack,
@@ -335,7 +335,7 @@ router.get('/stats/burndown', authenticateToken, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching weekly review burndown data:', error);
-    res.status(500).json({ error: 'Failed to fetch burndown data' });
+    return res.status(500).json({ error: 'Failed to fetch burndown data' });
   }
 });
 
@@ -360,10 +360,10 @@ router.get('/:date', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Weekly review not found' });
     }
 
-    res.json(review);
+    return res.json(review);
   } catch (error) {
     console.error('Error fetching weekly review:', error);
-    res.status(500).json({ error: 'Failed to fetch weekly review' });
+    return res.status(500).json({ error: 'Failed to fetch weekly review' });
   }
 });
 
@@ -423,13 +423,13 @@ router.post('/', authenticateToken, validateRequest(createWeeklyReviewSchema), a
       },
     });
 
-    res.status(201).json(review);
+    return res.status(201).json(review);
   } catch (error) {
     if (error.code === 'P2002') {
       return res.status(400).json({ error: 'Weekly review for this date already exists' });
     }
     console.error('Error creating weekly review:', error);
-    res.status(500).json({ error: 'Failed to create weekly review' });
+    return res.status(500).json({ error: 'Failed to create weekly review' });
   }
 });
 
@@ -452,13 +452,13 @@ router.put('/:date', authenticateToken, validateRequest(updateWeeklyReviewSchema
       data: updateData,
     });
 
-    res.json(review);
+    return res.json(review);
   } catch (error) {
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Weekly review not found' });
     }
     console.error('Error updating weekly review:', error);
-    res.status(500).json({ error: 'Failed to update weekly review' });
+    return res.status(500).json({ error: 'Failed to update weekly review' });
   }
 });
 
@@ -479,13 +479,13 @@ router.delete('/:date', authenticateToken, async (req, res) => {
       },
     });
 
-    res.status(204).send();
+    return res.status(204).send();
   } catch (error) {
     if (error.code === 'P2025') {
       return res.status(404).json({ error: 'Weekly review not found' });
     }
     console.error('Error deleting weekly review:', error);
-    res.status(500).json({ error: 'Failed to delete weekly review' });
+    return res.status(500).json({ error: 'Failed to delete weekly review' });
   }
 });
 
