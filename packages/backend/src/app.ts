@@ -126,6 +126,7 @@ import teamRoutes from './routes/team';
 import dataProcessingRoutes from './routes/dataProcessing';
 import emailPipelineRoutes from './routes/emailPipeline';
 import pipelineConfigRoutes from './routes/pipelineConfig';
+import entityLinksRoutes from './routes/entityLinks';
 
 const app = express();
 
@@ -328,6 +329,7 @@ apiRouter.use('/ai-agent-tasks', aiAgentTasksRoutes);
 apiRouter.use('/ai-messages', aiMessagesRoutes);
 apiRouter.use('/team', teamRoutes);
 apiRouter.use('/data-processing', dataProcessingRoutes);  // Data Processing - pipeline przetwarzania
+apiRouter.use('/entity-links', entityLinksRoutes);  // Entity Links - uniwersalne powiazania encji
 
 // Backward-compat aliases (deprecated - to be removed after frontend migration)
 apiRouter.use('/gtd', workflowRoutes);                     // deprecated -> use /workflow

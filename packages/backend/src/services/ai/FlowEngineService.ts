@@ -1839,6 +1839,165 @@ Odpowiedz w formacie JSON:
   }
 
   /**
+   * Wyodrebnij wzorzec tematu - top 3 slowa kluczowe z tematu
+   */
+  private extractSubjectPattern(subject: string): string | null {
+    if (!subject || subject.length < 3) return null;
+
+    const stopwords = new Set([
+      'i', 'w', 'na', 'z', 'do', 'od', 'o', 'po', 'za', 'nie', 'to', 'jest',
+      'sie', 'ze', 'ale', 'jak', 'co', 'tak', 'czy', 'dla', 'te', 'ten', 'ta',
+      'tym', 'jej', 'jego', 'ich', 'przez', 'juz', 'tez', 'tylko', 'moze',
+      'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+      'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'could',
+      'and', 'but', 'or', 'nor', 'not', 'so', 'yet', 'for', 'with', 'about',
+      'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under',
+      're', 'fwd', 'fw', 'aw', 'odp', 'wg'
+    ]);
+
+    const words = subject
+      .toLowerCase()
+      .replace(/[^\w\sąćęłńóśżź]/gi, ' ')
+      .split(/\s+/)
+      .filter((w: string) => w.length > 2 && !stopwords.has(w));
+
+    if (words.length === 0) return null;
+    return words.slice(0, 3).join(' ');
+  }
+
+  /**
+   * Wyodrebnij slowa kluczowe z tresci - top 5 wg czestosci
+   */
+  private extractContentKeywords(content: string): string | null {
+    if (!content || content.length < 10) return null;
+
+    const stopwords = new Set([
+      'i', 'w', 'na', 'z', 'do', 'od', 'o', 'po', 'za', 'nie', 'to', 'jest',
+      'sie', 'ze', 'ale', 'jak', 'co', 'tak', 'czy', 'dla', 'te', 'ten', 'ta',
+      'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been', 'being',
+      'have', 'has', 'had', 'and', 'but', 'or', 'nor', 'not', 'so', 'yet',
+      'for', 'with', 'about', 'to', 'from', 'in', 'out', 'on', 'off', 'this',
+      'that', 'these', 'those', 'what', 'which', 'who', 'whom'
+    ]);
+
+    const words = content
+      .toLowerCase()
+      .replace(/[^\w\sąćęłńóśżź]/gi, ' ')
+      .split(/\s+/)
+      .filter((w: string) => w.length > 3 && !stopwords.has(w));
+
+    if (words.length === 0) return null;
+
+    const freq: Record<string, number> = {};
+    for (const word of words) {
+      freq[word] = (freq[word] || 0) + 1;
+    }
+
+    const topKeywords = Object.entries(freq)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([word]) => word);
+
+    return topKeywords.length > 0 ? topKeywords.join(' ') : null;
+  }
+
+  /**
+   * Znajdz pasujace wzorce dla danego elementu
+   */
+  private async findMatchingPatterns(
+    organizationId: string,
+    userId: string,
+    item: any
+  ): Promise<Array<{ pattern: any; score: number }>> {
+    try {
+      const patterns = await this.prisma.flow_learned_patterns.findMany({
+        where: { organizationId, userId, isActive: true }
+      });
+
+      const scored: Array<{ pattern: any; score: number }> = [];
+      for (const pattern of patterns) {
+        const score = this.calculateMatchScore(pattern, item);
+        if (score > 0.3) {
+          scored.push({ pattern, score });
+        }
+      }
+
+      scored.sort((a, b) => b.score - a.score);
+      return scored;
+    } catch (error) {
+      console.error('Failed to find matching patterns:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Oblicz score dopasowania wzorca do elementu
+   * Wagi: sender (0.4), subject (0.3), content (0.3)
+   */
+  private calculateMatchScore(pattern: any, item: any): number {
+    let totalScore = 0;
+
+    const sender = item.source || item.sender || item.from || '';
+    const subject = item.subject || item.title || '';
+    const content = item.rawContent || item.content || '';
+
+    // Sender score (waga 0.4)
+    if (pattern.senderPattern && sender) {
+      let senderScore = 0;
+      try {
+        const regex = new RegExp(pattern.senderPattern, 'i');
+        if (regex.test(sender)) {
+          senderScore = 1.0;
+        } else {
+          const patternDomain = pattern.senderPattern.match(/@([\w.-]+)/)?.[1];
+          const senderDomain = sender.match(/@([\w.-]+)/)?.[1];
+          if (patternDomain && senderDomain && patternDomain === senderDomain) {
+            senderScore = 0.5;
+          }
+        }
+      } catch {
+        if (sender.includes(pattern.senderPattern)) {
+          senderScore = 0.5;
+        }
+      }
+      totalScore += senderScore * 0.4;
+    }
+
+    // Subject score (waga 0.3) - Jaccard similarity
+    if (pattern.subjectPattern && subject) {
+      const patternTokens = new Set(
+        pattern.subjectPattern.toLowerCase().split(/\s+/).filter((w: string) => w.length > 2)
+      );
+      const subjectTokens = new Set(
+        subject.toLowerCase().replace(/[^\w\sąćęłńóśżź]/gi, ' ')
+          .split(/\s+/).filter((w: string) => w.length > 2)
+      );
+      const intersection = new Set([...patternTokens].filter((token: string) => subjectTokens.has(token)));
+      const union = new Set([...patternTokens, ...subjectTokens]);
+      const jaccard = union.size > 0 ? intersection.size / union.size : 0;
+      totalScore += jaccard * 0.3;
+    }
+
+    // Content score (waga 0.3) - Jaccard similarity
+    if (pattern.contentPattern && content) {
+      const patternTokens = new Set(
+        pattern.contentPattern.toLowerCase().split(/[\s.*]+/).filter((w: string) => w.length > 2)
+      );
+      const contentTokens = new Set(
+        content.toLowerCase().replace(/[^\w\sąćęłńóśżź]/gi, ' ')
+          .split(/\s+/).filter((w: string) => w.length > 3)
+      );
+      const intersection = new Set([...patternTokens].filter((token: string) => contentTokens.has(token)));
+      const union = new Set([...patternTokens, ...contentTokens]);
+      const jaccard = union.size > 0 ? intersection.size / union.size : 0;
+      totalScore += jaccard * 0.3;
+    }
+
+    const confidenceMultiplier = pattern.confidence || 0.5;
+    return totalScore * confidenceMultiplier;
+  }
+
+  /**
    * Zapamiętaj powiązanie entity z streamem
    * Pomaga w przyszłym routingu - jeśli email od firmy X zwykle trafia do streamu Y
    * NOTE: Używamy senderPattern do zapamiętania powiązań z firmami/kontaktami

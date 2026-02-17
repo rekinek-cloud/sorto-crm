@@ -6,6 +6,7 @@ import { emailPipeline } from './emailPipeline';
 import { RuleProcessingPipeline } from './ai/RuleProcessingPipeline';
 import { PipelineConfigLoader } from './ai/PipelineConfigLoader';
 import { DEFAULT_PIPELINE_CONFIG } from './ai/PipelineConfigDefaults';
+import { EmailSyncService } from './EmailSyncService';
 
 export class ScheduledTasksService {
   private intervals: Map<string, NodeJS.Timeout> = new Map();
@@ -17,6 +18,8 @@ export class ScheduledTasksService {
     this.startInvoiceSyncTask();
     this.startRAGReindexTask();
     this.startEmailProcessingTask();
+    this.startEmailSyncTask();
+    this.startAutopilotDigestTask();
     logger.info('All scheduled tasks started');
   }
 
@@ -451,6 +454,137 @@ export class ScheduledTasksService {
     this.intervals.set(taskName, interval);
 
     logger.info(`Started ${taskName} task with ${intervalMs / 1000 / 60} minute interval`);
+  }
+
+  /**
+   * Start automatic IMAP email sync task
+   * Fetches new emails from all active email accounts every 5 minutes
+   */
+  private startEmailSyncTask(): void {
+    const taskName = 'email-sync';
+    const intervalMs = 5 * 60 * 1000; // 5 minutes
+    const startupDelay = 2 * 60 * 1000; // 2 minutes
+
+    const task = async () => {
+      try {
+        const emailSyncService = new EmailSyncService(prisma);
+        const results = await emailSyncService.syncAllAccounts({ forceSync: false });
+
+        const successful = results.filter(r => r.success).length;
+        const totalNew = results.reduce((sum, r) => sum + r.newMessages, 0);
+
+        if (results.length > 0) {
+          logger.info(`[EmailSync] Synced ${successful}/${results.length} accounts, ${totalNew} new messages`);
+        }
+      } catch (error: any) {
+        logger.error('[EmailSync] Task error:', { error: error.message });
+      }
+    };
+
+    setTimeout(() => {
+      task().catch(error => {
+        logger.error('[EmailSync] Initial run error:', { error: error.message });
+      });
+    }, startupDelay);
+
+    const interval = setInterval(task, intervalMs);
+    this.intervals.set(taskName, interval);
+
+    logger.info(`Started ${taskName} task with 5 minute interval (first run in 2 min)`);
+  }
+
+  /**
+   * Start autopilot daily digest task
+   * Sends email summary of autopilot actions at 18:00 daily
+   */
+  private startAutopilotDigestTask(): void {
+    const taskName = 'autopilot-digest';
+
+    const scheduleNext = () => {
+      const now = new Date();
+      const next = new Date();
+      next.setHours(18, 0, 0, 0);
+
+      if (now >= next) {
+        next.setDate(next.getDate() + 1);
+      }
+
+      const msUntilNext = next.getTime() - now.getTime();
+
+      const timeout = setTimeout(async () => {
+        try {
+          logger.info('[AutopilotDigest] Starting daily digest');
+
+          const todayStart = new Date();
+          todayStart.setHours(0, 0, 0, 0);
+
+          // Find all autopilot actions today
+          const autopilotActions = await prisma.flow_processing_history.findMany({
+            where: {
+              executedAt: { gte: todayStart },
+              mode: 'AUTOPILOT'
+            },
+            include: {
+              user: { select: { id: true, email: true, firstName: true } }
+            }
+          });
+
+          if (autopilotActions.length === 0) {
+            logger.info('[AutopilotDigest] No autopilot actions today, skipping digest');
+            scheduleNext();
+            return;
+          }
+
+          // Group by user
+          const byUser = new Map<string, typeof autopilotActions>();
+          for (const action of autopilotActions) {
+            const userId = action.userId;
+            if (!byUser.has(userId)) byUser.set(userId, []);
+            byUser.get(userId)!.push(action);
+          }
+
+          // Send digest email per user
+          const { modernEmailService } = await import('./modernEmailService');
+          for (const [userId, actions] of byUser) {
+            const user = actions[0]?.user;
+            if (!user?.email) continue;
+
+            const actionRows = actions.map(a => {
+              const result = a.result as any;
+              return `<tr><td>${a.action || 'N/A'}</td><td>${(a.confidence || 0).toFixed(0)}%</td><td>${result?.streamName || result?.taskTitle || 'OK'}</td></tr>`;
+            }).join('');
+
+            const html = `
+              <h2>Autopilot Digest - ${new Date().toLocaleDateString('pl-PL')}</h2>
+              <p>Cześć ${user.firstName || ''},</p>
+              <p>Autopilot przetworzył dzisiaj <strong>${actions.length}</strong> elementów:</p>
+              <table border="1" cellpadding="8" cellspacing="0" style="border-collapse:collapse">
+                <tr><th>Akcja</th><th>Pewność</th><th>Wynik</th></tr>
+                ${actionRows}
+              </table>
+              <p style="margin-top:16px"><em>Możesz cofnąć dowolną akcję w ciągu 24h z poziomu CRM.</em></p>
+            `;
+
+            await modernEmailService.sendEmail({
+              to: user.email,
+              subject: `Autopilot: ${actions.length} akcji przetworzonych`,
+              html
+            });
+          }
+
+          logger.info(`[AutopilotDigest] Sent digests to ${byUser.size} users`);
+        } catch (error: any) {
+          logger.error('[AutopilotDigest] Task error:', { error: error.message });
+        } finally {
+          scheduleNext();
+        }
+      }, msUntilNext);
+
+      this.intervals.set(taskName, timeout);
+      logger.info(`Scheduled ${taskName} for ${next.toISOString()}`);
+    };
+
+    scheduleNext();
   }
 
   /**

@@ -5,3 +5,7 @@ export { ActiveStreamsWidget } from './ActiveStreamsWidget';
 export { UpcomingDealsWidget } from './UpcomingDealsWidget';
 export { FollowupsWidget } from './FollowupsWidget';
 export { WeekProgressWidget } from './WeekProgressWidget';
+export { TimelineWidget } from './TimelineWidget';
+export { TeamActivityWidget } from './TeamActivityWidget';
+export { TeamProductivityWidget } from './TeamProductivityWidget';
+export { RisksWidget } from './RisksWidget';

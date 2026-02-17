@@ -72,9 +72,63 @@ export interface DayDashboardData {
   generatedAt: string;
 }
 
+// Manager dashboard types
+export interface TeamActivity {
+  type: 'TASK_COMPLETED' | 'DEAL_UPDATED';
+  userId: string;
+  userName: string;
+  title: string;
+  timestamp: string;
+}
+
+export interface TeamMember {
+  userId: string;
+  name: string;
+  tasksCompleted: number;
+  tasksTotal: number;
+}
+
+export interface Risk {
+  type: 'PROJECT_BEHIND' | 'TASK_OVERDUE';
+  title: string;
+  deadline: string | null;
+  progress?: number;
+  assignee?: string;
+}
+
+export interface ManagerDashboardData {
+  teamActivity: { activities: TeamActivity[] };
+  productivity: { members: TeamMember[] };
+  risks: { risks: Risk[] };
+}
+
 export const dayDashboardApi = {
   getDayDashboard: async (): Promise<DayDashboardData> => {
     const response = await apiClient.get('/dashboard/day');
     return response.data;
-  }
+  },
+
+  getManagerTeamActivity: async (): Promise<{ activities: TeamActivity[] }> => {
+    const response = await apiClient.get('/dashboard/manager/team-activity');
+    return response.data;
+  },
+
+  getManagerProductivity: async (): Promise<{ members: TeamMember[] }> => {
+    const response = await apiClient.get('/dashboard/manager/productivity');
+    return response.data;
+  },
+
+  getManagerRisks: async (): Promise<{ risks: Risk[] }> => {
+    const response = await apiClient.get('/dashboard/manager/risks');
+    return response.data;
+  },
+
+  getManagerDashboard: async (): Promise<ManagerDashboardData> => {
+    const [teamActivity, productivity, risks] = await Promise.all([
+      dayDashboardApi.getManagerTeamActivity(),
+      dayDashboardApi.getManagerProductivity(),
+      dayDashboardApi.getManagerRisks(),
+    ]);
+    return { teamActivity, productivity, risks };
+  },
 };

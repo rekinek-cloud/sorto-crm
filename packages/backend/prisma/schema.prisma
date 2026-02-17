@@ -148,6 +148,7 @@ model Organization {
   employees           Employee[]           @relation("OrganizationEmployees")
   aiAgentAssignments  AIAgentAssignment[]  @relation("OrganizationAIAgents")
   pipeline_config     pipeline_config?
+  entityLinks         EntityLink[]
 
   @@index([holdingId])
   @@map("organizations")
@@ -264,6 +265,7 @@ model User {
   // Holding & Multi-Company
   ownedHoldings            Holding[]            @relation("HoldingOwner")
   employeeProfiles         Employee[]           @relation("EmployeeUser")
+  createdEntityLinks       EntityLink[]         @relation("EntityLinkCreator")
 
   @@map("users")
 }
@@ -5713,4 +5715,48 @@ model pipeline_config {
   organization     Organization @relation(fields: [organizationId], references: [id])
 
   @@map("pipeline_config")
+}
+
+// ============================================================
+// Universal Entity Links
+// ============================================================
+
+enum EntityType {
+  CONTACT
+  COMPANY
+  DEAL
+  PROJECT
+  TASK
+  STREAM
+  MESSAGE
+  EVENT
+}
+
+model EntityLink {
+  id              String     @id @default(uuid())
+  organizationId  String
+
+  fromEntityType  EntityType
+  fromEntityId    String
+  toEntityType    EntityType
+  toEntityId      String
+
+  linkType        String     @default("RELATED") // RELATED, DEPENDS_ON, BLOCKS, PARENT, CHILD, REFERENCES, etc.
+  strength        Int        @default(3) // 1-5
+  isBidirectional Boolean    @default(true)
+  notes           String?    @db.Text
+  metadata        Json?
+
+  discoveredAt    DateTime   @default(now())
+  createdById     String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  createdBy       User?        @relation("EntityLinkCreator", fields: [createdById], references: [id])
+
+  @@unique([organizationId, fromEntityType, fromEntityId, toEntityType, toEntityId, linkType])
+  @@index([organizationId, fromEntityType, fromEntityId])
+  @@index([organizationId, toEntityType, toEntityId])
+  @@map("entity_links")
 }
