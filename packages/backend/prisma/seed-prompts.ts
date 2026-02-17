@@ -3,7 +3,8 @@ import { v4 as uuidv4 } from 'uuid';
 
 const prisma = new PrismaClient();
 
-const ORGANIZATION_ID = 'fe59f2b0-93d0-4193-9bab-aee778c1a449';
+// Organization ID will be resolved dynamically at seed time
+let ORGANIZATION_ID = '';
 
 const PROMPTS = [
   {
@@ -1574,6 +1575,142 @@ Analizujesz transakcje i sugerujesz następne kroki, aby zwiększyć szansę na 
 
 {{goalData}}`
   },
+  // === EMAIL PIPELINE PROMPTS ===
+  {
+    id: uuidv4(),
+    code: 'EMAIL_CLASSIFY',
+    name: 'Klasyfikacja emaila',
+    description: 'Prompt klasyfikacyjny dla pipeline emaili — zastepuje hardcoded prompt z PipelineConfigDefaults',
+    category: 'EMAIL',
+    isSystem: true,
+    defaultModel: 'gpt-4o-mini',
+    defaultTemperature: 0.2,
+    maxTokens: 300,
+    variables: {
+      required: ['categories'],
+      optional: []
+    },
+    systemPrompt: `You are an email classification expert. Classify the email into exactly one category.
+
+Categories:
+{{categories}}
+
+Respond ONLY with valid JSON (no markdown):
+{"classification":"CATEGORY","confidence":0.85,"summary":"One sentence summary","extractedTasks":[{"title":"Task description","priority":"MEDIUM"}]}
+
+Rules:
+- confidence must be between 0.0 and 1.0
+- extractedTasks: extract actionable items from the email (can be empty array)
+- If unsure, use lower confidence`,
+    userPromptTemplate: `Classify this email:\n\n{{emailContent}}`
+  },
+  {
+    id: uuidv4(),
+    code: 'EMAIL_POST_BUSINESS',
+    name: 'Analiza emaila biznesowego',
+    description: 'Post-klasyfikacja: analiza emaila sklasyfikowanego jako BUSINESS',
+    category: 'EMAIL',
+    isSystem: true,
+    defaultModel: 'gpt-4o-mini',
+    defaultTemperature: 0.3,
+    maxTokens: 1000,
+    variables: {
+      required: ['from', 'subject', 'body'],
+      optional: ['classification']
+    },
+    systemPrompt: `Jestes asystentem analizy emaili biznesowych w systemie CRM. Przeanalizuj email i wyodrebnij kluczowe informacje.
+
+WAZNE ZASADY:
+- Jesli nadawca to NOWA OSOBA (nie istniejacy kontakt/klient), ZAWSZE tworz lead. Zapytanie ofertowe, pytanie o cene, pierwszy kontakt = LEAD.
+- Lead to potencjalny klient, ktory jeszcze nie jest w CRM. Rozrozniaj lead (nowy) od contact (istniejacy).
+- tasks to konkretne dzialania do wykonania po naszej stronie (np. "Przygotowac oferte", "Odpowiedziec na zapytanie").
+
+Odpowiedz w JSON:
+{
+  "leads": [{"name": "Imie Nazwisko", "email": "email", "company": "Firma lub null", "source": "EMAIL", "notes": "Kontekst zapytania"}],
+  "tasks": [{"title": "Opis zadania", "priority": "HIGH|MEDIUM|LOW", "deadline": "YYYY-MM-DD lub null"}],
+  "contacts": [{"name": "Imie Nazwisko", "role": "Rola", "email": "email"}],
+  "deals": [{"title": "Nazwa transakcji", "value": 0, "stage": "PROSPECT|QUALIFIED|PROPOSAL"}],
+  "keyFacts": ["Fakt 1", "Fakt 2"],
+  "suggestedReply": "Krotka sugestia odpowiedzi lub null",
+  "urgency": "HIGH|MEDIUM|LOW",
+  "summary": "2-3 zdania podsumowania"
+}
+
+Jesli email to zapytanie ofertowe od nowej osoby — leads MUSI byc niepuste. Jesli nadawca jest juz znany (np. istniejacy klient, wewnetrzny) — leads moze byc puste.`,
+    userPromptTemplate: `Od: {{from}}
+Temat: {{subject}}
+
+{{body}}`
+  },
+  {
+    id: uuidv4(),
+    code: 'EMAIL_POST_NEWSLETTER',
+    name: 'Analiza newslettera',
+    description: 'Post-klasyfikacja: analiza emaila sklasyfikowanego jako NEWSLETTER',
+    category: 'EMAIL',
+    isSystem: true,
+    defaultModel: 'gpt-4o-mini',
+    defaultTemperature: 0.3,
+    maxTokens: 500,
+    variables: {
+      required: ['from', 'subject', 'body'],
+      optional: ['classification']
+    },
+    systemPrompt: `Jestes asystentem analizy newsletterow. Podsumuj newsletter i ocen przydatnosc biznesowa.
+
+Odpowiedz w JSON:
+{
+  "summary": "2-3 zdania podsumowania",
+  "businessRelevance": "HIGH|MEDIUM|LOW|NONE",
+  "keyInsights": ["Insight 1", "Insight 2"],
+  "actionItems": ["Akcja 1"],
+  "shouldKeep": true
+}`,
+    userPromptTemplate: `Od: {{from}}
+Temat: {{subject}}
+
+{{body}}`
+  },
+  {
+    id: uuidv4(),
+    code: 'EMAIL_POST_TRANSACTIONAL',
+    name: 'Analiza emaila transakcyjnego',
+    description: 'Post-klasyfikacja: analiza emaila sklasyfikowanego jako TRANSACTIONAL',
+    category: 'EMAIL',
+    isSystem: true,
+    defaultModel: 'gpt-4o-mini',
+    defaultTemperature: 0.2,
+    maxTokens: 500,
+    variables: {
+      required: ['from', 'subject', 'body'],
+      optional: ['classification']
+    },
+    systemPrompt: `Jestes asystentem analizy emaili transakcyjnych w systemie CRM. Wyodrebnij dane transakcji.
+
+WAZNE ZASADY:
+- ZAWSZE tworz zadanie (task) jesli email wymaga jakiegokolwiek dzialania: platnosc, potwierdzenie, weryfikacja, termin.
+- Termin platnosci = zadanie z deadline i priorytetem HIGH.
+- Potwierdzenie zamowienia = zadanie "Zweryfikowac zamowienie".
+- Zmiana statusu dostawy = zadanie "Sprawdzic dostawe".
+
+Odpowiedz w JSON:
+{
+  "transactionId": "numer zamowienia/transakcji lub null",
+  "amount": {"value": 0, "currency": "PLN"},
+  "date": "YYYY-MM-DD",
+  "status": "Opis statusu",
+  "tasks": [{"title": "Opis zadania", "priority": "HIGH|MEDIUM|LOW", "deadline": "YYYY-MM-DD lub null"}],
+  "requiredActions": ["Akcja 1"],
+  "summary": "1-2 zdania podsumowania"
+}
+
+Jesli jest termin platnosci — tasks MUSI zawierac zadanie z tym terminem jako deadline.`,
+    userPromptTemplate: `Od: {{from}}
+Temat: {{subject}}
+
+{{body}}`
+  },
   {
     id: uuidv4(),
     code: 'UNIVERSAL_ANALYZE',
@@ -1662,6 +1799,14 @@ Zanim odpowiesz, przemyśl krok po kroku:
 async function seedPrompts() {
   console.log('🌱 Seeding AI prompts...');
 
+  // Resolve organization IDs dynamically
+  const orgs = await prisma.organization.findMany({ select: { id: true, name: true } });
+  if (orgs.length === 0) {
+    console.error('❌ No organizations found in DB. Create an organization first.');
+    return;
+  }
+  console.log(`📋 Found ${orgs.length} organizations: ${orgs.map((o: { name: string }) => o.name).join(', ')}`);
+
   // Usuń istniejące prompty bez kodu (stare testowe)
   await prisma.ai_prompt_templates.deleteMany({
     where: {
@@ -1672,69 +1817,59 @@ async function seedPrompts() {
     }
   });
 
-  for (const prompt of PROMPTS) {
-    try {
-      await prisma.ai_prompt_templates.upsert({
-        where: {
-          id: prompt.id
-        },
-        update: {
-          name: prompt.name,
-          description: prompt.description,
-          category: prompt.category,
-          isSystem: prompt.isSystem,
-          defaultModel: prompt.defaultModel,
-          defaultTemperature: prompt.defaultTemperature,
-          maxTokens: prompt.maxTokens,
-          variables: prompt.variables,
-          systemPrompt: prompt.systemPrompt,
-          userPromptTemplate: prompt.userPromptTemplate,
-          updatedAt: new Date()
-        },
-        create: {
-          id: prompt.id,
-          code: prompt.code,
-          name: prompt.name,
-          description: prompt.description,
-          category: prompt.category,
-          isSystem: prompt.isSystem,
-          defaultModel: prompt.defaultModel,
-          defaultTemperature: prompt.defaultTemperature,
-          maxTokens: prompt.maxTokens,
-          variables: prompt.variables,
-          systemPrompt: prompt.systemPrompt,
-          userPromptTemplate: prompt.userPromptTemplate,
-          organizationId: ORGANIZATION_ID,
-          status: 'ACTIVE',
-          version: 1,
-          updatedAt: new Date()
-        }
-      });
-      console.log(`✅ ${prompt.code}: ${prompt.name}`);
-    } catch (error: any) {
-      // Jeśli prompt z tym kodem już istnieje, zaktualizuj go
-      if (error.code === 'P2002') {
-        await prisma.ai_prompt_templates.updateMany({
-          where: {
-            code: prompt.code,
-            organizationId: ORGANIZATION_ID
-          },
-          data: {
-            name: prompt.name,
-            description: prompt.description,
-            category: prompt.category,
-            isSystem: prompt.isSystem,
-            defaultModel: prompt.defaultModel,
-            defaultTemperature: prompt.defaultTemperature,
-            maxTokens: prompt.maxTokens,
-            variables: prompt.variables,
-            systemPrompt: prompt.systemPrompt,
-            userPromptTemplate: prompt.userPromptTemplate,
-            updatedAt: new Date()
-          }
+  for (const org of orgs) {
+    ORGANIZATION_ID = org.id;
+    console.log(`\n🏢 Seeding prompts for: ${org.name} (${org.id})`);
+
+    for (const prompt of PROMPTS) {
+      try {
+        // Check if this prompt code already exists for this org
+        const existing = await prisma.ai_prompt_templates.findFirst({
+          where: { code: prompt.code, organizationId: ORGANIZATION_ID }
         });
-        console.log(`🔄 ${prompt.code}: zaktualizowano`);
-      } else {
+
+        if (existing) {
+          await prisma.ai_prompt_templates.update({
+            where: { id: existing.id },
+            data: {
+              name: prompt.name,
+              description: prompt.description,
+              category: prompt.category,
+              isSystem: prompt.isSystem,
+              defaultModel: prompt.defaultModel,
+              defaultTemperature: prompt.defaultTemperature,
+              maxTokens: prompt.maxTokens,
+              variables: prompt.variables,
+              systemPrompt: prompt.systemPrompt,
+              userPromptTemplate: prompt.userPromptTemplate,
+              updatedAt: new Date()
+            }
+          });
+          console.log(`🔄 ${prompt.code}: zaktualizowano`);
+        } else {
+          await prisma.ai_prompt_templates.create({
+            data: {
+              id: uuidv4(),
+              code: prompt.code,
+              name: prompt.name,
+              description: prompt.description,
+              category: prompt.category,
+              isSystem: prompt.isSystem,
+              defaultModel: prompt.defaultModel,
+              defaultTemperature: prompt.defaultTemperature,
+              maxTokens: prompt.maxTokens,
+              variables: prompt.variables,
+              systemPrompt: prompt.systemPrompt,
+              userPromptTemplate: prompt.userPromptTemplate,
+              organizationId: ORGANIZATION_ID,
+              status: 'ACTIVE',
+              version: 1,
+              updatedAt: new Date()
+            }
+          });
+          console.log(`✅ ${prompt.code}: ${prompt.name}`);
+        }
+      } catch (error: any) {
         console.error(`❌ ${prompt.code}: ${error.message}`);
       }
     }
@@ -1743,9 +1878,7 @@ async function seedPrompts() {
   console.log('\n✅ Seeding complete!');
 
   // Pokaż statystyki
-  const count = await prisma.ai_prompt_templates.count({
-    where: { organizationId: ORGANIZATION_ID }
-  });
+  const count = await prisma.ai_prompt_templates.count();
   console.log(`📊 Łącznie promptów: ${count}`);
 }
 

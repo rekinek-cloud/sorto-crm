@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/lib/auth/context';
 import { apiClient } from '@/lib/api/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/Card';
@@ -78,6 +79,7 @@ const categoryLabels: Record<string, string> = {
   GOALS: 'Cele',
   SYSTEM: 'System',
   UNIVERSAL: 'Uniwersalne',
+  EMAIL: 'Email',
 };
 
 // Status badges
@@ -96,6 +98,7 @@ const statusLabels: Record<string, string> = {
 export function AIPromptsPanel() {
   const { user } = useAuth();
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'OWNER';
+  const searchParams = useSearchParams();
 
   const [prompts, setPrompts] = useState<AIPrompt[]>([]);
   const [loading, setLoading] = useState(true);
@@ -116,9 +119,9 @@ export function AIPromptsPanel() {
   const [versions, setVersions] = useState<PromptVersion[]>([]);
   const [versionsLoading, setVersionsLoading] = useState(false);
 
-  // Filters
+  // Filters — initialize search from URL param (e.g. ?search=EMAIL_POST_BUSINESS)
   const [categoryFilter, setCategoryFilter] = useState<string>('');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>(searchParams?.get('search') || '');
 
   // Categories
   const [categories, setCategories] = useState<string[]>([]);
@@ -626,6 +629,14 @@ export function AIPromptsPanel() {
 }
 
 // Prompt Editor Modal Component
+interface V2Model {
+  id: string;
+  name: string;
+  displayName: string;
+  status: string;
+  ai_providers: { name: string };
+}
+
 function PromptEditorModal({
   prompt,
   isCreating,
@@ -652,6 +663,14 @@ function PromptEditorModal({
   });
 
   const [saving, setSaving] = useState(false);
+  const [availableModels, setAvailableModels] = useState<V2Model[]>([]);
+
+  useEffect(() => {
+    apiClient.get('/ai-v2/models').then((res) => {
+      const models = (res.data?.models || []).filter((m: V2Model) => m.status === 'ACTIVE');
+      setAvailableModels(models);
+    }).catch(() => {});
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -768,28 +787,26 @@ function PromptEditorModal({
                   onChange={(e) => setFormData({ ...formData, defaultModel: e.target.value })}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2"
                 >
-                  <optgroup label="OpenAI">
-                    <option value="gpt-4o-mini">GPT-4o Mini (szybki, tani)</option>
-                    <option value="gpt-4o">GPT-4o (flagship)</option>
-                    <option value="o1">o1 (reasoning)</option>
-                    <option value="o1-mini">o1-mini (reasoning, tani)</option>
-                    <option value="gpt-4-turbo">GPT-4 Turbo</option>
-                  </optgroup>
-                  <optgroup label="Anthropic Claude">
-                    <option value="claude-sonnet-4-20250514">Claude 4 Sonnet (najnowszy)</option>
-                    <option value="claude-opus-4-20250514">Claude 4 Opus (premium)</option>
-                    <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
-                    <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku (szybki)</option>
-                  </optgroup>
-                  <optgroup label="Google Gemini">
-                    <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash</option>
-                    <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-                  </optgroup>
-                  <optgroup label="DeepSeek">
-                    <option value="deepseek-chat">DeepSeek V3</option>
-                    <option value="deepseek-reasoner">DeepSeek R1 (reasoning)</option>
-                  </optgroup>
+                  {availableModels.length > 0 ? (
+                    Object.entries(
+                      availableModels.reduce<Record<string, V2Model[]>>((acc, m) => {
+                        const provider = m.ai_providers?.name || 'Other';
+                        if (!acc[provider]) acc[provider] = [];
+                        acc[provider].push(m);
+                        return acc;
+                      }, {})
+                    ).map(([provider, models]) => (
+                      <optgroup key={provider} label={provider}>
+                        {models.map((m) => (
+                          <option key={m.id} value={m.name}>
+                            {m.displayName}
+                          </option>
+                        ))}
+                      </optgroup>
+                    ))
+                  ) : (
+                    <option value={formData.defaultModel}>{formData.defaultModel}</option>
+                  )}
                 </select>
               </div>
               <div>

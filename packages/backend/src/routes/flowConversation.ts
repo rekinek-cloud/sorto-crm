@@ -9,6 +9,7 @@ import { FlowConversationStatus, FlowAction } from '@prisma/client';
 import { prisma } from '../config/database';
 import { authenticateToken as authMiddleware } from '../shared/middleware/auth';
 import { AIRouter } from '../services/ai/AIRouter';
+import { resolveModelForAction } from '../services/ai/ActionModelResolver';
 
 const router = Router();
 
@@ -227,8 +228,9 @@ router.post('/start/:itemId', async (req: Request, res: Response) => {
     console.log('🔍 userPrompt:', userPrompt.substring(0, 300));
     console.log('🔍 ================================');
 
+    const resolvedConv = await resolveModelForAction(user.organizationId, 'FLOW_CONVERSATION');
     const aiResponse = await aiRouter.processRequest({
-      model: 'qwen-plus',
+      model: resolvedConv?.modelName ?? 'qwen-plus',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
@@ -487,8 +489,9 @@ Odpowiedz w JSON:
       content: m.content
     }));
 
+    const resolvedMsg = await resolveModelForAction(user.organizationId, 'FLOW_CONVERSATION');
     const aiResponse = await aiRouter.processRequest({
-      model: 'qwen-plus',
+      model: resolvedMsg?.modelName ?? 'qwen-plus',
       messages: [
         { role: 'system', content: systemPrompt },
         ...conversationHistory

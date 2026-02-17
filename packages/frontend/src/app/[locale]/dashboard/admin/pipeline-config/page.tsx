@@ -20,6 +20,8 @@ import {
   ChevronDown,
   ChevronUp,
 } from 'lucide-react';
+import Link from 'next/link';
+import { ExternalLink } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 import { PageShell } from '@/components/ui/PageShell';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -751,6 +753,8 @@ function PostActionsEditor({ data, classifications, onChange }: {
     { key: 'autoBlacklist', label: 'Auto-block', desc: 'Automatycznie zablokuj' },
   ] as const;
 
+  const noPromptClasses = ['SPAM', 'UNKNOWN'];
+
   const toggle = (cls: string, action: string) => {
     const current = data[cls] || {};
     onChange({
@@ -774,6 +778,10 @@ function PostActionsEditor({ data, classifications, onChange }: {
                   <div className="text-[10px] text-white/40 font-normal">{a.desc}</div>
                 </th>
               ))}
+              <th className="text-center py-2 px-2 text-white/60 font-medium">
+                <div className="text-xs">Prompt</div>
+                <div className="text-[10px] text-white/40 font-normal">Post-analiza AI</div>
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -794,10 +802,34 @@ function PostActionsEditor({ data, classifications, onChange }: {
                     </button>
                   </td>
                 ))}
+                <td className="text-center py-2 px-2">
+                  {noPromptClasses.includes(cls) ? (
+                    <span className="text-white/20 text-xs">&mdash;</span>
+                  ) : (
+                    <Link
+                      href={`/dashboard/ai-rules?tab=prompts&search=EMAIL_POST_${cls}`}
+                      className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 transition-colors"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      <span>EMAIL_POST_{cls}</span>
+                    </Link>
+                  )}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="flex items-center gap-2 p-3 rounded-lg bg-purple-500/10 border border-purple-500/20">
+        <FileText className="w-4 h-4 text-purple-400 flex-shrink-0" />
+        <p className="text-xs text-purple-300">
+          Prompty post-klasyfikacji zarzadzaj w{' '}
+          <Link href="/dashboard/ai-rules?tab=prompts" className="underline hover:text-purple-200">
+            Reguly AI &rarr; Prompty
+          </Link>
+          . Kod: <code className="bg-white/10 px-1 rounded">EMAIL_POST_&#123;KLASYFIKACJA&#125;</code>
+        </p>
       </div>
     </div>
   );

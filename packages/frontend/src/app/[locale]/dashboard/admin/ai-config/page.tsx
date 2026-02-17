@@ -12,11 +12,13 @@ import {
   RefreshCw,
   Settings,
   BarChart3,
+  Zap,
 } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 import { PageShell } from '@/components/ui/PageShell';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { SkeletonPage } from '@/components/ui/SkeletonLoader';
+import { AIActionConfigPanel } from '@/components/ai/AIActionConfigPanel';
 
 interface AIProvider {
   id: string;
@@ -50,7 +52,7 @@ export default function AIConfigPage() {
   const [models, setModels] = useState<AIModel[]>([]);
   const [usage, setUsage] = useState<UsageStats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'providers' | 'models' | 'usage'>('providers');
+  const [activeTab, setActiveTab] = useState<'providers' | 'models' | 'usage' | 'actions'>('providers');
   const [testingProvider, setTestingProvider] = useState<string | null>(null);
   const [showProviderForm, setShowProviderForm] = useState(false);
   const [showModelForm, setShowModelForm] = useState(false);
@@ -220,6 +222,17 @@ export default function AIConfigPage() {
         >
           <BarChart3 className="w-5 h-5 inline mr-2" />
           Usage
+        </button>
+        <button
+          onClick={() => setActiveTab('actions')}
+          className={`px-4 py-2 font-medium ${
+            activeTab === 'actions'
+              ? 'text-indigo-600 border-b-2 border-indigo-600'
+              : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+          }`}
+        >
+          <Zap className="w-5 h-5 inline mr-2" />
+          Akcje AI ({actionConfigs.length})
         </button>
       </div>
 
@@ -461,6 +474,8 @@ export default function AIConfigPage() {
           )}
         </div>
       )}
+      {/* Actions Tab */}
+      {activeTab === 'actions' && <AIActionConfigPanel />}
     </PageShell>
   );
 }

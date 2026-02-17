@@ -309,6 +309,171 @@ router.post('/seed-flow-rules',
 );
 
 /**
+ * POST /api/v1/ai-rules/seed-triage
+ * Seed email triage rules (3-layer filtering).
+ * Idempotent — skips rules that already exist by name.
+ */
+router.post('/seed-triage',
+  authenticateToken,
+  requireRole(['OWNER', 'ADMIN']),
+  async (req, res) => {
+    try {
+      const orgId = req.user!.organizationId;
+
+      const TRIAGE_RULES = [
+        // Layer 1: High-priority filtering
+        {
+          name: 'Noreply / System Senders',
+          description: 'Blokuj maile od noreply, mailer-daemon, system — klasyfikuj jako TRANSACTIONAL',
+          priority: 900,
+          triggerConditions: {
+            operator: 'OR',
+            conditions: [
+              { field: 'from', operator: 'contains', value: 'noreply@' },
+              { field: 'from', operator: 'contains', value: 'no-reply@' },
+              { field: 'from', operator: 'contains', value: 'mailer-daemon@' },
+              { field: 'from', operator: 'contains', value: 'system@' },
+              { field: 'from', operator: 'contains', value: 'donotreply@' },
+              { field: 'from', operator: 'contains', value: 'notifications@' },
+              { field: 'from', operator: 'contains', value: 'alert@' },
+            ],
+          },
+          actions: { forceClassification: 'TRANSACTIONAL' },
+        },
+        {
+          name: 'Newsletter Prefix Senders',
+          description: 'Klasyfikuj maile od newsletter@, marketing@, promo@ jako NEWSLETTER',
+          priority: 850,
+          triggerConditions: {
+            operator: 'OR',
+            conditions: [
+              { field: 'from', operator: 'contains', value: 'newsletter@' },
+              { field: 'from', operator: 'contains', value: 'news@' },
+              { field: 'from', operator: 'contains', value: 'marketing@' },
+              { field: 'from', operator: 'contains', value: 'promo@' },
+              { field: 'from', operator: 'contains', value: 'info@' },
+            ],
+          },
+          actions: { forceClassification: 'NEWSLETTER', list: { action: 'SUGGEST_BLACKLIST', target: 'DOMAIN' } },
+        },
+        {
+          name: 'Invoices & Logistics',
+          description: 'Faktura, proforma, płatność, zamówienie, tracking → TRANSACTIONAL',
+          priority: 800,
+          triggerConditions: {
+            operator: 'OR',
+            conditions: [
+              { field: 'subject', operator: 'regex', value: 'faktur|invoice|rachunek|proforma|płatnoś|payment|zamówienie\\s*nr|order\\s*confirm|tracking|przesyłk|shipment|paczk' },
+            ],
+          },
+          actions: { forceClassification: 'TRANSACTIONAL' },
+        },
+        {
+          name: 'Auto-Replies & OOO',
+          description: 'Out of office, auto-reply, nieobecność → TRANSACTIONAL',
+          priority: 750,
+          triggerConditions: {
+            operator: 'OR',
+            conditions: [
+              { field: 'subject', operator: 'contains', value: 'out of office' },
+              { field: 'subject', operator: 'contains', value: 'auto-reply' },
+              { field: 'subject', operator: 'contains', value: 'automatyczna odpowiedź' },
+              { field: 'subject', operator: 'contains', value: 'nieobecność' },
+              { field: 'subject', operator: 'contains', value: 'automatic reply' },
+              { field: 'subject', operator: 'contains', value: 'autoresponder' },
+            ],
+          },
+          actions: { forceClassification: 'TRANSACTIONAL' },
+        },
+        // Layer 3: Buying intent
+        {
+          name: 'Buying Intent / Inquiry',
+          description: 'Zapytanie, wycena, oferta, cennik, wymiary → BUSINESS',
+          priority: 500,
+          triggerConditions: {
+            operator: 'OR',
+            conditions: [
+              { field: 'body', operator: 'regex', value: 'zapytanie|wycen|ofert|cennik|interesuj|inquiry|quote|pricing|\\d+\\s*[x×]\\s*\\d+|\\d+\\s*szt|zamówi|order|zleceni' },
+              { field: 'subject', operator: 'regex', value: 'zapytanie|wycen|ofert|cennik|inquiry|quote|pricing|zamówieni|zleceni' },
+            ],
+          },
+          actions: { forceClassification: 'BUSINESS' },
+        },
+        {
+          name: 'Complaint / Issue',
+          description: 'Reklamacja, problem, nie działa, zwrot → BUSINESS + HIGH priority',
+          priority: 450,
+          triggerConditions: {
+            operator: 'OR',
+            conditions: [
+              { field: 'body', operator: 'contains', value: 'reklamacj' },
+              { field: 'body', operator: 'contains', value: 'complaint' },
+              { field: 'body', operator: 'contains', value: 'problem z' },
+              { field: 'body', operator: 'contains', value: 'nie działa' },
+              { field: 'body', operator: 'contains', value: 'zwrot' },
+              { field: 'subject', operator: 'contains', value: 'reklamacj' },
+              { field: 'subject', operator: 'contains', value: 'complaint' },
+            ],
+          },
+          actions: { forceClassification: 'BUSINESS', setPriority: 'HIGH' },
+        },
+      ];
+
+      let created = 0;
+      let skipped = 0;
+
+      for (const rule of TRIAGE_RULES) {
+        const exists = await prisma.ai_rules.findFirst({
+          where: { organizationId: orgId, name: rule.name },
+        });
+        if (exists) {
+          skipped++;
+          continue;
+        }
+
+        await prisma.ai_rules.create({
+          data: {
+            id: `triage-${rule.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now()}`,
+            name: rule.name,
+            description: rule.description,
+            category: 'CLASSIFICATION',
+            dataType: 'EMAIL',
+            status: 'ACTIVE',
+            priority: rule.priority,
+            triggerType: 'MESSAGE_RECEIVED',
+            triggerConditions: rule.triggerConditions,
+            actions: rule.actions,
+            isSystem: false,
+            organizationId: orgId,
+            createdBy: req.user!.id,
+            executionCount: 0,
+            successCount: 0,
+            errorCount: 0,
+            updatedAt: new Date(),
+          },
+        });
+        created++;
+      }
+
+      logger.info(`Triage rules seeded by ${req.user!.email}: ${created} created, ${skipped} skipped`);
+
+      return res.json({
+        success: true,
+        data: { created, skipped, total: TRIAGE_RULES.length },
+        message: `Utworzono ${created} reguł triage (pominięto ${skipped} istniejących)`,
+      });
+    } catch (error) {
+      logger.error('Failed to seed triage rules:', error);
+      return res.status(500).json({
+        success: false,
+        error: 'Nie udało się utworzyć reguł triage',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      });
+    }
+  }
+);
+
+/**
  * PUT /api/v1/ai-rules/:id
  * Update a rule
  */

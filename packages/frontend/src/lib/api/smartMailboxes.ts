@@ -119,3 +119,20 @@ export async function forwardMessage(messageId: string, data: { to: string; cont
   const response = await apiClient.post(`/communication/messages/${messageId}/forward`, data)
   return response.data
 }
+
+// Analyze message with AI pipeline (manual trigger)
+export async function analyzeMessage(messageId: string): Promise<{
+  success: boolean
+  data: {
+    classification: string
+    confidence: number
+    priority: string
+    actionsExecuted: string[]
+    linkedEntities: Record<string, string>
+    entitiesCreated: string[]
+    analysis: string | null
+  }
+}> {
+  const response = await apiClient.post(`/email-pipeline/analyze/${messageId}`)
+  return response.data
+}

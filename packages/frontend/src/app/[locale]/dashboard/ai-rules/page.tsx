@@ -10,7 +10,6 @@ import AIRuleForm from '@/components/ai/AIRuleForm';
 import { DomainListManager } from '@/components/ai-rules/DomainListManager';
 import { AIPromptsPanel } from '@/components/ai/AIPromptsPanel';
 import { AIProviderConfig } from '@/components/ai/AIProviderConfig';
-import { SuggestionCard } from '@/components/ai-rules/SuggestionCard';
 import { useAiSuggestions } from '@/hooks/useAiSuggestions';
 import {
   Plus,
@@ -31,21 +30,37 @@ import {
   Mail,
   FileText,
   Lightbulb,
+  Zap,
+  Search,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  X,
+  Filter,
+  Tag,
 } from 'lucide-react';
 import { PageShell } from '@/components/ui/PageShell';
 import { PageHeader } from '@/components/ui/PageHeader';
+import { AIActionConfigPanel } from '@/components/ai/AIActionConfigPanel';
+import { AISuggestionsManager } from '@/components/ai/AISuggestionsManager';
+import { CategoryManager } from '@/components/ai/CategoryManager';
+import Link from 'next/link';
+import { apiClient } from '@/lib/api/client';
 
 // --- Types ---
 
-type TabType = 'rules' | 'domains' | 'prompts' | 'config';
+type TabType = 'rules' | 'suggestions' | 'domains' | 'prompts' | 'config' | 'actions' | 'categories';
 
 // --- Constants ---
 
 const mainTabs: { id: TabType; name: string; icon: React.ElementType }[] = [
   { id: 'rules', name: 'Reguly', icon: Sparkles },
+  { id: 'suggestions', name: 'Sugestie AI', icon: Lightbulb },
   { id: 'domains', name: 'Listy domen', icon: ShieldAlert },
   { id: 'prompts', name: 'Prompty', icon: FileText },
   { id: 'config', name: 'Konfiguracja', icon: Settings },
+  { id: 'actions', name: 'Akcje AI', icon: Zap },
+  { id: 'categories', name: 'Kategorie', icon: Tag },
 ];
 
 const modules = [
@@ -169,6 +184,14 @@ export default function AIRulesPage() {
     pages: 0,
   });
 
+  // Search, sort, and filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortField, setSortField] = useState<'priority' | 'name' | 'executionCount' | 'successRate'>('priority');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [filterDataType, setFilterDataType] = useState<string>('all');
+  const [filterCategory, setFilterCategory] = useState<string>('all');
+
   // --- Rules data loading ---
 
   useEffect(() => {
@@ -236,7 +259,65 @@ export default function AIRulesPage() {
     setSelectedModule(module);
   }, [activeModuleTab, selectedModule, loadRules]);
 
-  const filteredRules = rules;
+  const filteredRules = React.useMemo(() => {
+    let result = [...rules];
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter(r =>
+        r.name.toLowerCase().includes(q) ||
+        (r.description || '').toLowerCase().includes(q)
+      );
+    }
+
+    // Status filter
+    if (filterStatus === 'active') result = result.filter(r => r.enabled);
+    if (filterStatus === 'inactive') result = result.filter(r => !r.enabled);
+
+    // DataType filter
+    if (filterDataType !== 'all') result = result.filter(r => r.dataType === filterDataType);
+
+    // Category filter
+    if (filterCategory !== 'all') result = result.filter(r => r.category === filterCategory);
+
+    // Sort
+    result.sort((a, b) => {
+      let cmp = 0;
+      switch (sortField) {
+        case 'priority': cmp = (a.priority || 0) - (b.priority || 0); break;
+        case 'name': cmp = a.name.localeCompare(b.name); break;
+        case 'executionCount': cmp = (a.executionCount || 0) - (b.executionCount || 0); break;
+        case 'successRate': cmp = (a.successRate || 0) - (b.successRate || 0); break;
+      }
+      return sortDirection === 'desc' ? -cmp : cmp;
+    });
+
+    return result;
+  }, [rules, searchQuery, filterStatus, filterDataType, filterCategory, sortField, sortDirection]);
+
+  const activeFilterCount = [
+    searchQuery.trim() ? 1 : 0,
+    filterStatus !== 'all' ? 1 : 0,
+    filterDataType !== 'all' ? 1 : 0,
+    filterCategory !== 'all' ? 1 : 0,
+  ].reduce((a, b) => a + b, 0);
+
+  const clearAllFilters = () => {
+    setSearchQuery('');
+    setFilterStatus('all');
+    setFilterDataType('all');
+    setFilterCategory('all');
+  };
+
+  const toggleSort = (field: typeof sortField) => {
+    if (sortField === field) {
+      setSortDirection(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
 
   const moduleTabs = [
     { id: 'all', name: 'Wszystkie', color: 'slate', count: rules.length },
@@ -283,13 +364,31 @@ export default function AIRulesPage() {
         iconColor="text-purple-600"
         actions={
           activeTab === 'rules' ? (
-            <button
-              onClick={() => setIsCreateModalOpen(true)}
-              className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-xl hover:from-purple-600 hover:to-blue-600 transition-colors"
-            >
-              <Plus className="w-5 h-5" />
-              <span>Nowa regula</span>
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={async () => {
+                  try {
+                    const resp = await apiClient.post('/ai-rules/seed-triage');
+                    const d = resp.data;
+                    toast.success(d.message || `Utworzono ${d.data?.created} regul triage`);
+                    loadRules(1, 20, activeModuleTab);
+                  } catch {
+                    toast.error('Blad podczas seedowania regul triage');
+                  }
+                }}
+                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white rounded-xl hover:from-amber-600 hover:to-orange-600 transition-colors"
+              >
+                <Zap className="w-5 h-5" />
+                <span>Seed Triage</span>
+              </button>
+              <button
+                onClick={() => setIsCreateModalOpen(true)}
+                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-xl hover:from-purple-600 hover:to-blue-600 transition-colors"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Nowa regula</span>
+              </button>
+            </div>
           ) : undefined
         }
       />
@@ -374,55 +473,22 @@ export default function AIRulesPage() {
         </div>
       </div>
 
-      {/* AI Suggestions Panel */}
-      {suggestions.length > 0 && (
-        <div className="mt-6 bg-gradient-to-r from-purple-50/80 to-indigo-50/80 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200/50 dark:border-purple-700/30 rounded-2xl p-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <Lightbulb className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-              <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
-                Sugestie AI ({suggestions.length})
-              </h3>
-            </div>
+      {/* Pending suggestions badge — prompts user to check Sugestie AI tab */}
+      {suggestions.length > 0 && activeTab !== 'suggestions' && (
+        <button
+          onClick={() => setActiveTab('suggestions')}
+          className="mt-4 w-full flex items-center justify-between px-4 py-3 bg-gradient-to-r from-purple-50/80 to-indigo-50/80 dark:from-purple-900/20 dark:to-indigo-900/20 border border-purple-200/50 dark:border-purple-700/30 rounded-xl hover:from-purple-100/80 hover:to-indigo-100/80 dark:hover:from-purple-900/30 dark:hover:to-indigo-900/30 transition-all"
+        >
+          <div className="flex items-center gap-2">
+            <Lightbulb className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+            <span className="text-sm font-medium text-slate-900 dark:text-slate-100">
+              {suggestions.length} {suggestions.length === 1 ? 'sugestia' : suggestions.length < 5 ? 'sugestie' : 'sugestii'} AI oczekuje na Twoja decyzje
+            </span>
           </div>
-          <div className="space-y-2">
-            {suggestions.map((s) => (
-              <SuggestionCard
-                key={s.id}
-                suggestion={{
-                  id: s.id,
-                  type: s.suggestionType || 'BLACKLIST_DOMAIN',
-                  title: s.title,
-                  description: s.description,
-                  confidence: typeof s.confidence === 'number' ? (s.confidence > 1 ? s.confidence / 100 : s.confidence) : undefined,
-                  reason: s.description,
-                  source: 'classification-pipeline',
-                  createdAt: s.createdAt,
-                }}
-                onAccept={async (id) => {
-                  try {
-                    await acceptSuggestion(id);
-                    toast.success('Sugestia zaakceptowana');
-                    // Reload domain list if on domains tab
-                    if (activeTab === 'domains') {
-                      loadSuggestions();
-                    }
-                  } catch {
-                    toast.error('Blad podczas akceptacji sugestii');
-                  }
-                }}
-                onReject={async (id) => {
-                  try {
-                    await rejectSuggestion(id);
-                    toast.success('Sugestia odrzucona');
-                  } catch {
-                    toast.error('Blad podczas odrzucania sugestii');
-                  }
-                }}
-              />
-            ))}
-          </div>
-        </div>
+          <span className="text-sm text-purple-600 dark:text-purple-400 font-medium">
+            Przejdz do sugestii →
+          </span>
+        </button>
       )}
 
       {/* Main Tab Navigation */}
@@ -543,6 +609,97 @@ export default function AIRulesPage() {
                     </span>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Search, Sort & Filters Toolbar */}
+            <div className="mt-4 bg-white/80 backdrop-blur-xl border border-white/20 dark:bg-slate-800/80 dark:border-slate-700/30 rounded-2xl shadow-sm p-4">
+              <div className="flex flex-wrap gap-3 items-center">
+                {/* Search */}
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    placeholder="Szukaj reguly..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                  />
+                </div>
+
+                {/* Status Filter */}
+                <select
+                  value={filterStatus}
+                  onChange={e => setFilterStatus(e.target.value as any)}
+                  className="px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                >
+                  <option value="all">Status: Wszystkie</option>
+                  <option value="active">Aktywne</option>
+                  <option value="inactive">Nieaktywne</option>
+                </select>
+
+                {/* DataType Filter */}
+                <select
+                  value={filterDataType}
+                  onChange={e => setFilterDataType(e.target.value)}
+                  className="px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                >
+                  <option value="all">Typ: Wszystkie</option>
+                  <option value="EMAIL">EMAIL</option>
+                  <option value="ALL">ALL</option>
+                  <option value="DOCUMENT">DOCUMENT</option>
+                </select>
+
+                {/* Category Filter */}
+                <select
+                  value={filterCategory}
+                  onChange={e => setFilterCategory(e.target.value)}
+                  className="px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+                >
+                  <option value="all">Kategoria: Wszystkie</option>
+                  <option value="CLASSIFICATION">CLASSIFICATION</option>
+                  <option value="ROUTING">ROUTING</option>
+                  <option value="EXTRACTION">EXTRACTION</option>
+                  <option value="INDEXING">INDEXING</option>
+                  <option value="FLOW_ANALYSIS">FLOW_ANALYSIS</option>
+                </select>
+
+                {/* Active filter badge + clear */}
+                {activeFilterCount > 0 && (
+                  <button
+                    onClick={clearAllFilters}
+                    className="flex items-center gap-1.5 px-3 py-2 text-sm bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                    Wyczysc ({activeFilterCount})
+                  </button>
+                )}
+              </div>
+
+              {/* Sort buttons */}
+              <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-slate-200 dark:border-slate-700">
+                <span className="text-xs text-slate-500 dark:text-slate-400 self-center mr-1">Sortuj:</span>
+                {([
+                  { field: 'priority' as const, label: 'Priorytet' },
+                  { field: 'name' as const, label: 'Nazwa' },
+                  { field: 'executionCount' as const, label: 'Wykonania' },
+                  { field: 'successRate' as const, label: '% sukcesu' },
+                ]).map(({ field, label }) => (
+                  <button
+                    key={field}
+                    onClick={() => toggleSort(field)}
+                    className={`flex items-center gap-1 px-2.5 py-1 text-xs rounded-lg transition-colors ${
+                      sortField === field
+                        ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 font-medium'
+                        : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
+                    }`}
+                  >
+                    {label}
+                    {sortField === field && (
+                      sortDirection === 'desc' ? <ArrowDown className="w-3 h-3" /> : <ArrowUp className="w-3 h-3" />
+                    )}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -774,11 +931,32 @@ export default function AIRulesPage() {
         {/* === DOMAINS TAB === */}
         {activeTab === 'domains' && <DomainListManager />}
 
+        {/* === SUGGESTIONS TAB === */}
+        {activeTab === 'suggestions' && <AISuggestionsManager />}
+
         {/* === PROMPTS TAB === */}
         {activeTab === 'prompts' && <AIPromptsPanel />}
 
         {/* === CONFIG TAB === */}
-        {activeTab === 'config' && <AIProviderConfig />}
+        {activeTab === 'config' && (
+          <div className="space-y-4">
+            <Link
+              href="/dashboard/admin/pipeline-config"
+              className="flex items-center gap-2 p-3 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 transition-colors text-sm"
+            >
+              <Settings className="w-4 h-4" />
+              <span>Konfiguracja Pipeline Emaili &mdash; klasyfikacje, post-akcje, progi</span>
+              <ChevronRight className="w-4 h-4 ml-auto" />
+            </Link>
+            <AIProviderConfig />
+          </div>
+        )}
+
+        {/* === ACTIONS TAB === */}
+        {activeTab === 'actions' && <AIActionConfigPanel />}
+
+        {/* === CATEGORIES TAB === */}
+        {activeTab === 'categories' && <CategoryManager />}
       </div>
 
       {/* AIRuleForm modal */}

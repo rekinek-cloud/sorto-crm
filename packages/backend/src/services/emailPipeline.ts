@@ -16,6 +16,7 @@ import { prisma } from '../config/database';
 import { AIRouter } from './ai/AIRouter';
 import { PipelineConfigLoader } from './ai/PipelineConfigLoader';
 import { PipelineConfig } from './ai/PipelineConfigDefaults';
+import { resolveModelForAction } from './ai/ActionModelResolver';
 
 export interface EmailMessage {
   id: string;
@@ -454,8 +455,9 @@ class EmailPipelineService {
       userPrompt = userPrompt.replace(/\{\{subject\}\}/g, message.subject || '');
 
       // 4. Wykonaj zapytanie AI przez AIRouter
+      const resolvedPipeline = await resolveModelForAction(organizationId, 'EMAIL_PIPELINE');
       const aiResponse = await aiRouter.processRequest({
-        model: promptTemplate.defaultModel || 'gpt-4o-mini',
+        model: resolvedPipeline?.modelName ?? promptTemplate.defaultModel ?? 'gpt-4o-mini',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }

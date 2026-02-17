@@ -27,6 +27,8 @@ import {
   Workflow,
   ChevronLeft,
   ChevronRight,
+  X,
+  Calendar,
 } from 'lucide-react';
 import Cookies from 'js-cookie';
 import { PageShell } from '@/components/ui/PageShell';
@@ -183,6 +185,11 @@ export default function EmailPipelinePage() {
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
   const [skipAIForBulk, setSkipAIForBulk] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
+  const [filterPriority, setFilterPriority] = useState<string>('all');
+  const [filterAiAnalyzed, setFilterAiAnalyzed] = useState<string>('all');
+  const [datePreset, setDatePreset] = useState<string>('all');
+  const [dateFrom, setDateFrom] = useState<string>('');
+  const [dateTo, setDateTo] = useState<string>('');
 
   useEffect(() => {
     fetchData();
@@ -238,6 +245,30 @@ export default function EmailPipelinePage() {
     if (sortBy !== field) return <ArrowUpDown className="w-3 h-3 opacity-30" />;
     return sortDir === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />;
   };
+
+  const activeFilterCount = [
+    filterPriority !== 'all' ? 1 : 0,
+    filterAiAnalyzed !== 'all' ? 1 : 0,
+    datePreset !== 'all' ? 1 : 0,
+    searchQuery ? 1 : 0,
+    messagesFilter !== 'all' ? 1 : 0,
+    classificationFilter ? 1 : 0,
+  ].reduce((a, b) => a + b, 0);
+
+  const filteredMessages = messages.filter((msg) => {
+    if (filterPriority !== 'all' && msg.priority !== filterPriority) return false;
+    if (filterAiAnalyzed === 'analyzed' && !msg.aiAnalyzed) return false;
+    if (filterAiAnalyzed === 'not-analyzed' && msg.aiAnalyzed) return false;
+    if (dateFrom) {
+      const msgDate = new Date(msg.receivedAt).toISOString().split('T')[0];
+      if (msgDate < dateFrom) return false;
+    }
+    if (dateTo) {
+      const msgDate = new Date(msg.receivedAt).toISOString().split('T')[0];
+      if (msgDate > dateTo) return false;
+    }
+    return true;
+  });
 
   const processSelected = async () => {
     const token = Cookies.get('access_token');
@@ -738,6 +769,94 @@ export default function EmailPipelinePage() {
                 ))}
               </div>
 
+              {/* Priority filter */}
+              <select
+                value={filterPriority}
+                onChange={e => setFilterPriority(e.target.value)}
+                className="px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+              >
+                <option value="all">Priorytet: Wszystkie</option>
+                <option value="URGENT">URGENT</option>
+                <option value="HIGH">HIGH</option>
+                <option value="MEDIUM">MEDIUM</option>
+                <option value="LOW">LOW</option>
+              </select>
+
+              {/* AI Analyzed filter */}
+              <select
+                value={filterAiAnalyzed}
+                onChange={e => setFilterAiAnalyzed(e.target.value)}
+                className="px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+              >
+                <option value="all">AI: Wszystkie</option>
+                <option value="analyzed">Analizowane</option>
+                <option value="not-analyzed">Nie analizowane</option>
+              </select>
+
+              {/* Date preset filter */}
+              <select
+                value={datePreset}
+                onChange={e => {
+                  const v = e.target.value;
+                  setDatePreset(v);
+                  const now = new Date();
+                  if (v === 'today') {
+                    setDateFrom(now.toISOString().split('T')[0]);
+                    setDateTo(now.toISOString().split('T')[0]);
+                  } else if (v === '7d') {
+                    const d = new Date(now); d.setDate(d.getDate() - 7);
+                    setDateFrom(d.toISOString().split('T')[0]);
+                    setDateTo(now.toISOString().split('T')[0]);
+                  } else if (v === '30d') {
+                    const d = new Date(now); d.setDate(d.getDate() - 30);
+                    setDateFrom(d.toISOString().split('T')[0]);
+                    setDateTo(now.toISOString().split('T')[0]);
+                  } else {
+                    setDateFrom('');
+                    setDateTo('');
+                  }
+                }}
+                className="px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100"
+              >
+                <option value="all">Okres: Wszystkie</option>
+                <option value="today">Dzis</option>
+                <option value="7d">Ostatnie 7 dni</option>
+                <option value="30d">Ostatnie 30 dni</option>
+                <option value="custom">Zakres...</option>
+              </select>
+
+              {/* Custom date range inputs */}
+              {datePreset === 'custom' && (
+                <div className="flex items-center gap-1">
+                  <input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)}
+                    className="px-2 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100" />
+                  <span className="text-slate-400 text-xs">-</span>
+                  <input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)}
+                    className="px-2 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-slate-100" />
+                </div>
+              )}
+
+              {/* Active filter clear button */}
+              {activeFilterCount > 0 && (
+                <button
+                  onClick={() => {
+                    setFilterPriority('all');
+                    setFilterAiAnalyzed('all');
+                    setDatePreset('all');
+                    setDateFrom('');
+                    setDateTo('');
+                    setSearchQuery('');
+                    setMessagesFilter('all');
+                    setClassificationFilter('');
+                    setMessagesPage(1);
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 text-sm bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg hover:bg-purple-200 dark:hover:bg-purple-900/50"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Wyczysc ({activeFilterCount})
+                </button>
+              )}
+
               {/* Bulk actions */}
               <div className="flex items-center gap-2 ml-auto">
                 <div className="flex items-center gap-1">
@@ -823,8 +942,14 @@ export default function EmailPipelinePage() {
                   <th className="w-8 px-3 py-3">
                     <input
                       type="checkbox"
-                      checked={selectedMessages.size === messages.length && messages.length > 0}
-                      onChange={selectAllMessages}
+                      checked={selectedMessages.size === filteredMessages.length && filteredMessages.length > 0}
+                      onChange={() => {
+                        if (selectedMessages.size === filteredMessages.length) {
+                          setSelectedMessages(new Set());
+                        } else {
+                          setSelectedMessages(new Set(filteredMessages.map(m => m.id)));
+                        }
+                      }}
                       className="rounded border-slate-300 dark:border-slate-600"
                     />
                   </th>
@@ -864,7 +989,7 @@ export default function EmailPipelinePage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                {messages.map((msg) => {
+                {filteredMessages.map((msg) => {
                   const pr = msg.pipelineResult as any;
                   const classification = pr?.classification || msg.category;
                   const matchedRule = pr?.matchedRule;
@@ -961,12 +1086,13 @@ export default function EmailPipelinePage() {
                     </tr>
                   );
                 })}
-                {messages.length === 0 && (
+                {filteredMessages.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-4 py-12 text-center text-slate-400 dark:text-slate-500">
                       <Mail className="w-8 h-8 mx-auto mb-2 opacity-40" />
                       {searchQuery ? 'Nie znaleziono wiadomości pasujących do wyszukiwania' :
                        classificationFilter ? `Brak wiadomości z klasyfikacją: ${classificationFilter}` :
+                       activeFilterCount > 0 ? 'Brak wiadomości pasujących do filtrów' :
                        'Brak wiadomości do wyświetlenia'}
                     </td>
                   </tr>

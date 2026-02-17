@@ -168,19 +168,41 @@ export class RAGService {
     `, sourceId, input.name, input.type || 'document', input.description || null,
        chunks.length, totalTokens, input.streamId || null, this.organizationId);
 
+    // Ensure API key is loaded for embedding generation
+    if (!this.apiKey) {
+      await this.initialize();
+    }
+
     // Index each chunk into vector_documents
     for (let i = 0; i < chunks.length; i++) {
       const chunkId = crypto.randomUUID();
       const contentHash = this.hashContent(chunks[i] + sourceId + i);
 
       try {
-        await this.prisma.$executeRawUnsafe(`
-          INSERT INTO vector_documents (id, title, content, "contentHash", embedding, "entityType", "entityId", source, language, "chunkIndex", "totalChunks", "chunkSize", "lastUpdated", "organizationId")
-          VALUES ($1, $2, $3, $4, '{}', 'rag_source', $5, $6, 'pl', $7, $8, $9, NOW(), $10)
-          ON CONFLICT ("contentHash") DO UPDATE SET
-            content = EXCLUDED.content,
-            "lastUpdated" = NOW()
-        `, chunkId, input.name, chunks[i], contentHash, sourceId, input.name, i, chunks.length, chunks[i].length, this.organizationId);
+        // Try to generate real embedding
+        const embedding = await this.generateEmbedding(chunks[i]);
+
+        if (embedding && embedding.length > 0) {
+          const vectorString = `[${embedding.join(',')}]`;
+          await this.prisma.$executeRawUnsafe(`
+            INSERT INTO vector_documents (id, title, content, "contentHash", embedding, "entityType", "entityId", source, language, "chunkIndex", "totalChunks", "chunkSize", "lastUpdated", "organizationId")
+            VALUES ($1, $2, $3, $4, $5::vector(${embedding.length}), 'rag_source', $6, $7, 'pl', $8, $9, $10, NOW(), $11)
+            ON CONFLICT ("contentHash") DO UPDATE SET
+              content = EXCLUDED.content,
+              embedding = $5::vector(${embedding.length}),
+              "lastUpdated" = NOW()
+          `, chunkId, input.name, chunks[i], contentHash, vectorString, sourceId, input.name, i, chunks.length, chunks[i].length, this.organizationId);
+        } else {
+          // No API key available — insert without embedding, log warning
+          console.warn(`RAG addSource: No embedding API key — chunk ${i} of "${input.name}" saved without vector`);
+          await this.prisma.$executeRawUnsafe(`
+            INSERT INTO vector_documents (id, title, content, "contentHash", embedding, "entityType", "entityId", source, language, "chunkIndex", "totalChunks", "chunkSize", "lastUpdated", "organizationId")
+            VALUES ($1, $2, $3, $4, '{}', 'rag_source', $5, $6, 'pl', $7, $8, $9, NOW(), $10)
+            ON CONFLICT ("contentHash") DO UPDATE SET
+              content = EXCLUDED.content,
+              "lastUpdated" = NOW()
+          `, chunkId, input.name, chunks[i], contentHash, sourceId, input.name, i, chunks.length, chunks[i].length, this.organizationId);
+        }
       } catch (error) {
         console.error(`Failed to index chunk ${i} of source ${sourceId}:`, error);
       }

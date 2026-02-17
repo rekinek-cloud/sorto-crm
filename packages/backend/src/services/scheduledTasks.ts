@@ -2,7 +2,6 @@ import logger from '../config/logger';
 import { prisma } from '../config/database';
 import { invoiceService } from './invoiceService';
 import { syncTasks, syncProjects, syncContacts, syncDeals, syncCompanies, syncKnowledge, syncMessages, vectorService } from '../routes/vectorSearch';
-import { emailPipeline } from './emailPipeline';
 import { RuleProcessingPipeline } from './ai/RuleProcessingPipeline';
 import { PipelineConfigLoader } from './ai/PipelineConfigLoader';
 import { DEFAULT_PIPELINE_CONFIG } from './ai/PipelineConfigDefaults';
@@ -321,7 +320,7 @@ export class ScheduledTasksService {
 
   /**
    * Start email processing task
-   * Runs every 5 minutes to process unprocessed emails through both pipelines
+   * Runs every 5 minutes to process unprocessed emails through RuleProcessingPipeline
    */
   private startEmailProcessingTask(): void {
     const taskName = 'email-processing';
@@ -350,86 +349,54 @@ export class ScheduledTasksService {
             logger.info(`[EmailProcessing] Processing ${unprocessed.length} emails for ${org.name}`);
             let processed = 0;
 
+            const rulePipeline = new RuleProcessingPipeline(prisma);
+
             for (const message of unprocessed) {
               try {
-                // Step 1: Email pipeline (PRE_FILTER → CLASSIFY → AI_ANALYSIS)
-                const pipelineMessage = {
-                  id: message.id,
+                // Unified pipeline: RuleProcessingPipeline (CRM → Lists → AI Rules → AI → Post-actions)
+                const result = await rulePipeline.processEntity(org.id, 'EMAIL', message.id, {
                   from: message.fromAddress || '',
-                  fromName: message.fromName || undefined,
-                  to: message.toAddress || '',
+                  fromName: message.fromName || '',
                   subject: message.subject || '',
                   body: message.content || '',
-                  html: message.htmlContent || undefined,
-                  date: message.receivedAt || new Date(),
-                  channelId: message.channelId
+                  bodyHtml: message.htmlContent || '',
+                  senderName: message.fromName || '',
+                });
+
+                const updateData: any = {
+                  pipelineProcessed: true,
+                  aiAnalyzed: true,
+                  category: result.finalClass,
+                  isSpam: result.finalClass === 'SPAM',
                 };
 
-                const pipelineResult = await emailPipeline.processEmail(pipelineMessage, org.id);
+                const ruleActions = result.stages?.ruleMatch?.actions;
+                if (ruleActions?.setPriority) {
+                  updateData.priority = ruleActions.setPriority;
+                } else if (result.finalClass === 'BUSINESS' && result.finalConfidence > 0.8) {
+                  updateData.priority = 'HIGH';
+                }
+
+                if (result.sentiment) updateData.sentiment = result.sentiment;
+                if (result.urgencyScore) updateData.urgencyScore = result.urgencyScore;
+
+                updateData.pipelineResult = {
+                  classification: result.finalClass,
+                  confidence: result.finalConfidence,
+                  actionsExecuted: result.actionsExecuted,
+                  linkedEntities: result.linkedEntities,
+                  addedToRag: result.actionsExecuted?.includes('ADDED_TO_RAG'),
+                  addedToFlow: result.actionsExecuted?.includes('ADDED_TO_FLOW'),
+                };
 
                 await prisma.message.update({
                   where: { id: message.id },
-                  data: {
-                    priority: pipelineResult.priority,
-                    category: pipelineResult.category || 'INBOX',
-                    isSpam: pipelineResult.isSpam,
-                    pipelineProcessed: true,
-                    pipelineResult: pipelineResult as any,
-                    aiAnalyzed: !pipelineResult.skipAI && !!pipelineResult.aiAnalysis,
-                    sentiment: pipelineResult.aiAnalysis?.sentiment,
-                    urgencyScore: pipelineResult.aiAnalysis?.urgency
-                  }
+                  data: updateData,
                 });
 
-                // Step 2: RuleProcessingPipeline (CRM → Lists → AI Rules → AI → Actions)
+                // FlowEngine integration — create InboxItem for actionable emails
                 try {
-                  const rulePipeline = new RuleProcessingPipeline(prisma);
-                  const classResult = await rulePipeline.processEntity(org.id, 'EMAIL', message.id, {
-                    from: message.fromAddress || '',
-                    subject: message.subject || '',
-                    body: message.content || '',
-                    content: message.content || '',
-                    senderName: message.fromName || '',
-                  });
-
-                  // Write classification back to message
-                  if (classResult?.finalClass) {
-                    const updateData: any = {
-                      category: classResult.finalClass,
-                    };
-                    if (classResult.finalClass === 'SPAM') {
-                      updateData.isSpam = true;
-                    }
-                    // Set priority from rule actions
-                    const ruleActions = classResult.stages?.ruleMatch?.actions;
-                    if (ruleActions?.setPriority) {
-                      updateData.priority = ruleActions.setPriority;
-                    } else if (classResult.finalClass === 'BUSINESS' && classResult.finalConfidence > 0.8) {
-                      updateData.priority = 'HIGH';
-                    }
-                    // Merge classification into pipelineResult
-                    const existingResult = pipelineResult as any || {};
-                    updateData.pipelineResult = {
-                      ...existingResult,
-                      classification: classResult.finalClass,
-                      classConfidence: classResult.finalConfidence,
-                      matchedRule: classResult.stages?.ruleMatch?.ruleName,
-                      addedToRag: classResult.actionsExecuted?.includes('ADDED_TO_RAG'),
-                      addedToFlow: classResult.actionsExecuted?.includes('ADDED_TO_FLOW'),
-                    };
-                    await prisma.message.update({
-                      where: { id: message.id },
-                      data: updateData,
-                    });
-                  }
-                } catch (classErr: any) {
-                  logger.warn(`[EmailProcessing] Classification error for ${message.id}: ${classErr.message}`);
-                }
-
-                // Step 3: FlowEngine integration — create InboxItem for actionable emails
-                try {
-                  if (!pipelineResult.isSpam && message.content && message.content.length >= 10) {
-                    // Check if InboxItem already exists for this message
+                  if (result.finalClass !== 'SPAM' && message.content && message.content.length >= 10) {
                     const existingItem = await prisma.inboxItem.findFirst({
                       where: {
                         organizationId: org.id,
@@ -441,7 +408,6 @@ export class ScheduledTasksService {
                     });
 
                     if (!existingItem) {
-                      // Find a user for this org to act as capturedBy
                       const orgUser = await prisma.user.findFirst({
                         where: { organizationId: org.id },
                         select: { id: true }
@@ -455,7 +421,7 @@ export class ScheduledTasksService {
                             source: message.fromAddress || 'unknown',
                             elementType: 'EMAIL',
                             rawContent: message.content.slice(0, 5000),
-                            urgencyScore: pipelineResult.aiAnalysis?.urgency ? Math.round(pipelineResult.aiAnalysis.urgency * 100) : 0,
+                            urgencyScore: result.urgencyScore || 0,
                             actionable: true,
                             flowStatus: 'PENDING',
                             organizationId: org.id,
@@ -465,7 +431,6 @@ export class ScheduledTasksService {
                           }
                         });
 
-                        // Fire-and-forget FlowEngine processing
                         getFlowEngine(org.id).then(engine => {
                           engine.processSourceItem({
                             organizationId: org.id,
@@ -603,8 +568,7 @@ export class ScheduledTasksService {
           // Find all autopilot actions today
           const autopilotActions = await prisma.flow_processing_history.findMany({
             where: {
-              executedAt: { gte: todayStart },
-              mode: 'AUTOPILOT'
+              startedAt: { gte: todayStart },
             },
             include: {
               user: { select: { id: true, email: true, firstName: true } }
@@ -632,8 +596,8 @@ export class ScheduledTasksService {
             if (!user?.email) continue;
 
             const actionRows = actions.map(a => {
-              const result = a.result as any;
-              return `<tr><td>${a.action || 'N/A'}</td><td>${(a.confidence || 0).toFixed(0)}%</td><td>${result?.streamName || result?.taskTitle || 'OK'}</td></tr>`;
+              const analysis = a.aiAnalysis as any;
+              return `<tr><td>${a.finalAction || 'N/A'}</td><td>${(a.aiConfidence || 0).toFixed(0)}%</td><td>${analysis?.streamName || analysis?.taskTitle || 'OK'}</td></tr>`;
             }).join('');
 
             const html = `

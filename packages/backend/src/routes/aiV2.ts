@@ -172,8 +172,7 @@ router.get('/models', async (req, res) => {
     });
 
     return res.json({
-      message: 'AI models retrieved successfully',
-      data: models
+      models
     });
   } catch (error) {
     console.error('Error fetching AI models:', error);
@@ -628,6 +627,162 @@ router.post('/templates/import-defaults', async (req, res) => {
   } catch (error) {
     console.error('Error importing default templates:', error);
     return res.status(500).json({ error: 'Failed to import default templates' });
+  }
+});
+
+// ==========================================
+// AI ACTION CONFIG — model-to-action mapping
+// ==========================================
+
+const ACTION_DEFAULTS: Record<string, string> = {
+  FLOW_ANALYSIS: 'qwen-max-2025-01-25',
+  FLOW_CONVERSATION: 'qwen-plus',
+  EMAIL_CLASSIFICATION: 'gpt-4o-mini',
+  EMAIL_PIPELINE: 'gpt-4o-mini',
+  AI_RULES_DEFAULT: 'gpt-4o-mini',
+  TASK_SUMMARY: 'gpt-4o-mini',
+  DEAL_ANALYSIS: 'gpt-4o-mini',
+};
+
+async function seedActionConfig(organizationId: string) {
+  const existing = await prisma.ai_action_config.findMany({
+    where: { organizationId },
+    select: { actionCode: true },
+  });
+  const existingCodes = new Set(existing.map(e => e.actionCode));
+
+  for (const [actionCode, modelName] of Object.entries(ACTION_DEFAULTS)) {
+    if (existingCodes.has(actionCode as any)) continue;
+
+    const model = await prisma.ai_models.findFirst({
+      where: { name: modelName, ai_providers: { organizationId, status: 'ACTIVE' } },
+      select: { id: true },
+    });
+    if (!model) continue;
+
+    await prisma.ai_action_config.create({
+      data: {
+        organizationId,
+        actionCode: actionCode as any,
+        primaryModelId: model.id,
+        isActive: true,
+      },
+    });
+  }
+}
+
+// GET /ai-v2/action-config — list all action configs (auto-seed if empty)
+router.get('/action-config', async (req: any, res) => {
+  try {
+    const organizationId = req.user!.organizationId;
+
+    // Auto-seed on first access
+    const count = await prisma.ai_action_config.count({ where: { organizationId } });
+    if (count === 0) {
+      await seedActionConfig(organizationId);
+    }
+
+    const configs = await prisma.ai_action_config.findMany({
+      where: { organizationId },
+      include: {
+        primaryModel: {
+          select: { id: true, name: true, displayName: true },
+          include: { ai_providers: { select: { name: true } } },
+        },
+        fallbackModel: {
+          select: { id: true, name: true, displayName: true },
+          include: { ai_providers: { select: { name: true } } },
+        },
+        updatedBy: { select: { id: true, firstName: true, lastName: true } },
+      },
+      orderBy: { actionCode: 'asc' },
+    });
+
+    return res.json({ configs });
+  } catch (error) {
+    console.error('Error fetching action configs:', error);
+    return res.status(500).json({ error: 'Failed to fetch action configs' });
+  }
+});
+
+// PUT /ai-v2/action-config/:actionCode — update model for action
+router.put('/action-config/:actionCode', async (req: any, res) => {
+  try {
+    const organizationId = req.user!.organizationId;
+    const { actionCode } = req.params;
+    const { primaryModelId, fallbackModelId, isActive } = req.body;
+
+    if (!primaryModelId) {
+      return res.status(400).json({ error: 'primaryModelId is required' });
+    }
+
+    const config = await prisma.ai_action_config.upsert({
+      where: {
+        organizationId_actionCode: {
+          organizationId,
+          actionCode: actionCode as any,
+        },
+      },
+      update: {
+        primaryModelId,
+        fallbackModelId: fallbackModelId || null,
+        isActive: isActive ?? true,
+        updatedById: req.user!.id,
+      },
+      create: {
+        organizationId,
+        actionCode: actionCode as any,
+        primaryModelId,
+        fallbackModelId: fallbackModelId || null,
+        isActive: isActive ?? true,
+        updatedById: req.user!.id,
+      },
+      include: {
+        primaryModel: {
+          select: { id: true, name: true, displayName: true },
+          include: { ai_providers: { select: { name: true } } },
+        },
+        fallbackModel: {
+          select: { id: true, name: true, displayName: true },
+          include: { ai_providers: { select: { name: true } } },
+        },
+      },
+    });
+
+    return res.json({ config });
+  } catch (error) {
+    console.error('Error updating action config:', error);
+    return res.status(500).json({ error: 'Failed to update action config' });
+  }
+});
+
+// POST /ai-v2/action-config/reset — reset to defaults
+router.post('/action-config/reset', async (req: any, res) => {
+  try {
+    const organizationId = req.user!.organizationId;
+
+    await prisma.ai_action_config.deleteMany({ where: { organizationId } });
+    await seedActionConfig(organizationId);
+
+    const configs = await prisma.ai_action_config.findMany({
+      where: { organizationId },
+      include: {
+        primaryModel: {
+          select: { id: true, name: true, displayName: true },
+          include: { ai_providers: { select: { name: true } } },
+        },
+        fallbackModel: {
+          select: { id: true, name: true, displayName: true },
+          include: { ai_providers: { select: { name: true } } },
+        },
+      },
+      orderBy: { actionCode: 'asc' },
+    });
+
+    return res.json({ configs, message: 'Reset to defaults' });
+  } catch (error) {
+    console.error('Error resetting action configs:', error);
+    return res.status(500).json({ error: 'Failed to reset action configs' });
   }
 });
 

@@ -96,10 +96,13 @@ router.post('/search', async (req, res) => {
                  WHEN created_at > NOW() - INTERVAL '90 days' THEN 1
                  ELSE 0 END
           ) as relevance_score,
-          -- Vector similarity mock (hash-based consistency)
-          (
-            0.5 + (ABS(HASH(content || ${query})) % 50) / 100.0
-          ) as vector_similarity
+          -- Text-based similarity (normalized relevance)
+          LEAST(1.0, (
+            CASE WHEN LOWER(metadata->>'title') LIKE LOWER(${'%' + query + '%'}) THEN 0.4 ELSE 0.0 END +
+            CASE WHEN LOWER(content) LIKE LOWER(${'%' + query + '%'}) THEN 0.3 ELSE 0.0 END +
+            CASE WHEN LOWER(content) ~ LOWER(${query.split(' ').join('|')}) THEN 0.2 ELSE 0.0 END +
+            0.1
+          )) as vector_similarity
         FROM vectors 
         WHERE metadata->>'organizationId' = ${organizationId}
         AND (

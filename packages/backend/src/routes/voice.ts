@@ -476,18 +476,11 @@ router.post('/speech-to-text', upload.single('audio'), async (req, res) => {
       });
     }
 
-    // In production, this would use a speech-to-text service
-    // For now, return mock data
-    return res.json({
-      success: true,
-      data: {
-        transcript: 'Mock transcription of audio',
-        confidence: 0.95,
-        language: 'pl-PL',
-        duration: 3.5
-      }
+    // Speech-to-text service is being implemented
+    return res.status(501).json({
+      status: 'not_implemented',
+      message: 'Transkrypcja mowy jest w trakcie wdrazania'
     });
-
   } catch (error) {
     console.error('Speech-to-text error:', error);
     return res.status(500).json({

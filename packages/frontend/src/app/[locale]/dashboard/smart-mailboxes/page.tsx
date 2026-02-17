@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SmartMailboxBuilder } from '@/components/communication/smart-mailboxes/SmartMailboxBuilder'
-import { getSmartMailboxMessages, getSmartMailboxes, archiveMessage, deleteMessage, deleteSmartMailbox } from '@/lib/api/smartMailboxes'
+import { getSmartMailboxMessages, getSmartMailboxes, archiveMessage, deleteMessage, deleteSmartMailbox, analyzeMessage } from '@/lib/api/smartMailboxes'
 import { communicationApi, CommunicationChannel } from '@/lib/api/communication'
 import { getUnifiedRules, executeUnifiedRule, UnifiedRule } from '@/lib/api/unifiedRules'
 import { useMessageFilters } from '@/hooks/useMessageFilters'
@@ -36,7 +36,8 @@ import {
   Settings,
   FileText,
   Tag,
-  Pencil
+  Pencil,
+  Scan
 } from 'lucide-react'
 
 import QuickCaptureModal from '@/components/gtd/QuickCaptureModal'
@@ -324,6 +325,22 @@ export default function SmartMailboxesPage() {
       loadMessages()
     } catch {
       toast.error('Blad usuwania')
+    }
+  }
+
+  const handleAnalyze = async (id: string) => {
+    const toastId = toast.loading('Analizowanie wiadomosci...')
+    try {
+      const result = await analyzeMessage(id)
+      const created = result.data?.entitiesCreated || []
+      const classification = result.data?.classification || 'N/A'
+      const msg = created.length > 0
+        ? `Analiza: ${classification}. Utworzono: ${created.length} encji CRM`
+        : `Analiza: ${classification}`
+      toast.success(msg, { id: toastId })
+      loadMessages()
+    } catch {
+      toast.error('Blad analizy AI', { id: toastId })
     }
   }
 
@@ -1044,6 +1061,7 @@ export default function SmartMailboxesPage() {
                       setCurrentMessage(message)
                       setShowEmailWriterModal(true)
                     }}
+                    onAnalyze={() => handleAnalyze(message.id)}
                   />
                 ))}
               </div>
@@ -1140,7 +1158,8 @@ function MessageRow({
   onArchive,
   onDelete,
   onGTDAction,
-  onEmailWriter
+  onEmailWriter,
+  onAnalyze
 }: {
   message: any
   isExpanded: boolean
@@ -1151,6 +1170,7 @@ function MessageRow({
   onDelete: () => void
   onGTDAction: (action: 'INBOX' | 'DO' | 'DEFER') => void
   onEmailWriter: () => void
+  onAnalyze: () => void
 }) {
   const urgency = message.urgencyScore || 0
   const isUnread = !message.isRead
@@ -1268,6 +1288,13 @@ function MessageRow({
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   AI Odpowiedz
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); onAnalyze() }}
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium text-cyan-700 bg-cyan-100 dark:text-cyan-300 dark:bg-cyan-900/40 rounded-lg hover:bg-cyan-200 dark:hover:bg-cyan-900/60 transition-colors"
+                >
+                  <Scan className="w-3.5 h-3.5" />
+                  Analizuj
                 </button>
                 <div className="flex-1" />
                 <button

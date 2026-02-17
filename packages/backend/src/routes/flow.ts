@@ -23,6 +23,7 @@ import { FlowEngineService, createFlowEngine } from '../services/ai/FlowEngineSe
 import { FlowRAGService } from '../services/ai/FlowRAGService';
 import { authenticateToken as authMiddleware, AuthenticatedRequest } from '../shared/middleware/auth';
 import { AIRouter } from '../services/ai/AIRouter';
+import { resolveModelForAction } from '../services/ai/ActionModelResolver';
 
 const router = Router();
 
@@ -172,8 +173,9 @@ async function analyzeWithAI(
     .replace(/\{\{#if itemMetadata\}\}[\s\S]*?\{\{\/if\}\}/g, '');  // Remove conditional metadata block
 
   try {
+    const resolved = await resolveModelForAction(organizationId, 'FLOW_ANALYSIS');
     const response = await aiRouter.processRequest({
-      model: 'qwen-max-2025-01-25',
+      model: resolved?.modelName ?? 'qwen-max-2025-01-25',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt }
@@ -181,7 +183,7 @@ async function analyzeWithAI(
       config: {
         temperature: 0.3,
         maxTokens: 2000,
-        responseFormat: 'json'  // Enable JSON mode for structured response
+        responseFormat: 'json'
       }
     });
 

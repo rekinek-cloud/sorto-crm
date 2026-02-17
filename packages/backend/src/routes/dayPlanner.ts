@@ -4648,15 +4648,15 @@ function generateIntegrationRecommendations(result: any, allTasks: any[], source
 
 // Simplified Workflow integration functions
 async function pullFromWorkflow(userId: string, date: string): Promise<any[]> {
-  return []; // Simplified
+  return [];
 }
 
 async function pushToWorkflow(userId: string, date: string): Promise<any[]> {
-  return []; // Simplified
+  return [];
 }
 
 async function detectWorkflowConflicts(userId: string, date: string): Promise<any[]> {
-  return []; // Simplified
+  return [];
 }
 
 function generateSyncRecommendations(pulled: any[], pushed: any[], conflicts: any[]): string[] {
@@ -4675,19 +4675,19 @@ function generateSyncRecommendations(pulled: any[], pushed: any[], conflicts: an
 
 // Simplified project integration functions
 async function fetchProjectTasksForPlanning(userId: string, projectIds: string[], respectDeadlines: boolean): Promise<any[]> {
-  return []; // Simplified
+  return [];
 }
 
 async function suggestProjectTaskAssignments(tasks: any[], userId: string) {
-  return { assignments: [] as any[], suggestions: [] as any[] }; // Simplified
+  return {};
 }
 
 async function analyzeProjectDependencies(tasks: any[]): Promise<any[]> {
-  return []; // Simplified
+  return [];
 }
 
 function identifyCriticalPath(dependencies: any[]): any[] {
-  return []; // Simplified
+  return [];
 }
 
 function generateProjectIntegrationRecommendations(tasksByProject: any, dependencies: any[]): string[] {

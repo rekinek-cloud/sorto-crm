@@ -6,6 +6,8 @@ import { AIRequest } from './providers/BaseProvider';
 import logger from '../../config/logger';
 import { PipelineConfigLoader } from './PipelineConfigLoader';
 import { PipelineConfig } from './PipelineConfigDefaults';
+import { resolveModelForAction } from './ActionModelResolver';
+import { PromptManager } from './PromptManager';
 
 // =============================================================================
 // Interfaces
@@ -73,6 +75,9 @@ export interface RuleMatchResult {
     addToFlow?: boolean;
     createDeal?: boolean;
     list?: { action: string; target: string };
+    templateId?: string;       // prompt template code from ai_prompt_templates
+    aiPrompt?: string;         // inline user prompt from rule
+    aiSystemPrompt?: string;   // inline system prompt from rule
   };
 }
 
@@ -91,6 +96,8 @@ export interface ProcessingResult {
   actionsExecuted: string[];
   extractedTasks?: ExtractedTask[];
   linkedEntities?: { contactId?: string; companyId?: string; dealId?: string };
+  sentiment?: string;      // POSITIVE | NEUTRAL | NEGATIVE
+  urgencyScore?: number;   // 0-100
 }
 
 // =============================================================================
@@ -109,11 +116,15 @@ export class RuleProcessingPipeline {
   }
 
   /**
-   * Main entry point: process an entity through the 4-stage pipeline.
-   * Stage 1: CRM Protection (contacts/companies)
+   * Main entry point: process an entity through the pipeline.
+   * Stage 1: CRM Protection (contacts/companies → BUSINESS)
    * Stage 2: Lists & Patterns (blacklist/whitelist, email patterns)
-   * Stage 3: AI Classification (LLM-based for unknown emails)
-   * Stage 4: Post-classification Actions (RAG, Flow, blacklist, tasks)
+   * Stage 2.5: AI Rules (always checked — from /dashboard/ai-rules)
+   * Stage 3: Classification decision (CRM > Lists > Patterns > Rules > default INBOX)
+   * Stage 4: Post-classification AI (ONLY if prompt EMAIL_POST_{category} exists or rule has inline prompt)
+   * Stage 5: Post-actions (RAG, Flow, entities, blacklist, tasks)
+   *
+   * AI is NOT auto-triggered. The gate is: does a prompt exist for the category?
    */
   async processEntity(
     organizationId: string,
@@ -164,17 +175,14 @@ export class RuleProcessingPipeline {
         ]);
       }
 
-      // Stage 2.5: AI Rules (from /dashboard/ai-rules)
+      // Stage 2.5: AI Rules (from /dashboard/ai-rules) — ALWAYS checked
       let ruleMatch: RuleMatchResult = { matched: false };
-      if (!crmCheck.matched && !listCheck.matched && !patternCheck.matched) {
-        ruleMatch = await this.applyAIRules(organizationId, entityData, senderEmail, senderDomain);
-      }
+      ruleMatch = await this.applyAIRules(organizationId, entityData, senderEmail, senderDomain);
 
       // Determine final classification
       // Priority: CRM > Lists > Patterns > AI Rules > AI Classification
       let finalClass: string;
       let finalConfidence: number;
-      let aiResult: AIClassResult | undefined;
       let extractedTasks: ExtractedTask[] = [];
 
       if (crmCheck.matched) {
@@ -190,18 +198,10 @@ export class RuleProcessingPipeline {
         finalClass = ruleMatch.actions.forceClassification;
         finalConfidence = ruleMatch.confidence || this.config.thresholds.defaultRuleConfidence;
       } else {
-        // Stage 3: AI Classification (only if no rules matched)
-        aiResult = await this.classifyWithAI(organizationId, entityData);
-        if (aiResult) {
-          finalClass = aiResult.confidence >= this.config.thresholds.unknownThreshold ? aiResult.classification : 'UNKNOWN';
-          finalConfidence = aiResult.confidence;
-          if (aiResult.extraction?.extractedTasks) {
-            extractedTasks = aiResult.extraction.extractedTasks;
-          }
-        } else {
-          finalClass = 'UNKNOWN';
-          finalConfidence = 0;
-        }
+        // No match anywhere → default to INBOX without AI
+        // AI fires ONLY in post-classification if prompt EMAIL_POST_{category} exists
+        finalClass = 'INBOX';
+        finalConfidence = 0;
       }
 
       // Stage 4: Post-classification Actions
@@ -310,7 +310,7 @@ export class RuleProcessingPipeline {
           if (addedToRag) actionsExecuted.push('ADDED_TO_RAG');
         }
         if (senderDomain && !this.freeEmailDomains.has(senderDomain)) {
-          await this.suggestBlacklist(organizationId, senderDomain, senderEmail, finalConfidence);
+          await this.suggestBlacklist(organizationId, senderDomain, senderEmail, finalConfidence, entityData);
           actionsExecuted.push('SUGGESTED_BLACKLIST');
         }
       }
@@ -327,16 +327,69 @@ export class RuleProcessingPipeline {
         extractedTasks = this.extractTasksFromContent(entityData);
       }
 
+      // Post-classification AI analysis — fires ONLY if prompt exists for this category
+      // Gate: existence of prompt EMAIL_POST_{category} OR inline prompt from matched rule
+      let postClassificationAnalysis: string | null = null;
+      if (finalClass !== 'SPAM' && finalClass !== 'UNKNOWN') {
+        postClassificationAnalysis = await this.runPostClassificationPrompt(
+          organizationId, entityData, finalClass, ruleMatch.actions
+        );
+        if (postClassificationAnalysis) {
+          actionsExecuted.push('POST_CLASSIFICATION_ANALYSIS');
+        }
+      }
+
+      // Extract sentiment and urgency from post-classification analysis
+      let sentiment: string | undefined;
+      let urgencyScore: number | undefined;
+      if (postClassificationAnalysis) {
+        try {
+          const jsonMatch = postClassificationAnalysis.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            if (parsed.sentiment) {
+              sentiment = String(parsed.sentiment).toUpperCase();
+            }
+            if (parsed.urgency !== undefined) {
+              if (typeof parsed.urgency === 'number') {
+                urgencyScore = parsed.urgency;
+              } else {
+                const urgencyMap: Record<string, number> = { LOW: 20, MEDIUM: 50, HIGH: 80, CRITICAL: 95 };
+                urgencyScore = urgencyMap[String(parsed.urgency).toUpperCase()] || 50;
+              }
+            }
+          }
+        } catch {
+          // Failed to parse sentiment/urgency — non-critical
+        }
+      }
+
+      // Auto-create CRM entities from post-classification analysis
+      if (postClassificationAnalysis && finalClass !== 'SPAM' && finalClass !== 'UNKNOWN') {
+        await this.createEntitiesFromAnalysis(
+          organizationId, entityId, finalClass,
+          postClassificationAnalysis, entityData, linkedEntities, actionsExecuted
+        );
+      }
+
       // Update processing record with all results
+      const aiExtractionData = (() => {
+        const base: Record<string, any> = {};
+        if (postClassificationAnalysis) base.postClassificationAnalysis = postClassificationAnalysis;
+        const entityActions = actionsExecuted.filter((a: string) => a.startsWith('CREATED_'));
+        if (entityActions.length > 0) base.entitiesCreated = entityActions;
+        return Object.keys(base).length > 0 ? base : null;
+      })();
+
       await this.prisma.data_processing.update({
         where: { id: processingRecord.id },
         data: {
           crmMatch: crmCheck.matched ? crmCheck as any : null,
           listMatch: listCheck.matched ? listCheck as any : null,
           patternMatch: patternCheck.matched ? patternCheck as any : null,
-          aiClassification: aiResult?.classification || null,
-          aiConfidence: aiResult?.confidence || null,
-          aiExtraction: aiResult?.extraction || null,
+          aiClassification: postClassificationAnalysis ? finalClass : null,
+          aiConfidence: postClassificationAnalysis ? finalConfidence : null,
+          aiExtraction: aiExtractionData,
           finalClass,
           finalConfidence,
           addedToRag,
@@ -352,7 +405,7 @@ export class RuleProcessingPipeline {
       await this.logExecution(organizationId, entityType, entityId, {
         finalClass,
         finalConfidence,
-        stages: { crmCheck: crmCheck.matched, listCheck: listCheck.matched, patternCheck: patternCheck.matched, ruleMatch: ruleMatch.matched, aiUsed: !!aiResult },
+        stages: { crmCheck: crmCheck.matched, listCheck: listCheck.matched, patternCheck: patternCheck.matched, ruleMatch: ruleMatch.matched, aiUsed: !!postClassificationAnalysis },
         actionsExecuted,
         executionTime: Date.now() - startTime,
       });
@@ -365,13 +418,15 @@ export class RuleProcessingPipeline {
           listCheck,
           patternCheck,
           ruleMatch: ruleMatch.matched ? ruleMatch : undefined,
-          aiClassification: aiResult,
+          aiClassification: undefined,
         },
         finalClass,
         finalConfidence,
         actionsExecuted,
         extractedTasks,
         linkedEntities,
+        sentiment,
+        urgencyScore,
       };
     } catch (error) {
       logger.error(`Processing pipeline failed for ${entityType}:${entityId}:`, error);
@@ -663,7 +718,11 @@ export class RuleProcessingPipeline {
               skipAI: actions.skipAI,
               addToRag: actions.addToRag,
               addToFlow: actions.addToFlow,
+              createDeal: actions.createDeal,
               list: actions.list,
+              templateId: (rule as any).templateId || undefined,
+              aiPrompt: (rule as any).aiPrompt || undefined,
+              aiSystemPrompt: (rule as any).aiSystemPrompt || undefined,
             },
           };
         }
@@ -764,13 +823,26 @@ export class RuleProcessingPipeline {
         (entityData.body || entityData.content || '').substring(0, this.config.contentLimits.aiContentLimit),
       ].filter(Boolean).join('\n');
 
+      const resolvedClass = await resolveModelForAction(organizationId, 'EMAIL_CLASSIFICATION');
+
+      // Try loading prompt from ai_prompt_templates (unified prompt management)
+      const categoriesText = PipelineConfigLoader.buildCategoriesText(this.config);
+      const compiled = await PromptManager.compilePrompt('EMAIL_CLASSIFY', {
+        variables: { categories: categoriesText, emailContent },
+        organizationId,
+      });
+
+      // Fallback to pipeline config if template not found in DB
+      const systemContent = compiled?.systemPrompt || PipelineConfigLoader.buildClassificationPrompt(this.config);
+      const userContent = compiled?.userPrompt || `Classify this email:\n\n${emailContent}`;
+
       const request: AIRequest = {
-        model: this.config.aiParams.model,
+        model: resolvedClass?.modelName ?? compiled?.model ?? this.config.aiParams.model,
         messages: [
-          { role: 'system', content: PipelineConfigLoader.buildClassificationPrompt(this.config) },
-          { role: 'user', content: `Classify this email:\n\n${emailContent}` },
+          { role: 'system', content: systemContent },
+          { role: 'user', content: userContent },
         ],
-        config: { temperature: this.config.aiParams.temperature, maxTokens: this.config.aiParams.maxTokens },
+        config: { temperature: compiled?.temperature ?? this.config.aiParams.temperature, maxTokens: compiled?.maxTokens ?? this.config.aiParams.maxTokens },
       };
 
       const response = await aiRouter.processRequest(request);
@@ -818,7 +890,88 @@ export class RuleProcessingPipeline {
   }
 
   // ===========================================================================
-  // Stage 4: Post-classification Actions
+  // Stage 4a: Post-classification AI Analysis (per-classification prompt)
+  // ===========================================================================
+
+  private async runPostClassificationPrompt(
+    organizationId: string,
+    entityData: EntityData,
+    classification: string,
+    ruleActions?: RuleMatchResult['actions']
+  ): Promise<string | null> {
+    try {
+      const emailBody = (entityData.body || entityData.content || '').substring(0, this.config.contentLimits.aiContentLimit);
+      const variables = {
+        from: entityData.from || entityData.senderName || '',
+        subject: entityData.subject || '',
+        body: emailBody,
+        classification,
+      };
+
+      // Prompt hierarchy:
+      // 1) Inline prompt from rule (aiPrompt/aiSystemPrompt fields)
+      // 2) Template specified by rule (templateId field)
+      // 3) Default: EMAIL_POST_{classification}
+      let compiled: { systemPrompt: string; userPrompt: string; model: string; temperature: number; maxTokens: number } | null = null;
+
+      if (ruleActions?.aiSystemPrompt || ruleActions?.aiPrompt) {
+        // Level 1: Inline prompt from rule fields
+        compiled = {
+          systemPrompt: ruleActions.aiSystemPrompt || 'You are an AI assistant analyzing emails.',
+          userPrompt: (ruleActions.aiPrompt || 'Analyze this email:\n\n{{body}}')
+            .replace(/\{\{body\}\}/g, emailBody)
+            .replace(/\{\{from\}\}/g, variables.from)
+            .replace(/\{\{subject\}\}/g, variables.subject)
+            .replace(/\{\{classification\}\}/g, classification),
+          model: this.config.aiParams.model,
+          temperature: this.config.aiParams.temperature,
+          maxTokens: this.config.aiParams.maxTokens,
+        };
+      } else if (ruleActions?.templateId) {
+        // Level 2: Template specified in rule
+        compiled = await PromptManager.compilePrompt(ruleActions.templateId, {
+          variables,
+          organizationId,
+        });
+      }
+
+      if (!compiled) {
+        // Level 3: Default EMAIL_POST_{classification}
+        const code = `EMAIL_POST_${classification}`;
+        compiled = await PromptManager.compilePrompt(code, {
+          variables,
+          organizationId,
+        });
+      }
+
+      if (!compiled) {
+        // No prompt at any level — no AI for this category
+        return null;
+      }
+
+      const aiRouter = new AIRouter({ organizationId, prisma: this.prisma });
+      await aiRouter.initializeProviders();
+      if (!aiRouter.hasAvailableProviders()) return null;
+
+      const resolvedModel = await resolveModelForAction(organizationId, 'EMAIL_CLASSIFICATION');
+      const response = await aiRouter.processRequest({
+        model: resolvedModel?.modelName ?? compiled.model,
+        messages: [
+          { role: 'system', content: compiled.systemPrompt },
+          { role: 'user', content: compiled.userPrompt },
+        ],
+        config: { temperature: compiled.temperature, maxTokens: compiled.maxTokens },
+      });
+
+      return response.content || null;
+    } catch (error) {
+      logger.warn(`[PostClassification] Prompt for ${classification} failed:`, error);
+      return null;
+    }
+  }
+
+  // ===========================================================================
+  // Stage 4b: Post-classification Actions
   // ===========================================================================
 
   private async addToRAG(
@@ -906,7 +1059,8 @@ export class RuleProcessingPipeline {
     organizationId: string,
     domain: string,
     email: string,
-    confidence: number
+    confidence: number,
+    entityData?: EntityData
   ): Promise<void> {
     try {
       // Check if suggestion already exists
@@ -927,22 +1081,53 @@ export class RuleProcessingPipeline {
       });
       if (!adminUser) return;
 
+      // Build reasoning from actual email content
+      const subject = entityData?.subject || '';
+      const fromName = entityData?.fromName || entityData?.from || email;
+      const bodySnippet = (entityData?.body || entityData?.content || '').substring(0, 500);
+      const confidencePct = Math.round(confidence * 100);
+
+      const reasoningParts: string[] = [];
+      reasoningParts.push(`Od: ${fromName}`);
+      if (subject) reasoningParts.push(`Temat: ${subject}`);
+      reasoningParts.push(`Klasyfikacja AI: NEWSLETTER (${confidencePct}%)`);
+
+      // Detect newsletter signals for reasoning
+      const signals: string[] = [];
+      const lowerSubject = subject.toLowerCase();
+      const lowerBody = bodySnippet.toLowerCase();
+      if (lowerSubject.includes('newsletter') || lowerBody.includes('newsletter')) signals.push('slowo "newsletter" w tresci');
+      if (lowerSubject.includes('unsubscribe') || lowerBody.includes('unsubscribe') || lowerBody.includes('wypisz')) signals.push('link do wypisania');
+      if (entityData?.headers?.['list-unsubscribe']) signals.push('naglowek List-Unsubscribe');
+      if (lowerBody.includes('weekly') || lowerBody.includes('monthly') || lowerBody.includes('digest')) signals.push('periodyczna wysylka');
+      if (email.startsWith('newsletter@') || email.startsWith('noreply@') || email.startsWith('no-reply@') || email.startsWith('info@') || email.startsWith('marketing@') || email.startsWith('notifications@')) signals.push(`adres nadawcy: ${email}`);
+      if (signals.length > 0) reasoningParts.push(`Sygnaly: ${signals.join(', ')}`);
+
       await this.prisma.ai_suggestions.create({
         data: {
           id: `sug-bl-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`,
           user_id: adminUser.id,
           organization_id: organizationId,
           context: 'BLACKLIST_DOMAIN',
-          input_data: { domain, email, source: 'classification-pipeline' },
+          input_data: {
+            domain,
+            email,
+            source: 'classification-pipeline',
+            subject,
+            fromName,
+            bodySnippet,
+          },
           suggestion: {
-            title: `Dodaj ${domain} do blacklisty`,
-            description: `Domena ${domain} (${email}) wykryta jako newsletter. Sugerujemy dodanie do blacklisty.`,
+            title: subject ? `${domain}: "${subject}"` : `Dodaj ${domain} do blacklisty`,
+            description: subject
+              ? `Od: ${fromName}\nTemat: ${subject}\n\nAI klasyfikuje jako newsletter (${confidencePct}%).`
+              : `Domena ${domain} (${email}) wykryta jako newsletter.`,
             domain,
             classification: 'NEWSLETTER',
-            reason: 'Automatyczna detekcja newslettera',
+            reason: signals.length > 0 ? `Sygnaly: ${signals.join(', ')}` : 'Automatyczna detekcja newslettera',
           },
-          confidence: Math.round(confidence * 100),
-          reasoning: `Email z ${domain} sklasyfikowany jako NEWSLETTER z confidence ${Math.round(confidence * 100)}%`,
+          confidence: confidencePct,
+          reasoning: reasoningParts.join('\n'),
           status: 'PENDING',
         },
       });
@@ -1185,6 +1370,251 @@ export class RuleProcessingPipeline {
     }).catch(() => {});
 
     return { updated: true, patternCreated };
+  }
+
+  // ===========================================================================
+  // Stage 4b: Auto-create CRM entities from post-classification analysis
+  // ===========================================================================
+
+  private async createEntitiesFromAnalysis(
+    organizationId: string,
+    entityId: string,
+    classification: string,
+    analysisJson: string,
+    entityData: EntityData,
+    linkedEntities: { contactId?: string; companyId?: string; dealId?: string },
+    actionsExecuted: string[]
+  ): Promise<void> {
+    const parsed = this.parseAIResponse(analysisJson);
+    if (!parsed) {
+      logger.warn(`[EntityCreation] Failed to parse analysis JSON for ${entityId}`);
+      return;
+    }
+
+    // Get admin user for createdById
+    const adminUser = await this.prisma.user.findFirst({
+      where: { organizationId },
+      orderBy: { createdAt: 'asc' },
+    });
+    if (!adminUser) return;
+
+    const senderEmail = entityData.from || '';
+    const senderDomain = entityData.senderDomain || this.extractDomain(senderEmail);
+    const dedup24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+    try {
+      // === 1. COMPANY ===
+      const isFreeEmail = !senderDomain || this.freeEmailDomains.has(senderDomain);
+      const aiCompanyName = parsed.leads?.[0]?.company || parsed.contacts?.[0]?.company || null;
+
+      if (!linkedEntities.companyId) {
+        // Try matching by domain first (non-free domains)
+        if (!isFreeEmail) {
+          const existingCompany = await this.prisma.company.findFirst({
+            where: {
+              organizationId,
+              OR: [
+                { domain: { equals: senderDomain, mode: 'insensitive' as const } },
+                { website: { contains: senderDomain, mode: 'insensitive' as const } },
+              ],
+            },
+          });
+          if (existingCompany) linkedEntities.companyId = existingCompany.id;
+        }
+
+        // Try matching by AI-extracted company name (also for free domains)
+        if (!linkedEntities.companyId && aiCompanyName) {
+          const existingByName = await this.prisma.company.findFirst({
+            where: {
+              organizationId,
+              name: { equals: aiCompanyName, mode: 'insensitive' as const },
+            },
+          });
+          if (existingByName) linkedEntities.companyId = existingByName.id;
+        }
+
+        // Create new company if still no match
+        if (!linkedEntities.companyId && (!isFreeEmail || aiCompanyName)) {
+          const companyName = aiCompanyName
+            || senderDomain.split('.')[0].charAt(0).toUpperCase() + senderDomain.split('.')[0].slice(1);
+
+          // Try to extract NIP from analysis
+          let nip: string | null = null;
+          const allText = JSON.stringify(parsed);
+          const nipMatch = allText.match(/\b(\d{10})\b/);
+          if (nipMatch) nip = nipMatch[1];
+
+          const newCompany = await this.prisma.company.create({
+            data: {
+              name: companyName,
+              domain: isFreeEmail ? undefined : senderDomain,
+              website: isFreeEmail ? undefined : `https://${senderDomain}`,
+              email: senderEmail || undefined,
+              nip,
+              status: 'PROSPECT',
+              tags: ['auto-created', 'from-email-analysis'],
+              organizationId,
+            },
+          });
+          linkedEntities.companyId = newCompany.id;
+          actionsExecuted.push(`CREATED_COMPANY:${newCompany.id}`);
+        }
+      }
+
+      // === 2. CONTACT ===
+      if (!linkedEntities.contactId && senderEmail) {
+        const existingContact = await this.prisma.contact.findFirst({
+          where: { organizationId, email: { equals: senderEmail, mode: 'insensitive' as const } },
+        });
+
+        if (existingContact) {
+          linkedEntities.contactId = existingContact.id;
+          // Update existing contact with companyId if missing
+          if (linkedEntities.companyId && !existingContact.companyId) {
+            await this.prisma.contact.update({
+              where: { id: existingContact.id },
+              data: { companyId: linkedEntities.companyId },
+            });
+          }
+        } else {
+          const leadData = parsed.leads?.[0];
+          const contactData = parsed.contacts?.[0];
+          const senderName = entityData.senderName || entityData.fromName || leadData?.name || '';
+          const nameParts = senderName.split(' ');
+
+          const newContact = await this.prisma.contact.create({
+            data: {
+              firstName: contactData?.firstName || nameParts[0] || senderEmail.split('@')[0],
+              lastName: contactData?.lastName || nameParts.slice(1).join(' ') || '',
+              email: senderEmail,
+              phone: contactData?.phone || undefined,
+              company: leadData?.company || contactData?.company || undefined,
+              position: contactData?.position || undefined,
+              source: 'Email',
+              status: classification === 'BUSINESS' ? 'LEAD' : 'ACTIVE',
+              companyId: linkedEntities.companyId || undefined,
+              tags: ['auto-created', 'from-email-analysis'],
+              organizationId,
+            },
+          });
+          linkedEntities.contactId = newContact.id;
+          actionsExecuted.push(`CREATED_CONTACT:${newContact.id}`);
+        }
+      }
+
+      // === 3. LEADS ===
+      if (parsed.leads && Array.isArray(parsed.leads)) {
+        for (const lead of parsed.leads) {
+          if (!lead.name && !lead.email) continue;
+          const leadTitle = lead.name || `Lead from ${senderEmail}`;
+
+          const existing = await this.prisma.lead.findFirst({
+            where: { organizationId, title: leadTitle, createdAt: { gte: dedup24h } },
+          });
+          if (existing) continue;
+
+          const newLead = await this.prisma.lead.create({
+            data: {
+              title: leadTitle,
+              description: lead.notes || `From email: ${entityData.subject || ''}`,
+              company: lead.company || undefined,
+              contactPerson: lead.email || senderEmail || undefined,
+              status: 'NEW',
+              priority: 'MEDIUM',
+              source: lead.source || 'Email',
+              organizationId,
+            },
+          });
+          actionsExecuted.push(`CREATED_LEAD:${newLead.id}`);
+        }
+      }
+
+      // === 4. DEALS ===
+      if (parsed.deals && Array.isArray(parsed.deals) && linkedEntities.companyId) {
+        for (const deal of parsed.deals) {
+          if (!deal.title) continue;
+
+          const existing = await this.prisma.deal.findFirst({
+            where: { organizationId, title: deal.title, createdAt: { gte: dedup24h } },
+          });
+          if (existing) {
+            linkedEntities.dealId = existing.id;
+            continue;
+          }
+
+          const stageMap: Record<string, string> = {
+            prospect: 'PROSPECT', qualified: 'QUALIFIED', proposal: 'PROPOSAL',
+            negotiation: 'NEGOTIATION', closed_won: 'CLOSED_WON', closed_lost: 'CLOSED_LOST',
+          };
+          const stage = stageMap[(deal.stage || '').toLowerCase()] || 'PROSPECT';
+
+          const newDeal = await this.prisma.deal.create({
+            data: {
+              title: deal.title,
+              description: `Auto-created from email: ${entityData.subject || ''}\nFrom: ${senderEmail}`,
+              value: deal.value || 0,
+              stage: stage as any,
+              source: 'Email',
+              companyId: linkedEntities.companyId,
+              ownerId: adminUser.id,
+              organizationId,
+            },
+          });
+          linkedEntities.dealId = newDeal.id;
+          actionsExecuted.push(`CREATED_DEAL:${newDeal.id}`);
+        }
+      }
+
+      // === 5. TASKS ===
+      const allTasks = [
+        ...(parsed.tasks || []),
+        ...(parsed.requiredActions?.map((a: string) => ({ title: a, priority: 'MEDIUM' })) || []),
+        ...(parsed.actionItems?.map((a: string) => ({ title: a, priority: 'LOW' })) || []),
+      ];
+
+      for (const task of allTasks.slice(0, 5)) {
+        if (!task.title || task.title.length < 5) continue;
+
+        const existing = await this.prisma.task.findFirst({
+          where: { organizationId, title: task.title, createdAt: { gte: dedup24h } },
+        });
+        if (existing) continue;
+
+        const priorityMap: Record<string, string> = {
+          low: 'LOW', medium: 'MEDIUM', high: 'HIGH', urgent: 'URGENT',
+        };
+        const priority = priorityMap[(task.priority || '').toLowerCase()] || 'MEDIUM';
+
+        let dueDate: Date | undefined;
+        if (task.deadline) {
+          const d = new Date(task.deadline);
+          if (!isNaN(d.getTime())) dueDate = d;
+        }
+
+        const newTask = await this.prisma.task.create({
+          data: {
+            title: task.title,
+            description: `Auto-created from email: ${entityData.subject || ''}\nFrom: ${senderEmail}`,
+            priority: priority as any,
+            status: 'NEW',
+            dueDate,
+            organizationId,
+            createdById: adminUser.id,
+            contactId: linkedEntities.contactId || undefined,
+            companyId: linkedEntities.companyId || undefined,
+            dealId: linkedEntities.dealId || undefined,
+          },
+        });
+        actionsExecuted.push(`CREATED_TASK:${newTask.id}`);
+      }
+
+      const createdCount = actionsExecuted.filter((a: string) => a.startsWith('CREATED_')).length;
+      if (createdCount > 0) {
+        logger.info(`[EntityCreation] Created ${createdCount} entities for email ${entityId}`);
+      }
+    } catch (error) {
+      logger.warn(`[EntityCreation] Error creating entities for ${entityId}:`, error);
+    }
   }
 
   // ===========================================================================

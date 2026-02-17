@@ -151,223 +151,57 @@ const UnifiedRuleUpdateSchema = UnifiedRuleCreateSchema.partial();
 
 // ⚠️ IMPORTANT: Static routes MUST come BEFORE dynamic /:id routes!
 
-// GET /api/v1/unified-rules/stats/overview - Statystyki przeglądu
+// GET /api/v1/unified-rules/stats/overview - Statystyki przeglądu (prawdziwe dane z bazy)
 router.get('/stats/overview', async (req: any, res) => {
   try {
-    // Mockowe dane dla testów - pozwala na przetestowanie frontend bez bazy danych
-    const mockStats = {
-      totalRules: 9,
-      activeRules: 6,
-      inactiveRules: 3,
-      rulesByType: [
-        { ruleType: 'PROCESSING', _count: 3 },
-        { ruleType: 'EMAIL_FILTER', _count: 2 },
-        { ruleType: 'AUTO_REPLY', _count: 2 },
-        { ruleType: 'AI_RULE', _count: 1 },
-        { ruleType: 'SMART_MAILBOX', _count: 1 }
-      ],
-      executions24h: 47,
-      successRate: 97.8,
-      avgExecutionTime: 189
-    };
+    const organizationId = req.user?.organizationId;
+    const where: any = organizationId ? { organizationId } : {};
+
+    const rules = await prisma.unified_rules.findMany({ where });
+    const totalRules = rules.length;
+    const activeRules = rules.filter((r: any) => r.status === 'ACTIVE').length;
+    const inactiveRules = totalRules - activeRules;
+
+    // Group by ruleType
+    const typeMap: Record<string, number> = {};
+    for (const rule of rules) {
+      typeMap[rule.ruleType] = (typeMap[rule.ruleType] || 0) + 1;
+    }
+    const rulesByType = Object.entries(typeMap).map(([ruleType, count]) => ({
+      ruleType,
+      _count: count,
+    }));
+
+    // Executions in last 24h
+    const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const execWhere: any = { createdAt: { gte: since24h } };
+    if (organizationId) execWhere.organizationId = organizationId;
+
+    const executions = await prisma.unified_rule_executions.findMany({ where: execWhere });
+    const executions24h = executions.length;
+    const successCount = executions.filter((e: any) => e.status === 'SUCCESS').length;
+    const successRate = executions24h > 0 ? Math.round((successCount / executions24h) * 1000) / 10 : 0;
+    const avgExecutionTime = executions24h > 0
+      ? Math.round(executions.reduce((sum: number, e: any) => sum + (e.executionTime || 0), 0) / executions24h)
+      : 0;
 
     return res.json({
       success: true,
-      data: mockStats,
-      message: 'TEMP: Using mock data for frontend testing'
+      data: {
+        totalRules,
+        activeRules,
+        inactiveRules,
+        rulesByType,
+        executions24h,
+        successRate,
+        avgExecutionTime,
+      },
     });
   } catch (error) {
     console.error('Error fetching unified rules stats:', error);
     return res.status(500).json({
       success: false,
       error: 'Failed to fetch unified rules stats'
-    });
-  }
-});
-
-// GET /api/v1/unified-rules/stats/overview-test - Statystyki przeglądu (TEST)
-router.get('/stats/overview-test', async (req, res) => {
-  try {
-    const mockStats = {
-      totalRules: 5,
-      activeRules: 3,
-      inactiveRules: 2,
-      rulesByType: [
-        { ruleType: 'PROCESSING', _count: 2 },
-        { ruleType: 'EMAIL_FILTER', _count: 1 },
-        { ruleType: 'AUTO_REPLY', _count: 1 },
-        { ruleType: 'AI_ANALYSIS', _count: 1 }
-      ],
-      executions24h: 24,
-      successRate: 95.5,
-      avgExecutionTime: 234
-    };
-
-    return res.json({
-      success: true,
-      data: mockStats,
-      message: 'TEST ENDPOINT - Mock data for development'
-    });
-  } catch (error) {
-    console.error('Error in test stats endpoint:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Failed to fetch test stats'
-    });
-  }
-});
-
-// GET /api/v1/unified-rules/mock - Lista mockowych reguł (dla testów)
-router.get('/mock', async (req: any, res) => {
-  try {
-    const { type, status, category, search, page = '1', limit = '50' } = req.query;
-
-    // Mockowe reguły dla testów
-    const mockRules = [
-      {
-        id: 'rule-1',
-        name: 'Auto-zadania z pilnych emaili',
-        description: 'Automatycznie tworzy zadania HIGH priority dla wiadomości z słowami "PILNE", "URGENT"',
-        ruleType: 'PROCESSING',
-        category: 'EMAIL_PROCESSING',
-        status: 'ACTIVE',
-        priority: 90,
-        triggerType: 'EVENT_BASED',
-        triggerEvents: ['message_received'],
-        conditions: { subjectContains: ['PILNE', 'URGENT'], minUrgencyScore: 80 },
-        actions: { createTask: { priority: 'HIGH', context: '@calls' } },
-        executionCount: 23,
-        successCount: 22,
-        errorCount: 1,
-        lastExecuted: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        fallbackModelIds: [] as any[] as any[]
-      },
-      {
-        id: 'rule-2',
-        name: 'Filtr newsletterów',
-        description: 'Automatycznie archiwizuje newslettery z pominięciem analizy AI',
-        ruleType: 'EMAIL_FILTER',
-        category: 'FILTERING',
-        status: 'ACTIVE',
-        priority: 50,
-        triggerType: 'EVENT_BASED',
-        triggerEvents: ['message_received'],
-        conditions: { subjectContains: ['newsletter', 'unsubscribe'], maxUrgencyScore: 30 },
-        actions: { categorize: 'ARCHIVE', skipAIAnalysis: true },
-        executionCount: 156,
-        successCount: 156,
-        errorCount: 0,
-        lastExecuted: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        fallbackModelIds: [] as any[] as any[]
-      },
-      {
-        id: 'rule-3',
-        name: 'Odpowiedź poza godzinami pracy',
-        description: 'Auto-odpowiedź wieczorem i w weekendy',
-        ruleType: 'AUTO_REPLY',
-        category: 'COMMUNICATION',
-        status: 'ACTIVE',
-        priority: 70,
-        triggerType: 'EVENT_BASED',
-        triggerEvents: ['message_received'],
-        conditions: { timeRange: { start: '18:00', end: '08:00' } },
-        actions: { sendAutoReply: { template: 'Dziękuję za wiadomość. Odpowiem w najbliższym dniu roboczym.' } },
-        executionCount: 12,
-        successCount: 12,
-        errorCount: 0,
-        lastExecuted: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        fallbackModelIds: [] as any[]
-      },
-      {
-        id: 'rule-4',
-        name: 'Analiza pilności projektów',
-        description: 'Automatyczna ocena pilności nowych projektów przez AI',
-        ruleType: 'AI_RULE',
-        category: 'AI_ANALYSIS',
-        status: 'ACTIVE',
-        priority: 80,
-        triggerType: 'EVENT_BASED',
-        triggerEvents: ['project_created'],
-        conditions: { entityType: 'project', analysisType: 'urgency' },
-        actions: { runAIAnalysis: { modelId: 'gpt-4', analysisType: 'urgency' } },
-        executionCount: 8,
-        successCount: 7,
-        errorCount: 1,
-        lastExecuted: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        fallbackModelIds: [] as any[]
-      },
-      {
-        id: 'rule-5',
-        name: 'VIP Mailbox Organization',
-        description: 'Automatyczne sortowanie wiadomości VIP do dedykowanej skrzynki',
-        ruleType: 'SMART_MAILBOX',
-        category: 'ORGANIZATION',
-        status: 'INACTIVE',
-        priority: 85,
-        triggerType: 'EVENT_BASED',
-        triggerEvents: ['message_received'],
-        conditions: { smartFilters: [{ name: 'VIP', condition: 'sender=@bigcorp.com' }] },
-        actions: { organizeIntoMailbox: { name: 'VIP Klienci', priority: 'HIGH' } },
-        executionCount: 0,
-        successCount: 0,
-        errorCount: 0,
-        lastExecuted: null as any,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        fallbackModelIds: [] as any[]
-      }
-    ];
-
-    // Apply filtering
-    let filteredRules = mockRules;
-
-    if (type && type !== 'ALL') {
-      filteredRules = filteredRules.filter(rule => rule.ruleType === type);
-    }
-
-    if (status && status !== 'ALL') {
-      filteredRules = filteredRules.filter(rule => rule.status === status);
-    }
-
-    if (search) {
-      const searchLower = search.toString().toLowerCase();
-      filteredRules = filteredRules.filter(rule =>
-        rule.name.toLowerCase().includes(searchLower) ||
-        (rule.description && rule.description.toLowerCase().includes(searchLower))
-      );
-    }
-
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
-    const total = filteredRules.length;
-    const skip = (pageNum - 1) * limitNum;
-    const paginatedRules = filteredRules.slice(skip, skip + limitNum);
-
-    return res.json({
-      success: true,
-      data: {
-        rules: paginatedRules,
-        pagination: {
-          page: pageNum,
-          limit: limitNum,
-          total,
-          pages: Math.ceil(total / limitNum)
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching unified rules:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Failed to fetch unified rules'
     });
   }
 });
@@ -505,161 +339,6 @@ router.get('/', async (req: any, res) => {
       success: true,
       data: {
         rules,
-        pagination: {
-          page: pageNum,
-          limit: limitNum,
-          total,
-          pages: Math.ceil(total / limitNum)
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Error fetching unified rules:', error);
-    return res.status(500).json({
-      success: false,
-      error: 'Failed to fetch unified rules'
-    });
-  }
-});
-
-// GET /api/v1/unified-rules/mock - Lista mockowych reguł (dla testów)
-router.get('/mock', async (req: any, res) => {
-  try {
-    const { type, status, category, search, page = '1', limit = '50' } = req.query;
-    
-    // Mockowe reguły dla testów
-    const mockRules = [
-      {
-        id: 'rule-1',
-        name: 'Auto-zadania z pilnych emaili',
-        description: 'Automatycznie tworzy zadania HIGH priority dla wiadomości z słowami "PILNE", "URGENT"',
-        ruleType: 'PROCESSING',
-        category: 'EMAIL_PROCESSING',
-        status: 'ACTIVE',
-        priority: 90,
-        triggerType: 'EVENT_BASED',
-        triggerEvents: ['message_received'],
-        conditions: { subjectContains: ['PILNE', 'URGENT'], minUrgencyScore: 80 },
-        actions: { createTask: { priority: 'HIGH', context: '@calls' } },
-        executionCount: 23,
-        successCount: 22,
-        errorCount: 1,
-        lastExecuted: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        fallbackModelIds: [] as any[] as any[]
-      },
-      {
-        id: 'rule-2',
-        name: 'Filtr newsletterów',
-        description: 'Automatycznie archiwizuje newslettery z pominięciem analizy AI',
-        ruleType: 'EMAIL_FILTER',
-        category: 'FILTERING',
-        status: 'ACTIVE',
-        priority: 50,
-        triggerType: 'EVENT_BASED',
-        triggerEvents: ['message_received'],
-        conditions: { subjectContains: ['newsletter', 'unsubscribe'], maxUrgencyScore: 30 },
-        actions: { categorize: 'ARCHIVE', skipAIAnalysis: true },
-        executionCount: 156,
-        successCount: 156,
-        errorCount: 0,
-        lastExecuted: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        fallbackModelIds: [] as any[] as any[]
-      },
-      {
-        id: 'rule-3',
-        name: 'Odpowiedź poza godzinami pracy',
-        description: 'Auto-odpowiedź wieczorem i w weekendy',
-        ruleType: 'AUTO_REPLY',
-        category: 'COMMUNICATION',
-        status: 'ACTIVE',
-        priority: 70,
-        triggerType: 'EVENT_BASED',
-        triggerEvents: ['message_received'],
-        conditions: { timeRange: { start: '18:00', end: '08:00' } },
-        actions: { sendAutoReply: { template: 'Dziękuję za wiadomość. Odpowiem w najbliższym dniu roboczym.' } },
-        executionCount: 12,
-        successCount: 12,
-        errorCount: 0,
-        lastExecuted: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        fallbackModelIds: [] as any[]
-      },
-      {
-        id: 'rule-4',
-        name: 'Analiza pilności projektów',
-        description: 'Automatyczna ocena pilności nowych projektów przez AI',
-        ruleType: 'AI_RULE',
-        category: 'AI_ANALYSIS',
-        status: 'ACTIVE',
-        priority: 80,
-        triggerType: 'EVENT_BASED',
-        triggerEvents: ['project_created'],
-        conditions: { entityType: 'project', analysisType: 'urgency' },
-        actions: { runAIAnalysis: { modelId: 'gpt-4', analysisType: 'urgency' } },
-        executionCount: 8,
-        successCount: 7,
-        errorCount: 1,
-        lastExecuted: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        fallbackModelIds: [] as any[]
-      },
-      {
-        id: 'rule-5',
-        name: 'VIP Mailbox Organization',
-        description: 'Automatyczne sortowanie wiadomości VIP do dedykowanej skrzynki',
-        ruleType: 'SMART_MAILBOX',
-        category: 'ORGANIZATION',
-        status: 'INACTIVE',
-        priority: 85,
-        triggerType: 'EVENT_BASED',
-        triggerEvents: ['message_received'],
-        conditions: { smartFilters: [{ name: 'VIP', condition: 'sender=@bigcorp.com' }] },
-        actions: { organizeIntoMailbox: { name: 'VIP Klienci', priority: 'HIGH' } },
-        executionCount: 0,
-        successCount: 0,
-        errorCount: 0,
-        lastExecuted: null as any,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        fallbackModelIds: [] as any[]
-      }
-    ];
-
-    // Apply filtering
-    let filteredRules = mockRules;
-    
-    if (type && type !== 'ALL') {
-      filteredRules = filteredRules.filter(rule => rule.ruleType === type);
-    }
-    
-    if (status && status !== 'ALL') {
-      filteredRules = filteredRules.filter(rule => rule.status === status);
-    }
-    
-    if (search) {
-      const searchLower = search.toString().toLowerCase();
-      filteredRules = filteredRules.filter(rule => 
-        rule.name.toLowerCase().includes(searchLower) ||
-        (rule.description && rule.description.toLowerCase().includes(searchLower))
-      );
-    }
-
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
-    const total = filteredRules.length;
-    const skip = (pageNum - 1) * limitNum;
-    const paginatedRules = filteredRules.slice(skip, skip + limitNum);
-    
-    return res.json({
-      success: true,
-      data: {
-        rules: paginatedRules,
         pagination: {
           page: pageNum,
           limit: limitNum,

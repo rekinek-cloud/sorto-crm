@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { PrismaClient } from '@prisma/client';
 import { BaseAIProvider, AIRequest, AIResponse } from './providers/BaseProvider';
 import { OpenAIProvider } from './providers/OpenAIProvider';
@@ -364,26 +365,191 @@ export class AIRouter {
     return results;
   }
 
-  // Helper methods for actions (implement based on your business logic)
+  // Helper methods for actions - create ai_suggestions entries for human review
   private async createTaskFromResponse(response: AIResponse, context: ProcessingContext): Promise<string> {
-    // Implementation depends on how you want to extract task info from AI response
-    // This is a placeholder
-    return 'task-id-placeholder';
+    const startTime = Date.now();
+    const suggestionId = crypto.randomUUID();
+
+    let parsedContent: any = {};
+    try {
+      parsedContent = JSON.parse(response.content);
+    } catch {
+      parsedContent = { rawContent: response.content };
+    }
+
+    const suggestion = {
+      type: 'CREATE_TASK',
+      title: parsedContent.title || parsedContent.taskName || `Task from AI analysis`,
+      description: parsedContent.description || parsedContent.summary || response.content,
+      priority: parsedContent.priority || 'MEDIUM',
+      dueDate: parsedContent.dueDate || null,
+      assigneeId: parsedContent.assigneeId || context.userId || null,
+      tags: parsedContent.tags || [],
+      estimatedTime: parsedContent.estimatedTime || null,
+    };
+
+    await this.prisma.ai_suggestions.create({
+      data: {
+        id: suggestionId,
+        user_id: context.userId || 'system',
+        organization_id: context.organizationId,
+        context: 'CREATE_TASK',
+        input_data: {
+          aiResponseId: response.id,
+          model: response.model,
+          content: response.content,
+          triggerType: context.triggerType,
+          triggerData: context.triggerData,
+        },
+        suggestion: suggestion,
+        confidence: parsedContent.confidence ?? 75,
+        reasoning: parsedContent.reasoning || `AI model ${response.model} suggested creating a task based on ${context.triggerType} trigger.`,
+        status: 'PENDING',
+        processing_time_ms: Date.now() - startTime,
+      },
+    });
+
+    return suggestionId;
   }
 
   private async updateContactFromResponse(response: AIResponse, config: any, context: ProcessingContext): Promise<boolean> {
-    // Implementation for updating contacts
+    const startTime = Date.now();
+    const suggestionId = crypto.randomUUID();
+
+    let parsedContent: any = {};
+    try {
+      parsedContent = JSON.parse(response.content);
+    } catch {
+      parsedContent = { rawContent: response.content };
+    }
+
+    const suggestion = {
+      type: 'UPDATE_CONTACT',
+      contactId: config.contactId || parsedContent.contactId || null,
+      fieldsToUpdate: parsedContent.fieldsToUpdate || parsedContent.updates || {},
+      newTags: parsedContent.newTags || [],
+      newNotes: parsedContent.notes || parsedContent.summary || null,
+      sentiment: parsedContent.sentiment || null,
+      leadScore: parsedContent.leadScore || null,
+    };
+
+    await this.prisma.ai_suggestions.create({
+      data: {
+        id: suggestionId,
+        user_id: context.userId || 'system',
+        organization_id: context.organizationId,
+        context: 'UPDATE_CONTACT',
+        input_data: {
+          aiResponseId: response.id,
+          model: response.model,
+          content: response.content,
+          actionConfig: config,
+          triggerType: context.triggerType,
+          triggerData: context.triggerData,
+        },
+        suggestion: suggestion,
+        confidence: parsedContent.confidence ?? 70,
+        reasoning: parsedContent.reasoning || `AI model ${response.model} suggested updating contact data based on ${context.triggerType} analysis.`,
+        status: 'PENDING',
+        processing_time_ms: Date.now() - startTime,
+      },
+    });
+
     return true;
   }
 
   private async sendNotification(response: AIResponse, context: ProcessingContext): Promise<boolean> {
-    // Implementation for sending notifications
+    const startTime = Date.now();
+    const suggestionId = crypto.randomUUID();
+
+    let parsedContent: any = {};
+    try {
+      parsedContent = JSON.parse(response.content);
+    } catch {
+      parsedContent = { rawContent: response.content };
+    }
+
+    const suggestion = {
+      type: 'SEND_NOTIFICATION',
+      recipientId: parsedContent.recipientId || context.userId || null,
+      channel: parsedContent.channel || 'in_app',
+      subject: parsedContent.subject || parsedContent.title || 'AI Notification',
+      message: parsedContent.message || parsedContent.summary || response.content,
+      priority: parsedContent.priority || 'NORMAL',
+      actionUrl: parsedContent.actionUrl || null,
+    };
+
+    await this.prisma.ai_suggestions.create({
+      data: {
+        id: suggestionId,
+        user_id: context.userId || 'system',
+        organization_id: context.organizationId,
+        context: 'SEND_NOTIFICATION',
+        input_data: {
+          aiResponseId: response.id,
+          model: response.model,
+          content: response.content,
+          triggerType: context.triggerType,
+          triggerData: context.triggerData,
+        },
+        suggestion: suggestion,
+        confidence: parsedContent.confidence ?? 80,
+        reasoning: parsedContent.reasoning || `AI model ${response.model} suggested sending a notification based on ${context.triggerType} trigger.`,
+        status: 'PENDING',
+        processing_time_ms: Date.now() - startTime,
+      },
+    });
+
     return true;
   }
 
   private async createDealFromResponse(response: AIResponse, config: any, context: ProcessingContext): Promise<string> {
-    // Implementation for creating deals
-    return 'deal-id-placeholder';
+    const startTime = Date.now();
+    const suggestionId = crypto.randomUUID();
+
+    let parsedContent: any = {};
+    try {
+      parsedContent = JSON.parse(response.content);
+    } catch {
+      parsedContent = { rawContent: response.content };
+    }
+
+    const suggestion = {
+      type: 'CREATE_DEAL',
+      title: parsedContent.title || parsedContent.dealName || 'New Deal from AI',
+      value: parsedContent.value || parsedContent.amount || config.defaultValue || null,
+      currency: parsedContent.currency || config.currency || 'PLN',
+      stage: parsedContent.stage || config.defaultStage || 'LEAD',
+      contactId: parsedContent.contactId || config.contactId || null,
+      companyId: parsedContent.companyId || config.companyId || null,
+      probability: parsedContent.probability || null,
+      expectedCloseDate: parsedContent.expectedCloseDate || null,
+      notes: parsedContent.notes || parsedContent.summary || null,
+    };
+
+    await this.prisma.ai_suggestions.create({
+      data: {
+        id: suggestionId,
+        user_id: context.userId || 'system',
+        organization_id: context.organizationId,
+        context: 'CREATE_DEAL',
+        input_data: {
+          aiResponseId: response.id,
+          model: response.model,
+          content: response.content,
+          actionConfig: config,
+          triggerType: context.triggerType,
+          triggerData: context.triggerData,
+        },
+        suggestion: suggestion,
+        confidence: parsedContent.confidence ?? 65,
+        reasoning: parsedContent.reasoning || `AI model ${response.model} suggested creating a deal based on ${context.triggerType} analysis.`,
+        status: 'PENDING',
+        processing_time_ms: Date.now() - startTime,
+      },
+    });
+
+    return suggestionId;
   }
 
   // Utility methods

@@ -115,12 +115,19 @@ export class PipelineConfigLoader {
   }
 
   /**
+   * Build categories text (name: description) for use in prompt templates.
+   */
+  static buildCategoriesText(config: PipelineConfig): string {
+    return config.classifications.validClasses
+      .map(cls => `- ${cls}: ${config.classifications.descriptions[cls] || cls}`)
+      .join('\n');
+  }
+
+  /**
    * Build the classification prompt by substituting categories from config.
    */
   static buildClassificationPrompt(config: PipelineConfig): string {
-    const categories = config.classifications.validClasses
-      .map(cls => `- ${cls}: ${config.classifications.descriptions[cls] || cls}`)
-      .join('\n');
+    const categories = this.buildCategoriesText(config);
     return config.aiParams.classificationPrompt.replace('{{categories}}', categories);
   }
 }

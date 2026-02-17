@@ -31,6 +31,7 @@ model Organization {
   ai_rules                ai_rules[]
   ai_suggestions          ai_suggestions[]
   ai_usage_stats          ai_usage_stats[]
+  ai_action_configs       ai_action_config[]
   email_domain_rules      email_domain_rules[]
   email_patterns          email_patterns[]
   data_processing         data_processing[]
@@ -246,6 +247,7 @@ model User {
   mcp_api_keys             mcp_api_keys[]           @relation("McpKeyCreator")
   voice_responses          voiceResponse[]          @relation("UserVoiceResponses")
   voice_feedback           voiceFeedback[]          @relation("UserVoiceFeedback")
+  actionConfigUpdates      ai_action_config[]       @relation("ActionConfigUpdater")
 
   // Extension models
   createdNotes             Note[]
@@ -2225,6 +2227,8 @@ model ai_models {
   ai_prompt_templates ai_prompt_templates[]
   ai_rules            ai_rules[]
   unified_rules       unified_rules[]
+  actionConfigPrimary ai_action_config[] @relation("actionPrimaryModel")
+  actionConfigFallback ai_action_config[] @relation("actionFallbackModel")
 
   @@unique([providerId, name])
 }
@@ -5759,4 +5763,33 @@ model EntityLink {
   @@index([organizationId, fromEntityType, fromEntityId])
   @@index([organizationId, toEntityType, toEntityId])
   @@map("entity_links")
+}
+
+enum AIActionCode {
+  FLOW_ANALYSIS
+  FLOW_CONVERSATION
+  EMAIL_CLASSIFICATION
+  EMAIL_PIPELINE
+  AI_RULES_DEFAULT
+  TASK_SUMMARY
+  DEAL_ANALYSIS
+}
+
+model ai_action_config {
+  id              String       @id @default(uuid())
+  organizationId  String
+  actionCode      AIActionCode
+  primaryModelId  String
+  fallbackModelId String?
+  isActive        Boolean      @default(true)
+  updatedAt       DateTime     @updatedAt
+  updatedById     String?
+
+  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  primaryModel    ai_models    @relation("actionPrimaryModel", fields: [primaryModelId], references: [id])
+  fallbackModel   ai_models?   @relation("actionFallbackModel", fields: [fallbackModelId], references: [id])
+  updatedBy       User?        @relation("ActionConfigUpdater", fields: [updatedById], references: [id])
+
+  @@unique([organizationId, actionCode])
+  @@map("ai_action_config")
 }

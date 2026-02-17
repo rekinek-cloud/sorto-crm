@@ -8,6 +8,7 @@ export interface AISuggestion {
   title: string;
   description: string;
   data: Record<string, any>;
+  inputData?: Record<string, any>;
   confidence: number;
   status: string;
   createdAt: string;
@@ -25,11 +26,26 @@ export const aiSuggestionsApi = {
     return response.data.data;
   },
 
-  async acceptSuggestion(id: string): Promise<void> {
-    await apiClient.post(`/ai-suggestions/${id}/accept`);
+  async acceptSuggestion(id: string, modifications?: Record<string, any>): Promise<{ createdEntity?: { id: string; type: string } }> {
+    const response = await apiClient.post(`/ai-suggestions/${id}/accept`, { modifications });
+    return response.data;
   },
 
-  async rejectSuggestion(id: string, note?: string): Promise<void> {
-    await apiClient.post(`/ai-suggestions/${id}/reject`, { note });
+  async rejectSuggestion(id: string, data?: {
+    note?: string;
+    correctClassification?: string;
+    correctAction?: string;
+    feedback?: string;
+  }): Promise<void> {
+    await apiClient.post(`/ai-suggestions/${id}/reject`, data || {});
+  },
+
+  async editSuggestion(id: string, data: {
+    suggestion?: Record<string, any>;
+    reasoning?: string;
+    confidence?: number;
+  }): Promise<AISuggestion> {
+    const response = await apiClient.put(`/ai-suggestions/${id}`, data);
+    return response.data.data;
   },
 };

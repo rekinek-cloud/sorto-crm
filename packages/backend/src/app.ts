@@ -86,7 +86,7 @@ import brandingRoutes from './routes/branding';
 import billingRoutes from './routes/billing';
 import emailAccountsRoutes from './routes/emailAccounts';
 import autoRepliesRoutes from './routes/autoReplies';
-// import aiV2Routes from './routes/aiV2';
+import aiV2Routes from './routes/aiV2';
 import pipelineAnalyticsRoutes from './routes/pipelineAnalytics';
 // import universalRulesRoutes from './routes/universalRules';
 import graphRoutes from './routes/graph';
@@ -277,7 +277,7 @@ apiRouter.use('/branding', brandingRoutes);  // Branding - logo i kolory
 apiRouter.use('/billing', billingRoutes);  // Billing - subskrypcje i płatności
 apiRouter.use('/email-accounts', emailAccountsRoutes);  // Email Accounts - IMAP/SMTP
 apiRouter.use('/auto-replies', autoRepliesRoutes);  // Auto Replies - automatyczne odpowiedzi
-// apiRouter.use('/ai-v2', aiV2Routes);  // AI V2 - providers & models
+apiRouter.use('/ai-v2', aiV2Routes);  // AI V2 - providers & models
 apiRouter.use('/pipeline-analytics', pipelineAnalyticsRoutes);  // Pipeline Analytics
 // apiRouter.use('/universal-rules', universalRulesRoutes);  // Universal Rules
 apiRouter.use('/graph', graphRoutes);  // Graph - relacje między encjami

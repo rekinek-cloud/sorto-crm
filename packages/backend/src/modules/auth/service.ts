@@ -6,6 +6,7 @@ import { generateTokenPair, TokenPayload, invalidateAllUserTokens } from '../../
 import { AppError, ConflictError, UnauthorizedError, NotFoundError } from '../../shared/middleware/error';
 import config from '../../config';
 import logger from '../../config/logger';
+// @ts-ignore - two separate files: EmailService.ts (mailer) vs emailService.ts (IMAP)
 import { emailService } from '../../services/EmailService';
 import {
   RegisterRequest,
