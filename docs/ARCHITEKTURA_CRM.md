@@ -19,17 +19,17 @@ Modul CRM stanowi rdzen Sorto CRM. Odpowiada za:
 - **Dokumenty finansowe** -- oferty, zamowienia, faktury
 - **Uniwersalne powiazania** -- EntityLink laczy dowolne encje miedzy soba
 
-### Relacja z GTD Streams
+### Relacja ze Strumieniami
 
 Encje CRM (Contact, Company, Deal, Event) moga byc powiazane z:
 - **Zadaniami** (`Task.contactId`, `Task.dealId`, `Task.eventId`)
 - **Projektami** (`Project.contactId`, `Project.dealId`, `Project.eventId`)
 - **Notatkami** (`Note.companyId`, `Note.contactId`, `Note.dealId`, `Note.eventId`)
 - **Spotkaniami** (`Meeting.contactId`, `Meeting.companyId`, `Meeting.dealId`)
-- **Strumieniami GTD** -- poprzez `EntityLink` (typ STREAM <-> CONTACT/COMPANY/DEAL)
+- **Strumieniami** -- poprzez `EntityLink` (typ STREAM <-> CONTACT/COMPANY/DEAL)
 
 Dzieki temu pojedynczy kontakt lub transakcja sa widoczne zarowno w widoku
-CRM, jak i w kontekscie GTD (Inbox, Next Actions, Projects).
+CRM, jak i w kontekscie strumieni (Zrodlo, Next Actions, Projects).
 
 ---
 
@@ -159,7 +159,7 @@ CRM, jak i w kontekscie GTD (Inbox, Next Actions, Projects).
 - `intelligence` -- wpisy wywiadowcze (`ClientIntelligence`)
 - `dealStakeholders` -- rola kontaktu w transakcjach (`DealStakeholder`)
 - `eventContacts` -- powiazania z wydarzeniami (`EventContact`)
-- `tasks`, `projects`, `meetings`, `offers`, `contactNotes` -- powiazane encje GTD/CRM
+- `tasks`, `projects`, `meetings`, `offers`, `contactNotes` -- powiazane encje
 
 ### API Endpoints
 
@@ -268,7 +268,7 @@ CRM, jak i w kontekscie GTD (Inbox, Next Actions, Projects).
 - `competitors` -- konkurencja w transakcji (`DealCompetitor[]`)
 - `lostAnalysis` -- analiza przegranej (1:1, `DealLostAnalysis`)
 - `offers` -- oferty powiazane z dealem
-- `dealTasks`, `dealProjects`, `dealMeetings`, `dealNotes` -- powiazane encje GTD
+- `dealTasks`, `dealProjects`, `dealMeetings`, `dealNotes` -- powiazane encje
 - `eventCompanies` -- powiazania z wydarzeniami
 - `clientProducts` -- zrealizowane produkty/uslugi
 
@@ -955,7 +955,7 @@ Model `ai_action_config` mapuje typ operacji na model AI:
 
 ---
 
-## 13. Integracja ze Strumieniami (GTD Streams)
+## 13. Integracja ze Strumieniami
 
 ### 13.1 Bezposrednie FK w modelach
 
@@ -970,7 +970,7 @@ Wiele modeli CRM posiada bezposrednie FK do Streams:
 
 ### 13.2 EntityLink -- uniwersalne powiazania ze Streams
 
-Poprzez `EntityLink` mozna laczyc encje CRM ze strumieniami GTD:
+Poprzez `EntityLink` mozna laczyc encje CRM ze strumieniami:
 
 ```
 EntityLink(fromEntityType=CONTACT, fromEntityId=...,
@@ -978,12 +978,12 @@ EntityLink(fromEntityType=CONTACT, fromEntityId=...,
            linkType="RELATED")
 ```
 
-### 13.3 Typowy workflow CRM <-> GTD
+### 13.3 Typowy workflow CRM <-> Strumienie
 
 ```
 1. Email przychodzi --> AI klasyfikuje
 2. Uzytkownik tworzy Deal z emaila
-3. Deal trafia do strumienia PROJECTS (GTD)
+3. Deal trafia do strumienia PROJECTS
 4. Zadania z Deal (follow-up, oferta) --> strumien NEXT_ACTIONS
 5. Oczekiwanie na odpowiedz klienta --> strumien WAITING_FOR
 6. Meeting z klientem --> powiazany z Deal + Stream
@@ -991,11 +991,11 @@ EntityLink(fromEntityType=CONTACT, fromEntityId=...,
 8. Zamkniecie dealu --> automatyczny update RelationshipHealth
 ```
 
-### 13.4 Konteksty CRM w GTD
+### 13.4 Konteksty CRM w Strumieniach
 
-Encje CRM sa widoczne w nastepujacych kontekstach GTD:
+Encje CRM sa widoczne w nastepujacych kontekstach strumieni:
 
-| Strumien GTD | Powiazanie CRM |
+| Strumien | Powiazanie CRM |
 |-------------|----------------|
 | INBOX | Nowe emaile od kontaktow CRM |
 | NEXT_ACTIONS | Follow-upy, przygotowanie ofert |

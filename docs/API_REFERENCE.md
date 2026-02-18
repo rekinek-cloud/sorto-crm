@@ -14,7 +14,7 @@
 4. [Firmy (Companies)](#4-firmy-companies)
 5. [Szanse sprzedazowe (Deals)](#5-szanse-sprzedazowe-deals)
 6. [Strumienie (Streams)](#6-strumienie-streams)
-7. [Zarzadzanie strumieniami GTD (Stream Management)](#7-zarzadzanie-strumieniami-gtd-stream-management)
+7. [Zarzadzanie strumieniami (Stream Management)](#7-zarzadzanie-strumieniami-stream-management)
 8. [Zadania (Tasks)](#8-zadania-tasks)
 9. [Projekty (Projects)](#9-projekty-projects)
 10. [Skrzynka odbiorcza / Source (Inbox)](#10-skrzynka-odbiorcza--source-inbox)
@@ -359,7 +359,7 @@ POST /api/v1/deals
 | POST | `/inbox` | Szybkie przechwycenie elementu do inbox | Tak |
 | POST | `/inbox/:id/process` | Przetworzenie elementu inbox | Tak |
 | POST | `/inbox/:id/quick-action` | Szybka akcja (QUICK_DO, QUICK_DEFER, QUICK_DELETE) | Tak |
-| GET | `/contexts` | Dostepne konteksty GTD | Tak |
+| GET | `/contexts` | Dostepne konteksty strumieni | Tak |
 
 ### Przykladowe zapytanie tworzenia strumienia
 
@@ -376,7 +376,7 @@ POST /api/v1/streams
 
 ---
 
-## 7. Zarzadzanie strumieniami GTD (Stream Management)
+## 7. Zarzadzanie strumieniami (Stream Management)
 
 **Sciezka bazowa:** `/api/v1/stream-management`
 **Autoryzacja:** Wszystkie endpointy wymagaja JWT
@@ -385,20 +385,20 @@ POST /api/v1/streams
 
 | Metoda | Sciezka | Opis | Auth |
 |--------|---------|------|------|
-| GET | `/` | Lista zarzadzanych strumieni GTD | Tak |
+| GET | `/` | Lista zarzadzanych strumieni | Tak |
 | POST | `/` | Utworzenie zarzadzanego strumienia | Tak |
-| GET | `/by-role/:role` | Strumienie wedlug roli GTD | Tak |
-| PUT | `/:id/role` | Przypisanie roli GTD do strumienia | Tak |
-| POST | `/:id/migrate` | Migracja strumienia do trybu GTD | Tak |
+| GET | `/by-role/:role` | Strumienie wedlug roli strumienia | Tak |
+| PUT | `/:id/role` | Przypisanie roli strumienia | Tak |
+| POST | `/:id/migrate` | Migracja do systemu strumieni | Tak |
 | POST | `/:id/freeze` | Zamrozenie strumienia | Tak |
 | POST | `/:id/unfreeze` | Odmrozenie strumienia | Tak |
 
-### Endpointy - Konfiguracja GTD
+### Endpointy - Konfiguracja strumienia
 
 | Metoda | Sciezka | Opis | Auth |
 |--------|---------|------|------|
-| GET | `/:id/config` | Pobranie konfiguracji GTD strumienia | Tak |
-| PUT | `/:id/config` | Aktualizacja konfiguracji GTD | Tak |
+| GET | `/:id/config` | Pobranie konfiguracji strumienia | Tak |
+| PUT | `/:id/config` | Aktualizacja konfiguracji strumienia | Tak |
 | POST | `/:id/config/reset` | Reset konfiguracji do domyslnych | Tak |
 
 ### Endpointy - Hierarchia
@@ -424,7 +424,7 @@ POST /api/v1/streams
 
 | Metoda | Sciezka | Opis | Auth |
 |--------|---------|------|------|
-| GET | `/stats` | Statystyki GTD | Tak |
+| GET | `/stats` | Statystyki strumieni | Tak |
 | GET | `/hierarchy-stats` | Statystyki hierarchii | Tak |
 | GET | `/routing-stats` | Statystyki routingu | Tak |
 
@@ -443,7 +443,7 @@ POST /api/v1/streams
 | POST | `/index-vectors` | Indeksowanie wektorow | Tak |
 | GET | `/vector-status` | Status indeksowania | Tak |
 
-### Role GTD (streamRole)
+### Role strumienia (streamRole)
 
 | Rola | Opis |
 |------|------|
@@ -456,7 +456,7 @@ POST /api/v1/streams
 | `AREAS` | Obszary odpowiedzialnosci |
 | `REFERENCE` | Materialy referencyjne |
 
-### Przyklad tworzenia strumienia GTD
+### Przyklad tworzenia strumienia
 
 ```json
 POST /api/v1/stream-management
@@ -493,7 +493,7 @@ POST /api/v1/stream-management
 |----------|-----|------|
 | `status` | string | Filtr statusu (NEW, IN_PROGRESS, COMPLETED, CANCELLED) |
 | `priority` | string | Filtr priorytetu (LOW, MEDIUM, HIGH, URGENT) |
-| `contextId` | string | Filtr kontekstu GTD |
+| `contextId` | string | Filtr kontekstu strumienia |
 | `projectId` | string | Filtr projektu |
 | `streamId` | string | Filtr strumienia |
 | `assignedToId` | string | Filtr przypisanego uzytkownika |
@@ -584,7 +584,7 @@ Zawiera dodatkowe dane:
 | GET | `/stats` | Statystyki inbox | Tak |
 | POST | `/` | Utworzenie elementu inbox | Tak |
 | POST | `/quick-capture` | Szybkie przechwycenie z kontekstem biznesowym | Tak |
-| POST | `/:id/process` | Pelne przetworzenie GTD | Tak |
+| POST | `/:id/process` | Pelne przetworzenie elementu | Tak |
 | POST | `/:id/quick-action` | Szybka akcja | Tak |
 | POST | `/bulk-process` | Masowe przetwarzanie | Tak |
 | DELETE | `/clear-processed` | Czyszczenie starych przetworzonych elementow | Tak |
@@ -614,7 +614,7 @@ Zawiera dodatkowe dane:
 | `limit` | number | Limit wynikow |
 | `offset` | number | Offset |
 
-### Decyzje GTD (POST /:id/process)
+### Decyzje przetwarzania (POST /:id/process)
 
 | Decyzja | Opis |
 |---------|------|

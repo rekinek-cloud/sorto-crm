@@ -1,4 +1,4 @@
-# Infrastruktura i Deployment - CRM-GTD Smart
+# Infrastruktura i Deployment - Sorto CRM
 
 > Ostatnia aktualizacja: 2026-02-17
 > Wersja dokumentu: 1.0
@@ -1427,4 +1427,4 @@ echo "Nginx:" && nginx -t 2>&1 | tail -1
 
 ---
 
-> **Autor:** Wygenerowano automatycznie na podstawie analizy kodu zrodlowego projektu CRM-GTD Smart.
+> **Autor:** Wygenerowano automatycznie na podstawie analizy kodu zrodlowego projektu Sorto CRM.
